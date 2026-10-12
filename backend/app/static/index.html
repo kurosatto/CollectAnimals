@@ -86,7 +86,8 @@
     <button class="close" id="dex-close" aria-label="Close">×</button>
   </div>
   <div class="dex-body">
-    <div class="dex-map"><div id="dex-map"></div><div class="muted" id="dex-map-note" style="font-size:.8rem"></div></div>
+    <div class="dex-map"><div id="dex-map"></div><div class="muted" id="dex-map-note" style="font-size:.8rem"></div>
+      <p id="dex-where" style="margin:8px 0 0"></p></div>
     <dl>
       <dt>Size</dt><dd id="dex-size"></dd>
       <dt>Weight</dt><dd id="dex-weight"></dd>
@@ -224,6 +225,7 @@ async function openDex(slug, num, caught) {
   $("dex-rarity").style.color = `var(--${s.rarity})`;
   $("dex-map").innerHTML = rangeSvg(d.range);
   $("dex-map-note").textContent = d.range ? "Where it's been seen (iNaturalist)" : "Sighting map coming soon";
+  $("dex-where").textContent = d.where_to_find ? "📍 " + d.where_to_find : "";
   $("dex-size").textContent = d.size || "Unknown";
   $("dex-weight").textContent = d.weight || "Unknown";
   $("dex-fact").textContent = caught ? (d.fun_fact || "—") : "🔒 Catch one to unlock its fun fact.";

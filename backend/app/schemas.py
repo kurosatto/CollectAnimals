@@ -43,6 +43,7 @@ class DexOut(BaseModel):
     size: str | None = None
     weight: str | None = None
     fun_fact: str | None = None
+    where_to_find: str | None = None
     # {"grid": {lon0, lat0, step, cols, rows}, "cells": [[col, row, count], ...]}
     range: dict | None = None
 

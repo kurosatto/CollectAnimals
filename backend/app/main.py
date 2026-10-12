@@ -126,7 +126,8 @@ def get_dex_entry(slug: str, db: Session = Depends(get_db)):
     s = get_species(slug, db)
     d = dex.details(slug)
     return DexOut(species=SpeciesOut.model_validate(s), size=d.get("size"), weight=d.get("weight"),
-                  fun_fact=d.get("fun_fact"), range=dex.range_for(slug))
+                  fun_fact=d.get("fun_fact"), where_to_find=d.get("where_to_find"),
+                  range=dex.range_for(slug))
 
 
 # --- captures & collection --------------------------------------------------

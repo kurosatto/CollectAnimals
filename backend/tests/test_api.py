@@ -140,7 +140,7 @@ def test_dex_entry(client):
 
     r = client.get("/species/coyote/dex").json()
     assert r["species"]["common_name"] == "Coyote"
-    assert r["size"] and r["weight"] and r["fun_fact"]
+    assert r["size"] and r["weight"] and r["fun_fact"] and r["where_to_find"]
     assert r["range"]["cells"] == [[10, 20, 5]] and r["range"]["grid"]["step"] == 0.25
 
     r = client.get("/species/bobcat/dex").json()
