@@ -40,6 +40,10 @@ Without a trained model the API still runs; captures report that no model is loa
   lists everyone's album photos for a species, ranked by likes. You need the
   species unlocked to see it. Photos that never made it into an album are
   never served.
+- **Private players.** `PATCH /me/settings {"is_private": true}` hides your
+  photos from everyone but you and your friends: they leave the species
+  galleries, the feed and your profile for strangers (strangers can't like
+  them either).
 - **Player pages.** `GET /users/{username}` returns a player's achievements
   (milestones, rare and legendary finds, completing a group, likes), catches
   by rarity and group, and their photos, plus whether you're friends. Friends

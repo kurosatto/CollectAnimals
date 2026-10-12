@@ -28,10 +28,12 @@ class UserOut(BaseModel):
     username: str
     created_at: datetime
     show_in_feed: bool | None = True
+    is_private: bool | None = False
 
 
 class SettingsIn(BaseModel):
     show_in_feed: bool | None = None
+    is_private: bool | None = None
 
 
 class SpeciesOut(BaseModel):
@@ -175,6 +177,8 @@ class ProfileOut(BaseModel):
     # self | friends | requested (you asked them) | incoming (they asked you) | none
     friendship: str
     is_bot: bool = False
+    # Private players show their photos only to themselves and friends.
+    is_private: bool = False
     caught: int
     total: int
     by_rarity: dict[str, Tally]
