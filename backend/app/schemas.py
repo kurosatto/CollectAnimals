@@ -138,6 +138,39 @@ class AlbumOut(BaseModel):
     photos: list[PhotoOut]
 
 
+class Tally(BaseModel):
+    caught: int
+    total: int
+
+
+class AchievementOut(BaseModel):
+    id: str
+    title: str
+    description: str
+    earned: bool
+    progress: int
+    goal: int
+
+
+class ProfileOut(BaseModel):
+    username: str
+    joined: datetime
+    # self | friends | requested (you asked them) | incoming (they asked you) | none
+    friendship: str
+    caught: int
+    total: int
+    by_rarity: dict[str, Tally]
+    by_category: dict[str, Tally]
+    likes_received: int
+    achievements: list[AchievementOut]
+    # Their legendary catches; names follow the viewer's own reveal rules.
+    legendaries: list[SpeciesOut]
+    # Album photos the viewer may see: all of them for you and friends, only
+    # species the viewer has unlocked for everyone else.
+    photos: list[PhotoOut]
+    hidden_photos: int = 0
+
+
 class GalleryOut(BaseModel):
     species: SpeciesOut
     scope: str

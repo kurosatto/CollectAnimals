@@ -38,6 +38,11 @@ Without a trained model the API still runs; captures report that no model is loa
   lists everyone's album photos for a species, ranked by likes. You need the
   species unlocked to see it. Photos that never made it into an album are
   never served.
+- **Player pages.** `GET /users/{username}` returns a player's achievements
+  (milestones, rare and legendary finds, completing a group, likes), catches
+  by rarity and group, and their photos, plus whether you're friends. Friends
+  see every photo; others see only animals they've unlocked themselves, with
+  the usual blurred places.
 - **Deleting.** "Delete photo" on your own photo (`DELETE /photos/{id}` or
   `DELETE /me/album/{species}`) removes it from your album, the gallery and
   the feed, drops its likes and deletes the file. It also un-catches the
