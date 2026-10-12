@@ -47,6 +47,13 @@ def revealed_species_ids(db: Session, user: User | None) -> set[int]:
     return set(db.scalars(select(Badge.species_id).where(Badge.user_id.in_(ids)).distinct()))
 
 
+def shown_to(user: User, friends: set[int]):
+    """SQL filter: album photos this viewer may see as far as privacy goes
+    (everyone's, except private players' unless they're you or a friend).
+    Use on a query that joins User on AlbumPhoto.user_id."""
+    return or_(User.is_private.is_(None), ~User.is_private, User.id.in_(friends | {user.id}))
+
+
 def species_out(s: Species, revealed: bool) -> SpeciesOut:
     if revealed:
         return SpeciesOut(number=s.id, slug=s.slug, common_name=s.common_name,
@@ -260,12 +267,12 @@ def user_profile(username: str, user: User = Depends(current_user), db: Session 
     likes_received = db.scalar(select(func.count()).select_from(PhotoLike).join(
         AlbumPhoto, AlbumPhoto.id == PhotoLike.photo_id).where(AlbumPhoto.user_id == owner.id))
     close = friendship in ("self", "friends")
-    visible = [p for p in photos if close or p.species_id in revealed]
+    visible = [p for p in photos if close or (p.species_id in revealed and not owner.is_private)]
     counts, liked = _like_info(db, [p.id for p in visible], user.id)
 
     return ProfileOut(
         username=owner.username, joined=owner.created_at, friendship=friendship,
-        is_bot=bool(owner.is_bot),
+        is_bot=bool(owner.is_bot), is_private=bool(owner.is_private),
         caught=len(caught_ids), total=len(species), by_rarity=by_rarity, by_category=by_category,
         likes_received=likes_received,
         achievements=_achievements(len(caught_ids), len(species), by_rarity, by_category, likes_received),
@@ -295,7 +302,8 @@ def species_gallery(species_key: str,
              .group_by(PhotoLike.photo_id).subquery())
     n = func.coalesce(likes.c.n, 0)
     q = (select(AlbumPhoto, n).outerjoin(likes, likes.c.photo_id == AlbumPhoto.id)
-         .where(AlbumPhoto.species_id == s.id))
+         .join(User, User.id == AlbumPhoto.user_id)
+         .where(AlbumPhoto.species_id == s.id, shown_to(user, friends)))
     if scope == "friends":
         q = q.where(AlbumPhoto.user_id.in_(friends | {user.id}))
     total = db.scalar(select(func.count()).select_from(q.subquery()))
@@ -323,14 +331,16 @@ def news_feed(scope: Literal["near", "all", "friends"] = "all",
     radius_km. Distances use each catch's blurred position, not its exact
     GPS, so the filter can't be used to pinpoint anyone (see places.py).
     uncaught=true keeps only animals the viewer hasn't caught yet.
-    Players who turned off show_in_feed are left out (except to themselves)."""
+    Players who turned off show_in_feed are left out (except to themselves),
+    and private players' catches only reach their friends."""
     if scope == "near" and (lat is None or lon is None):
         raise HTTPException(400, "scope=near needs lat and lon")
     friends = friend_ids(db, user.id)
     revealed = revealed_species_ids(db, user)
     q = (select(AlbumPhoto).join(Capture, Capture.id == AlbumPhoto.capture_id)
          .join(User, User.id == AlbumPhoto.user_id)
-         .where(or_(User.show_in_feed.is_(None), User.show_in_feed, User.id == user.id)))
+         .where(or_(User.show_in_feed.is_(None), User.show_in_feed, User.id == user.id),
+                shown_to(user, friends)))
     if scope == "friends":
         q = q.where(AlbumPhoto.user_id.in_(friends | {user.id}))
     if uncaught:
@@ -370,13 +380,17 @@ def update_settings(body: SettingsIn, user: User = Depends(current_user),
                     db: Session = Depends(get_db)):
     if body.show_in_feed is not None:
         user.show_in_feed = body.show_in_feed
+    if body.is_private is not None:
+        user.is_private = body.is_private
     db.commit()
-    return {"show_in_feed": user.show_in_feed is not False}
+    return {"show_in_feed": user.show_in_feed is not False, "is_private": bool(user.is_private)}
 
 
 def _visible_photo(db: Session, photo_id: int, user: User) -> AlbumPhoto:
     photo = db.get(AlbumPhoto, photo_id)
     if not photo or photo.species_id not in revealed_species_ids(db, user):
+        raise HTTPException(404, "No such photo")
+    if photo.user.is_private and photo.user_id != user.id and photo.user_id not in friend_ids(db, user.id):
         raise HTTPException(404, "No such photo")
     return photo
 

@@ -219,7 +219,7 @@ def test_news_feed(client, fake):
 
     # Opting out hides your catches from everyone else's feed, not your own.
     assert client.patch("/me/settings", headers=cyd, json={"show_in_feed": False}).json() == \
-        {"show_in_feed": False}
+        {"show_in_feed": False, "is_private": False}
     assert client.get("/me", headers=cyd).json()["show_in_feed"] is False
     assert {p["username"] for p in client.get("/feed", headers=ana).json()["photos"]} == {"ana", "bob"}
     assert len([p for p in client.get("/feed", headers=cyd).json()["photos"] if p["is_mine"]]) == 2
@@ -396,3 +396,37 @@ def test_bot_friends(client, fake):
     assert client.get("/users/human", headers=ana).json()["is_bot"] is False
     assert client.post("/friends/requests", headers=ana, json={"username": "human"}).json() == \
         {"status": "requested"}
+
+
+def test_private_player(client, fake):
+    admin, ana, bob = signup(client, "admin"), signup(client, "ana"), signup(client, "bob")
+    catch(client, fake, admin, "coyote")
+    catch(client, fake, admin, "bobcat")
+    catch(client, fake, ana, "coyote")
+    catch(client, fake, bob, "coyote")
+    assert client.patch("/me/settings", headers=admin, json={"is_private": True}).json() == \
+        {"show_in_feed": True, "is_private": True}
+    assert client.get("/me", headers=admin).json()["is_private"] is True
+    befriend(client, admin, bob, "bob", "admin")
+    admin_photo = client.get("/me/album", headers=admin).json()["photos"][0]["id"]
+
+    def users(path, h):
+        return {p["username"] for p in client.get(path, headers=h).json()["photos"]}
+
+    # Strangers don't see a private player's photos anywhere.
+    assert users("/species/coyote/photos", ana) == {"ana", "bob"}
+    assert users("/feed", ana) == {"ana", "bob"}
+    prof = client.get("/users/admin", headers=ana).json()
+    assert prof["is_private"] and prof["photos"] == [] and prof["hidden_photos"] == 2
+    assert client.post(f"/photos/{admin_photo}/like", headers=ana).status_code == 404
+    # Friends and the player themself still do.
+    assert users("/species/coyote/photos", bob) == {"admin", "ana", "bob"}
+    assert "admin" in users("/feed", bob)
+    assert len(client.get("/users/admin", headers=bob).json()["photos"]) == 2
+    assert client.post(f"/photos/{admin_photo}/like", headers=bob).status_code == 204
+    assert users("/species/coyote/photos", admin) == {"admin", "ana", "bob"}
+    # Captures only reveal names to friends, as for everyone.
+    assert not client.get("/species/bobcat", headers=ana).json()["revealed"]
+
+    client.patch("/me/settings", headers=admin, json={"is_private": False})
+    assert "admin" in users("/species/coyote/photos", ana)
