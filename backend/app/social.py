@@ -141,7 +141,7 @@ def set_album_photo(species_key: str, body: AlbumPick, user: User = Depends(curr
     s = find_species(db, species_key)
     capture = db.get(Capture, body.capture_id)
     if not capture or capture.user_id != user.id or capture.species_id != s.id:
-        raise HTTPException(400, "That capture isn't one of your catches of this species")
+        raise HTTPException(400, "That isn't one of your captures of this species")
     photo = db.scalar(select(AlbumPhoto).where(AlbumPhoto.user_id == user.id,
                                                AlbumPhoto.species_id == s.id))
     if photo is None:
@@ -210,18 +210,18 @@ def _achievements(caught: int, total: int, by_rarity: dict[str, Tally],
         out.append(AchievementOut(id=id_, title=title, description=description,
                                   earned=progress >= goal, progress=min(progress, goal), goal=goal))
 
-    add("first_catch", "First catch", "Catch your first animal", caught, 1)
+    add("first_catch", "First capture", "Capture your first animal", caught, 1)
     for n in (10, 25, 50):
-        add(f"collector_{n}", f"{n} animals", f"Catch {n} different animals", caught, n)
-    add("complete", "Gotta catch 'em all", f"Catch all {total} animals", caught, total)
+        add(f"collector_{n}", f"{n} animals", f"Capture {n} different animals", caught, n)
+    add("complete", "Gotta capture 'em all", f"Capture all {total} animals", caught, total)
     rare = by_rarity.get("rare", Tally(caught=0, total=0))
     legendary = by_rarity.get("legendary", Tally(caught=0, total=0))
-    add("first_rare", "Rare find", "Catch a rare animal", rare.caught, 1)
-    add("first_legendary", "Legend", "Catch a legendary animal", legendary.caught, 1)
-    add("all_legendaries", "Living legend", "Catch every legendary animal", legendary.caught, legendary.total)
+    add("first_rare", "Rare find", "Capture a rare animal", rare.caught, 1)
+    add("first_legendary", "Legend", "Capture a legendary animal", legendary.caught, 1)
+    add("all_legendaries", "Living legend", "Capture every legendary animal", legendary.caught, legendary.total)
     for cat, t in by_category.items():
         name = CATEGORY_TITLES.get(cat, cat.title())
-        add(f"all_{cat}", f"{name} master", f"Catch every {cat} on the list", t.caught, t.total)
+        add(f"all_{cat}", f"{name} master", f"Capture every {cat} on the list", t.caught, t.total)
     add("liked_10", "Crowd favorite", "Get 10 likes on your photos", likes, 10)
     return out
 
@@ -289,7 +289,7 @@ def species_gallery(species_key: str,
     s = find_species(db, species_key)
     if s.id not in revealed_species_ids(db, user):
         raise HTTPException(status.HTTP_403_FORBIDDEN,
-                            "Catch this animal, or have a friend catch it, to see its photos")
+                            "Capture this animal, or have a friend capture it, to see its photos")
     friends = friend_ids(db, user.id)
     likes = (select(PhotoLike.photo_id, func.count().label("n"))
              .group_by(PhotoLike.photo_id).subquery())
