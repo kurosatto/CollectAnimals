@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CollectAnimals</title>
+<style>
+  :root { --bg:#f6f4ee; --card:#fff; --ink:#1d2a22; --muted:#6b7a70; --accent:#2f7d4f; --line:#e3e0d6;
+          --common:#7a8a80; --uncommon:#2f7d4f; --rare:#2d5fa8; --legendary:#b7791f; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#121815; --card:#1b231e; --ink:#e7eee9; --muted:#93a39a; --line:#2a352f; } }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,sans-serif; background:var(--bg); color:var(--ink); }
+  main { max-width:960px; margin:0 auto; padding:16px; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+  h1 { font-size:1.5rem; margin:.5rem 0; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin:16px 0; }
+  input, button { font:inherit; padding:10px 12px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--ink); }
+  button { background:var(--accent); color:#fff; border:none; cursor:pointer; }
+  button.link { background:none; color:var(--accent); padding:0; }
+  form { display:flex; flex-wrap:wrap; gap:8px; }
+  .muted { color:var(--muted); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; }
+  .tile { border:1px solid var(--line); border-radius:10px; padding:10px; background:var(--card); font-size:.9rem; }
+  .tile.locked { opacity:.45; filter:grayscale(1); }
+  .tile .num { color:var(--muted); font-size:.75rem; }
+  .rarity { font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; font-weight:600; }
+  #result.win { border-color:var(--accent); }
+  .hidden { display:none; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>CollectAnimals <span class="muted" style="font-size:1rem">California</span></h1>
+    <div id="who" class="hidden"><span id="username"></span> · <button class="link" id="logout">Log out</button></div>
+  </header>
+
+  <section id="auth" class="card">
+    <h2 id="auth-title">Log in</h2>
+    <form id="auth-form">
+      <input id="email" type="email" placeholder="Email" class="hidden">
+      <input id="ident" placeholder="Email or username" required>
+      <input id="password" type="password" placeholder="Password (8+ chars)" required>
+      <button type="submit" id="auth-submit">Log in</button>
+    </form>
+    <p class="muted"><button class="link" id="toggle">Need an account? Sign up</button></p>
+    <p id="auth-error" style="color:#c0392b"></p>
+  </section>
+
+  <section id="game" class="hidden">
+    <div class="card">
+      <h2>Capture an animal</h2>
+      <form id="upload-form">
+        <input id="photo" type="file" accept="image/*" capture="environment" required>
+        <button type="submit">Identify</button>
+      </form>
+      <div id="result" class="card hidden"></div>
+    </div>
+    <div class="card">
+      <h2>Your collection <span id="progress" class="muted"></span></h2>
+      <div id="grid" class="grid"></div>
+    </div>
+  </section>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+let token = null;
+try { token = localStorage.getItem("token"); } catch {}
+let signup = false;
+
+async function api(path, opts = {}) {
+  const headers = opts.headers || {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const res = await fetch(path, { ...opts, headers });
+  const body = await res.json().catch(() => ({}));
+  if (res.status === 401 && token) { setToken(null); }
+  if (!res.ok) {
+    const d = body.detail;
+    throw new Error(Array.isArray(d) ? d.map((e) => e.msg).join("; ") : d || res.statusText);
+  }
+  return body;
+}
+
+function setToken(t) {
+  token = t;
+  try { t ? localStorage.setItem("token", t) : localStorage.removeItem("token"); } catch {}
+  render();
+}
+
+$("toggle").onclick = () => {
+  signup = !signup;
+  $("auth-title").textContent = $("auth-submit").textContent = signup ? "Sign up" : "Log in";
+  $("toggle").textContent = signup ? "Have an account? Log in" : "Need an account? Sign up";
+  $("email").classList.toggle("hidden", !signup);
+  $("email").required = signup;
+  $("ident").placeholder = signup ? "Username" : "Email or username";
+};
+
+$("auth-form").onsubmit = async (e) => {
+  e.preventDefault();
+  $("auth-error").textContent = "";
+  try {
+    let r;
+    if (signup) {
+      r = await api("/auth/register", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: $("email").value, username: $("ident").value, password: $("password").value }) });
+    } else {
+      r = await api("/auth/login", { method: "POST",
+        body: new URLSearchParams({ username: $("ident").value, password: $("password").value }) });
+    }
+    setToken(r.access_token);
+  } catch (err) { $("auth-error").textContent = err.message; }
+};
+
+$("logout").onclick = () => setToken(null);
+
+$("upload-form").onsubmit = async (e) => {
+  e.preventDefault();
+  const fd = new FormData();
+  fd.append("photo", $("photo").files[0]);
+  const box = $("result");
+  box.classList.remove("hidden", "win");
+  box.textContent = "Identifying…";
+  try {
+    const r = await api("/captures", { method: "POST", body: fd });
+    box.classList.toggle("win", r.matched);
+    box.innerHTML = "";
+    const h = document.createElement("strong");
+    h.textContent = (r.new_badge ? "🏅 " : "") + r.message;
+    const p = document.createElement("p");
+    p.className = "muted";
+    p.textContent = "Top guesses: " + r.top_predictions
+      .map((x) => `${x.common_name || x.label} ${(x.probability * 100).toFixed(0)}%`).join(", ");
+    box.append(h, p);
+    loadCollection();
+  } catch (err) { box.textContent = err.message; }
+};
+
+async function loadCollection() {
+  const c = await api("/me/collection");
+  $("progress").textContent = `${c.caught} / ${c.total}`;
+  const grid = $("grid");
+  grid.innerHTML = "";
+  c.entries.forEach((e, i) => {
+    const t = document.createElement("div");
+    t.className = "tile" + (e.caught ? "" : " locked");
+    const s = e.species;
+    t.innerHTML = `<div class="num">#${String(i + 1).padStart(3, "0")}</div><div class="name"></div>
+      <div class="muted sci"></div><div class="rarity" style="color:var(--${s.rarity})">${s.rarity}</div>`;
+    t.querySelector(".name").textContent = s.common_name + (e.capture_count > 1 ? ` ×${e.capture_count}` : "");
+    t.querySelector(".sci").textContent = s.scientific_name;
+    grid.append(t);
+  });
+}
+
+async function render() {
+  const authed = !!token;
+  $("auth").classList.toggle("hidden", authed);
+  $("game").classList.toggle("hidden", !authed);
+  $("who").classList.toggle("hidden", !authed);
+  if (authed) {
+    try { $("username").textContent = (await api("/me")).username; loadCollection(); } catch {}
+  }
+}
+render();
+</script>
+</body>
+</html>
