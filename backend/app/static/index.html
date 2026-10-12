@@ -33,7 +33,13 @@
   .pick .none { border-style:dashed; }
   .tile { cursor:pointer; }
   .tile:hover { border-color:var(--accent); }
-  .hidden { display:none; }
+  .hidden, .off { display:none !important; }
+  input[type=file] { max-width:100%; }
+  .keep { margin-top:12px; }
+  .keep-pair { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px; }
+  .keep-pair figure { margin:0; display:grid; gap:6px; }
+  .keep-pair img { width:100%; aspect-ratio:1; object-fit:cover; border-radius:8px; border:2px solid var(--line); }
+  .keep-pair figcaption { font-size:.8rem; color:var(--muted); text-align:center; }
   dialog { border:1px solid var(--line); border-radius:14px; background:var(--card); color:var(--ink);
            padding:0; width:min(560px, calc(100vw - 32px)); }
   dialog::backdrop { background:rgba(0,0,0,.45); }
@@ -87,6 +93,19 @@
                         font-size:1.6rem; color:var(--muted); }
   .feed-item .what { line-height:1.35; }
   .feed-item .when { font-size:.8rem; color:var(--muted); }
+  nav#tabs { position:fixed; left:0; right:0; bottom:0; display:flex; background:var(--card);
+             border-top:1px solid var(--line); padding-bottom:env(safe-area-inset-bottom); z-index:10; }
+  nav#tabs button { flex:1; background:none; color:var(--muted); border:none; border-radius:0; padding:8px 2px 6px;
+                    display:grid; justify-items:center; gap:2px; font-size:.72rem; }
+  nav#tabs button .ic { font-size:1.3rem; line-height:1; }
+  nav#tabs button.on { color:var(--accent); font-weight:600; }
+  body.authed main { padding-bottom:84px; }
+  @media (min-width:720px) {
+    nav#tabs { position:sticky; top:0; bottom:auto; margin:12px 0 0; border:1px solid var(--line);
+               border-radius:12px; }
+    nav#tabs button { grid-auto-flow:column; justify-content:center; gap:6px; font-size:.95rem; padding:10px; }
+    body.authed main { padding-bottom:16px; }
+  }
   label.inline { display:flex; align-items:center; gap:6px; font-size:.9rem; color:var(--muted); }
 </style>
 </head>
@@ -96,6 +115,15 @@
     <h1>CollectAnimals <span class="muted" style="font-size:1rem">California</span></h1>
     <div id="who" class="hidden"><span id="username"></span> · <button class="link" id="logout">Log out</button></div>
   </header>
+
+<nav id="tabs" class="hidden">
+  <button data-tab="catch"><span class="ic">📷</span>Catch</button>
+  <button data-tab="dex"><span class="ic">📖</span>Dex</button>
+  <button data-tab="photos"><span class="ic">🖼️</span>Photos</button>
+  <button data-tab="feed"><span class="ic">📰</span>Feed</button>
+  <button data-tab="parks"><span class="ic">🏞️</span>Parks</button>
+  <button data-tab="friends"><span class="ic">👥</span>Friends</button>
+</nav>
 
   <section id="auth" class="card">
     <h2 id="auth-title">Log in</h2>
@@ -110,7 +138,7 @@
   </section>
 
   <section id="game" class="hidden">
-    <div class="card">
+    <div class="card" data-tab="catch">
       <h2>Capture an animal</h2>
       <form id="upload-form">
         <input id="photo" type="file" accept="image/*" required>
@@ -119,7 +147,7 @@
       </form>
       <div id="result" class="card hidden"></div>
     </div>
-    <div class="card">
+    <div class="card off" data-tab="feed">
       <h2>Latest catches</h2>
       <div class="seg" id="feed-seg"></div>
       <label class="inline" style="margin-top:8px"><input type="checkbox" id="feed-uncaught"> Only animals I haven't caught</label>
@@ -128,7 +156,7 @@
       <p><button class="ghost hidden" id="feed-more">Show more</button></p>
       <label class="inline"><input type="checkbox" id="share-feed"> Show my catches in this feed</label>
     </div>
-    <div class="card" id="hotspots-card">
+    <div class="card off" id="hotspots-card" data-tab="parks">
       <h2>Hotspots</h2>
       <p class="muted" style="margin-top:0">Parks where you can spot lots of the 100. Tap a park to see which ones.</p>
       <div class="hot-wrap">
@@ -137,11 +165,16 @@
       </div>
       <div id="hot-list" class="hot-list"></div>
     </div>
-    <div class="card">
+    <div class="card off" data-tab="dex">
       <h2>Your collection <span id="progress" class="muted"></span></h2>
       <div id="grid" class="grid"></div>
     </div>
-    <div class="card">
+    <div class="card off" data-tab="photos">
+      <h2>My photos</h2>
+      <p class="muted" style="margin-top:0">Your album: one photo for each animal you caught.</p>
+      <div id="my-photos" class="photos"></div>
+    </div>
+    <div class="card off" data-tab="friends">
       <h2>Friends</h2>
       <p class="muted">Animals your friends catch show up by name in your collection, and you can see each other's albums.</p>
       <form id="friend-form">
@@ -243,7 +276,8 @@ function here() {
 $("upload-form").onsubmit = async (e) => {
   e.preventDefault();
   const fd = new FormData();
-  fd.append("photo", $("photo").files[0]);
+  const file = $("photo").files[0];
+  fd.append("photo", file);
   const box = $("result");
   box.classList.remove("hidden", "win");
   box.textContent = "Identifying…";
@@ -251,6 +285,7 @@ $("upload-form").onsubmit = async (e) => {
   if (pos) { fd.append("latitude", pos.latitude); fd.append("longitude", pos.longitude); }
   try {
     const r = await api("/captures", { method: "POST", body: fd });
+    r.file = file;
     box.classList.toggle("win", r.matched);
     box.innerHTML = "";
     const h = document.createElement("strong");
@@ -261,24 +296,46 @@ $("upload-form").onsubmit = async (e) => {
       .map((x) => `${x.common_name || (x.label === "other" ? "not on the list" : "???")} ${(x.probability * 100).toFixed(0)}%`).join(", ");
     box.append(h, p);
     if (r.choices && r.choices.length) box.append(pickPanel(r, box));
-    if (r.matched && !r.album_photo_id) {
-      // Already have an album photo for this animal: offer to swap in this one.
-      const b = document.createElement("button");
-      b.textContent = "Use this photo in my album instead";
-      b.onclick = async () => {
-        b.disabled = true;
-        try {
-          await api(`/me/album/${r.species.number}`, { method: "PUT",
-            headers: { "Content-Type": "application/json" }, body: JSON.stringify({ capture_id: r.capture_id }) });
-          b.textContent = "Album photo updated";
-          loadCollection();
-        } catch (err) { b.textContent = err.message; }
-      };
-      box.append(b);
-    }
+    if (r.matched && !r.album_photo_id) keepWhich(r.species, r.capture_id, file, box);
     loadCollection(); loadFeed();
   } catch (err) { box.textContent = err.message; }
 };
+
+// Caught an animal you already have: show your album photo next to the new one
+// and let the player choose which to keep.
+async function keepWhich(species, captureId, file, box) {
+  const wrap = el("div", "keep");
+  box.append(wrap);
+  let old = null;
+  try {
+    old = (await api("/me/album")).photos.find((p) => p.species.number === species.number);
+  } catch {}
+  if (!old) return wrap.remove();
+  wrap.append(el("strong", "", "You already have this one. Which photo do you want to keep?"));
+  const pair = el("div", "keep-pair");
+  const side = (src, caption, label, onPick) => {
+    const f = el("figure");
+    const img = el("img"); img.src = src; img.alt = caption;
+    const b = el("button", "", label);
+    b.type = "button";
+    b.onclick = async () => {
+      pair.querySelectorAll("button").forEach((x) => (x.disabled = true));
+      try { await onPick(); } catch (err) { b.textContent = err.message; return; }
+      pair.querySelectorAll("img").forEach((x) => (x.style.borderColor = x === img ? "var(--accent)" : "var(--line)"));
+      b.textContent = "✓ Kept";
+    };
+    f.append(img, el("figcaption", "", caption), b);
+    pair.append(f);
+  };
+  side(old.url, old.taken_on ? `Album photo · ${fmtDate(old.taken_on)}` : "Album photo", "Keep this one", async () => {});
+  side(URL.createObjectURL(file), "New photo", "Keep the new one", async () => {
+    await api(`/me/album/${species.number}`, { method: "PUT",
+      headers: { "Content-Type": "application/json" }, body: JSON.stringify({ capture_id: captureId }) });
+    loadCollection(); loadFeed(); loadMyPhotos();
+  });
+  wrap.append(pair);
+  if (old.like_count) wrap.append(el("p", "muted", `Your album photo has ${old.like_count} like${old.like_count > 1 ? "s" : ""}. They reset if you switch.`));
+}
 
 // "Not this animal?": the player picks from the model's top guesses. We trust them.
 function pickPanel(r, box) {
@@ -297,6 +354,8 @@ function pickPanel(r, box) {
       const h = box.querySelector("strong");
       h.textContent = (res.new_badge ? "🏅 " : "") + res.message;
       wrap.remove();
+      box.querySelector(".keep")?.remove();
+      if (res.matched && !res.album_photo_id) keepWhich(res.species, r.capture_id, r.file, box);
       loadCollection(); loadFeed();
     } catch (err) {
       b.textContent = err.message;
@@ -467,8 +526,31 @@ function photoCard(p, { showSpecies = false, onChange } = {}) {
 
 async function deletePhoto(id) {
   await api(`/photos/${id}`, { method: "DELETE" });
-  loadCollection(); loadFeed();
+  loadCollection(); loadFeed(); loadMyPhotos();
 }
+
+async function loadMyPhotos() {
+  const grid = $("my-photos");
+  try {
+    const a = await api("/me/album");
+    grid.innerHTML = "";
+    if (!a.photos.length) grid.append(el("p", "muted", "No photos yet. Catch an animal to start your album."));
+    a.photos.forEach((p) => grid.append(photoCard(p, { showSpecies: true })));
+  } catch (err) { grid.textContent = err.message; }
+}
+
+// One section at a time, picked from the tab bar (bottom on phones, top on wide screens).
+const TABS = ["catch", "dex", "photos", "feed", "parks", "friends"];
+function showTab(name) {
+  if (!TABS.includes(name)) name = "catch";
+  document.querySelectorAll("#game > [data-tab]").forEach((c) => c.classList.toggle("off", c.dataset.tab !== name));
+  document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b.dataset.tab === name));
+  if (location.hash !== "#" + name) history.replaceState(null, "", "#" + name);
+  if (name === "photos") loadMyPhotos();
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll("#tabs button").forEach((b) => (b.onclick = () => showTab(b.dataset.tab)));
+window.addEventListener("hashchange", () => showTab(location.hash.slice(1)));
 
 async function loadGallery() {
   const box = $("dex-photos");
@@ -717,7 +799,10 @@ async function render() {
   $("auth").classList.toggle("hidden", authed);
   $("game").classList.toggle("hidden", !authed);
   $("who").classList.toggle("hidden", !authed);
+  $("tabs").classList.toggle("hidden", !authed);
+  document.body.classList.toggle("authed", authed);
   if (authed) {
+    showTab(location.hash.slice(1));
     try {
       const me = await api("/me");
       $("username").textContent = me.username;
