@@ -142,8 +142,6 @@ def set_album_photo(species_key: str, body: AlbumPick, user: User = Depends(curr
     capture = db.get(Capture, body.capture_id)
     if not capture or capture.user_id != user.id or capture.species_id != s.id:
         raise HTTPException(400, "That capture isn't one of your catches of this species")
-    if not capture.image_path:
-        raise HTTPException(400, "That photo was deleted")
     photo = db.scalar(select(AlbumPhoto).where(AlbumPhoto.user_id == user.id,
                                                AlbumPhoto.species_id == s.id))
     if photo is None:
@@ -158,15 +156,21 @@ def set_album_photo(species_key: str, body: AlbumPick, user: User = Depends(curr
 
 
 def _delete_album_photo(db: Session, photo: AlbumPhoto) -> None:
-    """Delete the photo everywhere: album, gallery, feed, its likes and the image
-    file itself. The catch and badge stay, so the animal stays unlocked; the
-    next catch of it becomes the new album photo."""
-    capture = photo.capture
+    """Delete the photo everywhere (album, gallery, feed, its likes) and un-catch
+    the animal: the badge and all of the user's captures of that species go,
+    image files included. The animal is locked again unless a friend has
+    caught it, and catching it again starts over with a new badge."""
+    user_id, species_id = photo.user_id, photo.species_id
     db.execute(delete(PhotoLike).where(PhotoLike.photo_id == photo.id))
     db.delete(photo)
-    if capture.image_path:
-        get_storage().delete(capture.image_path)
-        capture.image_path = ""
+    db.execute(delete(Badge).where(Badge.user_id == user_id, Badge.species_id == species_id))
+    db.flush()
+    storage = get_storage()
+    for c in db.scalars(select(Capture).where(Capture.user_id == user_id,
+                                              Capture.species_id == species_id)).all():
+        if c.image_path:
+            storage.delete(c.image_path)
+        db.delete(c)
     db.commit()
 
 

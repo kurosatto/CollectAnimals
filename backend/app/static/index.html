@@ -515,7 +515,7 @@ function photoCard(p, { showSpecies = false, onChange } = {}) {
     const del = el("button", "like ghost", "Delete photo");
     del.onclick = async () => {
       if (!confirm("Delete this photo? It disappears from your album, the gallery and the feed, " +
-                   "and its likes are lost. You keep the animal in your collection.")) return;
+                   "and its likes are lost. The animal also leaves your collection until you catch it again.")) return;
       try { await deletePhoto(p.id); card.remove(); if ($("dex").open && gallery) loadGallery(); } catch (err) { alert(err.message); }
     };
     meta.append(del);

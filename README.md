@@ -42,8 +42,9 @@ Without a trained model the API still runs; captures report that no model is loa
   never served.
 - **Deleting.** "Delete photo" on your own photo (`DELETE /photos/{id}` or
   `DELETE /me/album/{species}`) removes it from your album, the gallery and
-  the feed, drops its likes and deletes the file. You keep the badge, and
-  your next catch of that animal becomes the new album photo.
+  the feed, drops its likes and deletes the file. It also un-catches the
+  animal: the badge and your other captures of it are deleted, so it is
+  locked again (unless a friend has caught it) until you catch it again.
 - **News feed.** `GET /feed?scope=near|friends|all` lists the newest catches
   with the place and time. The page defaults to "Near me" (`lat`, `lon`,
   `radius_km`, 50 km by default, 10 km minimum) and falls back to all of
