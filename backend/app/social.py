@@ -142,6 +142,8 @@ def set_album_photo(species_key: str, body: AlbumPick, user: User = Depends(curr
     capture = db.get(Capture, body.capture_id)
     if not capture or capture.user_id != user.id or capture.species_id != s.id:
         raise HTTPException(400, "That capture isn't one of your catches of this species")
+    if not capture.image_path:
+        raise HTTPException(400, "That photo was deleted")
     photo = db.scalar(select(AlbumPhoto).where(AlbumPhoto.user_id == user.id,
                                                AlbumPhoto.species_id == s.id))
     if photo is None:
@@ -155,17 +157,36 @@ def set_album_photo(species_key: str, body: AlbumPick, user: User = Depends(curr
     return photo_out(photo, user, friend_ids(db, user.id), 0, False)
 
 
+def _delete_album_photo(db: Session, photo: AlbumPhoto) -> None:
+    """Delete the photo everywhere: album, gallery, feed, its likes and the image
+    file itself. The catch and badge stay, so the animal stays unlocked; the
+    next catch of it becomes the new album photo."""
+    capture = photo.capture
+    db.execute(delete(PhotoLike).where(PhotoLike.photo_id == photo.id))
+    db.delete(photo)
+    if capture.image_path:
+        get_storage().delete(capture.image_path)
+        capture.image_path = ""
+    db.commit()
+
+
 @router.delete("/me/album/{species_key}", status_code=204)
 def remove_album_photo(species_key: str, user: User = Depends(current_user),
                        db: Session = Depends(get_db)):
-    """Take your photo out of your album and the gallery. You keep the badge."""
     s = find_species(db, species_key)
     photo = db.scalar(select(AlbumPhoto).where(AlbumPhoto.user_id == user.id,
                                                AlbumPhoto.species_id == s.id))
     if photo:
-        db.execute(delete(PhotoLike).where(PhotoLike.photo_id == photo.id))
-        db.delete(photo)
-        db.commit()
+        _delete_album_photo(db, photo)
+    return Response(status_code=204)
+
+
+@router.delete("/photos/{photo_id}", status_code=204)
+def delete_photo(photo_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    photo = db.get(AlbumPhoto, photo_id)
+    if not photo or photo.user_id != user.id:
+        raise HTTPException(404, "No such photo of yours")
+    _delete_album_photo(db, photo)
     return Response(status_code=204)
 
 
