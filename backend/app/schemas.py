@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
@@ -27,15 +27,25 @@ class UserOut(BaseModel):
     email: str
     username: str
     created_at: datetime
+    show_in_feed: bool | None = True
+
+
+class SettingsIn(BaseModel):
+    show_in_feed: bool | None = None
 
 
 class SpeciesOut(BaseModel):
+    """A species card. Names (and slug, which spells the name) are None until
+    the viewer or one of their friends has caught it; category and rarity are
+    always shown as hints."""
     model_config = ConfigDict(from_attributes=True)
-    slug: str
-    common_name: str
-    scientific_name: str
+    number: int
+    slug: str | None
+    common_name: str | None
+    scientific_name: str | None
     category: str
     rarity: str
+    revealed: bool = True
 
 
 class DexOut(BaseModel):
@@ -52,8 +62,9 @@ class DexOut(BaseModel):
 
 
 class HotspotSpecies(BaseModel):
-    slug: str
-    common_name: str
+    number: int
+    slug: str | None
+    common_name: str | None
     rarity: str
     observations: int
 
@@ -81,6 +92,8 @@ class CaptureOut(BaseModel):
     new_badge: bool
     message: str
     top_predictions: list[PredictionOut]
+    # Set when this photo became the album photo for the species (first catch).
+    album_photo_id: int | None = None
 
 
 class CollectionEntry(BaseModel):
@@ -88,9 +101,73 @@ class CollectionEntry(BaseModel):
     caught: bool
     capture_count: int = 0
     earned_at: datetime | None = None
+    friends_caught: int = 0
+    photo_url: str | None = None
 
 
 class CollectionOut(BaseModel):
     caught: int
     total: int
     entries: list[CollectionEntry]
+
+
+class PhotoOut(BaseModel):
+    id: int
+    # None in the feed for species the viewer hasn't unlocked (the photo would give it away).
+    url: str | None
+    username: str
+    species: SpeciesOut
+    taken_on: date
+    caught_at: datetime
+    # How precise depends on who's looking and how rare the animal is (see app/places.py).
+    latitude: float | None = None
+    longitude: float | None = None
+    location_precise: bool = False
+    place: str | None = None
+    like_count: int = 0
+    liked_by_me: bool = False
+    is_mine: bool = False
+    by_friend: bool = False
+    rank: int | None = None
+
+
+class AlbumOut(BaseModel):
+    username: str
+    caught: int
+    total: int
+    photos: list[PhotoOut]
+
+
+class GalleryOut(BaseModel):
+    species: SpeciesOut
+    scope: str
+    sort: str
+    total: int
+    photos: list[PhotoOut]
+
+
+class FeedOut(BaseModel):
+    scope: str  # near | all | friends
+    photos: list[PhotoOut]
+    # Pass as ?before= to get the next, older page; None when there are no more.
+    next_before: int | None = None
+
+
+class AlbumPick(BaseModel):
+    capture_id: int
+
+
+class FriendRequestIn(BaseModel):
+    username: str
+
+
+class FriendOut(BaseModel):
+    username: str
+    caught: int = 0
+    since: datetime
+
+
+class FriendsOut(BaseModel):
+    friends: list[FriendOut]
+    incoming: list[FriendOut]
+    outgoing: list[FriendOut]

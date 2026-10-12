@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import CheckConstraint, DateTime, Float, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .db import Base
@@ -17,6 +17,8 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     username: Mapped[str] = mapped_column(String(40), unique=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(100))
+    # Whether new catches appear in everyone's news feed (None = default, yes).
+    show_in_feed: Mapped[bool | None] = mapped_column(nullable=True, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
@@ -43,6 +45,11 @@ class Capture(Base):
     image_path: Mapped[str] = mapped_column(String(255))
     predicted_label: Mapped[str] = mapped_column(String(64))
     confidence: Mapped[float] = mapped_column(Float)
+    # Where and when the photo was taken: from the phone (browser location) or
+    # the photo's EXIF, read before EXIF is stripped from the saved file.
+    latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    taken_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     species: Mapped["Species | None"] = relationship()
@@ -62,3 +69,48 @@ class Badge(Base):
     earned_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     species: Mapped[Species] = relationship()
+
+
+class AlbumPhoto(Base):
+    """The one photo a user shows for a species: in their album, to friends,
+    and in that species' global gallery. Points at one of their captures."""
+
+    __tablename__ = "album_photos"
+    __table_args__ = (UniqueConstraint("user_id", "species_id"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    species_id: Mapped[int] = mapped_column(ForeignKey("species.id"), index=True)
+    capture_id: Mapped[int] = mapped_column(ForeignKey("captures.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    user: Mapped[User] = relationship()
+    species: Mapped[Species] = relationship()
+    capture: Mapped[Capture] = relationship()
+
+
+class PhotoLike(Base):
+    __tablename__ = "photo_likes"
+    __table_args__ = (UniqueConstraint("photo_id", "user_id"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    photo_id: Mapped[int] = mapped_column(ForeignKey("album_photos.id", ondelete="CASCADE"), index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class Friendship(Base):
+    """A friend request from requester to addressee; friends once accepted."""
+
+    __tablename__ = "friendships"
+    __table_args__ = (UniqueConstraint("requester_id", "addressee_id"),
+                      CheckConstraint("requester_id <> addressee_id"))
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    requester_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    addressee_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    accepted: Mapped[bool] = mapped_column(default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    requester: Mapped[User] = relationship(foreign_keys=[requester_id])
+    addressee: Mapped[User] = relationship(foreign_keys=[addressee_id])
