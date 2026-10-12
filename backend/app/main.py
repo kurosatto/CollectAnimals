@@ -57,7 +57,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="CollectAnimals", lifespan=lifespan,
+app = FastAPI(title="Capture Animals", lifespan=lifespan,
               **({"docs_url": None, "redoc_url": None, "openapi_url": None} if settings.public else {}))
 
 # Failed logins per account in the last LOGIN_WINDOW seconds; slows password guessing.
@@ -288,7 +288,7 @@ async def create_capture(photo: UploadFile = File(...),
     # Don't give away names the player hasn't unlocked yet.
     revealed = revealed_species_ids(db, user)
     if matched:
-        message = (f"You caught a {species.common_name}! New badge unlocked."
+        message = (f"You captured a {species.common_name}! New badge unlocked."
                    if new_badge else f"Another {species.common_name} for your collection.")
         if album_photo:
             message += " It's now in your album."

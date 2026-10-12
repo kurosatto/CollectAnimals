@@ -1,4 +1,4 @@
-# CollectAnimals
+# Capture Animals
 
 A Pokémon-style game for real wildlife: photograph animals around you, and if
 the model recognizes one of the species on the list, you earn its badge.
