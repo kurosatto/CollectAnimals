@@ -103,9 +103,22 @@ fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: Pokedex, onBack:
         details?.whereToFind?.takeIf { it.isNotBlank() }?.let {
             Text("📍 $it", style = MaterialTheme.typography.bodyMedium)
         }
+        details?.activeTime?.takeIf { it.isNotBlank() }?.let { LabeledLine("Most active", it) }
+        details?.spottingTip?.takeIf { it.isNotBlank() }?.let { LabeledLine("Spotting tip", it) }
+        if (dex.parks.isNotEmpty()) {
+            LabeledLine("Hotspots", dex.hotspotsFor(s.slug).joinToString(", ").ifEmpty { "—" })
+        }
         Text("Each square is about 25 km (15 mi) across; darker means more of the " +
             "${dex.ranges.sightings(s.slug)} recent iNaturalist sightings in California.",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+    }
+}
+
+@Composable
+private fun LabeledLine(label: String, value: String) {
+    Column {
+        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.outline)
+        Text(value, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
@@ -120,48 +133,53 @@ private fun StatCard(label: String, value: String, modifier: Modifier) {
 }
 
 /**
- * California outline with the species' sighting cells shaded on top. Equirectangular
- * projection with longitudes squeezed by cos(37.5°), which is close enough at state scale.
+ * Equirectangular frame around the California outline, with longitudes squeezed by
+ * cos(37.5°), which is close enough at state scale. Widened a little to the west so
+ * offshore sightings (whales, seals) stay on the map.
  */
-@Composable
-fun RangeMap(dex: Pokedex, slug: String, color: Color, modifier: Modifier = Modifier) {
-    val o = dex.outline
-    val g = dex.ranges
-    val kx = cos(Math.toRadians(37.5))
-    // Frame on the state outline, widened a little so offshore sightings (whales, seals) show.
-    val pad = 0.6
-    val minLon = o.minLon - pad
+class CaliforniaFrame(o: Outline) {
+    private val kx = cos(Math.toRadians(37.5))
+    val minLon = o.minLon - 0.6
     val maxLon = o.maxLon + 0.2
     val minLat = o.minLat - 0.2
     val maxLat = o.maxLat + 0.2
     val aspect = ((maxLon - minLon) * kx / (maxLat - minLat)).toFloat()
 
+    fun x(lon: Double, width: Float) = ((lon - minLon) / (maxLon - minLon) * width).toFloat()
+    fun y(lat: Double, height: Float) = ((maxLat - lat) / (maxLat - minLat) * height).toFloat()
+
+    fun outlinePath(o: Outline, size: Size): Path = Path().apply {
+        for (ring in o.rings) {
+            moveTo(x(ring[0], size.width), y(ring[1], size.height))
+            for (i in 2 until ring.size step 2) lineTo(x(ring[i], size.width), y(ring[i + 1], size.height))
+            close()
+        }
+    }
+}
+
+/** California outline with the species' sighting cells shaded on top. */
+@Composable
+fun RangeMap(dex: Pokedex, slug: String, color: Color, modifier: Modifier = Modifier) {
+    val g = dex.ranges
+    val frame = remember(dex) { CaliforniaFrame(dex.outline) }
     val land = MaterialTheme.colorScheme.surfaceVariant
     val sea = MaterialTheme.colorScheme.surface
     val border = MaterialTheme.colorScheme.outline
     val cells = g.cells[slug].orEmpty()
     val maxCount = cells.maxOfOrNull { it[2] } ?: 1
 
-    Canvas(modifier.aspectRatio(aspect).clip(RoundedCornerShape(16.dp)).background(sea)) {
-        val sx = size.width / (maxLon - minLon)
-        val sy = size.height / (maxLat - minLat)
-        fun x(lon: Double) = ((lon - minLon) * sx).toFloat()
-        fun y(lat: Double) = ((maxLat - lat) * sy).toFloat()
-
-        val path = Path()
-        for (ring in o.rings) {
-            path.moveTo(x(ring[0]), y(ring[1]))
-            for (i in 2 until ring.size step 2) path.lineTo(x(ring[i]), y(ring[i + 1]))
-            path.close()
-        }
+    Canvas(modifier.aspectRatio(frame.aspect).clip(RoundedCornerShape(16.dp)).background(sea)) {
+        val path = frame.outlinePath(dex.outline, size)
         drawPath(path, land)
+        val cw = frame.x(frame.minLon + g.step, size.width)
+        val ch = size.height - frame.y(frame.minLat + g.step, size.height)
         for ((col, row, n) in cells) {
             val lon = g.lon0 + col * g.step
             val lat = g.lat0 + row * g.step
             // Log scale so a few sightings still show next to city hotspots.
             val t = (0.25 + 0.75 * ln(1.0 + n) / ln(1.0 + maxCount)).toFloat()
-            drawRect(color.copy(alpha = t), topLeft = Offset(x(lon), y(lat + g.step)),
-                size = Size((g.step * sx).toFloat(), (g.step * sy).toFloat()))
+            drawRect(color.copy(alpha = t), topLeft = Offset(frame.x(lon, size.width), frame.y(lat + g.step, size.height)),
+                size = Size(cw, ch))
         }
         drawPath(path, border, style = Stroke(width = 1.5.dp.toPx()))
     }

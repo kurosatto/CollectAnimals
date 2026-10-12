@@ -105,6 +105,7 @@ fun App(vm: GameViewModel = viewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var dexSlug by rememberSaveable { mutableStateOf<String?>(null) }
+    var showHotspots by rememberSaveable { mutableStateOf(false) }
     val info = state.info
     val dex = state.pokedex
     val entry = dexSlug?.let { slug -> info?.species?.indexOfFirst { it.slug == slug }?.takeIf { it >= 0 } }
@@ -117,11 +118,21 @@ fun App(vm: GameViewModel = viewModel()) {
         }
         return
     }
+    if (info != null && dex != null && showHotspots) {
+        Scaffold { padding ->
+            Box(Modifier.padding(padding)) {
+                HotspotsScreen(info, dex, state.collection, onOpenDex = { dexSlug = it }) { showHotspots = false }
+            }
+        }
+        return
+    }
     val total = info?.species?.size ?: 0
 
     Scaffold(topBar = {
         Column {
-            TopAppBar(title = { Text("CollectAnimals") })
+            TopAppBar(title = { Text("CollectAnimals") }, actions = {
+                if (!dex?.parks.isNullOrEmpty()) TextButton(onClick = { showHotspots = true }) { Text("Hotspots") }
+            })
             if (info != null) {
                 Column(Modifier.padding(horizontal = 16.dp)) {
                     Text("${state.collection.size} / $total California species caught",
