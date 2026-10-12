@@ -327,3 +327,43 @@ def test_delete_photo(client, fake):
     assert client.delete(f"/photos/{photo['id']}", headers=ana).status_code == 404
     assert client.delete("/me/album/coyote", headers=ana).status_code == 204
     assert client.get("/me/collection", headers=ana).json()["caught"] == 1
+
+
+def test_profile(client, fake):
+    ana, bob, cyd = (signup(client, n) for n in ("ana", "bob", "cyd"))
+    catch(client, fake, bob, "coyote", latitude=36.9741, longitude=-122.0308)
+    catch(client, fake, bob, "bobcat")
+    catch(client, fake, bob, "mountain_lion", latitude=34.10, longitude=-118.80)
+    catch(client, fake, ana, "coyote")
+    catch(client, fake, cyd, "coyote")
+    coyote_id = next(p["id"] for p in client.get("/species/coyote/photos", headers=ana).json()["photos"]
+                     if p["username"] == "bob")
+    client.post(f"/photos/{coyote_id}/like", headers=ana)
+    client.post(f"/photos/{coyote_id}/like", headers=cyd)
+
+    assert client.get("/users/nobody", headers=ana).status_code == 404
+    p = client.get("/users/bob", headers=ana).json()
+    assert p["username"] == "bob" and p["friendship"] == "none"
+    assert p["caught"] == 3 and p["total"] == 100
+    assert p["by_rarity"]["legendary"]["caught"] == 1 and p["by_rarity"]["rare"]["caught"] == 1
+    assert p["by_category"]["mammal"]["caught"] == 3
+    assert p["likes_received"] == 2
+    ach = {a["id"]: a for a in p["achievements"]}
+    assert ach["first_catch"]["earned"] and ach["first_legendary"]["earned"] and ach["first_rare"]["earned"]
+    assert not ach["collector_10"]["earned"] and ach["collector_10"]["progress"] == 3
+    assert not ach["all_legendaries"]["earned"]
+    # A stranger sees only photos of animals they've unlocked, with blurred places,
+    # and bob's legendary stays nameless for them.
+    assert [x["species"]["slug"] for x in p["photos"]] == ["coyote"] and p["hidden_photos"] == 2
+    assert not p["photos"][0]["location_precise"] and p["photos"][0]["liked_by_me"]
+    assert p["legendaries"][0]["common_name"] is None
+
+    # Add friend from the profile, then the friend sees everything.
+    assert client.post("/friends/requests", headers=ana, json={"username": "bob"}).status_code == 201
+    assert client.get("/users/bob", headers=ana).json()["friendship"] == "requested"
+    assert client.get("/users/ana", headers=bob).json()["friendship"] == "incoming"
+    client.post("/friends/requests/ana/accept", headers=bob)
+    p = client.get("/users/bob", headers=ana).json()
+    assert p["friendship"] == "friends" and len(p["photos"]) == 3 and p["hidden_photos"] == 0
+    assert p["legendaries"][0]["common_name"] == "Mountain Lion"
+    assert client.get("/users/ana", headers=ana).json()["friendship"] == "self"

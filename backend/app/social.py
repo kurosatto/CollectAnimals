@@ -24,7 +24,7 @@ from . import places
 from .auth import current_user
 from .db import get_db
 from .models import AlbumPhoto, Badge, Capture, Friendship, PhotoLike, Species, User
-from .schemas import (AlbumOut, AlbumPick, FeedOut, FriendOut, FriendRequestIn, FriendsOut,
+from .schemas import (AchievementOut, AlbumOut, AlbumPick, FeedOut, ProfileOut, Tally, FriendOut, FriendRequestIn, FriendsOut,
                       GalleryOut, PhotoOut, SettingsIn, SpeciesOut)
 from .storage import get_storage
 
@@ -192,6 +192,87 @@ def delete_photo(photo_id: int, user: User = Depends(current_user), db: Session 
         raise HTTPException(404, "No such photo of yours")
     _delete_album_photo(db, photo)
     return Response(status_code=204)
+
+
+# --- profiles -----------------------------------------------------------------
+
+RARITIES = ["common", "uncommon", "rare", "legendary"]
+CATEGORY_TITLES = {"mammal": "Mammal", "bird": "Bird", "reptile": "Reptile", "amphibian": "Amphibian",
+                   "invertebrate": "Bug", "marine": "Ocean"}
+
+
+def _achievements(caught: int, total: int, by_rarity: dict[str, Tally],
+                  by_category: dict[str, Tally], likes: int) -> list[AchievementOut]:
+    out = []
+
+    def add(id_, title, description, progress, goal):
+        goal = max(goal, 1)
+        out.append(AchievementOut(id=id_, title=title, description=description,
+                                  earned=progress >= goal, progress=min(progress, goal), goal=goal))
+
+    add("first_catch", "First catch", "Catch your first animal", caught, 1)
+    for n in (10, 25, 50):
+        add(f"collector_{n}", f"{n} animals", f"Catch {n} different animals", caught, n)
+    add("complete", "Gotta catch 'em all", f"Catch all {total} animals", caught, total)
+    rare = by_rarity.get("rare", Tally(caught=0, total=0))
+    legendary = by_rarity.get("legendary", Tally(caught=0, total=0))
+    add("first_rare", "Rare find", "Catch a rare animal", rare.caught, 1)
+    add("first_legendary", "Legend", "Catch a legendary animal", legendary.caught, 1)
+    add("all_legendaries", "Living legend", "Catch every legendary animal", legendary.caught, legendary.total)
+    for cat, t in by_category.items():
+        name = CATEGORY_TITLES.get(cat, cat.title())
+        add(f"all_{cat}", f"{name} master", f"Catch every {cat} on the list", t.caught, t.total)
+    add("liked_10", "Crowd favorite", "Get 10 likes on your photos", likes, 10)
+    return out
+
+
+def _friendship(db: Session, viewer: User, other: User) -> str:
+    if viewer.id == other.id:
+        return "self"
+    f = db.scalar(select(Friendship).where(_between(viewer.id, other.id)))
+    if not f:
+        return "none"
+    if f.accepted:
+        return "friends"
+    return "requested" if f.requester_id == viewer.id else "incoming"
+
+
+@router.get("/users/{username}", response_model=ProfileOut)
+def user_profile(username: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    """A player's page: achievements, catches by rarity and group, and photos."""
+    owner = _user_by_name(db, username)
+    friendship = _friendship(db, user, owner)
+    friends = friend_ids(db, user.id)
+    revealed = revealed_species_ids(db, user)
+
+    species = db.scalars(select(Species).order_by(Species.id)).all()
+    caught_ids = set(db.scalars(select(Badge.species_id).where(Badge.user_id == owner.id)))
+    by_rarity = {r: Tally(caught=0, total=0) for r in RARITIES}
+    by_category: dict[str, Tally] = {}
+    for s in species:
+        for bucket in (by_rarity.setdefault(s.rarity, Tally(caught=0, total=0)),
+                       by_category.setdefault(s.category, Tally(caught=0, total=0))):
+            bucket.total += 1
+            bucket.caught += s.id in caught_ids
+
+    photos = db.scalars(select(AlbumPhoto).where(AlbumPhoto.user_id == owner.id)
+                        .order_by(AlbumPhoto.species_id)).all()
+    likes_received = db.scalar(select(func.count()).select_from(PhotoLike).join(
+        AlbumPhoto, AlbumPhoto.id == PhotoLike.photo_id).where(AlbumPhoto.user_id == owner.id))
+    close = friendship in ("self", "friends")
+    visible = [p for p in photos if close or p.species_id in revealed]
+    counts, liked = _like_info(db, [p.id for p in visible], user.id)
+
+    return ProfileOut(
+        username=owner.username, joined=owner.created_at, friendship=friendship,
+        caught=len(caught_ids), total=len(species), by_rarity=by_rarity, by_category=by_category,
+        likes_received=likes_received,
+        achievements=_achievements(len(caught_ids), len(species), by_rarity, by_category, likes_received),
+        legendaries=[species_out(s, s.id in revealed) for s in species
+                     if s.rarity == "legendary" and s.id in caught_ids],
+        photos=[photo_out(p, user, friends, counts.get(p.id, 0), p.id in liked, p.species_id in revealed)
+                for p in visible],
+        hidden_photos=len(photos) - len(visible))
 
 
 # --- gallery & likes --------------------------------------------------------
