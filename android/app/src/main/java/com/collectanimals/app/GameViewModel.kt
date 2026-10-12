@@ -154,6 +154,14 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** "Delete photo": removes the photo and the catch, as on the website. */
+    fun deleteCatch(slug: String) {
+        viewModelScope.launch {
+            val updated = withContext(Dispatchers.IO) { store.forget(_state.value.collection, slug) }
+            _state.update { it.copy(collection = updated) }
+        }
+    }
+
     fun dismissResult() = _state.update { it.copy(result = null, error = null) }
 
     override fun onCleared() {

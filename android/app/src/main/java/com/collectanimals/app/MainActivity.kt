@@ -42,10 +42,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -105,7 +105,6 @@ fun App(vm: GameViewModel = viewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var dexSlug by rememberSaveable { mutableStateOf<String?>(null) }
-    var showHotspots by rememberSaveable { mutableStateOf(false) }
     val info = state.info
     val dex = state.pokedex
     val entry = dexSlug?.let { slug -> info?.species?.indexOfFirst { it.slug == slug }?.takeIf { it >= 0 } }
@@ -118,21 +117,11 @@ fun App(vm: GameViewModel = viewModel()) {
         }
         return
     }
-    if (info != null && dex != null && showHotspots) {
-        Scaffold { padding ->
-            Box(Modifier.padding(padding)) {
-                HotspotsScreen(info, dex, state.collection, onOpenDex = { dexSlug = it }) { showHotspots = false }
-            }
-        }
-        return
-    }
     val total = info?.species?.size ?: 0
 
     Scaffold(topBar = {
         Column {
-            TopAppBar(title = { Text("CollectAnimals") }, actions = {
-                if (!dex?.parks.isNullOrEmpty()) TextButton(onClick = { showHotspots = true }) { Text("Hotspots") }
-            })
+            TopAppBar(title = { Text(if (tab == 0) "CollectAnimals" else TABS[tab].title) })
             if (info != null) {
                 Column(Modifier.padding(horizontal = 16.dp)) {
                     Text("${state.collection.size} / $total California species caught",
@@ -144,21 +133,38 @@ fun App(vm: GameViewModel = viewModel()) {
                     Spacer(Modifier.height(8.dp))
                 }
             }
-            TabRow(selectedTabIndex = tab) {
-                Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Catch") })
-                Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("Collection") })
+        }
+    }, bottomBar = {
+        // One screen per job instead of one long page; Hotspots only once its data is there.
+        NavigationBar {
+            TABS.forEachIndexed { i, t ->
+                if (t.key == "hotspots" && dex?.parks.isNullOrEmpty()) return@forEachIndexed
+                NavigationBarItem(selected = tab == i, onClick = { tab = i },
+                    icon = { Text(t.glyph, fontSize = 20.sp) }, label = { Text(t.title) })
             }
         }
     }) { padding ->
         Box(Modifier.padding(padding).fillMaxSize()) {
             when {
                 info == null -> CircularProgressIndicator(Modifier.align(Alignment.Center))
-                tab == 0 -> CatchScreen(state, vm::capture, vm::dismissResult, vm::pick) { dexSlug = it }
-                else -> CollectionScreen(info, state.collection) { dexSlug = it }
+                TABS[tab].key == "catch" -> CatchScreen(state, vm::capture, vm::dismissResult, vm::pick) { dexSlug = it }
+                TABS[tab].key == "collection" -> CollectionScreen(info, state.collection) { dexSlug = it }
+                TABS[tab].key == "gallery" -> GalleryScreen(info, state.collection, onOpenDex = { dexSlug = it },
+                    onDelete = vm::deleteCatch)
+                dex != null -> HotspotsScreen(info, dex, state.collection, onOpenDex = { dexSlug = it })
             }
         }
     }
 }
+
+private class AppTab(val key: String, val title: String, val glyph: String)
+
+private val TABS = listOf(
+    AppTab("catch", "Catch", "📷"),
+    AppTab("collection", "Collection", "🗂"),
+    AppTab("gallery", "Gallery", "🖼"),
+    AppTab("hotspots", "Hotspots", "📍"),
+)
 
 @Composable
 fun CatchScreen(state: UiState, onPhoto: (Uri) -> Unit, onDismiss: () -> Unit, onPick: (String?) -> Unit,

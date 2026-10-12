@@ -48,8 +48,8 @@ import kotlin.math.min
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun HotspotsScreen(info: ModelInfo, dex: Pokedex, collection: Map<String, Badge>,
-                   onOpenDex: (String) -> Unit, onBack: () -> Unit) {
-    BackHandler(onBack = onBack)
+                   onOpenDex: (String) -> Unit, onBack: (() -> Unit)? = null) {
+    if (onBack != null) BackHandler(onBack = onBack)
     val parks = remember(dex) { dex.parks.sortedByDescending { it.species.size } }
     var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
     val selected = parks.firstOrNull { it.id == selectedId }
@@ -57,10 +57,12 @@ fun HotspotsScreen(info: ModelInfo, dex: Pokedex, collection: Map<String, Badge>
     val scroll = rememberScrollState()
 
     Column(Modifier.fillMaxSize().verticalScroll(scroll).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        TextButton(onClick = onBack, contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) {
-            Text("‹ Back")
+        if (onBack != null) {
+            TextButton(onClick = onBack, contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) {
+                Text("‹ Back")
+            }
+            Text("Hotspots", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         }
-        Text("Hotspots", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         Text("Parks where you can spot lots of the 100. Tap a park to see which ones.",
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
 

@@ -24,15 +24,30 @@ class CollectionStore(private val dir: File) {
     fun addCatch(current: Map<String, Badge>, slug: String, photo: Bitmap): Pair<Map<String, Badge>, Boolean> {
         val existing = current[slug]
         val badge = if (existing == null) {
-            val f = File(photos, "$slug.jpg")
-            f.outputStream().use { photo.compress(Bitmap.CompressFormat.JPEG, 85, it) }
-            Badge(1, System.currentTimeMillis(), f.absolutePath)
+            Badge(1, System.currentTimeMillis(), savePhoto(slug, photo))
         } else {
             existing.copy(count = existing.count + 1)
         }
         val updated = current + (slug to badge)
         save(updated)
         return updated to (existing == null)
+    }
+
+    /** Saves the badge photo; returns its path, or null if the bitmap couldn't be encoded. */
+    private fun savePhoto(slug: String, photo: Bitmap): String? {
+        // JPEG needs a plain 8-bit software bitmap; picker photos can arrive as
+        // hardware or wide-color (F16) bitmaps, which compress() rejects.
+        val bmp = if (photo.config == Bitmap.Config.ARGB_8888) photo else photo.copy(Bitmap.Config.ARGB_8888, false)
+        val f = File(photos, "$slug.jpg")
+        val tmp = File(photos, "$slug.jpg.tmp")
+        val ok = bmp != null && tmp.outputStream().use { bmp.compress(Bitmap.CompressFormat.JPEG, 85, it) }
+        if (!ok || tmp.length() == 0L) {
+            android.util.Log.w("CollectionStore", "could not save photo for $slug (config=${photo.config})")
+            tmp.delete()
+            return null
+        }
+        tmp.renameTo(f)
+        return f.absolutePath
     }
 
     /** Takes back one catch, e.g. when the player says the model named the wrong animal. */
@@ -44,6 +59,15 @@ class CollectionStore(private val dir: File) {
             existing.photo?.let { File(it).delete() }
             current - slug
         }
+        save(updated)
+        return updated
+    }
+
+    /** Deletes the badge photo and un-catches the animal entirely. */
+    fun forget(current: Map<String, Badge>, slug: String): Map<String, Badge> {
+        val existing = current[slug] ?: return current
+        existing.photo?.let { File(it).delete() }
+        val updated = current - slug
         save(updated)
         return updated
     }
