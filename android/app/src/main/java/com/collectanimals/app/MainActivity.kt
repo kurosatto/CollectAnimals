@@ -153,7 +153,7 @@ fun App(vm: GameViewModel = viewModel()) {
         Box(Modifier.padding(padding).fillMaxSize()) {
             when {
                 info == null -> CircularProgressIndicator(Modifier.align(Alignment.Center))
-                tab == 0 -> CatchScreen(state, vm::capture, vm::dismissResult) { dexSlug = it }
+                tab == 0 -> CatchScreen(state, vm::capture, vm::dismissResult, vm::pick) { dexSlug = it }
                 else -> CollectionScreen(info, state.collection) { dexSlug = it }
             }
         }
@@ -161,7 +161,8 @@ fun App(vm: GameViewModel = viewModel()) {
 }
 
 @Composable
-fun CatchScreen(state: UiState, onPhoto: (Uri) -> Unit, onDismiss: () -> Unit, onOpenDex: (String) -> Unit) {
+fun CatchScreen(state: UiState, onPhoto: (Uri) -> Unit, onDismiss: () -> Unit, onPick: (String?) -> Unit,
+                onOpenDex: (String) -> Unit) {
     val context = LocalContext.current
     var pendingCameraUri by rememberSaveable { mutableStateOf<Uri?>(null) }
     val takePicture = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
@@ -198,12 +199,12 @@ fun CatchScreen(state: UiState, onPhoto: (Uri) -> Unit, onDismiss: () -> Unit, o
             Text("Identifying…", style = MaterialTheme.typography.bodyMedium)
         }
         state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        state.result?.let { ResultCard(it, onDismiss, onOpenDex) }
+        state.result?.let { ResultCard(it, onDismiss, onPick, onOpenDex) }
     }
 }
 
 @Composable
-fun ResultCard(r: CaptureResult, onDismiss: () -> Unit, onOpenDex: (String) -> Unit) {
+fun ResultCard(r: CaptureResult, onDismiss: () -> Unit, onPick: (String?) -> Unit, onOpenDex: (String) -> Unit) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Image(r.photo.asImageBitmap(), contentDescription = "Your photo",
@@ -226,11 +227,34 @@ fun ResultCard(r: CaptureResult, onDismiss: () -> Unit, onOpenDex: (String) -> U
                     Text("${(g.probability * 100).toInt()}%")
                 }
             }
+            if (!r.picked && r.choices.isNotEmpty()) PickPanel(r, onPick)
             Row(Modifier.align(Alignment.End)) {
                 if (r.matched && r.species != null) {
                     TextButton(onClick = { onOpenDex(r.species.slug) }) { Text("Pokédex entry") }
                 }
                 TextButton(onClick = onDismiss) { Text("Done") }
+            }
+        }
+    }
+}
+
+/** "Not this animal?": the player picks from the model's top guesses. We trust them. */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+fun PickPanel(r: CaptureResult, onPick: (String?) -> Unit) {
+    var open by remember(r) { mutableStateOf(false) }
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        OutlinedButton(onClick = { open = !open }) {
+            Text(if (r.matched) "Not this animal? Pick the right one" else "Know what it is? Pick it")
+        }
+        if (open) {
+            androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                r.choices.filter { !(r.matched && it.label == r.species?.slug) }.forEach { c ->
+                    OutlinedButton(onClick = { onPick(c.label) }) {
+                        Text("${c.name} · ${(c.probability * 100).toInt()}%")
+                    }
+                }
+                TextButton(onClick = { onPick(null) }) { Text("None of these") }
             }
         }
     }

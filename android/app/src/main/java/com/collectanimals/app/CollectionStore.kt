@@ -35,6 +35,19 @@ class CollectionStore(private val dir: File) {
         return updated to (existing == null)
     }
 
+    /** Takes back one catch, e.g. when the player says the model named the wrong animal. */
+    fun removeCatch(current: Map<String, Badge>, slug: String): Map<String, Badge> {
+        val existing = current[slug] ?: return current
+        val updated = if (existing.count > 1) {
+            current + (slug to existing.copy(count = existing.count - 1))
+        } else {
+            existing.photo?.let { File(it).delete() }
+            current - slug
+        }
+        save(updated)
+        return updated
+    }
+
     private fun save(collection: Map<String, Badge>) {
         val o = JSONObject()
         for ((slug, b) in collection) {
