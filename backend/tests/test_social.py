@@ -101,7 +101,7 @@ def test_album_photo_location_and_date(client, fake):
 
     assert client.delete("/me/album/coyote", headers=ana).status_code == 204
     assert client.get("/me/album", headers=ana).json()["photos"] == []
-    assert client.get("/me/collection", headers=ana).json()["caught"] == 1
+    assert client.get("/me/collection", headers=ana).json()["caught"] == 0
 
 
 def test_location_from_exif(client, fake):
@@ -289,27 +289,41 @@ def test_delete_photo(client, fake):
     from app.config import settings
 
     ana, bob = signup(client, "ana"), signup(client, "bob")
-    r = catch(client, fake, ana, "coyote", latitude=37.77, longitude=-122.42)
+    catch(client, fake, ana, "coyote", latitude=37.77, longitude=-122.42)
+    catch(client, fake, ana, "coyote")
+    catch(client, fake, ana, "bobcat")
     catch(client, fake, bob, "coyote")
-    photo = client.get("/me/album", headers=ana).json()["photos"][0]
+    photo = next(p for p in client.get("/me/album", headers=ana).json()["photos"]
+                 if p["species"]["slug"] == "coyote")
     assert client.post(f"/photos/{photo['id']}/like", headers=bob).status_code == 204
-    key = photo["url"].rsplit("/", 1)[1]
-    assert (settings.upload_dir / key).exists()
+    files_before = len(list(settings.upload_dir.iterdir()))
 
     # Only the owner can delete it.
     assert client.delete(f"/photos/{photo['id']}", headers=bob).status_code == 404
     assert client.delete(f"/photos/{photo['id']}", headers=ana).status_code == 204
 
-    # Gone from the album, gallery, feed and disk; the badge stays.
-    assert client.get("/me/album", headers=ana).json()["photos"] == []
+    # Gone from the album, gallery and feed; both coyote photo files are erased.
+    assert [p["species"]["slug"] for p in client.get("/me/album", headers=ana).json()["photos"]] == ["bobcat"]
     assert [p["username"] for p in client.get("/species/coyote/photos", headers=bob).json()["photos"]] == ["bob"]
-    assert [p["username"] for p in client.get("/feed", headers=bob).json()["photos"]] == ["bob"]
-    assert client.get(photo["url"]).status_code == 404 and not (settings.upload_dir / key).exists()
+    assert "ana" not in {p["username"] for p in client.get("/feed?scope=all", headers=bob).json()["photos"]
+                         if p["species"]["slug"] == "coyote"}
+    assert client.get(photo["url"]).status_code == 404
+    assert len(list(settings.upload_dir.iterdir())) == files_before - 2
+
+    # The coyote is un-caught and locked again; the bobcat is untouched.
     col = client.get("/me/collection", headers=ana).json()
     assert col["caught"] == 1
-    assert client.put("/me/album/coyote", headers=ana,
-                      json={"capture_id": r["capture_id"]}).status_code == 400
+    coyote = next(e for e in col["entries"] if e["species"]["number"] == photo["species"]["number"])
+    assert not coyote["caught"] and not coyote["species"]["revealed"]
+    assert client.get("/species/coyote/photos", headers=ana).status_code == 403
 
-    # The next catch becomes the new album photo.
-    assert catch(client, fake, ana, "coyote")["album_photo_id"]
+    # A friend's catch still reveals the name.
+    befriend(client, ana, bob, "bob", "ana")
+    assert client.get("/species/coyote", headers=ana).json()["revealed"]
+
+    # Catching it again starts over with a new badge and album photo.
+    r = catch(client, fake, ana, "coyote")
+    assert r["new_badge"] and r["album_photo_id"]
     assert client.delete(f"/photos/{photo['id']}", headers=ana).status_code == 404
+    assert client.delete("/me/album/coyote", headers=ana).status_code == 204
+    assert client.get("/me/collection", headers=ana).json()["caught"] == 1
