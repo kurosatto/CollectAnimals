@@ -19,6 +19,8 @@ class Settings:
         "RANGES_JSON", ROOT / "species" / "ranges.json")))
     hotspots_json: Path = field(default_factory=lambda: Path(os.getenv(
         "HOTSPOTS_JSON", ROOT / "species" / "hotspots.json")))
+    places_json: Path = field(default_factory=lambda: Path(os.getenv(
+        "PLACES_JSON", ROOT / "species" / "ca_places.json")))
     model_path: Path = field(default_factory=lambda: Path(os.getenv(
         "MODEL_PATH", ROOT / "models" / "ca100.pt")))
     upload_dir: Path = field(default_factory=lambda: Path(os.getenv(

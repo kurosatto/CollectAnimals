@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from . import classifier as clf
 from . import dex
-from . import social
+from . import places, social
 from .auth import create_token, current_user, hash_password, optional_user, verify_password
 from .config import settings
 from .db import Base, SessionLocal, add_missing_columns, engine, get_db
@@ -50,6 +50,7 @@ async def lifespan(app: FastAPI):
     with SessionLocal() as db:
         seed_species(db, settings.species_csv)
     dex.load(settings.details_csv, settings.ranges_json, settings.hotspots_json)
+    places.load(settings.places_json)
     if clf.get_classifier() is None:
         clf.load_classifier(settings.model_path)
     yield

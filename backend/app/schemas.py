@@ -27,6 +27,11 @@ class UserOut(BaseModel):
     email: str
     username: str
     created_at: datetime
+    show_in_feed: bool | None = True
+
+
+class SettingsIn(BaseModel):
+    show_in_feed: bool | None = None
 
 
 class SpeciesOut(BaseModel):
@@ -108,14 +113,17 @@ class CollectionOut(BaseModel):
 
 class PhotoOut(BaseModel):
     id: int
-    url: str
+    # None in the feed for species the viewer hasn't unlocked (the photo would give it away).
+    url: str | None
     username: str
     species: SpeciesOut
     taken_on: date
-    # Exact-ish (about 100 m) for you and your friends, about 10 km for everyone else.
+    caught_at: datetime
+    # How precise depends on who's looking and how rare the animal is (see app/places.py).
     latitude: float | None = None
     longitude: float | None = None
     location_precise: bool = False
+    place: str | None = None
     like_count: int = 0
     liked_by_me: bool = False
     is_mine: bool = False
@@ -136,6 +144,13 @@ class GalleryOut(BaseModel):
     sort: str
     total: int
     photos: list[PhotoOut]
+
+
+class FeedOut(BaseModel):
+    scope: str
+    photos: list[PhotoOut]
+    # Pass as ?before= to get the next, older page; None when there are no more.
+    next_before: int | None = None
 
 
 class AlbumPick(BaseModel):

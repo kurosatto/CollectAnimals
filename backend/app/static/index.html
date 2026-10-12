@@ -73,6 +73,14 @@
   ul.people li { display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; }
   ul.people button { padding:4px 10px; font-size:.85rem; }
   button.ghost { background:none; color:var(--muted); border:1px solid var(--line); }
+  .feed { display:grid; gap:10px; margin-top:10px; }
+  .feed-item { display:flex; gap:12px; align-items:center; cursor:pointer; padding:6px; border-radius:10px; }
+  .feed-item:hover { background:var(--bg); }
+  .feed-item img, .feed-item .mystery { width:64px; height:64px; border-radius:8px; object-fit:cover; flex:none; }
+  .feed-item .mystery { display:grid; place-items:center; background:var(--bg); border:1px dashed var(--line);
+                        font-size:1.6rem; color:var(--muted); }
+  .feed-item .what { line-height:1.35; }
+  .feed-item .when { font-size:.8rem; color:var(--muted); }
   label.inline { display:flex; align-items:center; gap:6px; font-size:.9rem; color:var(--muted); }
 </style>
 </head>
@@ -104,6 +112,13 @@
         <label class="inline"><input type="checkbox" id="use-location" checked> Save where I caught it</label>
       </form>
       <div id="result" class="card hidden"></div>
+    </div>
+    <div class="card">
+      <h2>Latest catches</h2>
+      <div class="seg" id="feed-seg"></div>
+      <div id="feed" class="feed"></div>
+      <p><button class="ghost hidden" id="feed-more">Show more</button></p>
+      <label class="inline"><input type="checkbox" id="share-feed"> Show my catches in this feed</label>
     </div>
     <div class="card" id="hotspots-card">
       <h2>Hotspots</h2>
@@ -251,7 +266,7 @@ $("upload-form").onsubmit = async (e) => {
       };
       box.append(b);
     }
-    loadCollection();
+    loadCollection(); loadFeed();
   } catch (err) { box.textContent = err.message; }
 };
 
@@ -360,11 +375,11 @@ function photoCard(p, { showSpecies = false, onChange } = {}) {
   if (p.rank) who.append(el("span", "rank", p.rank <= 3 ? ["🥇", "🥈", "🥉"][p.rank - 1] : `#${p.rank}`));
   meta.append(who, el("span", "muted", fmtDate(p.taken_on)));
   if (p.latitude != null) {
-    const a = el("a", "", (p.location_precise ? "" : "near ") + `${p.latitude}, ${p.longitude}`);
+    const a = el("a", "", p.place || `${p.latitude}, ${p.longitude}`);
     a.href = `https://www.openstreetmap.org/?mlat=${p.latitude}&mlon=${p.longitude}#map=${p.location_precise ? 14 : 10}/${p.latitude}/${p.longitude}`;
     a.target = "_blank"; a.rel = "noopener"; a.style.color = "var(--accent)";
     meta.append(a);
-  }
+  } else if (p.place) meta.append(el("span", "muted", p.place));
   const like = el("button", "like" + (p.liked_by_me ? " on" : ""), `♥ ${p.like_count}`);
   if (p.is_mine) { like.disabled = true; like.title = "Your photo"; }
   else like.onclick = async () => {
@@ -422,6 +437,63 @@ async function openAlbum(username) {
 }
 $("album-close").onclick = () => $("album").close();
 $("album").onclick = (e) => { if (e.target === $("album")) $("album").close(); };
+
+// --- news feed ----------------------------------------------------------------
+
+let feedScope = "all", feedBefore = null;
+const article = (w) => (/^[aeiou]/i.test(w) ? "an " : "a ") + w;
+
+function ago(iso) {
+  const t = new Date(iso.endsWith("Z") || iso.includes("+") ? iso : iso + "Z");
+  const m = Math.round((Date.now() - t) / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m} min ago`;
+  if (m < 60 * 24) return `${Math.round(m / 60)} h ago`;
+  if (m < 60 * 24 * 7) return `${Math.round(m / 1440)} d ago`;
+  return t.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function feedItem(p) {
+  const s = p.species;
+  const row = el("div", "feed-item");
+  if (p.url) { const img = el("img"); img.src = p.url; img.alt = s.common_name || ""; img.loading = "lazy"; row.append(img); }
+  else row.append(el("div", "mystery", "?"));
+  const what = el("div", "what");
+  const line = el("div");
+  line.append(el("strong", "", p.is_mine ? "You" : p.username), " caught ");
+  const name = el("strong", "", s.revealed ? article(s.common_name) : `a mystery ${s.category}`);
+  name.style.color = `var(--${s.rarity})`;
+  line.append(name);
+  const when = el("div", "when", [p.place, ago(p.caught_at)].filter(Boolean).join(" · "));
+  what.append(line, when);
+  if (s.revealed && p.like_count) what.append(el("div", "when", `♥ ${p.like_count}`));
+  row.append(what);
+  row.onclick = () => openDex(s.number, dexNumbers[s.number] || s.number, caughtNums.has(s.number));
+  return row;
+}
+
+async function loadFeed(more = false) {
+  if (!more) { feedBefore = null; $("feed").innerHTML = ""; }
+  const seg = $("feed-seg");
+  seg.innerHTML = "";
+  for (const [v, label] of [["all", "Everyone"], ["friends", "Friends"]]) {
+    const b = el("button", feedScope === v ? "on" : "", label);
+    b.onclick = () => { feedScope = v; loadFeed(); };
+    seg.append(b);
+  }
+  try {
+    const f = await api(`/feed?scope=${feedScope}&limit=10${feedBefore ? `&before=${feedBefore}` : ""}`);
+    f.photos.forEach((p) => $("feed").append(feedItem(p)));
+    if (!f.photos.length && !more) $("feed").append(el("p", "muted", "No catches yet. Be the first!"));
+    feedBefore = f.next_before;
+    $("feed-more").classList.toggle("hidden", !feedBefore);
+  } catch (err) { $("feed").append(el("p", "muted", err.message)); }
+}
+$("feed-more").onclick = () => loadFeed(true);
+$("share-feed").onchange = async (e) => {
+  try { await api("/me/settings", { method: "PATCH", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ show_in_feed: e.target.checked }) }); } catch { e.target.checked = !e.target.checked; }
+};
 
 // --- friends ------------------------------------------------------------------
 
@@ -535,7 +607,12 @@ async function render() {
   $("game").classList.toggle("hidden", !authed);
   $("who").classList.toggle("hidden", !authed);
   if (authed) {
-    try { $("username").textContent = (await api("/me")).username; loadCollection(); loadFriends(); } catch {}
+    try {
+      const me = await api("/me");
+      $("username").textContent = me.username;
+      $("share-feed").checked = me.show_in_feed !== false;
+      loadCollection(); loadFriends(); loadFeed();
+    } catch {}
   }
 }
 render();

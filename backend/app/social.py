@@ -5,8 +5,10 @@ Rules:
 - Each user shows one album photo per species; it starts as their first
   matching capture and they can swap in a later one.
 - Album photos are visible to every logged-in user who has that species
-  revealed, ranked by likes in the species gallery. Locations are about
-  100 m precise for you and your friends and about 10 km for everyone else.
+  revealed, ranked by likes in the species gallery. How precisely others see
+  where it was taken depends on the animal's rarity (see app/places.py).
+- The news feed lists everyone's newest album photos, unless they opted out.
+  Animals the viewer hasn't unlocked show as a mystery with no photo.
 """
 
 from __future__ import annotations
@@ -17,11 +19,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import and_, delete, func, or_, select
 from sqlalchemy.orm import Session
 
+from . import places
 from .auth import current_user
 from .db import get_db
 from .models import AlbumPhoto, Badge, Capture, Friendship, PhotoLike, Species, User
-from .schemas import (AlbumOut, AlbumPick, FriendOut, FriendRequestIn, FriendsOut, GalleryOut,
-                      PhotoOut, SpeciesOut)
+from .schemas import (AlbumOut, AlbumPick, FeedOut, FriendOut, FriendRequestIn, FriendsOut,
+                      GalleryOut, PhotoOut, SettingsIn, SpeciesOut)
 from .storage import get_storage
 
 router = APIRouter()
@@ -61,25 +64,18 @@ def find_species(db: Session, key: str) -> Species:
     return s
 
 
-def _coords(c: Capture, precise: bool) -> tuple[float | None, float | None]:
-    if c.latitude is None or c.longitude is None:
-        return None, None
-    digits = 3 if precise else 1
-    return round(c.latitude, digits), round(c.longitude, digits)
-
-
 def photo_out(p: AlbumPhoto, viewer: User, friends: set[int], likes: int, liked: bool,
-              revealed: bool = True, rank: int | None = None) -> PhotoOut:
+              revealed: bool = True, rank: int | None = None, show_image: bool = True) -> PhotoOut:
     mine = p.user_id == viewer.id
-    precise = mine or p.user_id in friends
-    lat, lon = _coords(p.capture, precise)
     c = p.capture
+    loc = places.for_viewer(c.latitude, c.longitude, p.species.rarity, mine, p.user_id in friends)
     return PhotoOut(
-        id=p.id, url=get_storage().url(c.image_path), username=p.user.username,
-        species=species_out(p.species, revealed),
-        taken_on=(c.taken_at or c.created_at).date(),
-        latitude=lat, longitude=lon, location_precise=precise and lat is not None,
-        like_count=likes, liked_by_me=liked, is_mine=mine, by_friend=p.user_id in friends, rank=rank)
+        id=p.id, url=get_storage().url(c.image_path) if show_image else None,
+        username=p.user.username, species=species_out(p.species, revealed),
+        taken_on=(c.taken_at or c.created_at).date(), caught_at=c.created_at,
+        latitude=loc.latitude, longitude=loc.longitude, location_precise=loc.precise,
+        place=loc.place, like_count=likes, liked_by_me=liked, is_mine=mine,
+        by_friend=p.user_id in friends, rank=rank)
 
 
 def _like_info(db: Session, photo_ids: list[int], viewer_id: int) -> tuple[dict[int, int], set[int]]:
@@ -203,6 +199,40 @@ def species_gallery(species_key: str,
         photo_out(p, user, friends, count, p.id in liked,
                   rank=offset + i + 1 if sort == "top" else None)
         for i, (p, count) in enumerate(rows)])
+
+
+@router.get("/feed", response_model=FeedOut)
+def news_feed(scope: Literal["all", "friends"] = "all",
+              limit: int = Query(20, ge=1, le=50), before: int | None = Query(None, ge=1),
+              user: User = Depends(current_user), db: Session = Depends(get_db)):
+    """Newest catches first: each album photo, ordered by when it was caught.
+    Players who turned off show_in_feed are left out (except to themselves)."""
+    friends = friend_ids(db, user.id)
+    revealed = revealed_species_ids(db, user)
+    q = (select(AlbumPhoto).join(Capture, Capture.id == AlbumPhoto.capture_id)
+         .join(User, User.id == AlbumPhoto.user_id)
+         .where(or_(User.show_in_feed.is_(None), User.show_in_feed, User.id == user.id)))
+    if scope == "friends":
+        q = q.where(AlbumPhoto.user_id.in_(friends | {user.id}))
+    if before:
+        q = q.where(Capture.id < before)
+    rows = db.scalars(q.order_by(Capture.id.desc()).limit(limit + 1)).all()
+    more = len(rows) > limit
+    rows = rows[:limit]
+    counts, liked = _like_info(db, [p.id for p in rows], user.id)
+    return FeedOut(scope=scope, next_before=rows[-1].capture_id if more else None, photos=[
+        photo_out(p, user, friends, counts.get(p.id, 0), p.id in liked,
+                  revealed=p.species_id in revealed, show_image=p.species_id in revealed)
+        for p in rows])
+
+
+@router.patch("/me/settings")
+def update_settings(body: SettingsIn, user: User = Depends(current_user),
+                    db: Session = Depends(get_db)):
+    if body.show_in_feed is not None:
+        user.show_in_feed = body.show_in_feed
+    db.commit()
+    return {"show_in_feed": user.show_in_feed is not False}
 
 
 def _visible_photo(db: Session, photo_id: int, user: User) -> AlbumPhoto:

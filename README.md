@@ -36,9 +36,20 @@ Without a trained model the API still runs; captures report that no model is loa
   albums and each other's catches unlock names for you.
 - **Gallery.** `GET /species/{species}/photos?scope=all|friends&sort=top|new`
   lists everyone's album photos for a species, ranked by likes. You need the
-  species unlocked to see it. Locations are about 100 m precise for you and
-  your friends and rounded to about 10 km for everyone else. Photos that
-  never made it into an album are never served.
+  species unlocked to see it. Photos that never made it into an album are
+  never served.
+- **News feed.** `GET /feed?scope=all|friends` lists the newest catches with
+  the place and time. Animals you haven't unlocked show as "a mystery
+  mammal" with no photo. Players can turn off "Show my catches in this feed"
+  (`PATCH /me/settings`).
+- **Locations others see** (`backend/app/places.py`): a hotspot park name,
+  "near <town>" (`species/ca_places.json`) or a region, never exact GPS.
+  Common and uncommon animals also get coordinates rounded to about 10 km
+  (about 100 m for friends). Rare animals get only a park or "around <town>",
+  and legendary ones only a region, for everyone but you.
+- **Hidden tips.** While a species is hidden its where-to-find and spotting
+  tips are held back (some name the animal); active time, hotspot parks, size,
+  weight and the map stay visible as hints.
 
 ## Storage and hosting
 

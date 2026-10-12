@@ -17,6 +17,8 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     username: Mapped[str] = mapped_column(String(40), unique=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(100))
+    # Whether new catches appear in everyone's news feed (None = default, yes).
+    show_in_feed: Mapped[bool | None] = mapped_column(nullable=True, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 

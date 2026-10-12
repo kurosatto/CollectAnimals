@@ -183,3 +183,56 @@ def test_unmatched_captures_are_private(client, fake):
         key = db.get(Capture, r.json()["capture_id"]).image_path
     assert client.get(f"/media/{key}").status_code == 404
     assert client.get("/media/..%2Fsecret").status_code == 404
+
+
+def test_news_feed(client, fake):
+    ana, bob, cyd = (signup(client, n) for n in ("ana", "bob", "cyd"))
+    catch(client, fake, bob, "coyote", latitude=36.9741, longitude=-122.0308)       # Santa Cruz
+    catch(client, fake, cyd, "bobcat", latitude=36.9741, longitude=-122.0308)       # rare
+    catch(client, fake, cyd, "mountain_lion", latitude=34.10, longitude=-118.80)    # legendary
+    catch(client, fake, ana, "coyote")                                              # no location
+
+    feed = client.get("/feed", headers=ana).json()
+    assert [(p["username"], p["species"]["number"]) for p in feed["photos"]][0][0] == "ana"
+    items = {p["username"] + ":" + (p["species"]["slug"] or p["species"]["category"]): p
+             for p in feed["photos"]}
+    coyote = items["bob:coyote"]
+    assert coyote["place"] == "near Santa Cruz" and coyote["latitude"] == 37.0
+    assert coyote["url"] and coyote["caught_at"]
+    # ana hasn't unlocked the bobcat or the mountain lion: no name, no photo.
+    hidden = [p for p in feed["photos"] if p["username"] == "cyd"]
+    assert all(p["url"] is None and p["species"]["common_name"] is None for p in hidden)
+    rare, legendary = sorted(hidden, key=lambda p: p["species"]["rarity"] == "legendary")
+    assert rare["place"] == "around Santa Cruz" and rare["latitude"] is None
+    assert legendary["place"] == "somewhere in Southern California" and legendary["latitude"] is None
+    assert items["ana:coyote"]["place"] is None
+
+    # cyd sees their own catches exactly.
+    mine = [p for p in client.get("/feed", headers=cyd).json()["photos"] if p["is_mine"]]
+    assert all(p["location_precise"] and p["url"] for p in mine)
+
+    # Paging.
+    page1 = client.get("/feed?limit=3", headers=ana).json()
+    assert len(page1["photos"]) == 3 and page1["next_before"]
+    page2 = client.get(f"/feed?limit=3&before={page1['next_before']}", headers=ana).json()
+    assert len(page2["photos"]) == 1 and page2["next_before"] is None
+
+    # Opting out hides your catches from everyone else's feed, not your own.
+    assert client.patch("/me/settings", headers=cyd, json={"show_in_feed": False}).json() == \
+        {"show_in_feed": False}
+    assert client.get("/me", headers=cyd).json()["show_in_feed"] is False
+    assert {p["username"] for p in client.get("/feed", headers=ana).json()["photos"]} == {"ana", "bob"}
+    assert len([p for p in client.get("/feed", headers=cyd).json()["photos"] if p["is_mine"]]) == 2
+
+    befriend(client, ana, bob, "bob", "ana")
+    friends_feed = client.get("/feed?scope=friends", headers=ana).json()["photos"]
+    assert {p["username"] for p in friends_feed} == {"ana", "bob"}
+    # Friends see common animals precisely.
+    assert next(p for p in friends_feed if p["username"] == "bob")["location_precise"]
+
+
+def test_place_names(client):
+    from app import places
+    assert places.place_name(37.7694, -122.4862) == "Golden Gate Park & Presidio"
+    assert places.place_name(36.9741, -122.0308) == "near Santa Cruz"
+    assert places.place_name(41.0, -121.0).startswith("in ")
