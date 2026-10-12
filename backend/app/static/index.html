@@ -66,6 +66,7 @@
   .like.on { border-color:#c0392b; color:#c0392b; }
   .seg { display:flex; gap:6px; flex-wrap:wrap; margin-top:12px; }
   .seg button { background:none; color:var(--ink); border:1px solid var(--line); padding:4px 10px; font-size:.85rem; }
+  .seg select { padding:4px 8px; font-size:.85rem; }
   .seg button.on { background:var(--accent); color:#fff; border-color:var(--accent); }
   .dex-photos { padding:0 16px 16px; }
   .dex-photos h3 { margin:16px 0 0; font-size:1rem; }
@@ -116,6 +117,7 @@
     <div class="card">
       <h2>Latest catches</h2>
       <div class="seg" id="feed-seg"></div>
+      <p class="muted" id="feed-note" style="margin:8px 0 0;font-size:.85rem"></p>
       <div id="feed" class="feed"></div>
       <p><button class="ghost hidden" id="feed-more">Show more</button></p>
       <label class="inline"><input type="checkbox" id="share-feed"> Show my catches in this feed</label>
@@ -440,7 +442,16 @@ $("album").onclick = (e) => { if (e.target === $("album")) $("album").close(); }
 
 // --- news feed ----------------------------------------------------------------
 
-let feedScope = "all", feedBefore = null;
+let feedScope = "near", feedBefore = null, feedRadius = 50, feedPos = null;
+try { feedRadius = +localStorage.getItem("feedRadius") || 50; } catch {}
+
+function myPosition() {
+  if (feedPos) return Promise.resolve(feedPos);
+  if (!navigator.geolocation) return Promise.resolve(null);
+  return new Promise((ok) => navigator.geolocation.getCurrentPosition(
+    (p) => ok(feedPos = { lat: p.coords.latitude, lon: p.coords.longitude }), () => ok(null),
+    { timeout: 8000, maximumAge: 600000, enableHighAccuracy: false }));
+}
 const article = (w) => (/^[aeiou]/i.test(w) ? "an " : "a ") + w;
 
 function ago(iso) {
@@ -476,15 +487,43 @@ async function loadFeed(more = false) {
   if (!more) { feedBefore = null; $("feed").innerHTML = ""; }
   const seg = $("feed-seg");
   seg.innerHTML = "";
-  for (const [v, label] of [["all", "Everyone"], ["friends", "Friends"]]) {
+  for (const [v, label] of [["near", "Near me"], ["friends", "Friends"], ["all", "All California"]]) {
     const b = el("button", feedScope === v ? "on" : "", label);
     b.onclick = () => { feedScope = v; loadFeed(); };
     seg.append(b);
   }
+  const params = new URLSearchParams({ scope: feedScope, limit: 10 });
+  $("feed-note").textContent = "";
+  if (feedScope === "near") {
+    const sel = el("select");
+    for (const km of [10, 25, 50, 100, 200]) {
+      const o = el("option", "", `within ${km} km`); o.value = km; o.selected = km === feedRadius; sel.append(o);
+    }
+    sel.onchange = () => {
+      feedRadius = +sel.value;
+      try { localStorage.setItem("feedRadius", feedRadius); } catch {}
+      loadFeed();
+    };
+    seg.append(sel);
+    const pos = await myPosition();
+    if (!pos) {
+      // No location permission: fall back to the whole state.
+      feedScope = "all";
+      $("feed-note").textContent = "Allow location to see catches near you. Showing all of California.";
+      seg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.textContent === "All California"));
+      sel.remove();
+      params.set("scope", "all");
+    } else {
+      params.set("lat", pos.lat.toFixed(2)); params.set("lon", pos.lon.toFixed(2));
+      params.set("radius_km", feedRadius);
+    }
+  }
+  if (feedBefore) params.set("before", feedBefore);
   try {
-    const f = await api(`/feed?scope=${feedScope}&limit=10${feedBefore ? `&before=${feedBefore}` : ""}`);
+    const f = await api(`/feed?${params}`);
     f.photos.forEach((p) => $("feed").append(feedItem(p)));
-    if (!f.photos.length && !more) $("feed").append(el("p", "muted", "No catches yet. Be the first!"));
+    if (!f.photos.length && !more) $("feed").append(el("p", "muted", params.get("scope") === "near"
+      ? `No catches within ${feedRadius} km yet. Try a bigger radius, or be the first!` : "No catches yet. Be the first!"));
     feedBefore = f.next_before;
     $("feed-more").classList.toggle("hidden", !feedBefore);
   } catch (err) { $("feed").append(el("p", "muted", err.message)); }

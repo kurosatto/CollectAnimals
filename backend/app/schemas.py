@@ -147,7 +147,7 @@ class GalleryOut(BaseModel):
 
 
 class FeedOut(BaseModel):
-    scope: str
+    scope: str  # near | all | friends
     photos: list[PhotoOut]
     # Pass as ?before= to get the next, older page; None when there are no more.
     next_before: int | None = None

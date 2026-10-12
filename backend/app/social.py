@@ -13,6 +13,7 @@ Rules:
 
 from __future__ import annotations
 
+import math
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
@@ -202,11 +203,20 @@ def species_gallery(species_key: str,
 
 
 @router.get("/feed", response_model=FeedOut)
-def news_feed(scope: Literal["all", "friends"] = "all",
+def news_feed(scope: Literal["near", "all", "friends"] = "all",
+              lat: float | None = Query(None, ge=-90, le=90),
+              lon: float | None = Query(None, ge=-180, le=180),
+              radius_km: float = Query(50, ge=places.MIN_RADIUS_KM, le=500),
               limit: int = Query(20, ge=1, le=50), before: int | None = Query(None, ge=1),
               user: User = Depends(current_user), db: Session = Depends(get_db)):
     """Newest catches first: each album photo, ordered by when it was caught.
+
+    scope=near (needs lat/lon, the viewer's position) keeps catches within
+    radius_km. Distances use each catch's blurred position, not its exact
+    GPS, so the filter can't be used to pinpoint anyone (see places.py).
     Players who turned off show_in_feed are left out (except to themselves)."""
+    if scope == "near" and (lat is None or lon is None):
+        raise HTTPException(400, "scope=near needs lat and lon")
     friends = friend_ids(db, user.id)
     revealed = revealed_species_ids(db, user)
     q = (select(AlbumPhoto).join(Capture, Capture.id == AlbumPhoto.capture_id)
@@ -214,9 +224,26 @@ def news_feed(scope: Literal["all", "friends"] = "all",
          .where(or_(User.show_in_feed.is_(None), User.show_in_feed, User.id == user.id)))
     if scope == "friends":
         q = q.where(AlbumPhoto.user_id.in_(friends | {user.id}))
-    if before:
-        q = q.where(Capture.id < before)
-    rows = db.scalars(q.order_by(Capture.id.desc()).limit(limit + 1)).all()
+    if scope == "near":
+        # Cheap bounding box in SQL (with slack for the blurring), exact check below.
+        dlat = radius_km / 111 + 0.6
+        dlon = radius_km / (111 * max(0.2, math.cos(math.radians(lat)))) + 0.6
+        q = q.where(Capture.latitude.between(lat - dlat, lat + dlat),
+                    Capture.longitude.between(lon - dlon, lon + dlon))
+
+    rows: list[AlbumPhoto] = []
+    cursor = before
+    while len(rows) <= limit:
+        page = q.where(Capture.id < cursor) if cursor else q
+        batch = db.scalars(page.order_by(Capture.id.desc()).limit(200)).all()
+        if not batch:
+            break
+        for p in batch:
+            c = p.capture
+            if scope != "near" or places.blurred_distance_km(
+                    c.latitude, c.longitude, p.species.rarity, lat, lon) <= radius_km:
+                rows.append(p)
+        cursor = batch[-1].capture_id
     more = len(rows) > limit
     rows = rows[:limit]
     counts, liked = _like_info(db, [p.id for p in rows], user.id)

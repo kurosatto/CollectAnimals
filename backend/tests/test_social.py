@@ -236,3 +236,33 @@ def test_place_names(client):
     assert places.place_name(37.7694, -122.4862) == "Golden Gate Park & Presidio"
     assert places.place_name(36.9741, -122.0308) == "near Santa Cruz"
     assert places.place_name(41.0, -121.0).startswith("in ")
+
+
+def test_local_feed(client, fake):
+    ana, bob, cyd = (signup(client, n) for n in ("ana", "bob", "cyd"))
+    catch(client, fake, bob, "coyote", latitude=36.9741, longitude=-122.0308)   # Santa Cruz
+    catch(client, fake, cyd, "coyote", latitude=32.7157, longitude=-117.1611)   # San Diego
+    catch(client, fake, cyd, "bobcat", latitude=37.00, longitude=-122.06)       # rare, near Santa Cruz
+    catch(client, fake, ana, "coyote")                                          # no location
+
+    def near(**kw):
+        r = client.get("/feed", headers=ana, params={"scope": "near", **kw})
+        assert r.status_code == 200, r.text
+        return [(p["username"], p["species"]["rarity"]) for p in r.json()["photos"]]
+
+    # From San Jose: Santa Cruz is ~40 km away, San Diego ~650 km.
+    assert near(lat=37.34, lon=-121.89) == [("cyd", "rare"), ("bob", "common")]
+    assert near(lat=37.34, lon=-121.89, radius_km=20) == []
+    assert near(lat=32.72, lon=-117.16, radius_km=25) == [("cyd", "common")]
+    assert len(client.get("/feed", headers=ana).json()["photos"]) == 4
+
+    assert client.get("/feed?scope=near", headers=ana).status_code == 400
+    assert client.get("/feed?scope=near&lat=37&lon=-122&radius_km=1", headers=ana).status_code == 422
+
+    # Paging works through the distance filter.
+    page = client.get("/feed", headers=ana, params={"scope": "near", "lat": 37.34, "lon": -121.89,
+                                                    "limit": 1}).json()
+    assert page["next_before"]
+    rest = client.get("/feed", headers=ana, params={"scope": "near", "lat": 37.34, "lon": -121.89,
+                                                    "before": page["next_before"]}).json()
+    assert [p["username"] for p in rest["photos"]] == ["bob"] and rest["next_before"] is None

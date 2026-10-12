@@ -65,6 +65,23 @@ def place_name(lat: float, lon: float, town_km: float = 25, prefix: str = "near"
     return f"{prefix} {town}" if town and dist <= town_km else f"in {region(lat, lon)}"
 
 
+# Smallest radius for the "near me" feed, so it can't be narrowed down to a house.
+MIN_RADIUS_KM = 10
+
+
+def blurred_point(lat: float, lon: float, rarity: str) -> tuple[float, float]:
+    """The position used for distance filters: a ~10 km grid for most animals,
+    a ~50 km grid for rare and legendary ones."""
+    step = 0.5 if rarity in ("rare", "legendary") else 0.1
+    return round(lat / step) * step, round(lon / step) * step
+
+
+def blurred_distance_km(lat, lon, rarity: str, from_lat: float, from_lon: float) -> float:
+    if lat is None or lon is None:
+        return math.inf
+    return _km(*blurred_point(lat, lon, rarity), from_lat, from_lon)
+
+
 @dataclass
 class Location:
     latitude: float | None = None
