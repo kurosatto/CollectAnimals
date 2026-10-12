@@ -345,8 +345,10 @@ def _unassign_capture(db: Session, capture: Capture) -> None:
             db.delete(like)
         db.delete(photo)
         db.flush()
-        if others:
-            social.ensure_album_photo(db, others[-1])
+        # Re-point the album at the newest other catch that still has its photo.
+        with_photo = [c for c in others if c.image_path]
+        if with_photo:
+            social.ensure_album_photo(db, with_photo[-1])
 
 
 @app.post("/captures/{capture_id}/pick", response_model=CaptureOut)
