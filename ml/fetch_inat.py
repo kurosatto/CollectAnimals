@@ -38,6 +38,11 @@ import requests
 API = "https://api.inaturalist.org/v1"
 CALIFORNIA_PLACE_ID = 14
 ANIMALIA_TAXON_ID = 1
+# The "other" class is spread evenly over these groups and over the 12 months,
+# so it isn't dominated by whatever is most observed right now (e.g. this
+# season's insects).
+NEGATIVE_GROUPS = ["Aves", "Mammalia", "Reptilia", "Amphibia", "Insecta",
+                   "Arachnida", "Mollusca", "Actinopterygii"]
 LICENSES = "cc0,cc-by,cc-by-nc"
 OTHER_CLASS = "other"
 USER_AGENT = "CollectAnimals-dataset-builder/0.1"
@@ -210,8 +215,14 @@ def main():
             all_ids = ",".join(str(t["taxon_id"]) for t in taxa.values())
             # Include casual/needs_id too: "other" just needs to be "an animal
             # photo that isn't one of ours", not a confirmed ID.
-            fetch_class(OTHER_CLASS, out_dir, args.negatives, args.size, pool, attribution,
-                        taxon_id=ANIMALIA_TAXON_ID, without_taxon_id=all_ids)
+            per_slice = max(1, args.negatives // (len(NEGATIVE_GROUPS) * 12))
+            for group in NEGATIVE_GROUPS:
+                for month in range(1, 13):
+                    print(f"  {group}, month {month}")
+                    fetch_class(OTHER_CLASS, out_dir, per_slice, args.size, pool, attribution,
+                                taxon_id=ANIMALIA_TAXON_ID, without_taxon_id=all_ids,
+                                iconic_taxa=group, month=month)
+                    fh.flush()
 
 
 if __name__ == "__main__":

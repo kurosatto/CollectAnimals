@@ -13,8 +13,8 @@ the backend loads directly:
     python ml/train.py --data data/images --out models/ca100.pt
 
 Any timm model name works. Small options:
-  efficientnet_b0.ra_in1k        (default; 5M params, ~20 MB)
-  convnext_nano.in12k_ft_in1k    (15M params, stronger embeddings)
+  convnext_nano.in12k_ft_in1k    (default; 15M params, ~60 MB)
+  efficientnet_b0.ra_in1k        (5M params, ~20 MB, a few points less accurate)
   mobilenetv3_large_100.ra_in1k  (5M params, fastest on phones)
 """
 
@@ -146,7 +146,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--data", default="data/images")
     ap.add_argument("--out", default="models/ca100.pt")
-    ap.add_argument("--model", default="efficientnet_b0.ra_in1k")
+    ap.add_argument("--model", default="convnext_nano.in12k_ft_in1k")
     ap.add_argument("--img-size", type=int, default=224)
     ap.add_argument("--aug-views", type=int, default=2,
                     help="extra augmented embeddings per training image")

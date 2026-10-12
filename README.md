@@ -32,6 +32,13 @@ python ml/predict.py models/ca100.pt some_photo.jpg
 The backend loads `models/ca100.pt` by default (override with `MODEL_PATH`).
 A capture only counts above `MATCH_THRESHOLD` (default 0.6).
 
+## Current model
+
+First full run (2026-10-12): 104,699 photos (100 species with 779–1,000 each, plus
+~5,000 "other"), frozen `convnext_nano.in12k_ft_in1k` backbone with a trained head.
+Held-out accuracy: 78.0% top-1, 92.6% top-5. Weakest: "other" (30%), bobcat,
+crow vs. raven, and the hawks. About 91% of the photos are CC-BY-NC (non-commercial).
+
 ## Tests
 
 ```bash
