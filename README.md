@@ -25,7 +25,7 @@ Without a trained model the API still runs; captures report that no model is loa
 ```bash
 pip install -r ml/requirements.txt
 python ml/fetch_inat.py --per-species 1000 --negatives 5000 --out data/images
-python ml/train.py --data data/images --out models/ca100.pt
+python ml/train.py --data data/images --out models/ca100.pt   # frozen backbone, trains the head only
 python ml/predict.py models/ca100.pt some_photo.jpg
 ```
 

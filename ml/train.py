@@ -1,21 +1,27 @@
-"""Fine-tune an ImageNet-pretrained backbone on the downloaded species photos.
+"""Train a species classifier head on top of a frozen ImageNet-pretrained backbone.
 
 Expects the layout produced by fetch_inat.py:
     data/images/<class_slug>/*.jpg     (100 species + "other")
+
+The backbone is never updated. Its pooled embeddings are computed once per
+image (plus a few augmented views of each training image) and cached next to
+the output, so re-running with different head settings takes seconds. Only a
+linear head is trained on those embeddings.
 
 Writes a single checkpoint (weights + class list + preprocessing config) that
 the backend loads directly:
     python ml/train.py --data data/images --out models/ca100.pt
 
-Any timm model name works. Good starting points:
-  convnext_tiny.fb_in22k_ft_in1k     (default; fast, strong)
-  efficientnet_b0.ra_in1k            (smallest / CPU-friendly)
-  convnext_base.fb_in22k_ft_in1k_384 (more accurate, needs a bigger GPU)
+Any timm model name works. Small options:
+  efficientnet_b0.ra_in1k        (default; 5M params, ~20 MB)
+  convnext_nano.in12k_ft_in1k    (15M params, stronger embeddings)
+  mobilenetv3_large_100.ra_in1k  (5M params, fastest on phones)
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import random
 import time
@@ -62,7 +68,7 @@ def split_dataset(root: Path, val_frac: float, seed: int):
 
 def build_transforms(cfg, img_size):
     mean, std = cfg["mean"], cfg["std"]
-    train_tf = transforms.Compose([
+    aug_tf = transforms.Compose([
         transforms.RandomResizedCrop(img_size, scale=(0.35, 1.0)),
         transforms.RandomHorizontalFlip(),
         transforms.ColorJitter(0.3, 0.3, 0.2, 0.02),
@@ -75,41 +81,73 @@ def build_transforms(cfg, img_size):
         transforms.ToTensor(),
         transforms.Normalize(mean, std),
     ])
-    return train_tf, eval_tf
+    return aug_tf, eval_tf
 
 
 @torch.no_grad()
-def evaluate(model, loader, device, num_classes):
-    model.eval()
-    correct = total = top5 = 0
-    per_class = Counter()
-    per_class_total = Counter()
+def embed(model, items, transform, device, batch_size, workers):
+    """Pooled backbone features (pre-logits) for every item."""
+    loader = DataLoader(ImageList(items, transform), batch_size,
+                        num_workers=workers, pin_memory=device.type == "cuda")
+    feats, labels = [], []
     for x, y in loader:
-        x, y = x.to(device), y.to(device)
         with torch.autocast(device.type, enabled=device.type == "cuda"):
-            logits = model(x)
-        pred5 = logits.topk(min(5, num_classes), dim=1).indices
-        hit1 = pred5[:, 0] == y
-        correct += hit1.sum().item()
-        top5 += (pred5 == y[:, None]).any(1).sum().item()
-        total += y.numel()
-        for label, hit in zip(y.tolist(), hit1.tolist()):
-            per_class_total[label] += 1
-            per_class[label] += hit
-    acc = {c: per_class[c] / per_class_total[c] for c in per_class_total}
-    return correct / total, top5 / total, acc
+            f = model.forward_head(model.forward_features(x.to(device)), pre_logits=True)
+        feats.append(f.float().cpu())
+        labels.append(y)
+    return torch.cat(feats), torch.cat(labels)
+
+
+def cached_embeddings(model, args, classes, train_items, val_items, aug_tf, eval_tf, device):
+    """Embed the dataset once and reuse it while the image set and backbone are unchanged."""
+    key = hashlib.sha1(json.dumps([
+        args.model, args.img_size, args.aug_views, classes,
+        [str(p) for p, _ in train_items], [str(p) for p, _ in val_items],
+    ]).encode()).hexdigest()[:12]
+    cache = Path(args.out).with_suffix(f".feats-{key}.pt")
+    if cache.exists():
+        print(f"using cached embeddings {cache}")
+        return torch.load(cache)
+
+    t0 = time.time()
+    views = [embed(model, train_items, eval_tf, device, args.batch_size, args.workers)]
+    for v in range(args.aug_views):
+        print(f"  augmented view {v + 1}/{args.aug_views}")
+        views.append(embed(model, train_items, aug_tf, device, args.batch_size, args.workers))
+    data = {
+        "train_x": torch.cat([x for x, _ in views]),
+        "train_y": torch.cat([y for _, y in views]),
+        "val": embed(model, val_items, eval_tf, device, args.batch_size, args.workers),
+    }
+    torch.save(data, cache)
+    print(f"embedded {len(train_items)} train x{1 + args.aug_views} views, "
+          f"{len(val_items)} val in {time.time() - t0:.0f}s -> {cache}")
+    return data
+
+
+@torch.no_grad()
+def evaluate(head, x, y, num_classes):
+    pred5 = head(x).topk(min(5, num_classes), dim=1).indices
+    hit1 = pred5[:, 0] == y
+    top1 = hit1.float().mean().item()
+    top5 = (pred5 == y[:, None]).any(1).float().mean().item()
+    per_class = {c: hit1[y == c].float().mean().item() for c in y.unique().tolist()}
+    return top1, top5, per_class
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--data", default="data/images")
     ap.add_argument("--out", default="models/ca100.pt")
-    ap.add_argument("--model", default="convnext_tiny.fb_in22k_ft_in1k")
+    ap.add_argument("--model", default="efficientnet_b0.ra_in1k")
     ap.add_argument("--img-size", type=int, default=224)
-    ap.add_argument("--epochs", type=int, default=12)
-    ap.add_argument("--batch-size", type=int, default=64)
-    ap.add_argument("--lr", type=float, default=3e-4, help="head LR; backbone uses lr/10")
-    ap.add_argument("--weight-decay", type=float, default=0.05)
+    ap.add_argument("--aug-views", type=int, default=2,
+                    help="extra augmented embeddings per training image")
+    ap.add_argument("--epochs", type=int, default=30)
+    ap.add_argument("--batch-size", type=int, default=128, help="batch size for embedding")
+    ap.add_argument("--head-batch-size", type=int, default=512)
+    ap.add_argument("--lr", type=float, default=1e-3)
+    ap.add_argument("--weight-decay", type=float, default=1e-4)
     ap.add_argument("--val-frac", type=float, default=0.1)
     ap.add_argument("--workers", type=int, default=8)
     ap.add_argument("--seed", type=int, default=0)
@@ -124,52 +162,49 @@ def main():
     print(f"{len(classes)} classes, {len(train_items)} train / {len(val_items)} val, device={device}")
 
     model = timm.create_model(args.model, pretrained=not args.no_pretrained, num_classes=len(classes))
+    model.requires_grad_(False)
+    model.eval().to(device)
     data_cfg = resolve_data_config({}, model=model)
-    train_tf, eval_tf = build_transforms(data_cfg, args.img_size)
-
-    # Classes are imbalanced (rare species have fewer photos, "other" has more);
-    # weight the loss so the model doesn't just learn the class prior.
-    counts = Counter(label for _, label in train_items)
-    weights = torch.tensor([len(train_items) / (len(classes) * counts[i]) for i in range(len(classes))])
-    criterion = nn.CrossEntropyLoss(weight=weights.to(device), label_smoothing=0.1)
-
-    train_dl = DataLoader(ImageList(train_items, train_tf), args.batch_size, shuffle=True,
-                          num_workers=args.workers, pin_memory=True, drop_last=True)
-    val_dl = DataLoader(ImageList(val_items, eval_tf), args.batch_size,
-                        num_workers=args.workers, pin_memory=True)
-
-    head_params = list(model.get_classifier().parameters())
-    head_ids = {id(p) for p in head_params}
-    backbone_params = [p for p in model.parameters() if id(p) not in head_ids]
-    optimizer = torch.optim.AdamW(
-        [{"params": backbone_params, "lr": args.lr / 10}, {"params": head_params, "lr": args.lr}],
-        weight_decay=args.weight_decay,
-    )
-    steps = args.epochs * len(train_dl)
-    scheduler = torch.optim.lr_scheduler.OneCycleLR(
-        optimizer, max_lr=[args.lr / 10, args.lr], total_steps=steps, pct_start=0.1)
-    scaler = torch.amp.GradScaler(enabled=device.type == "cuda")
-    model.to(device)
+    aug_tf, eval_tf = build_transforms(data_cfg, args.img_size)
 
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
+    data = cached_embeddings(model, args, classes, train_items, val_items, aug_tf, eval_tf, device)
+    train_x, train_y = data["train_x"].to(device), data["train_y"].to(device)
+    val_x, val_y = (t.to(device) for t in data["val"])
+
+    # The head is timm's own classifier layer, so the saved state_dict loads
+    # straight into timm.create_model(..., num_classes=N) in the backend.
+    head = model.get_classifier()
+    head.reset_parameters()
+    head.requires_grad_(True)
+
+    # Classes are imbalanced (rare species have fewer photos, "other" has more);
+    # weight the loss so the model doesn't just learn the class prior.
+    counts = Counter(train_y.tolist())
+    weights = torch.tensor([len(train_y) / (len(classes) * counts[i]) for i in range(len(classes))])
+    criterion = nn.CrossEntropyLoss(weight=weights.to(device), label_smoothing=0.1)
+    optimizer = torch.optim.AdamW(head.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    steps_per_epoch = (len(train_y) + args.head_batch_size - 1) // args.head_batch_size
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.epochs * steps_per_epoch)
+
     best = -1.0
     for epoch in range(args.epochs):
-        model.train()
-        t0, running = time.time(), 0.0
-        for x, y in train_dl:
-            x, y = x.to(device, non_blocking=True), y.to(device, non_blocking=True)
-            with torch.autocast(device.type, enabled=device.type == "cuda"):
-                loss = criterion(model(x), y)
+        head.train()
+        perm = torch.randperm(len(train_y), device=device)
+        running = 0.0
+        for i in range(0, len(perm), args.head_batch_size):
+            idx = perm[i:i + args.head_batch_size]
+            loss = criterion(head(train_x[idx]), train_y[idx])
             optimizer.zero_grad(set_to_none=True)
-            scaler.scale(loss).backward()
-            scaler.step(optimizer)
-            scaler.update()
+            loss.backward()
+            optimizer.step()
             scheduler.step()
             running += loss.item()
-        top1, top5, per_class = evaluate(model, val_dl, device, len(classes))
-        print(f"epoch {epoch + 1}/{args.epochs} loss={running / len(train_dl):.3f} "
-              f"val_top1={top1:.3f} val_top5={top5:.3f} ({time.time() - t0:.0f}s)")
+        head.eval()
+        top1, top5, per_class = evaluate(head, val_x, val_y, len(classes))
+        print(f"epoch {epoch + 1}/{args.epochs} loss={running / steps_per_epoch:.3f} "
+              f"val_top1={top1:.3f} val_top5={top5:.3f}")
         if top1 > best:
             best = top1
             torch.save({
@@ -178,7 +213,7 @@ def main():
                 "img_size": args.img_size,
                 "mean": list(data_cfg["mean"]),
                 "std": list(data_cfg["std"]),
-                "state_dict": model.state_dict(),
+                "state_dict": {k: v.cpu() for k, v in model.state_dict().items()},
                 "val_top1": top1,
                 "val_top5": top5,
             }, out)
