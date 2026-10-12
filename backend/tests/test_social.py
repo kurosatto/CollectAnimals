@@ -266,3 +266,20 @@ def test_local_feed(client, fake):
     rest = client.get("/feed", headers=ana, params={"scope": "near", "lat": 37.34, "lon": -121.89,
                                                     "before": page["next_before"]}).json()
     assert [p["username"] for p in rest["photos"]] == ["bob"] and rest["next_before"] is None
+
+
+def test_feed_uncaught_only(client, fake):
+    ana, bob = signup(client, "ana"), signup(client, "bob")
+    catch(client, fake, bob, "coyote")
+    catch(client, fake, bob, "bobcat")
+    catch(client, fake, ana, "coyote")
+
+    def feed(**kw):
+        return [p["species"]["number"] for p in
+                client.get("/feed", headers=ana, params=kw).json()["photos"]]
+    everything = feed()
+    assert len(everything) == 3
+    only = client.get("/feed?uncaught=true", headers=ana).json()["photos"]
+    # Only bob's bobcat is left, still hidden from ana.
+    assert len(only) == 1 and only[0]["species"]["common_name"] is None and only[0]["url"] is None
+    assert len(client.get("/feed?uncaught=true", headers=bob).json()["photos"]) == 0

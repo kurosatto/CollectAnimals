@@ -43,7 +43,8 @@ Without a trained model the API still runs; captures report that no model is loa
   `radius_km`, 50 km by default, 10 km minimum) and falls back to all of
   California without location permission. Distances use each catch's blurred
   position (a ~10 km grid, ~50 km for rare and legendary animals), so the
-  radius can't be used to pinpoint anyone. Animals you haven't unlocked show as "a mystery
+  radius can't be used to pinpoint anyone.
+  `uncaught=true` ("Only animals I haven't caught") hides species you already have. Animals you haven't unlocked show as "a mystery
   mammal" with no photo. Players can turn off "Show my catches in this feed"
   (`PATCH /me/settings`).
 - **Locations others see** (`backend/app/places.py`): a hotspot park name,

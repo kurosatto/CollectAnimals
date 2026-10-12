@@ -207,6 +207,7 @@ def news_feed(scope: Literal["near", "all", "friends"] = "all",
               lat: float | None = Query(None, ge=-90, le=90),
               lon: float | None = Query(None, ge=-180, le=180),
               radius_km: float = Query(50, ge=places.MIN_RADIUS_KM, le=500),
+              uncaught: bool = False,
               limit: int = Query(20, ge=1, le=50), before: int | None = Query(None, ge=1),
               user: User = Depends(current_user), db: Session = Depends(get_db)):
     """Newest catches first: each album photo, ordered by when it was caught.
@@ -214,6 +215,7 @@ def news_feed(scope: Literal["near", "all", "friends"] = "all",
     scope=near (needs lat/lon, the viewer's position) keeps catches within
     radius_km. Distances use each catch's blurred position, not its exact
     GPS, so the filter can't be used to pinpoint anyone (see places.py).
+    uncaught=true keeps only animals the viewer hasn't caught yet.
     Players who turned off show_in_feed are left out (except to themselves)."""
     if scope == "near" and (lat is None or lon is None):
         raise HTTPException(400, "scope=near needs lat and lon")
@@ -224,6 +226,9 @@ def news_feed(scope: Literal["near", "all", "friends"] = "all",
          .where(or_(User.show_in_feed.is_(None), User.show_in_feed, User.id == user.id)))
     if scope == "friends":
         q = q.where(AlbumPhoto.user_id.in_(friends | {user.id}))
+    if uncaught:
+        q = q.where(AlbumPhoto.species_id.not_in(
+            select(Badge.species_id).where(Badge.user_id == user.id)))
     if scope == "near":
         # Cheap bounding box in SQL (with slack for the blurring), exact check below.
         dlat = radius_km / 111 + 0.6
