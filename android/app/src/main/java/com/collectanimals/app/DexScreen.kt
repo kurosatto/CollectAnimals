@@ -100,6 +100,9 @@ fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: Pokedex, onBack:
 
         Text("Where to find it", style = MaterialTheme.typography.titleMedium)
         RangeMap(dex, s.slug, rarityColor(s.rarity), Modifier.fillMaxWidth())
+        details?.whereToFind?.takeIf { it.isNotBlank() }?.let {
+            Text("📍 $it", style = MaterialTheme.typography.bodyMedium)
+        }
         Text("Each square is about 25 km (15 mi) across; darker means more of the " +
             "${dex.ranges.sightings(s.slug)} recent iNaturalist sightings in California.",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)

@@ -161,14 +161,16 @@ def test_dex_entry(client, fake):
     # Before catching: size, weight and map are hints; name and fun fact are locked.
     r = client.get("/species/coyote/dex").json()
     assert r["species"]["common_name"] is None and r["fun_fact"] is None
-    assert r["size"] and r["weight"]
+    # Tips can name the animal, so they wait too; active time and parks are hints.
+    assert r["where_to_find"] is None and r["spotting_tip"] is None
+    assert r["size"] and r["weight"] and r["active_time"]
     assert r["range"]["cells"] == [[10, 20, 5]] and r["range"]["grid"]["step"] == 0.25
 
     h = signup(client)
     fake.next = [Prediction("coyote", 0.93)]
     upload(client, h)
     r = client.get("/species/coyote/dex", headers=h).json()
-    assert r["species"]["common_name"] == "Coyote" and r["fun_fact"]
+    assert r["species"]["common_name"] == "Coyote" and r["fun_fact"] and r["where_to_find"]
 
     r = client.get("/species/bobcat/dex", headers=h).json()
     assert r["fun_fact"] is None and r["range"] is None and r["size"]
@@ -178,3 +180,37 @@ def test_dex_entry(client, fake):
 def test_california_outline(client):
     r = client.get("/map/california")
     assert r.status_code == 200 and len(r.json()["rings"][0]) > 100
+
+
+def test_hotspots(client, fake):
+    import json
+    from pathlib import Path
+
+    from app import dex
+    from app.config import settings
+
+    tmp = Path(tempfile.mkdtemp())
+    (tmp / "hotspots.json").write_text(json.dumps({"parks": [
+        {"id": "small", "name": "Small Park", "lat": 34.0, "lon": -118.0, "blurb": "b",
+         "species": [{"slug": "coyote", "observations": 24}]},
+        {"id": "big", "name": "Big Park", "lat": 36.5, "lon": -121.2, "blurb": "b",
+         "species": [{"slug": "california_condor", "observations": 800},
+                     {"slug": "coyote", "observations": 50}, {"slug": "not_listed", "observations": 9}]},
+    ]}))
+    dex.load(settings.details_csv, settings.ranges_json, tmp / "hotspots.json")
+
+    parks = client.get("/hotspots").json()
+    assert [p["name"] for p in parks] == ["Big Park", "Small Park"]
+    # Names stay hidden until caught.
+    assert [s["common_name"] for s in parks[0]["species"]] == [None, None]
+
+    h = signup(client)
+    fake.next = [Prediction("california_condor", 0.95)]
+    upload(client, h)
+    parks = client.get("/hotspots", headers=h).json()
+    assert [s["slug"] for s in parks[0]["species"]] == ["california_condor", None]
+    assert parks[0]["species"][0]["common_name"] == "California Condor"
+
+    r = client.get("/species/coyote/dex").json()
+    assert r["hotspots"] == ["Big Park", "Small Park"]
+    assert r["active_time"] and r["spotting_tip"] is None

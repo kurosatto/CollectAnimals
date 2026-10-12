@@ -48,8 +48,29 @@ class DexOut(BaseModel):
     size: str | None = None
     weight: str | None = None
     fun_fact: str | None = None
+    where_to_find: str | None = None
+    active_time: str | None = None
+    spotting_tip: str | None = None
+    hotspots: list[str] = []
     # {"grid": {lon0, lat0, step, cols, rows}, "cells": [[col, row, count], ...]}
     range: dict | None = None
+
+
+class HotspotSpecies(BaseModel):
+    number: int
+    slug: str | None
+    common_name: str | None
+    rarity: str
+    observations: int
+
+
+class HotspotOut(BaseModel):
+    id: str
+    name: str
+    lat: float
+    lon: float
+    blurb: str
+    species: list[HotspotSpecies]
 
 
 class PredictionOut(BaseModel):

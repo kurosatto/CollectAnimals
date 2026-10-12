@@ -20,8 +20,8 @@ from .auth import create_token, current_user, hash_password, optional_user, veri
 from .config import settings
 from .db import Base, SessionLocal, add_missing_columns, engine, get_db
 from .models import AlbumPhoto, Badge, Capture, Species, User
-from .schemas import (CaptureOut, CollectionEntry, CollectionOut, DexOut, PredictionOut, RegisterIn,
-                      SpeciesOut, TokenOut, UserOut)
+from .schemas import (CaptureOut, CollectionEntry, CollectionOut, DexOut, HotspotOut, HotspotSpecies,
+                      PredictionOut, RegisterIn, SpeciesOut, TokenOut, UserOut)
 from .social import find_species, friend_ids, revealed_species_ids, species_out
 from .storage import get_storage
 
@@ -49,7 +49,7 @@ async def lifespan(app: FastAPI):
     get_storage()
     with SessionLocal() as db:
         seed_species(db, settings.species_csv)
-    dex.load(settings.details_csv, settings.ranges_json)
+    dex.load(settings.details_csv, settings.ranges_json, settings.hotspots_json)
     if clf.get_classifier() is None:
         clf.load_classifier(settings.model_path)
     yield
@@ -131,15 +131,43 @@ def california_outline():
 
 @app.get("/species/{key}/dex", response_model=DexOut)
 def get_dex_entry(key: str, user: User | None = Depends(optional_user), db: Session = Depends(get_db)):
-    """Size, weight and the sighting map are hints, so they show even while the
-    name is hidden. The fun fact unlocks when you catch the species yourself."""
+    """Size, weight, active time, hotspot parks and the sighting map are hints,
+    so they show even while the name is hidden. The where-to-find and spotting
+    tips can name the animal, so they wait until it's revealed. The fun fact
+    unlocks when you catch the species yourself."""
     s = find_species(db, key)
     d = dex.details(s.slug)
+    revealed = s.id in revealed_species_ids(db, user)
     caught = user is not None and db.scalar(select(Badge.id).where(
         Badge.user_id == user.id, Badge.species_id == s.id)) is not None
-    return DexOut(species=species_out(s, s.id in revealed_species_ids(db, user)),
-                  size=d.get("size"), weight=d.get("weight"),
-                  fun_fact=d.get("fun_fact") if caught else None, range=dex.range_for(s.slug))
+    return DexOut(species=species_out(s, revealed), size=d.get("size"), weight=d.get("weight"),
+                  fun_fact=d.get("fun_fact") if caught else None,
+                  where_to_find=d.get("where_to_find") if revealed else None,
+                  active_time=d.get("active_time"),
+                  spotting_tip=d.get("spotting_tip") if revealed else None,
+                  hotspots=dex.hotspots_for(s.slug), range=dex.range_for(s.slug))
+
+
+@app.get("/hotspots", response_model=list[HotspotOut])
+def list_hotspots(user: User | None = Depends(optional_user), db: Session = Depends(get_db)):
+    """Parks and the listed species seen there, parks with the most species first.
+    Species the viewer hasn't unlocked are listed without their names."""
+    by_slug = {s.slug: s for s in db.scalars(select(Species))}
+    revealed = revealed_species_ids(db, user)
+    out = []
+    for p in dex.hotspots():
+        species = []
+        for sp in p["species"]:
+            s = by_slug.get(sp["slug"])
+            if s is None:
+                continue
+            shown = s.id in revealed
+            species.append(HotspotSpecies(number=s.id, slug=s.slug if shown else None,
+                                          common_name=s.common_name if shown else None,
+                                          rarity=s.rarity, observations=sp["observations"]))
+        out.append(HotspotOut(id=p["id"], name=p["name"], lat=p["lat"], lon=p["lon"],
+                              blurb=p.get("blurb", ""), species=species))
+    return sorted(out, key=lambda h: -len(h.species))
 
 
 # --- captures & collection --------------------------------------------------

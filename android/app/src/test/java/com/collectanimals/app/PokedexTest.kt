@@ -23,7 +23,8 @@ class PokedexTest {
         assertEquals(100, slugs.size)
         for (slug in slugs) {
             val d = dex.details[slug]
-            assertTrue("no details for $slug", d != null && d.size.isNotBlank() && d.weight.isNotBlank() && d.funFact.isNotBlank())
+            assertTrue("no details for $slug", d != null && d.size.isNotBlank() && d.weight.isNotBlank() &&
+                d.funFact.isNotBlank() && d.whereToFind.isNotBlank())
             assertTrue("no range cells for $slug", dex.ranges.sightings(slug) > 0)
             for (c in dex.ranges.cells.getValue(slug)) {
                 assertTrue("$slug cell off grid", c[0] in 0 until dex.ranges.cols && c[1] in 0 until dex.ranges.rows)

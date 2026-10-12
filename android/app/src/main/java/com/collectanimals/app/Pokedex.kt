@@ -2,7 +2,7 @@ package com.collectanimals.app
 
 import org.json.JSONObject
 
-data class SpeciesDetails(val size: String, val weight: String, val funFact: String)
+data class SpeciesDetails(val size: String, val weight: String, val funFact: String, val whereToFind: String = "")
 
 /** Sighting counts on a lon/lat grid (species/ranges.json, built by ml/build_ranges.py). */
 class RangeGrid(val lon0: Double, val lat0: Double, val step: Double, val cols: Int, val rows: Int,
@@ -25,8 +25,9 @@ class Pokedex(val details: Map<String, SpeciesDetails>, val ranges: RangeGrid, v
             val header = rows.first()
             val idx = { name: String -> header.indexOf(name).also { require(it >= 0) { "details.csv lacks $name" } } }
             val (slug, size, weight, fact) = listOf(idx("slug"), idx("size"), idx("weight"), idx("fun_fact"))
+            val where = header.indexOf("where_to_find")  // optional column
             val details = rows.drop(1).filter { it.size > fact }.associate {
-                it[slug] to SpeciesDetails(it[size], it[weight], it[fact])
+                it[slug] to SpeciesDetails(it[size], it[weight], it[fact], it.getOrElse(where) { "" })
             }
 
             val r = JSONObject(rangesJson)
