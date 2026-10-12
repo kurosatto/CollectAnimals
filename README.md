@@ -6,7 +6,9 @@ Starting with 100 California species (`species/california_100.csv`).
 
 ## Layout
 
-- `species/` — the species list (slug, names, category, rarity)
+- `species/` — the species list (slug, names, category, rarity) and `sprites/`, a 32×32
+  pixel-art sprite and silhouette per species (drawn by `tools/make_sprites.py`; a new
+  species needs a drawing added there, then rerun it)
 - `ml/` — dataset download from iNaturalist, fine-tuning, and a predict CLI
 - `backend/` — FastAPI app: accounts, photo captures, badges, collection, friends, photo albums and galleries, and a minimal web page
 - `android/` — offline Android app: runs the model on the phone, badges stored on the device
