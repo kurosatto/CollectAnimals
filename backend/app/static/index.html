@@ -26,7 +26,23 @@
   .tile .num { color:var(--muted); font-size:.75rem; }
   .rarity { font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; font-weight:600; }
   #result.win { border-color:var(--accent); }
+  .tile { cursor:pointer; }
+  .tile:hover { border-color:var(--accent); }
   .hidden { display:none; }
+  dialog { border:1px solid var(--line); border-radius:14px; background:var(--card); color:var(--ink);
+           padding:0; width:min(560px, calc(100vw - 32px)); }
+  dialog::backdrop { background:rgba(0,0,0,.45); }
+  .dex { padding:16px; }
+  .dex-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+  .dex-head h2 { margin:0; }
+  .dex-body { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px; margin-top:12px; }
+  @media (max-width:520px) { .dex-body { grid-template-columns:1fr; } }
+  .dex-map svg { width:100%; height:auto; display:block; }
+  .dex-map .land { fill:var(--bg); stroke:var(--muted); stroke-width:1.5; stroke-linejoin:round; }
+  .dex-map .cell { fill:var(--accent); }
+  .dex dt { font-size:.75rem; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin-top:10px; }
+  .dex dd { margin:2px 0 0; }
+  .dex .close { background:none; color:var(--muted); font-size:1.4rem; line-height:1; padding:0 4px; }
 </style>
 </head>
 <body>
@@ -63,6 +79,21 @@
     </div>
   </section>
 </main>
+<dialog id="dex"><div class="dex">
+  <div class="dex-head">
+    <div><div class="num muted" id="dex-num"></div><h2 id="dex-name"></h2>
+      <div class="muted" id="dex-sci"></div><div class="rarity" id="dex-rarity"></div></div>
+    <button class="close" id="dex-close" aria-label="Close">×</button>
+  </div>
+  <div class="dex-body">
+    <div class="dex-map"><div id="dex-map"></div><div class="muted" id="dex-map-note" style="font-size:.8rem"></div></div>
+    <dl>
+      <dt>Size</dt><dd id="dex-size"></dd>
+      <dt>Weight</dt><dd id="dex-weight"></dd>
+      <dt>Fun fact</dt><dd id="dex-fact"></dd>
+    </dl>
+  </div>
+</div></dialog>
 <script>
 const $ = (id) => document.getElementById(id);
 let token = null;
@@ -150,9 +181,59 @@ async function loadCollection() {
       <div class="muted sci"></div><div class="rarity" style="color:var(--${s.rarity})">${s.rarity}</div>`;
     t.querySelector(".name").textContent = s.common_name + (e.capture_count > 1 ? ` ×${e.capture_count}` : "");
     t.querySelector(".sci").textContent = s.scientific_name;
+    t.onclick = () => openDex(s.slug, i + 1, e.caught);
     grid.append(t);
   });
 }
+
+// California outline as [lon, lat]: coast from the Mexican border north, then the
+// Oregon line, the Nevada border and the Colorado River. Simplified, game-map detail.
+const CALIFORNIA = [[-117.12,32.53],[-117.25,32.75],[-117.28,33.0],[-117.4,33.2],[-117.6,33.39],
+  [-117.93,33.6],[-118.1,33.75],[-118.29,33.71],[-118.41,33.8],[-118.52,34.03],[-118.8,34.0],
+  [-119.2,34.15],[-119.7,34.4],[-120.47,34.45],[-120.62,34.75],[-120.64,35.15],[-120.88,35.4],
+  [-121.3,35.65],[-121.9,36.3],[-121.95,36.6],[-121.8,36.85],[-122.0,36.96],[-122.4,37.2],
+  [-122.5,37.5],[-122.51,37.78],[-122.75,37.95],[-123.0,38.0],[-123.1,38.3],[-123.7,38.95],
+  [-123.8,39.4],[-123.85,39.9],[-124.35,40.3],[-124.15,40.8],[-124.1,41.3],[-124.2,41.75],
+  [-124.21,42.0],[-120.0,42.0],[-120.0,39.0],[-114.63,35.0],[-114.57,34.8],[-114.43,34.3],
+  [-114.13,34.27],[-114.5,33.9],[-114.53,33.03],[-114.47,32.85],[-114.72,32.72]];
+const MAP = { lon0: -124.6, lat1: 42.2, kx: 40 * Math.cos(37 * Math.PI / 180), ky: 40 };
+const px = (lon, lat) => [(lon - MAP.lon0) * MAP.kx, (MAP.lat1 - lat) * MAP.ky];
+
+function rangeSvg(range) {
+  const w = px(-113.9, 0)[0], h = px(0, 32.3)[1];
+  const land = CALIFORNIA.map(([lon, lat]) => px(lon, lat).map((v) => v.toFixed(1)).join(",")).join(" ");
+  let cells = "";
+  if (range) {
+    const { lon0, lat0, step } = range.grid;
+    const max = Math.max(...range.cells.map((c) => c[2]));
+    for (const [col, row, n] of range.cells) {
+      const [x, y] = px(lon0 + col * step, lat0 + (row + 1) * step);
+      const op = (0.25 + 0.75 * Math.log1p(n) / Math.log1p(max)).toFixed(2);
+      cells += `<rect class="cell" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(step * MAP.kx).toFixed(1)}"
+        height="${(step * MAP.ky).toFixed(1)}" opacity="${op}"/>`;
+    }
+  }
+  return `<svg viewBox="0 0 ${w.toFixed(0)} ${h.toFixed(0)}" role="img" aria-label="Map of California sightings">
+    <polygon class="land" points="${land}"/>${cells}</svg>`;
+}
+
+async function openDex(slug, num, caught) {
+  const d = await api(`/species/${encodeURIComponent(slug)}/dex`);
+  const s = d.species;
+  $("dex-num").textContent = `#${String(num).padStart(3, "0")}`;
+  $("dex-name").textContent = s.common_name;
+  $("dex-sci").textContent = s.scientific_name;
+  $("dex-rarity").textContent = s.rarity;
+  $("dex-rarity").style.color = `var(--${s.rarity})`;
+  $("dex-map").innerHTML = rangeSvg(d.range);
+  $("dex-map-note").textContent = d.range ? "Where it's been seen (iNaturalist)" : "Sighting map coming soon";
+  $("dex-size").textContent = d.size || "Unknown";
+  $("dex-weight").textContent = d.weight || "Unknown";
+  $("dex-fact").textContent = caught ? (d.fun_fact || "—") : "🔒 Catch one to unlock its fun fact.";
+  $("dex").showModal();
+}
+$("dex-close").onclick = () => $("dex").close();
+$("dex").onclick = (e) => { if (e.target === $("dex")) $("dex").close(); };
 
 async function render() {
   const authed = !!token;

@@ -124,3 +124,25 @@ def test_rejects_non_image(client, fake):
     r = client.post("/captures", headers=signup(client),
                     files={"photo": ("x.jpg", b"not an image", "image/jpeg")})
     assert r.status_code == 400
+
+
+def test_dex_entry(client):
+    from app import dex
+    from app.config import settings
+
+    tmp = tempfile.mkdtemp()
+    ranges = os.path.join(tmp, "ranges.json")
+    with open(ranges, "w") as fh:
+        fh.write('{"grid": {"lon0": -124.5, "lat0": 32.5, "step": 0.25, "cols": 42, "rows": 38},'
+                 ' "species": {"coyote": [[10, 20, 5]]}}')
+    from pathlib import Path
+    dex.load(settings.details_csv, Path(ranges))
+
+    r = client.get("/species/coyote/dex").json()
+    assert r["species"]["common_name"] == "Coyote"
+    assert r["size"] and r["weight"] and r["fun_fact"]
+    assert r["range"]["cells"] == [[10, 20, 5]] and r["range"]["grid"]["step"] == 0.25
+
+    r = client.get("/species/bobcat/dex").json()
+    assert r["fun_fact"] and r["range"] is None
+    assert client.get("/species/nope/dex").status_code == 404
