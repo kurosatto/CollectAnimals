@@ -106,6 +106,19 @@
     nav#tabs button { grid-auto-flow:column; justify-content:center; gap:6px; font-size:.95rem; padding:10px; }
     body.authed main { padding-bottom:16px; }
   }
+  button.link.user { font-weight:600; color:inherit; text-align:left; }
+  .profile-actions { margin:12px 0 0; }
+  #album h3 { margin:18px 0 8px; font-size:1rem; }
+  .bar-row { display:grid; grid-template-columns:8.5em 1fr 3.5em; gap:8px; align-items:center; font-size:.85rem; margin:4px 0; }
+  .bar-row .muted { text-align:right; }
+  .bar { height:8px; border-radius:99px; background:var(--bg); border:1px solid var(--line); overflow:hidden; }
+  .bar > div { height:100%; background:var(--accent); }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .chip { border:1px solid var(--line); border-radius:999px; padding:3px 10px; font-size:.85rem; }
+  .chip.legend { border-color:var(--legendary); color:var(--legendary); }
+  .achievements { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; }
+  .ach { border:1px solid var(--line); border-radius:10px; padding:8px; display:grid; gap:2px; font-size:.8rem; opacity:.6; }
+  .ach.on { opacity:1; border-color:var(--legendary); }
   label.inline { display:flex; align-items:center; gap:6px; font-size:.9rem; color:var(--muted); }
 </style>
 </head>
@@ -113,7 +126,7 @@
 <main>
   <header>
     <h1>CollectAnimals <span class="muted" style="font-size:1rem">California</span></h1>
-    <div id="who" class="hidden"><span id="username"></span> · <button class="link" id="logout">Log out</button></div>
+    <div id="who" class="hidden"><button class="link" id="username"></button> · <button class="link" id="logout">Log out</button></div>
   </header>
 
 <nav id="tabs" class="hidden">
@@ -213,7 +226,7 @@
     <div><h2 id="album-title"></h2><div class="muted" id="album-sub"></div></div>
     <button class="close" id="album-close" aria-label="Close">×</button>
   </div>
-  <div id="album-photos" class="photos"></div>
+  <div id="album-photos"></div>
 </div></dialog>
 <script>
 const $ = (id) => document.getElementById(id);
@@ -266,6 +279,7 @@ $("auth-form").onsubmit = async (e) => {
 };
 
 $("logout").onclick = () => setToken(null);
+$("username").onclick = () => openProfile($("username").textContent);
 
 function here() {
   if (!$("use-location").checked || !navigator.geolocation) return Promise.resolve(null);
@@ -487,7 +501,8 @@ function photoCard(p, { showSpecies = false, onChange } = {}) {
   const img = el("img"); img.src = p.url; img.alt = p.species.common_name || "Animal photo"; img.loading = "lazy";
   const meta = el("div", "meta");
   const who = el("div", "who");
-  who.append(el("span", "", showSpecies ? (p.species.common_name || "???") : p.username + (p.is_mine ? " (you)" : "")));
+  who.append(showSpecies ? el("span", "", p.species.common_name || "???")
+                         : userLink(p.username, p.username + (p.is_mine ? " (you)" : "")));
   if (p.rank) who.append(el("span", "rank", p.rank <= 3 ? ["🥇", "🥈", "🥉"][p.rank - 1] : `#${p.rank}`));
   meta.append(who, el("span", "muted", fmtDate(p.taken_on)));
   if (p.latitude != null) {
@@ -578,15 +593,91 @@ async function loadGallery() {
   } catch (err) { note.textContent = err.message; }
 }
 
-async function openAlbum(username) {
-  const a = await api(`/users/${encodeURIComponent(username)}/album`);
-  $("album-title").textContent = `${a.username}'s album`;
-  $("album-sub").textContent = `${a.caught} / ${a.total} caught`;
-  const grid = $("album-photos");
-  grid.innerHTML = "";
-  if (!a.photos.length) grid.append(el("p", "muted", "No photos yet."));
-  a.photos.forEach((p) => grid.append(photoCard(p, { showSpecies: true })));
-  $("album").showModal();
+// --- player profiles ----------------------------------------------------------
+
+const CATEGORY_NAMES = { mammal: "Mammals", bird: "Birds", reptile: "Reptiles", amphibian: "Amphibians",
+                         invertebrate: "Bugs & critters", marine: "Ocean" };
+
+function userLink(username, label) {
+  const b = el("button", "link user", label || username);
+  b.type = "button";
+  b.onclick = (e) => { e.stopPropagation(); openProfile(username); };
+  return b;
+}
+
+function bar(label, t, color) {
+  const row = el("div", "bar-row");
+  const track = el("div", "bar");
+  const fill = el("div");
+  fill.style.width = `${t.total ? (100 * t.caught) / t.total : 0}%`;
+  if (color) fill.style.background = color;
+  track.append(fill);
+  row.append(el("span", "", label), track, el("span", "muted", `${t.caught}/${t.total}`));
+  return row;
+}
+
+async function openProfile(username) {
+  const box = $("album-photos");
+  box.innerHTML = "";
+  $("album-title").textContent = username;
+  $("album-sub").textContent = "Loading…";
+  if (!$("album").open) $("album").showModal();
+  let u;
+  try { u = await api(`/users/${encodeURIComponent(username)}`); }
+  catch (err) { $("album-sub").textContent = err.message; return; }
+  const joined = new Date(u.joined).toLocaleDateString(undefined, { month: "short", year: "numeric" });
+  $("album-title").textContent = u.friendship === "self" ? `${u.username} (you)` : u.username;
+  $("album-sub").textContent = `${u.caught} / ${u.total} caught · ♥ ${u.likes_received} · joined ${joined}`;
+
+  const act = el("div", "profile-actions");
+  const friendBtn = (label, cls, fn) => {
+    const b = el("button", cls, label);
+    b.onclick = async () => {
+      b.disabled = true;
+      try { await fn(); openProfile(u.username); loadFriends(); loadCollection(); } catch (err) { b.textContent = err.message; }
+    };
+    act.append(b);
+  };
+  const name = encodeURIComponent(u.username);
+  if (u.friendship === "none") friendBtn("Add friend", "", () => api("/friends/requests", { method: "POST",
+    headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: u.username }) }));
+  else if (u.friendship === "incoming") friendBtn("Accept friend request", "", () =>
+    api(`/friends/requests/${name}/accept`, { method: "POST" }));
+  else if (u.friendship === "requested") act.append(el("span", "muted", "Friend request sent"));
+  else if (u.friendship === "friends") act.append(el("span", "muted", "✓ Friends"));
+  if (act.childNodes.length) box.append(act);
+
+  const sec = (title) => { const h = el("h3", "", title); box.append(h); return h; };
+  sec("Rarity");
+  for (const r of ["common", "uncommon", "rare", "legendary"])
+    if (u.by_rarity[r]) box.append(bar(r[0].toUpperCase() + r.slice(1), u.by_rarity[r], `var(--${r})`));
+  if (u.legendaries.length) {
+    const shelf = el("div", "chips");
+    u.legendaries.forEach((s) => shelf.append(el("span", "chip legend", "⭐ " + (s.common_name || "???"))));
+    box.append(shelf);
+  }
+  sec("Groups");
+  for (const [cat, t] of Object.entries(u.by_category)) box.append(bar(CATEGORY_NAMES[cat] || cat, t));
+
+  sec("Photos");
+  const grid = el("div", "photos");
+  if (!u.photos.length) grid.append(el("p", "muted", "No photos yet."));
+  u.photos.forEach((p) => grid.append(photoCard(p, { showSpecies: true })));
+  box.append(grid);
+  if (u.hidden_photos) box.append(el("p", "muted",
+    `${u.hidden_photos} more photo${u.hidden_photos > 1 ? "s" : ""} of animals you haven't discovered yet.`));
+  const earned = u.achievements.filter((a) => a.earned).length;
+  sec(`Achievements · ${earned}/${u.achievements.length}`);
+  const ach = el("div", "achievements");
+  for (const a of [...u.achievements].sort((x, y) => y.earned - x.earned)) {
+    const d = el("div", "ach" + (a.earned ? " on" : ""));
+    d.title = a.description;
+    d.append(el("strong", "", (a.earned ? "🏆 " : "🔒 ") + a.title),
+             el("span", "muted", a.earned ? a.description : `${a.progress}/${a.goal} · ${a.description}`));
+    ach.append(d);
+  }
+  box.append(ach);
+
 }
 $("album-close").onclick = () => $("album").close();
 $("album").onclick = (e) => { if (e.target === $("album")) $("album").close(); };
@@ -622,7 +713,7 @@ function feedItem(p) {
   else row.append(el("div", "mystery", "?"));
   const what = el("div", "what");
   const line = el("div");
-  line.append(el("strong", "", p.is_mine ? "You" : p.username), " caught ");
+  line.append(p.is_mine ? el("strong", "", "You") : userLink(p.username), " caught ");
   const name = el("strong", "", s.revealed ? article(s.common_name) : `a mystery ${s.category}`);
   name.style.color = `var(--${s.rarity})`;
   line.append(name);
@@ -700,7 +791,9 @@ async function loadFriends() {
     const ul = el("ul", "people");
     for (const p of people) {
       const li = el("li");
-      li.append(el("span", "", p.username + (p.caught ? ` · ${p.caught} caught` : "")));
+      const who = el("span");
+      who.append(userLink(p.username), p.caught ? ` · ${p.caught} caught` : "");
+      li.append(who);
       const btns = el("span");
       for (const [label, cls, fn] of actions) {
         const b = el("button", cls, label);
@@ -719,7 +812,7 @@ async function loadFriends() {
   section("Friend requests", f.incoming, [
     ["Accept", "", (u) => api(`/friends/requests/${encodeURIComponent(u)}/accept`, { method: "POST" })],
     ["Decline", "ghost", del]]);
-  section("Your friends", f.friends, [["Album", "", openAlbum], ["Remove", "ghost", del]]);
+  section("Your friends", f.friends, [["Profile", "", openProfile], ["Remove", "ghost", del]]);
   section("Waiting for them to accept", f.outgoing, [["Cancel", "ghost", del]]);
   if (!f.friends.length && !f.incoming.length && !f.outgoing.length)
     box.append(el("p", "muted", "No friends yet. Add someone by their username."));
