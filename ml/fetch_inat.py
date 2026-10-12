@@ -167,8 +167,12 @@ def main():
     ap.add_argument("--size", default="medium", choices=["small", "medium", "large"],
                     help="medium is ~500px, plenty for 224-384px training")
     ap.add_argument("--only", nargs="*", help="limit to these slugs")
-    ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--workers", type=int, default=16,
+                    help="parallel photo downloads (from the AWS open-data bucket; "
+                         "API calls stay at ~1/sec regardless)")
     args = ap.parse_args()
+    # One pooled connection per download thread (requests defaults to 10).
+    session.mount("https://", requests.adapters.HTTPAdapter(pool_maxsize=args.workers))
 
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
