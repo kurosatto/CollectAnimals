@@ -18,8 +18,8 @@ from .auth import create_token, current_user, hash_password, verify_password
 from .config import settings
 from .db import Base, SessionLocal, engine, get_db
 from .models import Badge, Capture, Species, User
-from .schemas import (CaptureOut, CollectionEntry, CollectionOut, DexOut, PredictionOut, RegisterIn,
-                      SpeciesOut, TokenOut, UserOut)
+from .schemas import (CaptureOut, CollectionEntry, CollectionOut, DexOut, HotspotOut, HotspotSpecies,
+                      PredictionOut, RegisterIn, SpeciesOut, TokenOut, UserOut)
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -44,7 +44,7 @@ async def lifespan(app: FastAPI):
     settings.upload_dir.mkdir(parents=True, exist_ok=True)
     with SessionLocal() as db:
         seed_species(db, settings.species_csv)
-    dex.load(settings.details_csv, settings.ranges_json)
+    dex.load(settings.details_csv, settings.ranges_json, settings.hotspots_json)
     if clf.get_classifier() is None:
         clf.load_classifier(settings.model_path)
     yield
@@ -127,7 +127,22 @@ def get_dex_entry(slug: str, db: Session = Depends(get_db)):
     d = dex.details(slug)
     return DexOut(species=SpeciesOut.model_validate(s), size=d.get("size"), weight=d.get("weight"),
                   fun_fact=d.get("fun_fact"), where_to_find=d.get("where_to_find"),
-                  range=dex.range_for(slug))
+                  active_time=d.get("active_time"), spotting_tip=d.get("spotting_tip"),
+                  hotspots=dex.hotspots_for(slug), range=dex.range_for(slug))
+
+
+@app.get("/hotspots", response_model=list[HotspotOut])
+def list_hotspots(db: Session = Depends(get_db)):
+    """Parks and the listed species seen there, parks with the most species first."""
+    by_slug = {s.slug: s for s in db.scalars(select(Species))}
+    out = []
+    for p in dex.hotspots():
+        species = [HotspotSpecies(slug=sp["slug"], common_name=by_slug[sp["slug"]].common_name,
+                                  rarity=by_slug[sp["slug"]].rarity, observations=sp["observations"])
+                   for sp in p["species"] if sp["slug"] in by_slug]
+        out.append(HotspotOut(id=p["id"], name=p["name"], lat=p["lat"], lon=p["lon"],
+                              blurb=p.get("blurb", ""), species=species))
+    return sorted(out, key=lambda h: -len(h.species))
 
 
 # --- captures & collection --------------------------------------------------

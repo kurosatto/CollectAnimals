@@ -42,6 +42,16 @@
   .dex-map .cell { fill:var(--accent); }
   .dex dt { font-size:.75rem; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin-top:10px; }
   .dex dd { margin:2px 0 0; }
+  .hot-wrap { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.2fr); gap:16px; }
+  @media (max-width:640px) { .hot-wrap { grid-template-columns:1fr; } }
+  .hot-pin { fill:var(--legendary); stroke:var(--card); stroke-width:2; cursor:pointer; }
+  .hot-pin.on { fill:var(--accent); }
+  .hot-list { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
+  .hot-list button { background:var(--bg); color:var(--ink); border:1px solid var(--line); padding:6px 10px; font-size:.85rem; }
+  .hot-list button.on { border-color:var(--accent); color:var(--accent); }
+  .hot-species { display:flex; flex-wrap:wrap; gap:6px; padding:0; list-style:none; }
+  .hot-species li { border:1px solid var(--line); border-radius:999px; padding:3px 10px; font-size:.85rem; cursor:pointer; }
+  .hot-species li.caught { border-color:var(--accent); }
   .dex .close { background:none; color:var(--muted); font-size:1.4rem; line-height:1; padding:0 4px; }
 </style>
 </head>
@@ -73,6 +83,15 @@
       </form>
       <div id="result" class="card hidden"></div>
     </div>
+    <div class="card" id="hotspots-card">
+      <h2>Hotspots</h2>
+      <p class="muted" style="margin-top:0">Parks where you can spot lots of the 100. Tap a park to see which ones.</p>
+      <div class="hot-wrap">
+        <div class="dex-map" id="hot-map"></div>
+        <div id="hot-detail"><p class="muted">Pick a park on the map or the list.</p></div>
+      </div>
+      <div id="hot-list" class="hot-list"></div>
+    </div>
     <div class="card">
       <h2>Your collection <span id="progress" class="muted"></span></h2>
       <div id="grid" class="grid"></div>
@@ -89,6 +108,9 @@
     <div class="dex-map"><div id="dex-map"></div><div class="muted" id="dex-map-note" style="font-size:.8rem"></div>
       <p id="dex-where" style="margin:8px 0 0"></p></div>
     <dl>
+      <dt>Most active</dt><dd id="dex-active"></dd>
+      <dt>Spotting tip</dt><dd id="dex-tip"></dd>
+      <dt>Hotspots</dt><dd id="dex-hotspots"></dd>
       <dt>Size</dt><dd id="dex-size"></dd>
       <dt>Weight</dt><dd id="dex-weight"></dd>
       <dt>Fun fact</dt><dd id="dex-fact"></dd>
@@ -169,8 +191,14 @@ $("upload-form").onsubmit = async (e) => {
   } catch (err) { box.textContent = err.message; }
 };
 
+let caughtSlugs = new Set();
+let dexNumbers = {};
+
 async function loadCollection() {
   const c = await api("/me/collection");
+  caughtSlugs = new Set(c.entries.filter((e) => e.caught).map((e) => e.species.slug));
+  c.entries.forEach((e, i) => { dexNumbers[e.species.slug] = i + 1; });
+  loadHotspots();
   $("progress").textContent = `${c.caught} / ${c.total}`;
   const grid = $("grid");
   grid.innerHTML = "";
@@ -226,11 +254,69 @@ async function openDex(slug, num, caught) {
   $("dex-map").innerHTML = rangeSvg(d.range);
   $("dex-map-note").textContent = d.range ? "Where it's been seen (iNaturalist)" : "Sighting map coming soon";
   $("dex-where").textContent = d.where_to_find ? "📍 " + d.where_to_find : "";
+  $("dex-active").textContent = d.active_time || "Unknown";
+  $("dex-tip").textContent = d.spotting_tip || "—";
+  $("dex-hotspots").textContent = d.hotspots.length ? d.hotspots.join(", ") : "—";
   $("dex-size").textContent = d.size || "Unknown";
   $("dex-weight").textContent = d.weight || "Unknown";
   $("dex-fact").textContent = caught ? (d.fun_fact || "—") : "🔒 Catch one to unlock its fun fact.";
   $("dex").showModal();
 }
+let hotspots = [];
+let hotSelected = null;
+
+async function loadHotspots() {
+  try { hotspots = await api("/hotspots"); } catch { hotspots = []; }
+  $("hotspots-card").classList.toggle("hidden", !hotspots.length);
+  if (hotspots.length) drawHotspots();
+}
+
+function drawHotspots() {
+  const svg = rangeSvg(null).replace("</svg>", hotspots.map((h, i) => {
+    const [x, y] = px(h.lon, h.lat);
+    const r = 5 + Math.min(7, h.species.length / 6);
+    return `<circle class="hot-pin${hotSelected === i ? " on" : ""}" data-i="${i}" cx="${x.toFixed(1)}"
+      cy="${y.toFixed(1)}" r="${r.toFixed(1)}"><title></title></circle>`;
+  }).join("") + "</svg>");
+  $("hot-map").innerHTML = svg;
+  $("hot-map").querySelectorAll(".hot-pin").forEach((c) => {
+    const h = hotspots[+c.dataset.i];
+    c.querySelector("title").textContent = `${h.name}: ${h.species.length} species`;
+    c.onclick = () => selectHotspot(+c.dataset.i);
+  });
+  const list = $("hot-list");
+  list.innerHTML = "";
+  hotspots.forEach((h, i) => {
+    const b = document.createElement("button");
+    b.className = hotSelected === i ? "on" : "";
+    b.textContent = `${h.name} · ${h.species.length}`;
+    b.onclick = () => selectHotspot(i);
+    list.append(b);
+  });
+}
+
+function selectHotspot(i) {
+  hotSelected = i;
+  const h = hotspots[i];
+  const got = h.species.filter((s) => caughtSlugs.has(s.slug)).length;
+  const box = $("hot-detail");
+  box.innerHTML = `<h3 style="margin:0"></h3><p class="muted blurb"></p><p class="count"></p><ul class="hot-species"></ul>`;
+  box.querySelector("h3").textContent = h.name;
+  box.querySelector(".blurb").textContent = h.blurb;
+  box.querySelector(".count").textContent =
+    `You can spot ${h.species.length} of the 100 here. You've caught ${got} of them.`;
+  const ul = box.querySelector("ul");
+  for (const s of h.species) {
+    const li = document.createElement("li");
+    li.className = caughtSlugs.has(s.slug) ? "caught" : "";
+    li.textContent = (caughtSlugs.has(s.slug) ? "✓ " : "") + s.common_name;
+    li.style.color = `var(--${s.rarity})`;
+    li.onclick = () => openDex(s.slug, dexNumbers[s.slug] || 0, caughtSlugs.has(s.slug));
+    ul.append(li);
+  }
+  drawHotspots();
+}
+
 $("dex-close").onclick = () => $("dex").close();
 $("dex").onclick = (e) => { if (e.target === $("dex")) $("dex").close(); };
 

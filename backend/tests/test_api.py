@@ -151,3 +151,30 @@ def test_dex_entry(client):
 def test_california_outline(client):
     r = client.get("/map/california")
     assert r.status_code == 200 and len(r.json()["rings"][0]) > 100
+
+
+def test_hotspots(client):
+    import json
+    from pathlib import Path
+
+    from app import dex
+    from app.config import settings
+
+    tmp = Path(tempfile.mkdtemp())
+    (tmp / "hotspots.json").write_text(json.dumps({"parks": [
+        {"id": "small", "name": "Small Park", "lat": 34.0, "lon": -118.0, "blurb": "b",
+         "species": [{"slug": "coyote", "observations": 24}]},
+        {"id": "big", "name": "Big Park", "lat": 36.5, "lon": -121.2, "blurb": "b",
+         "species": [{"slug": "california_condor", "observations": 800},
+                     {"slug": "coyote", "observations": 50}, {"slug": "not_listed", "observations": 9}]},
+    ]}))
+    dex.load(settings.details_csv, settings.ranges_json, tmp / "hotspots.json")
+
+    parks = client.get("/hotspots").json()
+    assert [p["name"] for p in parks] == ["Big Park", "Small Park"]
+    assert [s["slug"] for s in parks[0]["species"]] == ["california_condor", "coyote"]
+    assert parks[0]["species"][0]["common_name"] == "California Condor"
+
+    r = client.get("/species/coyote/dex").json()
+    assert r["hotspots"] == ["Big Park", "Small Park"]
+    assert r["active_time"] and r["spotting_tip"]
