@@ -178,3 +178,11 @@ def test_hotspots(client):
     r = client.get("/species/coyote/dex").json()
     assert r["hotspots"] == ["Big Park", "Small Park"]
     assert r["active_time"] and r["spotting_tip"]
+
+
+def test_login_rate_limit(client):
+    signup(client, "carol")
+    for _ in range(10):
+        assert client.post("/auth/login", data={"username": "carol", "password": "wrong-pass"}).status_code == 401
+    r = client.post("/auth/login", data={"username": "carol", "password": "hunter2hunter2"})
+    assert r.status_code == 429

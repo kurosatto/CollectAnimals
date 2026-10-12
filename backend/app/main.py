@@ -1,5 +1,6 @@
 import csv
 import io
+import time
 import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -50,7 +51,12 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="CollectAnimals", lifespan=lifespan)
+app = FastAPI(title="CollectAnimals", lifespan=lifespan,
+              **({"docs_url": None, "redoc_url": None, "openapi_url": None} if settings.public else {}))
+
+# Failed logins per account in the last LOGIN_WINDOW seconds; slows password guessing.
+LOGIN_WINDOW, LOGIN_MAX_FAILURES = 300, 10
+_failed_logins: dict[str, list[float]] = {}
 
 
 @app.get("/", include_in_schema=False)
@@ -61,7 +67,7 @@ def index():
 @app.get("/health")
 def health():
     return {"ok": True, "model_loaded": clf.get_classifier() is not None,
-            "model_error": clf.classifier_status()}
+            "model_error": None if settings.public else clf.classifier_status()}
 
 
 # --- auth -------------------------------------------------------------------
@@ -86,9 +92,16 @@ def register(body: RegisterIn, db: Session = Depends(get_db)):
 def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """Log in with email or username (sent in the OAuth2 `username` field)."""
     ident = form.username.strip()
+    now = time.monotonic()
+    recent = [t for t in _failed_logins.get(ident.lower(), []) if now - t < LOGIN_WINDOW]
+    if len(recent) >= LOGIN_MAX_FAILURES:
+        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS,
+                            "Too many failed logins. Try again in a few minutes.")
     user = db.scalar(select(User).where(or_(User.email == ident.lower(), User.username == ident)))
     if not user or not verify_password(form.password, user.password_hash):
+        _failed_logins[ident.lower()] = recent + [now]
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Wrong email/username or password")
+    _failed_logins.pop(ident.lower(), None)
     return TokenOut(access_token=create_token(user.id))
 
 

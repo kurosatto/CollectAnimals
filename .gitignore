@@ -6,3 +6,4 @@ data/
 models/
 backend/uploads/
 backend/*.db
+backend/.secret_key
