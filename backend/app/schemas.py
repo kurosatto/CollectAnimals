@@ -59,6 +59,9 @@ class DexOut(BaseModel):
     hotspots: list[str] = []
     # {"grid": {lon0, lat0, step, cols, rows}, "cells": [[col, row, count], ...]}
     range: dict | None = None
+    # {"months": [12 sighting counts], "hours": [24], "night_ratio": float | None}
+    season: dict | None = None
+    captured: bool = False
 
 
 class HotspotSpecies(BaseModel):

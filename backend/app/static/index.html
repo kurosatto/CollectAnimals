@@ -119,6 +119,18 @@
   .achievements { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; }
   .ach { border:1px solid var(--line); border-radius:10px; padding:8px; display:grid; gap:2px; font-size:.8rem; opacity:.6; }
   .ach.on { opacity:1; border-color:var(--legendary); }
+  .grid .tier { grid-column:1/-1; margin:14px 0 0; font-size:.8rem; text-transform:uppercase; letter-spacing:.06em; font-weight:700; }
+  .grid .tier:first-child { margin-top:0; }
+  .tile .status, .dex .status { font-size:.75rem; font-weight:600; margin-top:4px; }
+  .tile.mine { border-color:var(--accent); border-width:2px; }
+  .status.mine { color:var(--accent); }
+  .status.friend { color:var(--muted); }
+  .sprite.shadow { opacity:.55; }
+  .season { margin-top:12px; font-size:.85rem; }
+  .season .months { display:grid; grid-template-columns:repeat(12,1fr); gap:2px; align-items:end; height:40px; margin-top:6px; }
+  .season .months div { background:var(--accent); border-radius:2px 2px 0 0; min-height:2px; }
+  .season .months div.low { opacity:.35; }
+  .season .labels { display:grid; grid-template-columns:repeat(12,1fr); font-size:.6rem; color:var(--muted); text-align:center; }
   label.inline { display:flex; align-items:center; gap:6px; font-size:.9rem; color:var(--muted); }
 </style>
 </head>
@@ -203,12 +215,14 @@
   <div class="dex-head">
     <img class="sprite dex-sprite" id="dex-sprite" alt="">
     <div style="flex:1"><div class="num muted" id="dex-num"></div><h2 id="dex-name"></h2>
-      <div class="muted" id="dex-sci"></div><div class="rarity" id="dex-rarity"></div></div>
+      <div class="muted" id="dex-sci"></div><div class="rarity" id="dex-rarity"></div>
+      <div class="status" id="dex-status"></div></div>
     <button class="close" id="dex-close" aria-label="Close">×</button>
   </div>
   <div class="dex-body">
     <div class="dex-map"><div id="dex-map"></div><div class="muted" id="dex-map-note" style="font-size:.8rem"></div>
-      <p id="dex-where" style="margin:8px 0 0"></p></div>
+      <p id="dex-where" style="margin:8px 0 0"></p>
+      <div id="dex-season" class="season"></div></div>
     <dl>
       <dt>Most active</dt><dd id="dex-active"></dd>
       <dt>Spotting tip</dt><dd id="dex-tip"></dd>
@@ -397,22 +411,41 @@ function pickPanel(r, box) {
 let caughtNums = new Set();
 let dexNumbers = {};
 
+// Dex order: common animals first, legendaries last; grouped by kind within each tier.
+const RARITY_ORDER = ["common", "uncommon", "rare", "legendary"];
+const CATEGORY_ORDER = ["mammal", "bird", "reptile", "amphibian", "invertebrate", "marine"];
+const dexSort = (a, b) => RARITY_ORDER.indexOf(a.rarity) - RARITY_ORDER.indexOf(b.rarity)
+  || CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category) || a.number - b.number;
+const silhouetteUrl = (number) => `/sprites/silhouette/${number}.png`;
+
 async function loadCollection() {
   const c = await api("/me/collection");
-  caughtNums = new Set(c.entries.filter((e) => e.caught).map((e) => e.species.number));
-  c.entries.forEach((e, i) => { dexNumbers[e.species.number] = i + 1; });
+  const entries = [...c.entries].sort((a, b) => dexSort(a.species, b.species));
+  caughtNums = new Set(entries.filter((e) => e.caught).map((e) => e.species.number));
+  entries.forEach((e, i) => { dexNumbers[e.species.number] = i + 1; });
   loadHotspots();
   $("progress").textContent = `${c.caught} / ${c.total}`;
   const grid = $("grid");
   grid.innerHTML = "";
-  c.entries.forEach((e, i) => {
-    const t = document.createElement("div");
+  let tier = null;
+  entries.forEach((e, i) => {
     const s = e.species;
-    t.className = "tile" + (e.caught ? "" : " locked") + (!e.caught && s.revealed ? " hinted" : "");
+    if (s.rarity !== tier) {
+      tier = s.rarity;
+      const all = entries.filter((x) => x.species.rarity === tier);
+      const h = el("div", "tier", `${tier} · ${all.filter((x) => x.caught).length}/${all.length}`);
+      h.style.color = `var(--${tier})`;
+      grid.append(h);
+    }
+    const t = document.createElement("div");
+    // Three looks: yours (captured), seen by a friend (colour sprite, not yours), unknown (silhouette).
+    const state = e.caught ? "mine" : s.revealed ? "friend" : "unknown";
+    t.className = "tile " + state + (state === "mine" ? "" : " locked") + (state === "friend" ? " hinted" : "");
+    const sprite = s.slug ? spriteUrl(s.slug, true) : silhouetteUrl(s.number);
     t.innerHTML = `<div class="num">#${String(i + 1).padStart(3, "0")}</div>
-      ${s.slug ? `<img class="sprite" alt="" src="${spriteUrl(s.slug, e.caught)}">` : ""}<div class="name"></div>
+      <img class="sprite${state === "unknown" ? " shadow" : ""}" alt="" src="${sprite}"><div class="name"></div>
       <div class="muted sci"></div><div class="rarity" style="color:var(--${s.rarity})">${s.rarity}</div>
-      <div class="friends"></div>`;
+      <div class="status"></div>`;
     if (e.photo_url) {
       const img = document.createElement("img");
       img.className = "thumb"; img.src = e.photo_url; img.alt = ""; img.loading = "lazy";
@@ -421,8 +454,12 @@ async function loadCollection() {
     t.querySelector(".name").textContent = s.revealed
       ? s.common_name + (e.capture_count > 1 ? ` ×${e.capture_count}` : "") : "???";
     t.querySelector(".sci").textContent = s.revealed ? s.scientific_name : `Unknown ${s.category}`;
-    if (e.friends_caught) t.querySelector(".friends").textContent =
-      `👥 ${e.friends_caught} friend${e.friends_caught > 1 ? "s" : ""} captured it`;
+    const st = t.querySelector(".status");
+    if (state === "mine") { st.textContent = "✓ Captured"; st.classList.add("mine"); }
+    else if (state === "friend") {
+      st.textContent = `Not yours yet · 👥 ${e.friends_caught} friend${e.friends_caught > 1 ? "s" : ""} captured it`;
+      st.classList.add("friend");
+    }
     t.onclick = () => openDex(s.number, i + 1, e.caught);
     grid.append(t);
   });
@@ -459,11 +496,53 @@ function rangeSvg(range) {
     <path class="land" d="${land}"/>${cells}</svg>`;
 }
 
+// "When to look": sightings by month (Animal Crossing style) and a day/night hint.
+const MONTHS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+function bestMonths(months) {
+  const max = Math.max(...months);
+  const good = months.map((n) => n >= 0.6 * max);
+  if (good.every(Boolean)) return "All year";
+  // Runs of good months, wrapping from December into January.
+  const start = good.findIndex((g, i) => g && !good[(i + 11) % 12]);
+  const runs = [];
+  for (let k = 0, i = start; k < 12; k++, i = (i + 1) % 12) {
+    if (good[i] && !good[(i + 11) % 12]) runs.push([i, i]);
+    else if (good[i]) runs[runs.length - 1][1] = i;
+  }
+  return runs.map(([a, b]) => a === b ? MONTH_NAMES[a] : `${MONTH_NAMES[a]}–${MONTH_NAMES[b]}`).join(", ");
+}
+function drawSeason(season) {
+  const box = $("dex-season");
+  box.innerHTML = "";
+  if (!season || !season.months.some((n) => n)) return;
+  const r = season.night_ratio;
+  const when = r == null ? "" : r >= 1.8 ? "🌙 Often out at night" : r >= 1.2 ? "🌗 Day and night"
+    : r <= 0.5 ? "☀️ Daytime" : "☀️ Mostly daytime";
+  box.append(el("strong", "", "When to look"), el("div", "", `📅 Best months: ${bestMonths(season.months)}`));
+  if (when) box.append(el("div", "", when));
+  const max = Math.max(...season.months);
+  const bars = el("div", "months");
+  season.months.forEach((n, i) => {
+    const b = el("div", n < 0.6 * max ? "low" : "");
+    b.style.height = `${Math.max(5, (100 * n) / max)}%`;
+    b.title = `${MONTH_NAMES[i]}: ${n} sightings`;
+    bars.append(b);
+  });
+  const labels = el("div", "labels");
+  MONTHS.forEach((m) => labels.append(el("span", "", m)));
+  box.append(bars, labels);
+}
+
 async function openDex(key, num, caught) {
   const d = await api(`/species/${encodeURIComponent(key)}/dex`);
   const s = d.species;
-  $("dex-sprite").classList.toggle("hidden", !s.slug);
-  if (s.slug) $("dex-sprite").src = spriteUrl(s.slug, caught);
+  $("dex-sprite").src = s.slug ? spriteUrl(s.slug, true) : silhouetteUrl(s.number);
+  $("dex-sprite").classList.toggle("shadow", !s.slug);
+  const st = $("dex-status");
+  st.className = "status " + (d.captured ? "mine" : s.revealed ? "friend" : "");
+  st.textContent = d.captured ? "✓ Captured by you"
+    : s.revealed ? "Not captured by you yet. A friend has seen it." : "";
   $("dex-num").textContent = `#${String(num).padStart(3, "0")}`;
   $("dex-name").textContent = s.revealed ? s.common_name : "???";
   $("dex-sci").textContent = s.revealed ? s.scientific_name
@@ -478,7 +557,8 @@ async function openDex(key, num, caught) {
   $("dex-hotspots").textContent = d.hotspots.length ? d.hotspots.join(", ") : "—";
   $("dex-size").textContent = d.size || "Unknown";
   $("dex-weight").textContent = d.weight || "Unknown";
-  $("dex-fact").textContent = caught ? (d.fun_fact || "—") : "🔒 Capture one to unlock its fun fact.";
+  $("dex-fact").textContent = d.fun_fact || "🔒 Capture one, or have a friend capture one, to unlock its fun fact.";
+  drawSeason(d.season);
   gallery = { species: s, scope: "all", sort: "top" };
   loadGallery();
   $("dex").showModal();

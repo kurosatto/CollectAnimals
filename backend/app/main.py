@@ -50,7 +50,7 @@ async def lifespan(app: FastAPI):
     get_storage()
     with SessionLocal() as db:
         seed_species(db, settings.species_csv)
-    dex.load(settings.details_csv, settings.ranges_json, settings.hotspots_json)
+    dex.load(settings.details_csv, settings.ranges_json, settings.hotspots_json, settings.seasons_json)
     places.load(settings.places_json)
     if clf.get_classifier() is None:
         clf.load_classifier(settings.model_path)
@@ -69,6 +69,17 @@ app.include_router(social.router)
 @app.get("/", include_in_schema=False)
 def index():
     return FileResponse(STATIC_DIR / "index.html")
+
+
+@app.get("/sprites/silhouette/{number}.png", include_in_schema=False)
+def silhouette_by_number(number: int, db: Session = Depends(get_db)):
+    """The silhouette for a species that's still hidden, by Dex number, so the
+    URL doesn't give away its name."""
+    s = db.get(Species, number)
+    path = settings.sprites_dir / f"{s.slug}_silhouette.png" if s else None
+    if not path or not path.is_file():
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No such sprite")
+    return FileResponse(path, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
 
 
 @app.get("/sprites/{name}.png", include_in_schema=False)
@@ -157,19 +168,20 @@ def california_outline():
 def get_dex_entry(key: str, user: User | None = Depends(optional_user), db: Session = Depends(get_db)):
     """Size, weight, active time, hotspot parks and the sighting map are hints,
     so they show even while the name is hidden. The where-to-find and spotting
-    tips can name the animal, so they wait until it's revealed. The fun fact
-    unlocks when you catch the species yourself."""
+    tips can name the animal, so they wait until it's revealed, and so does the
+    fun fact (your own capture or a friend's reveals it)."""
     s = find_species(db, key)
     d = dex.details(s.slug)
     revealed = s.id in revealed_species_ids(db, user)
     caught = user is not None and db.scalar(select(Badge.id).where(
         Badge.user_id == user.id, Badge.species_id == s.id)) is not None
     return DexOut(species=species_out(s, revealed), size=d.get("size"), weight=d.get("weight"),
-                  fun_fact=d.get("fun_fact") if caught else None,
+                  fun_fact=d.get("fun_fact") if revealed else None,
                   where_to_find=d.get("where_to_find") if revealed else None,
                   active_time=d.get("active_time"),
                   spotting_tip=d.get("spotting_tip") if revealed else None,
-                  hotspots=dex.hotspots_for(s.slug), range=dex.range_for(s.slug))
+                  hotspots=dex.hotspots_for(s.slug), range=dex.range_for(s.slug),
+                  season=dex.season_for(s.slug), captured=caught)
 
 
 @app.get("/hotspots", response_model=list[HotspotOut])

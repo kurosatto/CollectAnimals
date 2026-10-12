@@ -64,8 +64,9 @@ def test_names_revealed_by_friends(client, fake):
     entry = next(e for e in client.get("/me/collection", headers=ana).json()["entries"]
                  if e["species"]["slug"] == "bobcat")
     assert not entry["caught"] and entry["friends_caught"] == 1
-    # The fun fact still needs your own catch.
-    assert client.get("/species/bobcat/dex", headers=ana).json()["fun_fact"] is None
+    # A friend's capture unlocks the full entry, but it isn't yours.
+    d = client.get("/species/bobcat/dex", headers=ana).json()
+    assert d["fun_fact"] and not d["captured"]
 
     client.delete("/friends/ana", headers=bob)
     assert names(client, ana) == set()

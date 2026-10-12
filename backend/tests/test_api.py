@@ -177,6 +177,27 @@ def test_dex_entry(client, fake):
     assert client.get("/species/nope/dex").status_code == 404
 
 
+def test_dex_season_compares_night_sightings_with_the_average(client):
+    import json
+    from pathlib import Path
+
+    from app import dex
+    from app.config import settings
+
+    day = [0] * 6 + [10] * 14 + [0] * 4      # all daytime
+    night = [10] * 6 + [0] * 14 + [10] * 4   # all night
+    tmp = Path(tempfile.mkdtemp())
+    (tmp / "seasons.json").write_text(json.dumps({"species": {
+        "coyote": {"months": [1] * 12, "hours": day},
+        "barn_owl": {"months": [0, 0, 5, 9, 9, 5, 0, 0, 0, 0, 0, 0], "hours": night}}}))
+    dex.load(settings.details_csv, settings.ranges_json, None, tmp / "seasons.json")
+    owl = client.get("/species/barn_owl/dex").json()["season"]
+    assert owl["months"][3] == 9 and owl["night_ratio"] == 2.0
+    assert client.get("/species/coyote/dex").json()["season"]["night_ratio"] == 0.0
+    assert client.get("/species/bobcat/dex").json()["season"] is None
+    dex.load(settings.details_csv, settings.ranges_json, settings.hotspots_json, settings.seasons_json)
+
+
 def test_california_outline(client):
     r = client.get("/map/california")
     assert r.status_code == 200 and len(r.json()["rings"][0]) > 100

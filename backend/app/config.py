@@ -37,6 +37,8 @@ class Settings:
         "RANGES_JSON", ROOT / "species" / "ranges.json")))
     hotspots_json: Path = field(default_factory=lambda: Path(os.getenv(
         "HOTSPOTS_JSON", ROOT / "species" / "hotspots.json")))
+    seasons_json: Path = field(default_factory=lambda: Path(os.getenv(
+        "SEASONS_JSON", ROOT / "species" / "seasons.json")))
     places_json: Path = field(default_factory=lambda: Path(os.getenv(
         "PLACES_JSON", ROOT / "species" / "ca_places.json")))
     sprites_dir: Path = field(default_factory=lambda: Path(os.getenv(
