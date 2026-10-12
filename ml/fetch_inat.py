@@ -132,7 +132,7 @@ def download(url: str, dest: Path) -> bool:
         return False
     tmp = dest.with_suffix(".part")
     tmp.write_bytes(resp.content)
-    tmp.rename(dest)
+    tmp.replace(dest)  # rename() fails on Windows if dest already exists
     return True
 
 
@@ -145,7 +145,9 @@ def fetch_class(name: str, out_dir: Path, limit: int, size: str, pool, attributi
         photo = obs["photos"][0]
         pid = str(photo["id"])
         if pid not in have:
-            # Photos already on disk were recorded by an earlier run.
+            # Photos already on disk were recorded by an earlier run; the same
+            # photo can also show up twice in the paging, so queue it once.
+            have.add(pid)
             attribution.writerow(
                 [name, pid, obs["id"], obs.get("taxon", {}).get("name", ""),
                  photo.get("license_code", ""), photo.get("attribution", ""),
