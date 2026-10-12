@@ -40,6 +40,10 @@ Without a trained model the API still runs; captures report that no model is loa
   lists everyone's album photos for a species, ranked by likes. You need the
   species unlocked to see it. Photos that never made it into an album are
   never served.
+- **Deleting.** "Delete photo" on your own photo (`DELETE /photos/{id}` or
+  `DELETE /me/album/{species}`) removes it from your album, the gallery and
+  the feed, drops its likes and deletes the file. You keep the badge, and
+  your next catch of that animal becomes the new album photo.
 - **News feed.** `GET /feed?scope=near|friends|all` lists the newest catches
   with the place and time. The page defaults to "Near me" (`lat`, `lon`,
   `radius_km`, 50 km by default, 10 km minimum) and falls back to all of

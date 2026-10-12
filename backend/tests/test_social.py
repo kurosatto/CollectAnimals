@@ -283,3 +283,33 @@ def test_feed_uncaught_only(client, fake):
     # Only bob's bobcat is left, still hidden from ana.
     assert len(only) == 1 and only[0]["species"]["common_name"] is None and only[0]["url"] is None
     assert len(client.get("/feed?uncaught=true", headers=bob).json()["photos"]) == 0
+
+
+def test_delete_photo(client, fake):
+    from app.config import settings
+
+    ana, bob = signup(client, "ana"), signup(client, "bob")
+    r = catch(client, fake, ana, "coyote", latitude=37.77, longitude=-122.42)
+    catch(client, fake, bob, "coyote")
+    photo = client.get("/me/album", headers=ana).json()["photos"][0]
+    assert client.post(f"/photos/{photo['id']}/like", headers=bob).status_code == 204
+    key = photo["url"].rsplit("/", 1)[1]
+    assert (settings.upload_dir / key).exists()
+
+    # Only the owner can delete it.
+    assert client.delete(f"/photos/{photo['id']}", headers=bob).status_code == 404
+    assert client.delete(f"/photos/{photo['id']}", headers=ana).status_code == 204
+
+    # Gone from the album, gallery, feed and disk; the badge stays.
+    assert client.get("/me/album", headers=ana).json()["photos"] == []
+    assert [p["username"] for p in client.get("/species/coyote/photos", headers=bob).json()["photos"]] == ["bob"]
+    assert [p["username"] for p in client.get("/feed", headers=bob).json()["photos"]] == ["bob"]
+    assert client.get(photo["url"]).status_code == 404 and not (settings.upload_dir / key).exists()
+    col = client.get("/me/collection", headers=ana).json()
+    assert col["caught"] == 1
+    assert client.put("/me/album/coyote", headers=ana,
+                      json={"capture_id": r["capture_id"]}).status_code == 400
+
+    # The next catch becomes the new album photo.
+    assert catch(client, fake, ana, "coyote")["album_photo_id"]
+    assert client.delete(f"/photos/{photo['id']}", headers=ana).status_code == 404
