@@ -626,7 +626,7 @@ async function openProfile(username) {
   try { u = await api(`/users/${encodeURIComponent(username)}`); }
   catch (err) { $("album-sub").textContent = err.message; return; }
   const joined = new Date(u.joined).toLocaleDateString(undefined, { month: "short", year: "numeric" });
-  $("album-title").textContent = u.friendship === "self" ? `${u.username} (you)` : u.username;
+  $("album-title").textContent = (u.friendship === "self" ? `${u.username} (you)` : u.username) + (u.is_bot ? " 🤖" : "");
   $("album-sub").textContent = `${u.caught} / ${u.total} caught · ♥ ${u.likes_received} · joined ${joined}`;
 
   const act = el("div", "profile-actions");
@@ -645,6 +645,7 @@ async function openProfile(username) {
     api(`/friends/requests/${name}/accept`, { method: "POST" }));
   else if (u.friendship === "requested") act.append(el("span", "muted", "Friend request sent"));
   else if (u.friendship === "friends") act.append(el("span", "muted", "✓ Friends"));
+  if (u.is_bot) act.append(el("p", "muted", "A bot friend: a sample player who comes with the game."));
   if (act.childNodes.length) box.append(act);
 
   const sec = (title) => { const h = el("h3", "", title); box.append(h); return h; };
@@ -792,7 +793,7 @@ async function loadFriends() {
     for (const p of people) {
       const li = el("li");
       const who = el("span");
-      who.append(userLink(p.username), p.caught ? ` · ${p.caught} caught` : "");
+      who.append(userLink(p.username), p.is_bot ? " 🤖" : "", p.caught ? ` · ${p.caught} caught` : "");
       li.append(who);
       const btns = el("span");
       for (const [label, cls, fn] of actions) {
@@ -816,6 +817,11 @@ async function loadFriends() {
   section("Waiting for them to accept", f.outgoing, [["Cancel", "ghost", del]]);
   if (!f.friends.length && !f.incoming.length && !f.outgoing.length)
     box.append(el("p", "muted", "No friends yet. Add someone by their username."));
+  // Bot friends: sample players anyone can add, so the game isn't lonely at the start.
+  let bots = [];
+  try { bots = await api("/friends/suggestions"); } catch {}
+  section("Bot friends to add 🤖", bots, [["Add", "", (u) => api("/friends/requests", { method: "POST",
+    headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: u }) })]]);
 }
 
 $("friend-form").onsubmit = async (e) => {

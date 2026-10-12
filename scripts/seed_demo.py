@@ -1,10 +1,14 @@
-"""Fill a running server with a few demo players, friendships and catches.
+"""Fill a running server with the demo "bot friends" and their catches.
 
-Uploads real photos from the training set (data/images/<slug>/) through the
-normal API, so the model really identifies each one. Only catches the model
-accepts count, which is what a visitor would see too.
+Each bot catches two animals by uploading real photos from the training set
+(data/images/<slug>/) through the normal API, so the model really identifies
+each one. New players can add the bots as friends; being friends reveals the
+bots' animals, so each bot only has a couple.
 
-    python scripts/seed_demo.py --url http://127.0.0.1:8000
+Re-running trims any other catches the bots have (deleting a photo un-catches
+the animal) and, with --db, marks the accounts as bots in the database.
+
+    python scripts/seed_demo.py --url http://127.0.0.1:8000 --db backend/demo.db
 """
 
 import argparse
@@ -12,17 +16,15 @@ import json
 import os
 import random
 import secrets
+import sqlite3
 from pathlib import Path
 
 import requests
 
 PLAYERS = {
-    "trailblazer": ["california_condor", "sea_otter", "elk", "brown_pelican", "california_quail",
-                    "western_fence_lizard", "monarch", "mule_deer"],
-    "tidepooler": ["ochre_sea_star", "giant_green_anemone", "harbor_seal", "california_sea_lion",
-                   "western_gull", "brown_pelican"],
-    "birdnerd": ["annas_hummingbird", "acorn_woodpecker", "red_tailed_hawk", "great_blue_heron",
-                 "california_scrub_jay", "bald_eagle", "california_quail"],
+    "trailblazer": ["mule_deer", "sea_otter"],
+    "tidepooler": ["ochre_sea_star", "harbor_seal"],
+    "birdnerd": ["annas_hummingbird", "acorn_woodpecker"],
 }
 # Fallback spots for species without a hotspot park.
 SPOTS = [(36.49, -121.18), (38.07, -122.88), (36.82, -121.76), (34.09, -118.83), (37.74, -119.59)]
@@ -43,6 +45,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", default="http://127.0.0.1:8000")
     ap.add_argument("--images", default="data/images")
+    ap.add_argument("--db", help="SQLite file of the server, to mark the demo players as bots")
     ap.add_argument("--hotspots", default=str(Path(__file__).resolve().parents[1] / "species" / "hotspots.json"))
     args = ap.parse_args()
     rng = random.Random(7)
@@ -66,7 +69,18 @@ def main():
             requests.post(f"{args.url}/friends/requests/{a}/accept", headers=tokens[b])
 
     for name, slugs in PLAYERS.items():
+        # Keep each bot small: drop catches from earlier, bigger seedings.
+        album = requests.get(f"{args.url}/me/album", headers=tokens[name]).json()
+        have = set()
+        for p in album["photos"]:
+            if p["species"]["slug"] in slugs:
+                have.add(p["species"]["slug"])
+            else:
+                requests.delete(f"{args.url}/photos/{p['id']}", headers=tokens[name])
+                print(f"{name}: removed {p['species']['slug']}")
         for slug in slugs:
+            if slug in have:
+                continue
             photos = sorted((Path(args.images) / slug).glob("*.jpg"))
             for photo in rng.sample(photos, min(4, len(photos))):  # try a few until one matches
                 lat, lon = parks.get(slug) or rng.choice(SPOTS)
@@ -79,6 +93,14 @@ def main():
                     break
             else:
                 print(f"{name}: no confident match for {slug}")
+    if args.db:
+        with sqlite3.connect(args.db) as con:
+            cols = {r[1] for r in con.execute("PRAGMA table_info(users)")}
+            if "is_bot" in cols:
+                con.execute(f"UPDATE users SET is_bot = 1 WHERE username IN ({','.join('?' * len(names))})", names)
+                print("marked as bots")
+            else:
+                print("this server has no is_bot column yet; restart it on the new code and re-run")
     print(f"demo players: {', '.join(names)} (password {password})")
 
 
