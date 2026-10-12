@@ -121,10 +121,10 @@ fun App(vm: GameViewModel = viewModel()) {
 
     Scaffold(topBar = {
         Column {
-            TopAppBar(title = { Text(if (tab == 0) "CollectAnimals" else TABS[tab].title) })
+            TopAppBar(title = { Text(if (tab == 0) "Capture Animals" else TABS[tab].title) })
             if (info != null) {
                 Column(Modifier.padding(horizontal = 16.dp)) {
-                    Text("${state.collection.size} / $total California species caught",
+                    Text("${state.collection.size} / $total California species captured",
                         style = MaterialTheme.typography.bodyMedium)
                     Spacer(Modifier.height(4.dp))
                     LinearProgressIndicator(
@@ -160,7 +160,7 @@ fun App(vm: GameViewModel = viewModel()) {
 private class AppTab(val key: String, val title: String, val glyph: String)
 
 private val TABS = listOf(
-    AppTab("catch", "Catch", "📷"),
+    AppTab("catch", "Capture", "📷"),
     AppTab("collection", "Collection", "🗂"),
     AppTab("gallery", "Gallery", "🖼"),
     AppTab("hotspots", "Hotspots", "📍"),
@@ -219,7 +219,7 @@ fun ResultCard(r: CaptureResult, onDismiss: () -> Unit, onPick: (String?) -> Uni
                     .clip(RoundedCornerShape(12.dp)),
                 contentScale = ContentScale.Crop)
             if (r.matched && r.species != null) {
-                Text(if (r.newBadge) "New badge!" else "Caught again",
+                Text(if (r.newBadge) "New badge!" else "Captured again",
                     style = MaterialTheme.typography.labelLarge, color = rarityColor(r.species.rarity))
                 Text(r.species.commonName, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                 Text(r.species.scientificName, fontStyle = FontStyle.Italic)

@@ -102,7 +102,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             _state.update { it.copy(collection = updated) }
         }
         val message = when {
-            matched && newBadge -> "You caught a ${species!!.commonName}! New badge unlocked."
+            matched && newBadge -> "You captured a ${species!!.commonName}! New badge unlocked."
             matched -> "Another ${species!!.commonName} for your collection."
             species != null -> "Might be a ${species.commonName}, but we're not sure. Try a clearer photo!"
             else -> "We couldn't match this to any animal in the California collection."

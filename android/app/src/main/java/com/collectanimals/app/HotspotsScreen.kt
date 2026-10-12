@@ -75,7 +75,7 @@ fun HotspotsScreen(info: ModelInfo, dex: Pokedex, collection: Map<String, Badge>
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(park.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                     Text(park.blurb, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
-                    Text("You can spot ${park.species.size} of the 100 here. You've caught $caught of them.",
+                    Text("You can spot ${park.species.size} of the 100 here. You've captured $caught of them.",
                         style = MaterialTheme.typography.bodyLarge)
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         park.species.forEach { ps ->

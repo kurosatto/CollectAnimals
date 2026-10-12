@@ -38,8 +38,8 @@ import java.text.DateFormat
 import java.util.Date
 
 /**
- * Your catches' photos, newest first. Tapping a photo opens its Pokédex page;
- * "Delete photo" removes the photo and un-catches the animal, as on the website.
+ * Your captures' photos, newest first. Tapping a photo opens its Pokédex page;
+ * "Delete photo" removes the photo and un-captures the animal, as on the website.
  */
 @Composable
 fun GalleryScreen(info: ModelInfo, collection: Map<String, Badge>, onOpenDex: (String) -> Unit,
@@ -50,7 +50,7 @@ fun GalleryScreen(info: ModelInfo, collection: Map<String, Badge>, onOpenDex: (S
 
     if (entries.isEmpty()) {
         Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-            Text("Your photos show up here once you catch your first animal.",
+            Text("Your photos show up here once you capture your first animal.",
                 style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.outline)
         }
         return
@@ -94,7 +94,7 @@ fun GalleryScreen(info: ModelInfo, collection: Map<String, Badge>, onOpenDex: (S
         AlertDialog(
             onDismissRequest = { confirm = null },
             title = { Text("Delete this photo?") },
-            text = { Text("The ${s.commonName} also leaves your collection. Catch it again to get it back.") },
+            text = { Text("The ${s.commonName} also leaves your collection. Capture it again to get it back.") },
             confirmButton = { TextButton(onClick = { onDelete(s.slug); confirm = null }) { Text("Delete") } },
             dismissButton = { TextButton(onClick = { confirm = null }) { Text("Cancel") } },
         )

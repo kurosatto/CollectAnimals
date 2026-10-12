@@ -72,12 +72,12 @@ fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: Pokedex, onBack:
             } else {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("?", fontSize = 64.sp, color = MaterialTheme.colorScheme.outline)
-                    Text("Not caught yet", color = MaterialTheme.colorScheme.outline)
+                    Text("Not captured yet", color = MaterialTheme.colorScheme.outline)
                 }
             }
         }
         if (badge != null) {
-            Text("Caught ${badge.count}× — first on " +
+            Text("Captured ${badge.count}× — first on " +
                 DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(badge.firstCaughtAt)),
                 style = MaterialTheme.typography.bodyMedium)
         }
@@ -92,7 +92,7 @@ fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: Pokedex, onBack:
                 Column(Modifier.padding(16.dp)) {
                     Text("Fun fact", style = MaterialTheme.typography.labelLarge, color = rarityColor(s.rarity))
                     // Same as the web page: the fact is the reward for catching it.
-                    Text(if (badge != null) details.funFact else "🔒 Catch one to unlock its fun fact.",
+                    Text(if (badge != null) details.funFact else "🔒 Capture one to unlock its fun fact.",
                         style = MaterialTheme.typography.bodyLarge)
                 }
             }
