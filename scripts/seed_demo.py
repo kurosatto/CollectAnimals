@@ -9,7 +9,9 @@ accepts count, which is what a visitor would see too.
 
 import argparse
 import json
+import os
 import random
+import secrets
 from pathlib import Path
 
 import requests
@@ -22,7 +24,6 @@ PLAYERS = {
     "birdnerd": ["annas_hummingbird", "acorn_woodpecker", "red_tailed_hawk", "great_blue_heron",
                  "california_scrub_jay", "bald_eagle", "california_quail"],
 }
-PASSWORD = "demo-password-123"
 # Fallback spots for species without a hotspot park.
 SPOTS = [(36.49, -121.18), (38.07, -122.88), (36.82, -121.76), (34.09, -118.83), (37.74, -119.59)]
 
@@ -46,12 +47,15 @@ def main():
     args = ap.parse_args()
     rng = random.Random(7)
     parks = best_parks(Path(args.hotspots))
+    # A random password unless DEMO_PASSWORD is set (e.g. to re-run against the
+    # same database); a fixed one in a public repo would let anyone log in as them.
+    password = os.getenv("DEMO_PASSWORD") or secrets.token_urlsafe(12)
     tokens = {}
     for name in PLAYERS:
         r = requests.post(f"{args.url}/auth/register",
-                          json={"email": f"{name}@example.com", "username": name, "password": PASSWORD})
+                          json={"email": f"{name}@example.com", "username": name, "password": password})
         if r.status_code == 409:
-            r = requests.post(f"{args.url}/auth/login", data={"username": name, "password": PASSWORD})
+            r = requests.post(f"{args.url}/auth/login", data={"username": name, "password": password})
         r.raise_for_status()
         tokens[name] = {"Authorization": f"Bearer {r.json()['access_token']}"}
 
@@ -75,7 +79,7 @@ def main():
                     break
             else:
                 print(f"{name}: no confident match for {slug}")
-    print(f"demo players: {', '.join(names)} (password {PASSWORD})")
+    print(f"demo players: {', '.join(names)} (password {password})")
 
 
 if __name__ == "__main__":
