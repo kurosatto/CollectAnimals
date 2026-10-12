@@ -31,6 +31,9 @@
   .tile { cursor:pointer; }
   .tile:hover { border-color:var(--accent); }
   .hidden { display:none; }
+  .pick { display:inline-flex; align-items:center; padding:10px 12px; border-radius:8px; border:1px solid var(--line);
+          background:var(--card); color:var(--ink); cursor:pointer; }
+  #photo-name { align-self:center; font-size:.85rem; }
   dialog { border:1px solid var(--line); border-radius:14px; background:var(--card); color:var(--ink);
            padding:0; width:min(560px, calc(100vw - 32px)); }
   dialog::backdrop { background:rgba(0,0,0,.45); }
@@ -110,7 +113,11 @@
     <div class="card">
       <h2>Capture an animal</h2>
       <form id="upload-form">
-        <input id="photo" type="file" accept="image/*" capture="environment" required>
+        <label class="pick">📷 Take photo
+          <input id="photo-camera" type="file" accept="image/*" capture="environment" hidden></label>
+        <label class="pick">🖼️ Choose from photos
+          <input id="photo-library" type="file" accept="image/*" hidden></label>
+        <span id="photo-name" class="muted"></span>
         <button type="submit">Identify</button>
         <label class="inline"><input type="checkbox" id="use-location" checked> Save where I caught it</label>
       </form>
@@ -237,10 +244,21 @@ function here() {
     (p) => ok(p.coords), () => ok(null), { timeout: 8000, maximumAge: 300000 }));
 }
 
+// Phones only offer the camera when `capture` is set, so there are two pickers:
+// one that opens the camera and one that opens the photo library.
+let chosenPhoto = null;
+for (const id of ["photo-camera", "photo-library"]) {
+  $(id).onchange = () => {
+    chosenPhoto = $(id).files[0] || null;
+    $("photo-name").textContent = chosenPhoto ? chosenPhoto.name : "";
+  };
+}
+
 $("upload-form").onsubmit = async (e) => {
   e.preventDefault();
+  if (!chosenPhoto) { $("photo-name").textContent = "Pick a photo first"; return; }
   const fd = new FormData();
-  fd.append("photo", $("photo").files[0]);
+  fd.append("photo", chosenPhoto);
   const box = $("result");
   box.classList.remove("hidden", "win");
   box.textContent = "Identifying…";
