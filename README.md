@@ -30,14 +30,29 @@ python ml/predict.py models/ca100.pt some_photo.jpg
 ```
 
 The backend loads `models/ca100.pt` by default (override with `MODEL_PATH`).
-A capture only counts above `MATCH_THRESHOLD` (default 0.6).
+A capture only counts above `MATCH_THRESHOLD` (default 0.7; see the table below).
 
 ## Current model
 
-First full run (2026-10-12): 104,699 photos (100 species with 779–1,000 each, plus
-~5,000 "other"), frozen `convnext_nano.in12k_ft_in1k` backbone with a trained head.
-Held-out accuracy: 78.0% top-1, 92.6% top-5. Weakest: "other" (30%), bobcat,
-crow vs. raven, and the hawks. About 91% of the photos are CC-BY-NC (non-commercial).
+Frozen `convnext_nano.in12k_ft_in1k` backbone with a trained linear head (v2,
+2026-10-12). Trained on ~110k small iNaturalist photos: 100 species with
+779–1,000 each, plus ~10,000 "other" animals spread over 8 groups and 12 months.
+
+On held-out photos: 80% top-1 on the 100 species. Weakest: bobcat, crow vs.
+raven, the hawks. Animals not on the list are the hard part: they are labelled
+"other" only ~25% of the time, so the confidence threshold does most of the
+work of preventing wrong badges:
+
+| Threshold | Correct badge | Wrong species | Non-list animal gets a badge |
+|---|---|---|---|
+| 0.5 | 68.9% | 5.0% | 22.3% |
+| 0.6 | 64.4% | 2.8% | 17.7% |
+| **0.7** (default) | 57.7% | 1.7% | 13.4% |
+| 0.8 | 48.1% | 0.7% | 8.5% |
+| 0.9 | 31.3% | 0.2% | 3.1% |
+
+About 91% of the photos are CC-BY-NC (non-commercial only); credits are in
+`data/images/attribution.csv`.
 
 ## Tests
 

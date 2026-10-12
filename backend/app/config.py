@@ -18,7 +18,7 @@ class Settings:
     upload_dir: Path = field(default_factory=lambda: Path(os.getenv(
         "UPLOAD_DIR", ROOT / "backend" / "uploads")))
     # A capture only counts if the model is at least this confident.
-    match_threshold: float = field(default_factory=lambda: float(os.getenv("MATCH_THRESHOLD", "0.6")))
+    match_threshold: float = field(default_factory=lambda: float(os.getenv("MATCH_THRESHOLD", "0.7")))
     max_upload_mb: int = field(default_factory=lambda: int(os.getenv("MAX_UPLOAD_MB", "15")))
 
 
