@@ -50,18 +50,26 @@ _last_call = 0.0
 def api_get(path: str, **params) -> dict:
     """GET an iNat API endpoint, throttled to ~1 req/sec with simple retries."""
     global _last_call
-    for attempt in range(5):
+    resp = None
+    for attempt in range(6):
         wait = 1.05 - (time.monotonic() - _last_call)
         if wait > 0:
             time.sleep(wait)
         _last_call = time.monotonic()
-        resp = session.get(f"{API}{path}", params=params, timeout=30)
+        try:
+            resp = session.get(f"{API}{path}", params=params, timeout=30)
+        except (requests.ConnectionError, requests.Timeout) as exc:
+            # Dropped connections happen on long pulls; back off and retry.
+            print(f"  retrying {path} after {type(exc).__name__}")
+            time.sleep(2**attempt * 5)
+            continue
         if resp.status_code == 429 or resp.status_code >= 500:
             time.sleep(2**attempt * 5)
             continue
         resp.raise_for_status()
         return resp.json()
-    resp.raise_for_status()
+    if resp is not None:
+        resp.raise_for_status()
     raise RuntimeError(f"giving up on {path}")
 
 
@@ -136,12 +144,13 @@ def fetch_class(name: str, out_dir: Path, limit: int, size: str, pool, attributi
     for obs in iter_observations(limit, **filters):
         photo = obs["photos"][0]
         pid = str(photo["id"])
-        attribution.writerow(
-            [name, pid, obs["id"], obs.get("taxon", {}).get("name", ""),
-             photo.get("license_code", ""), photo.get("attribution", ""),
-             f"https://www.inaturalist.org/observations/{obs['id']}"]
-        )
         if pid not in have:
+            # Photos already on disk were recorded by an earlier run.
+            attribution.writerow(
+                [name, pid, obs["id"], obs.get("taxon", {}).get("name", ""),
+                 photo.get("license_code", ""), photo.get("attribution", ""),
+                 f"https://www.inaturalist.org/observations/{obs['id']}"]
+            )
             jobs.append(pool.submit(download, photo_url(photo, size), class_dir / f"{pid}.jpg"))
     ok = sum(j.result() for j in jobs)
     total = len(list(class_dir.glob("*.jpg")))
