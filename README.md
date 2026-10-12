@@ -9,6 +9,7 @@ Starting with 100 California species (`species/california_100.csv`).
 - `species/` — the species list (slug, names, category, rarity)
 - `ml/` — dataset download from iNaturalist, fine-tuning, and a predict CLI
 - `backend/` — FastAPI app: accounts, photo captures, badges, collection, and a minimal web page
+- `android/` — offline Android app: runs the model on the phone, badges stored on the device
 
 ## Run the backend
 
@@ -53,6 +54,25 @@ work of preventing wrong badges:
 
 About 91% of the photos are CC-BY-NC (non-commercial only); credits are in
 `data/images/attribution.csv`.
+
+## Android app
+
+The app runs the classifier on the phone (no server, works offline in the
+field) and keeps badges on the device. Same rules as the backend: a capture
+counts when the top guess is one of the 100 species at >= 0.7 confidence.
+
+```bash
+python ml/export_onnx.py models/ca100.pt          # writes android/app/src/main/assets/model.{onnx,json}
+cd android && ./gradlew assembleDebug testDebugUnitTest
+# APK: android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+Needs JDK 17 and the Android SDK (platform 35; set `sdk.dir` in
+`android/local.properties` or `ANDROID_HOME`). The APK is ~88 MB, mostly the
+60 MB model; int8 quantization shrank it to 15 MB but changed the top-1
+answer on 11% of photos, so it ships in float32. `PreprocessTest` checks the
+Kotlin resize/crop against PIL/torchvision; `ClassifierTest` runs the real
+model through it when `data/images` is present.
 
 ## Tests
 

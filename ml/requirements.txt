@@ -3,3 +3,5 @@ torch>=2.3
 torchvision>=0.18
 timm>=1.0
 pillow>=10
+onnx>=1.16          # ml/export_onnx.py (Android app)
+onnxruntime>=1.18

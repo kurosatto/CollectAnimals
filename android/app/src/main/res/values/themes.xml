@@ -1,0 +1,3 @@
+<resources>
+    <style name="Theme.CollectAnimals" parent="android:Theme.Material.NoActionBar" />
+</resources>
