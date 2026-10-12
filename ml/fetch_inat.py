@@ -214,14 +214,17 @@ def main():
             print(f"{OTHER_CLASS} (animals not in the list)")
             all_ids = ",".join(str(t["taxon_id"]) for t in taxa.values())
             # Include casual/needs_id too: "other" just needs to be "an animal
-            # photo that isn't one of ours", not a confirmed ID.
+            # photo that isn't one of ours", not a confirmed ID. But it must be
+            # identified to species: a coarse ID like "Taricha" or "Sciuridae"
+            # passes without_taxon_id yet may well be one of our species, and
+            # ~22% of an unfiltered pull was such coarse IDs.
             per_slice = max(1, args.negatives // (len(NEGATIVE_GROUPS) * 12))
             for group in NEGATIVE_GROUPS:
                 for month in range(1, 13):
                     print(f"  {group}, month {month}")
                     fetch_class(OTHER_CLASS, out_dir, per_slice, args.size, pool, attribution,
                                 taxon_id=ANIMALIA_TAXON_ID, without_taxon_id=all_ids,
-                                iconic_taxa=group, month=month)
+                                iconic_taxa=group, month=month, hrank="species")
                     fh.flush()
 
 
