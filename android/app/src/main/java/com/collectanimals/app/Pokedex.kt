@@ -1,0 +1,78 @@
+package com.collectanimals.app
+
+import org.json.JSONObject
+
+data class SpeciesDetails(val size: String, val weight: String, val funFact: String)
+
+/** Sighting counts on a lon/lat grid (species/ranges.json, built by ml/build_ranges.py). */
+class RangeGrid(val lon0: Double, val lat0: Double, val step: Double, val cols: Int, val rows: Int,
+                val cells: Map<String, List<IntArray>>) {
+    fun sightings(slug: String) = cells[slug].orEmpty().sumOf { it[2] }
+}
+
+/** California outline rings as [lon, lat] pairs (species/california_outline.json). */
+class Outline(val rings: List<DoubleArray>) {
+    val minLon = rings.minOf { r -> (r.indices step 2).minOf { r[it] } }
+    val maxLon = rings.maxOf { r -> (r.indices step 2).maxOf { r[it] } }
+    val minLat = rings.minOf { r -> (1 until r.size step 2).minOf { r[it] } }
+    val maxLat = rings.maxOf { r -> (1 until r.size step 2).maxOf { r[it] } }
+}
+
+class Pokedex(val details: Map<String, SpeciesDetails>, val ranges: RangeGrid, val outline: Outline) {
+    companion object {
+        fun parse(detailsCsv: String, rangesJson: String, outlineJson: String): Pokedex {
+            val rows = parseCsv(detailsCsv)
+            val header = rows.first()
+            val idx = { name: String -> header.indexOf(name).also { require(it >= 0) { "details.csv lacks $name" } } }
+            val (slug, size, weight, fact) = listOf(idx("slug"), idx("size"), idx("weight"), idx("fun_fact"))
+            val details = rows.drop(1).filter { it.size > fact }.associate {
+                it[slug] to SpeciesDetails(it[size], it[weight], it[fact])
+            }
+
+            val r = JSONObject(rangesJson)
+            val g = r.getJSONObject("grid")
+            val sp = r.getJSONObject("species")
+            val cells = sp.keys().asSequence().associateWith { key ->
+                val arr = sp.getJSONArray(key)
+                List(arr.length()) { i -> arr.getJSONArray(i).let { c -> intArrayOf(c.getInt(0), c.getInt(1), c.getInt(2)) } }
+            }
+            val ranges = RangeGrid(g.getDouble("lon0"), g.getDouble("lat0"), g.getDouble("step"),
+                g.getInt("cols"), g.getInt("rows"), cells)
+
+            val ringsJson = JSONObject(outlineJson).getJSONArray("rings")
+            val rings = List(ringsJson.length()) { i ->
+                val ring = ringsJson.getJSONArray(i)
+                DoubleArray(ring.length() * 2) { j -> ring.getJSONArray(j / 2).getDouble(j % 2) }
+            }
+            return Pokedex(details, ranges, Outline(rings))
+        }
+
+        /** Minimal RFC 4180 CSV: quoted fields, doubled quotes, commas/newlines inside quotes. */
+        fun parseCsv(text: String): List<List<String>> {
+            val rows = mutableListOf<List<String>>()
+            var row = mutableListOf<String>()
+            val field = StringBuilder()
+            var quoted = false
+            var i = 0
+            val s = text.removePrefix("﻿")
+            while (i < s.length) {
+                val c = s[i]
+                when {
+                    quoted && c == '"' && i + 1 < s.length && s[i + 1] == '"' -> { field.append('"'); i++ }
+                    c == '"' -> quoted = !quoted
+                    !quoted && c == ',' -> { row.add(field.toString()); field.clear() }
+                    !quoted && (c == '\n' || c == '\r') -> {
+                        if (c == '\r' && i + 1 < s.length && s[i + 1] == '\n') i++
+                        row.add(field.toString()); field.clear()
+                        if (row.any { it.isNotEmpty() }) rows.add(row)
+                        row = mutableListOf()
+                    }
+                    else -> field.append(c)
+                }
+                i++
+            }
+            if (field.isNotEmpty() || row.isNotEmpty()) { row.add(field.toString()); rows.add(row) }
+            return rows
+        }
+    }
+}

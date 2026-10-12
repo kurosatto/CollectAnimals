@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -33,7 +34,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -75,8 +75,6 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import java.io.File
-import java.text.DateFormat
-import java.util.Date
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -106,7 +104,19 @@ fun rarityColor(rarity: String): Color = when (rarity) {
 fun App(vm: GameViewModel = viewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
     var tab by rememberSaveable { mutableIntStateOf(0) }
+    var dexSlug by rememberSaveable { mutableStateOf<String?>(null) }
     val info = state.info
+    val dex = state.pokedex
+    val entry = dexSlug?.let { slug -> info?.species?.indexOfFirst { it.slug == slug }?.takeIf { it >= 0 } }
+    if (info != null && dex != null && entry != null) {
+        Scaffold { padding ->
+            Box(Modifier.padding(padding)) {
+                val s = info.species[entry]
+                DexEntryScreen(entry + 1, s, state.collection[s.slug], dex) { dexSlug = null }
+            }
+        }
+        return
+    }
     val total = info?.species?.size ?: 0
 
     Scaffold(topBar = {
@@ -132,15 +142,15 @@ fun App(vm: GameViewModel = viewModel()) {
         Box(Modifier.padding(padding).fillMaxSize()) {
             when {
                 info == null -> CircularProgressIndicator(Modifier.align(Alignment.Center))
-                tab == 0 -> CatchScreen(state, vm::capture, vm::dismissResult)
-                else -> CollectionScreen(info, state.collection)
+                tab == 0 -> CatchScreen(state, vm::capture, vm::dismissResult) { dexSlug = it }
+                else -> CollectionScreen(info, state.collection) { dexSlug = it }
             }
         }
     }
 }
 
 @Composable
-fun CatchScreen(state: UiState, onPhoto: (Uri) -> Unit, onDismiss: () -> Unit) {
+fun CatchScreen(state: UiState, onPhoto: (Uri) -> Unit, onDismiss: () -> Unit, onOpenDex: (String) -> Unit) {
     val context = LocalContext.current
     var pendingCameraUri by rememberSaveable { mutableStateOf<Uri?>(null) }
     val takePicture = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
@@ -177,16 +187,17 @@ fun CatchScreen(state: UiState, onPhoto: (Uri) -> Unit, onDismiss: () -> Unit) {
             Text("Identifying…", style = MaterialTheme.typography.bodyMedium)
         }
         state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        state.result?.let { ResultCard(it, onDismiss) }
+        state.result?.let { ResultCard(it, onDismiss, onOpenDex) }
     }
 }
 
 @Composable
-fun ResultCard(r: CaptureResult, onDismiss: () -> Unit) {
+fun ResultCard(r: CaptureResult, onDismiss: () -> Unit, onOpenDex: (String) -> Unit) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Image(r.photo.asImageBitmap(), contentDescription = "Your photo",
-                modifier = Modifier.fillMaxWidth().aspectRatio(r.photo.width / r.photo.height.toFloat())
+                modifier = Modifier.fillMaxWidth().heightIn(max = 280.dp)
+                    .aspectRatio(r.photo.width / r.photo.height.toFloat(), matchHeightConstraintsFirst = true)
                     .clip(RoundedCornerShape(12.dp)),
                 contentScale = ContentScale.Crop)
             if (r.matched && r.species != null) {
@@ -204,7 +215,12 @@ fun ResultCard(r: CaptureResult, onDismiss: () -> Unit) {
                     Text("${(g.probability * 100).toInt()}%")
                 }
             }
-            TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) { Text("Done") }
+            Row(Modifier.align(Alignment.End)) {
+                if (r.matched && r.species != null) {
+                    TextButton(onClick = { onOpenDex(r.species.slug) }) { Text("Pokédex entry") }
+                }
+                TextButton(onClick = onDismiss) { Text("Done") }
+            }
         }
     }
 }
@@ -217,10 +233,9 @@ fun RarityTag(rarity: String) {
 }
 
 @Composable
-fun CollectionScreen(info: ModelInfo, collection: Map<String, Badge>) {
+fun CollectionScreen(info: ModelInfo, collection: Map<String, Badge>, onOpen: (String) -> Unit) {
     val categories = remember(info) { listOf("all") + info.species.map { it.category }.distinct() }
     var category by rememberSaveable { mutableStateOf("all") }
-    var selected by remember { mutableStateOf<Species?>(null) }
     val shown = info.species.filter { category == "all" || it.category == category }
 
     LazyVerticalGrid(columns = GridCells.Adaptive(104.dp), modifier = Modifier.fillMaxSize(),
@@ -234,9 +249,10 @@ fun CollectionScreen(info: ModelInfo, collection: Map<String, Badge>) {
                 }
             }
         }
-        items(shown, key = { it.slug }) { s -> SpeciesTile(s, collection[s.slug]) { selected = s } }
+        items(shown, key = { it.slug }) { s ->
+            SpeciesTile(info.species.indexOf(s) + 1, s, collection[s.slug]) { onOpen(s.slug) }
+        }
     }
-    selected?.let { s -> SpeciesDialog(s, collection[s.slug]) { selected = null } }
 }
 
 @Composable
@@ -244,7 +260,7 @@ private fun Modifier.horizontalScrollCompat(): Modifier =
     this.then(Modifier.fillMaxWidth()).then(Modifier.horizontalScroll(rememberScrollState()))
 
 @Composable
-fun SpeciesTile(s: Species, badge: Badge?, onClick: () -> Unit) {
+fun SpeciesTile(number: Int, s: Species, badge: Badge?, onClick: () -> Unit) {
     val caught = badge != null
     Card(
         modifier = Modifier.clickable(onClick = onClick)
@@ -265,34 +281,12 @@ fun SpeciesTile(s: Species, badge: Badge?, onClick: () -> Unit) {
                 }
             }
             Spacer(Modifier.height(4.dp))
+            Text("#%03d".format(number), style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.outline)
             Text(s.commonName, style = MaterialTheme.typography.labelMedium, maxLines = 2,
                 overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
                 color = if (caught) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline)
             Box(Modifier.padding(top = 2.dp).size(8.dp).clip(RoundedCornerShape(50)).background(rarityColor(s.rarity)))
         }
     }
-}
-
-@Composable
-fun SpeciesDialog(s: Species, badge: Badge?, onClose: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onClose,
-        confirmButton = { TextButton(onClick = onClose) { Text("Close") } },
-        title = { Text(s.commonName) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(s.scientificName, fontStyle = FontStyle.Italic)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    RarityTag(s.rarity)
-                    Text(s.category.replaceFirstChar { it.uppercase() })
-                }
-                if (badge != null) {
-                    Text("Caught ${badge.count}× — first on " +
-                        DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(badge.firstCaughtAt)))
-                } else {
-                    Text("Not caught yet.")
-                }
-            }
-        },
-    )
 }

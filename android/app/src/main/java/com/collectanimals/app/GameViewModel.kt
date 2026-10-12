@@ -28,6 +28,7 @@ data class CaptureResult(
 
 data class UiState(
     val info: ModelInfo? = null,
+    val pokedex: Pokedex? = null,
     val collection: Map<String, Badge> = emptyMap(),
     val busy: Boolean = false,
     val result: CaptureResult? = null,
@@ -44,11 +45,14 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     init {
         viewModelScope.launch {
-            val (info, collection) = withContext(Dispatchers.IO) {
-                val json = getApplication<Application>().assets.open("model.json").bufferedReader().use { it.readText() }
-                ModelInfo.parse(json) to store.load()
+            val assets = getApplication<Application>().assets
+            fun text(name: String) = assets.open(name).bufferedReader().use { it.readText() }
+            val loaded = withContext(Dispatchers.IO) {
+                Triple(ModelInfo.parse(text("model.json")),
+                       Pokedex.parse(text("details.csv"), text("ranges.json"), text("california_outline.json")),
+                       store.load())
             }
-            _state.update { it.copy(info = info, collection = collection) }
+            _state.update { it.copy(info = loaded.first, pokedex = loaded.second, collection = loaded.third) }
         }
     }
 

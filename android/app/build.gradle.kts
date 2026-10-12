@@ -29,6 +29,9 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true }
+    // Pokédex data (details.csv, ranges.json, california_outline.json) is shared with
+    // the web app, so it's packaged straight from species/ rather than copied.
+    sourceSets { getByName("main") { assets.srcDir("../../species") } }
     // The model is read straight from the APK; compressing 60 MB of floats gains little.
     androidResources { noCompress += "onnx" }
     testOptions { unitTests.isReturnDefaultValues = true }

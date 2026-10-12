@@ -1,0 +1,163 @@
+package com.collectanimals.app
+
+import android.graphics.BitmapFactory
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import java.text.DateFormat
+import java.util.Date
+import kotlin.math.cos
+import kotlin.math.ln
+
+/** Full-page Pokédex entry for one species. */
+@Composable
+fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: Pokedex, onBack: () -> Unit) {
+    BackHandler(onBack = onBack)
+    val details = dex.details[s.slug]
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        TextButton(onClick = onBack, contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) {
+            Text("‹ Collection")
+        }
+        Text("#%03d · %s".format(number, s.category.replaceFirstChar { it.uppercase() }),
+            style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.outline)
+        Text(s.commonName, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(s.scientificName, fontStyle = FontStyle.Italic)
+            RarityTag(s.rarity)
+        }
+
+        Box(Modifier.fillMaxWidth().aspectRatio(4f / 3f).clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
+            val photo = remember(badge?.photo) { badge?.photo?.let { BitmapFactory.decodeFile(it) } }
+            if (photo != null) {
+                Image(photo.asImageBitmap(), contentDescription = "Your ${s.commonName}",
+                    modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+            } else {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("?", fontSize = 64.sp, color = MaterialTheme.colorScheme.outline)
+                    Text("Not caught yet", color = MaterialTheme.colorScheme.outline)
+                }
+            }
+        }
+        if (badge != null) {
+            Text("Caught ${badge.count}× — first on " +
+                DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(badge.firstCaughtAt)),
+                style = MaterialTheme.typography.bodyMedium)
+        }
+
+        if (details != null) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                StatCard("Size", details.size, Modifier.weight(1f))
+                StatCard("Weight", details.weight, Modifier.weight(1f))
+            }
+            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(
+                containerColor = rarityColor(s.rarity).copy(alpha = 0.12f))) {
+                Column(Modifier.padding(16.dp)) {
+                    Text("Fun fact", style = MaterialTheme.typography.labelLarge, color = rarityColor(s.rarity))
+                    Text(details.funFact, style = MaterialTheme.typography.bodyLarge)
+                }
+            }
+        }
+
+        Text("Where to find it", style = MaterialTheme.typography.titleMedium)
+        RangeMap(dex, s.slug, rarityColor(s.rarity), Modifier.fillMaxWidth())
+        Text("Each square is about 25 km (15 mi) across; darker means more of the " +
+            "${dex.ranges.sightings(s.slug)} recent iNaturalist sightings in California.",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+    }
+}
+
+@Composable
+private fun StatCard(label: String, value: String, modifier: Modifier) {
+    Card(modifier) {
+        Column(Modifier.padding(12.dp)) {
+            Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.outline)
+            Text(value, style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+}
+
+/**
+ * California outline with the species' sighting cells shaded on top. Equirectangular
+ * projection with longitudes squeezed by cos(37.5°), which is close enough at state scale.
+ */
+@Composable
+fun RangeMap(dex: Pokedex, slug: String, color: Color, modifier: Modifier = Modifier) {
+    val o = dex.outline
+    val g = dex.ranges
+    val kx = cos(Math.toRadians(37.5))
+    // Frame on the state outline, widened a little so offshore sightings (whales, seals) show.
+    val pad = 0.6
+    val minLon = o.minLon - pad
+    val maxLon = o.maxLon + 0.2
+    val minLat = o.minLat - 0.2
+    val maxLat = o.maxLat + 0.2
+    val aspect = ((maxLon - minLon) * kx / (maxLat - minLat)).toFloat()
+
+    val land = MaterialTheme.colorScheme.surfaceVariant
+    val sea = MaterialTheme.colorScheme.surface
+    val border = MaterialTheme.colorScheme.outline
+    val cells = g.cells[slug].orEmpty()
+    val maxCount = cells.maxOfOrNull { it[2] } ?: 1
+
+    Canvas(modifier.aspectRatio(aspect).clip(RoundedCornerShape(16.dp)).background(sea)) {
+        val sx = size.width / (maxLon - minLon)
+        val sy = size.height / (maxLat - minLat)
+        fun x(lon: Double) = ((lon - minLon) * sx).toFloat()
+        fun y(lat: Double) = ((maxLat - lat) * sy).toFloat()
+
+        val path = Path()
+        for (ring in o.rings) {
+            path.moveTo(x(ring[0]), y(ring[1]))
+            for (i in 2 until ring.size step 2) path.lineTo(x(ring[i]), y(ring[i + 1]))
+            path.close()
+        }
+        drawPath(path, land)
+        for ((col, row, n) in cells) {
+            val lon = g.lon0 + col * g.step
+            val lat = g.lat0 + row * g.step
+            // Log scale so a few sightings still show next to city hotspots.
+            val t = (0.25 + 0.75 * ln(1.0 + n) / ln(1.0 + maxCount)).toFloat()
+            drawRect(color.copy(alpha = t), topLeft = Offset(x(lon), y(lat + g.step)),
+                size = Size((g.step * sx).toFloat(), (g.step * sy).toFloat()))
+        }
+        drawPath(path, border, style = Stroke(width = 1.5.dp.toPx()))
+    }
+}
