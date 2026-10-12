@@ -163,23 +163,23 @@ def main():
 
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
-    species = list(csv.DictReader(open(args.species)))
+    species = list(csv.DictReader(open(args.species, encoding="utf-8")))
     if args.only:
         species = [s for s in species if s["slug"] in set(args.only)]
 
     # Taxon ids are cached so re-runs (and the backend) don't need to re-resolve.
     taxa_path = out_dir / "taxa.json"
-    taxa = json.loads(taxa_path.read_text()) if taxa_path.exists() else {}
+    taxa = json.loads(taxa_path.read_text(encoding="utf-8")) if taxa_path.exists() else {}
     for s in species:
         if s["slug"] not in taxa:
             t = resolve_taxon(s["scientific_name"])
             taxa[s["slug"]] = {"taxon_id": t["id"], "name": t["name"],
                                "observations_count": t.get("observations_count")}
-            taxa_path.write_text(json.dumps(taxa, indent=2))
+            taxa_path.write_text(json.dumps(taxa, indent=2), encoding="utf-8")
 
     attr_path = out_dir / "attribution.csv"
     new_file = not attr_path.exists()
-    with open(attr_path, "a", newline="") as fh, ThreadPoolExecutor(args.workers) as pool:
+    with open(attr_path, "a", newline="", encoding="utf-8") as fh, ThreadPoolExecutor(args.workers) as pool:
         attribution = csv.writer(fh)
         if new_file:
             attribution.writerow(["class", "photo_id", "observation_id", "taxon",

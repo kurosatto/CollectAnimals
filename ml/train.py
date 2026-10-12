@@ -220,7 +220,7 @@ def main():
             worst = sorted(per_class.items(), key=lambda kv: kv[1])[:10]
             report = {"val_top1": top1, "val_top5": top5,
                       "per_class_top1": {classes[c]: round(a, 3) for c, a in sorted(per_class.items())}}
-            out.with_suffix(".metrics.json").write_text(json.dumps(report, indent=2))
+            out.with_suffix(".metrics.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
             print("  saved; weakest classes: " + ", ".join(f"{classes[c]}={a:.2f}" for c, a in worst))
     print(f"best val top1 {best:.3f} -> {out}")
 

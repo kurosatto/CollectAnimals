@@ -26,7 +26,7 @@ STATIC_DIR = Path(__file__).parent / "static"
 def seed_species(db: Session, csv_path: Path) -> None:
     """Upsert species from the CSV so editing the list doesn't need a migration."""
     existing = {s.slug: s for s in db.scalars(select(Species))}
-    with open(csv_path, newline="") as fh:
+    with open(csv_path, newline="", encoding="utf-8") as fh:
         for row in csv.DictReader(fh):
             s = existing.get(row["slug"]) or Species(slug=row["slug"])
             s.common_name = row["common_name"]
