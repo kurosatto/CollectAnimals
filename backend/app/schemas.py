@@ -84,6 +84,18 @@ class PredictionOut(BaseModel):
     probability: float
 
 
+class ChoiceOut(BaseModel):
+    """One of the model's top guesses, named, for 'Not this animal? Pick the right one'."""
+    slug: str
+    common_name: str
+    probability: float
+
+
+class PickIn(BaseModel):
+    # A slug from the capture's choices, or "none" for "none of these".
+    label: str
+
+
 class CaptureOut(BaseModel):
     capture_id: int
     matched: bool
@@ -94,6 +106,8 @@ class CaptureOut(BaseModel):
     top_predictions: list[PredictionOut]
     # Set when this photo became the album photo for the species (first catch).
     album_photo_id: int | None = None
+    # The model's top 5 species guesses with names, for the player to correct it.
+    choices: list[ChoiceOut] = []
 
 
 class CollectionEntry(BaseModel):

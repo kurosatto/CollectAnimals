@@ -28,6 +28,9 @@
   .tile .num { color:var(--muted); font-size:.75rem; }
   .rarity { font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; font-weight:600; }
   #result.win { border-color:var(--accent); }
+  .pick { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .pick button { background:none; border:1px solid var(--muted); color:inherit; }
+  .pick .none { border-style:dashed; }
   .tile { cursor:pointer; }
   .tile:hover { border-color:var(--accent); }
   .hidden { display:none; }
@@ -257,6 +260,7 @@ $("upload-form").onsubmit = async (e) => {
     p.textContent = "Top guesses: " + r.top_predictions
       .map((x) => `${x.common_name || (x.label === "other" ? "not on the list" : "???")} ${(x.probability * 100).toFixed(0)}%`).join(", ");
     box.append(h, p);
+    if (r.choices && r.choices.length) box.append(pickPanel(r, box));
     if (r.matched && !r.album_photo_id) {
       // Already have an album photo for this animal: offer to swap in this one.
       const b = document.createElement("button");
@@ -275,6 +279,47 @@ $("upload-form").onsubmit = async (e) => {
     loadCollection(); loadFeed();
   } catch (err) { box.textContent = err.message; }
 };
+
+// "Not this animal?": the player picks from the model's top guesses. We trust them.
+function pickPanel(r, box) {
+  const wrap = document.createElement("div");
+  const open = document.createElement("button");
+  open.type = "button";
+  open.textContent = r.matched ? "Not this animal? Pick the right one" : "Know what it is? Pick it";
+  const list = document.createElement("div");
+  list.className = "pick hidden";
+  const choose = async (label, b) => {
+    list.querySelectorAll("button").forEach((x) => { x.disabled = true; });
+    try {
+      const res = await api(`/captures/${r.capture_id}/pick`, { method: "POST",
+        headers: { "Content-Type": "application/json" }, body: JSON.stringify({ label }) });
+      box.classList.toggle("win", res.matched);
+      const h = box.querySelector("strong");
+      h.textContent = (res.new_badge ? "🏅 " : "") + res.message;
+      wrap.remove();
+      loadCollection(); loadFeed();
+    } catch (err) {
+      b.textContent = err.message;
+      list.querySelectorAll("button").forEach((x) => { x.disabled = false; });
+    }
+  };
+  for (const c of r.choices) {
+    if (r.matched && r.species && c.slug === r.species.slug) continue;
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = `${c.common_name} · ${(c.probability * 100).toFixed(0)}%`;
+    b.onclick = () => choose(c.slug, b);
+    list.append(b);
+  }
+  const none = document.createElement("button");
+  none.type = "button"; none.className = "none";
+  none.textContent = "None of these";
+  none.onclick = () => choose("none", none);
+  list.append(none);
+  open.onclick = () => { list.classList.toggle("hidden"); };
+  wrap.append(open, list);
+  return wrap;
+}
 
 let caughtNums = new Set();
 let dexNumbers = {};

@@ -20,9 +20,9 @@ from . import places, social
 from .auth import create_token, current_user, hash_password, optional_user, verify_password
 from .config import settings
 from .db import Base, SessionLocal, add_missing_columns, engine, get_db
-from .models import AlbumPhoto, Badge, Capture, Species, User
-from .schemas import (CaptureOut, CollectionEntry, CollectionOut, DexOut, HotspotOut, HotspotSpecies,
-                      PredictionOut, RegisterIn, SpeciesOut, TokenOut, UserOut)
+from .models import AlbumPhoto, Badge, Capture, PhotoLike, Species, User
+from .schemas import (CaptureOut, ChoiceOut, CollectionEntry, CollectionOut, DexOut, HotspotOut, HotspotSpecies,
+                      PickIn, PredictionOut, RegisterIn, SpeciesOut, TokenOut, UserOut)
 from .social import find_species, friend_ids, revealed_species_ids, species_out
 from .storage import get_storage
 
@@ -250,7 +250,9 @@ async def create_capture(photo: UploadFile = File(...),
     # Phone photos are often rotated via EXIF; apply it before classifying.
     image = ImageOps.exif_transpose(raw).convert("RGB")
 
-    preds = model.predict(image, k=3)
+    # Five guesses: the first three are shown, all five are offered if the
+    # player says the model got it wrong.
+    preds = model.predict(image, k=5)
     top = preds[0]
     species_by_slug = {s.slug: s for s in db.scalars(
         select(Species).where(Species.slug.in_([p.label for p in preds])))}
@@ -266,7 +268,8 @@ async def create_capture(photo: UploadFile = File(...),
 
     capture = Capture(user_id=user.id, species_id=species.id if matched else None,
                       image_path=name, predicted_label=top.label, confidence=top.probability,
-                      latitude=latitude, longitude=longitude, taken_at=taken_at)
+                      latitude=latitude, longitude=longitude, taken_at=taken_at,
+                      top_labels=",".join(p.label for p in preds if p.label in species_by_slug))
     db.add(capture)
     db.flush()
 
@@ -309,10 +312,89 @@ async def create_capture(photo: UploadFile = File(...),
             if p.label in species_by_slug and species_by_slug[p.label].id in revealed
             else PredictionOut(label="other" if p.label not in species_by_slug else "hidden",
                                probability=round(p.probability, 4), common_name=None)
-            for p in preds
+            for p in preds[:3]
         ],
         album_photo_id=album_photo.id if album_photo else None,
+        choices=[ChoiceOut(slug=p.label, common_name=species_by_slug[p.label].common_name,
+                           probability=round(p.probability, 4))
+                 for p in preds if p.label in species_by_slug],
     )
+
+
+def _unassign_capture(db: Session, capture: Capture) -> None:
+    """Take back the badge and album photo a capture earned, e.g. when the
+    player says the model named the wrong animal."""
+    old = capture.species_id
+    if old is None:
+        return
+    capture.species_id = None
+    db.flush()
+    others = db.scalars(select(Capture).where(Capture.user_id == capture.user_id,
+                                              Capture.species_id == old).order_by(Capture.id)).all()
+    badge = db.scalar(select(Badge).where(Badge.user_id == capture.user_id, Badge.species_id == old))
+    if badge:
+        if not others:
+            db.delete(badge)
+        else:
+            badge.capture_count = max(1, badge.capture_count - 1)
+            if badge.first_capture_id == capture.id:
+                badge.first_capture_id = others[0].id
+    photo = db.scalar(select(AlbumPhoto).where(AlbumPhoto.capture_id == capture.id))
+    if photo:
+        for like in db.scalars(select(PhotoLike).where(PhotoLike.photo_id == photo.id)):
+            db.delete(like)
+        db.delete(photo)
+        db.flush()
+        if others:
+            social.ensure_album_photo(db, others[-1])
+
+
+@app.post("/captures/{capture_id}/pick", response_model=CaptureOut)
+def pick_capture_species(capture_id: int, body: PickIn, user: User = Depends(current_user),
+                         db: Session = Depends(get_db)):
+    """'Not this animal?': the player names the animal themselves, from the
+    model's top guesses (or "none"). We trust their pick and award the badge."""
+    capture = db.get(Capture, capture_id)
+    if capture is None or capture.user_id != user.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Capture not found")
+
+    if body.label == "none":
+        _unassign_capture(db, capture)
+        capture.user_picked = True
+        db.commit()
+        return CaptureOut(capture_id=capture.id, matched=False, species=None, confidence=capture.confidence,
+                          new_badge=False, message="Okay, this photo doesn't count for any animal.",
+                          top_predictions=[])
+
+    allowed = capture.top_labels.split(",") if capture.top_labels else None
+    if allowed is not None and body.label not in allowed:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Pick one of the suggested animals")
+    species = db.scalar(select(Species).where(Species.slug == body.label))
+    if species is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Unknown species")
+
+    new_badge = False
+    album_photo = None
+    if capture.species_id != species.id:
+        _unassign_capture(db, capture)
+        capture.species_id = species.id
+        capture.user_picked = True
+        badge = db.scalar(select(Badge).where(Badge.user_id == user.id, Badge.species_id == species.id))
+        if badge:
+            badge.capture_count += 1
+        else:
+            db.add(Badge(user_id=user.id, species_id=species.id, first_capture_id=capture.id))
+            new_badge = True
+        album_photo = social.ensure_album_photo(db, capture)
+    db.commit()
+
+    message = (f"Got it: a {species.common_name}! New badge unlocked." if new_badge
+               else f"Got it: another {species.common_name} for your collection.")
+    if album_photo:
+        message += " It's now in your album."
+    return CaptureOut(capture_id=capture.id, matched=True, species=species_out(species, True),
+                      confidence=capture.confidence, new_badge=new_badge, message=message,
+                      top_predictions=[], album_photo_id=album_photo.id if album_photo else None)
 
 
 @app.get("/me/collection", response_model=CollectionOut)

@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import CheckConstraint, DateTime, Float, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import Boolean, CheckConstraint, DateTime, Float, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .db import Base
@@ -51,6 +51,11 @@ class Capture(Base):
     longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     taken_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    # The model's top guesses (comma-separated slugs, best first): the animals a
+    # player may pick from when they say the model got it wrong.
+    top_labels: Mapped[str | None] = mapped_column(String(400), nullable=True)
+    # True when the species was picked by the player rather than the model.
+    user_picked: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
 
     species: Mapped["Species | None"] = relationship()
 

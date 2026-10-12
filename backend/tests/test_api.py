@@ -230,3 +230,49 @@ def test_sprites(client):
     assert client.get("/sprites/coyote_silhouette.png").status_code == 200
     assert client.get("/sprites/nope.png").status_code == 404
     assert client.get("/sprites/..%2Fcalifornia_100.png").status_code == 404
+
+
+def test_player_picks_the_animal_when_model_is_unsure(client, fake):
+    h = signup(client)
+    fake.next = [Prediction("bobcat", 0.41), Prediction("gray_fox", 0.3), Prediction("other", 0.1),
+                 Prediction("coyote", 0.08), Prediction("raccoon", 0.05)]
+    r = upload(client, h).json()
+    assert not r["matched"]
+    # The pick list names every suggested species, but never "other".
+    assert [c["slug"] for c in r["choices"]] == ["bobcat", "gray_fox", "coyote", "raccoon"]
+    assert r["choices"][1]["common_name"] == "Gray Fox"
+    assert len(r["top_predictions"]) == 3
+
+    p = client.post(f"/captures/{r['capture_id']}/pick", json={"label": "gray_fox"}, headers=h).json()
+    assert p["matched"] and p["new_badge"] and p["species"]["slug"] == "gray_fox"
+    assert p["album_photo_id"]
+    col = client.get("/me/collection", headers=h).json()
+    assert col["caught"] == 1
+    assert next(e for e in col["entries"] if e["species"]["slug"] == "gray_fox")["caught"]
+
+    # Only the model's suggestions can be picked, and only by the photo's owner.
+    bad = client.post(f"/captures/{r['capture_id']}/pick", json={"label": "mountain_lion"}, headers=h)
+    assert bad.status_code == 400
+    other = client.post(f"/captures/{r['capture_id']}/pick", json={"label": "bobcat"},
+                        headers=signup(client, "bob"))
+    assert other.status_code == 404
+
+
+def test_player_corrects_a_wrong_match(client, fake):
+    h = signup(client)
+    fake.next = [Prediction("coyote", 0.9), Prediction("gray_fox", 0.05)]
+    r = upload(client, h).json()
+    assert r["matched"] and r["species"]["slug"] == "coyote"
+
+    # "Not this animal": the coyote badge and album photo move to the gray fox.
+    p = client.post(f"/captures/{r['capture_id']}/pick", json={"label": "gray_fox"}, headers=h).json()
+    assert p["species"]["slug"] == "gray_fox" and p["new_badge"]
+    caught = [e["species"]["slug"] for e in client.get("/me/collection", headers=h).json()["entries"] if e["caught"]]
+    assert caught == ["gray_fox"]  # the coyote is uncaught (and hidden) again
+    album = client.get("/me/album", headers=h).json()
+    assert [ph["species"]["slug"] for ph in album["photos"]] == ["gray_fox"]
+
+    # "None of these" takes the badge back.
+    n = client.post(f"/captures/{r['capture_id']}/pick", json={"label": "none"}, headers=h).json()
+    assert not n["matched"]
+    assert client.get("/me/collection", headers=h).json()["caught"] == 0
