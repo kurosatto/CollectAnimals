@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
@@ -27,15 +27,25 @@ class UserOut(BaseModel):
     email: str
     username: str
     created_at: datetime
+    show_in_feed: bool | None = True
+
+
+class SettingsIn(BaseModel):
+    show_in_feed: bool | None = None
 
 
 class SpeciesOut(BaseModel):
+    """A species card. Names (and slug, which spells the name) are None until
+    the viewer or one of their friends has caught it; category and rarity are
+    always shown as hints."""
     model_config = ConfigDict(from_attributes=True)
-    slug: str
-    common_name: str
-    scientific_name: str
+    number: int
+    slug: str | None
+    common_name: str | None
+    scientific_name: str | None
     category: str
     rarity: str
+    revealed: bool = True
 
 
 class DexOut(BaseModel):
@@ -49,11 +59,15 @@ class DexOut(BaseModel):
     hotspots: list[str] = []
     # {"grid": {lon0, lat0, step, cols, rows}, "cells": [[col, row, count], ...]}
     range: dict | None = None
+    # {"months": [12 sighting counts], "hours": [24], "night_ratio": float | None}
+    season: dict | None = None
+    captured: bool = False
 
 
 class HotspotSpecies(BaseModel):
-    slug: str
-    common_name: str
+    number: int
+    slug: str | None
+    common_name: str | None
     rarity: str
     observations: int
 
@@ -73,6 +87,18 @@ class PredictionOut(BaseModel):
     probability: float
 
 
+class ChoiceOut(BaseModel):
+    """One of the model's top guesses, named, for 'Not this animal? Pick the right one'."""
+    slug: str
+    common_name: str
+    probability: float
+
+
+class PickIn(BaseModel):
+    # A slug from the capture's choices, or "none" for "none of these".
+    label: str
+
+
 class CaptureOut(BaseModel):
     capture_id: int
     matched: bool
@@ -81,6 +107,10 @@ class CaptureOut(BaseModel):
     new_badge: bool
     message: str
     top_predictions: list[PredictionOut]
+    # Set when this photo became the album photo for the species (first catch).
+    album_photo_id: int | None = None
+    # The model's top 5 species guesses with names, for the player to correct it.
+    choices: list[ChoiceOut] = []
 
 
 class CollectionEntry(BaseModel):
@@ -88,9 +118,114 @@ class CollectionEntry(BaseModel):
     caught: bool
     capture_count: int = 0
     earned_at: datetime | None = None
+    friends_caught: int = 0
+    photo_url: str | None = None
 
 
 class CollectionOut(BaseModel):
     caught: int
     total: int
     entries: list[CollectionEntry]
+
+
+class PhotoOut(BaseModel):
+    id: int
+    # None in the feed for species the viewer hasn't unlocked (the photo would give it away).
+    url: str | None
+    username: str
+    species: SpeciesOut
+    taken_on: date
+    caught_at: datetime
+    # How precise depends on who's looking and how rare the animal is (see app/places.py).
+    latitude: float | None = None
+    longitude: float | None = None
+    location_precise: bool = False
+    place: str | None = None
+    like_count: int = 0
+    liked_by_me: bool = False
+    is_mine: bool = False
+    by_friend: bool = False
+    rank: int | None = None
+
+
+class AlbumOut(BaseModel):
+    username: str
+    caught: int
+    total: int
+    photos: list[PhotoOut]
+
+
+class Tally(BaseModel):
+    caught: int
+    total: int
+
+
+class AchievementOut(BaseModel):
+    id: str
+    title: str
+    description: str
+    earned: bool
+    progress: int
+    goal: int
+
+
+class ProfileOut(BaseModel):
+    username: str
+    joined: datetime
+    # self | friends | requested (you asked them) | incoming (they asked you) | none
+    friendship: str
+    is_bot: bool = False
+    caught: int
+    total: int
+    by_rarity: dict[str, Tally]
+    by_category: dict[str, Tally]
+    likes_received: int
+    achievements: list[AchievementOut]
+    # Their legendary catches; names follow the viewer's own reveal rules.
+    legendaries: list[SpeciesOut]
+    # Album photos the viewer may see: all of them for you and friends, only
+    # species the viewer has unlocked for everyone else.
+    photos: list[PhotoOut]
+    hidden_photos: int = 0
+
+
+class GalleryOut(BaseModel):
+    species: SpeciesOut
+    scope: str
+    sort: str
+    total: int
+    photos: list[PhotoOut]
+
+
+class FeedOut(BaseModel):
+    scope: str  # near | all | friends
+    photos: list[PhotoOut]
+    # Pass as ?before= to get the next, older page; None when there are no more.
+    next_before: int | None = None
+
+
+class AlbumPick(BaseModel):
+    capture_id: int
+
+
+class FriendRequestIn(BaseModel):
+    username: str
+
+
+class FriendOut(BaseModel):
+    username: str
+    caught: int = 0
+    since: datetime
+    is_bot: bool = False
+
+
+class SuggestionOut(BaseModel):
+    username: str
+    caught: int = 0
+    is_bot: bool = False
+
+
+class FriendsOut(BaseModel):
+    friends: list[FriendOut]
+    incoming: list[FriendOut]
+    outgoing: list[FriendOut]

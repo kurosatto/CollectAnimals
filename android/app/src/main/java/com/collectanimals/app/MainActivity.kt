@@ -313,13 +313,7 @@ fun SpeciesTile(number: Int, s: Species, badge: Badge?, onClick: () -> Unit) {
         Column(Modifier.padding(6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Box(Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(8.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
-                val thumb = remember(badge?.photo) { badge?.photo?.let { BitmapFactory.decodeFile(it) } }
-                if (thumb != null) {
-                    Image(thumb.asImageBitmap(), contentDescription = s.commonName,
-                        modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                } else {
-                    Text("?", fontSize = 32.sp, color = MaterialTheme.colorScheme.outline)
-                }
+                PixelSprite(s.slug, caught, Modifier.fillMaxSize(0.85f))
             }
             Spacer(Modifier.height(4.dp))
             Text("#%03d".format(number), style = MaterialTheme.typography.labelSmall,

@@ -11,6 +11,7 @@ from .db import get_db
 from .models import User
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
 
 
 def hash_password(password: str) -> str:
@@ -38,3 +39,9 @@ def current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_
     if user is None:
         raise unauthorized
     return user
+
+
+def optional_user(token: str | None = Depends(optional_oauth2_scheme),
+                  db: Session = Depends(get_db)) -> User | None:
+    """The logged-in user, or None for anonymous requests. A bad token is still a 401."""
+    return current_user(token, db) if token else None

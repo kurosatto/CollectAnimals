@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CollectAnimals</title>
+<title>Capture Animals</title>
 <style>
   :root { --bg:#f6f4ee; --card:#fff; --ink:#1d2a22; --muted:#6b7a70; --accent:#2f7d4f; --line:#e3e0d6;
           --common:#7a8a80; --uncommon:#2f7d4f; --rare:#2d5fa8; --legendary:#b7791f; }
@@ -22,13 +22,24 @@
   .muted { color:var(--muted); }
   .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; }
   .tile { border:1px solid var(--line); border-radius:10px; padding:10px; background:var(--card); font-size:.9rem; }
-  .tile.locked { opacity:.45; filter:grayscale(1); }
+  .tile.locked { color:var(--muted); }
+  .sprite { display:block; width:96px; height:96px; margin:4px auto; image-rendering:pixelated; }
+  .dex-sprite { width:64px; height:64px; margin:0; }
   .tile .num { color:var(--muted); font-size:.75rem; }
   .rarity { font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; font-weight:600; }
   #result.win { border-color:var(--accent); }
+  .pick { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .pick button { background:none; border:1px solid var(--muted); color:inherit; }
+  .pick .none { border-style:dashed; }
   .tile { cursor:pointer; }
   .tile:hover { border-color:var(--accent); }
-  .hidden { display:none; }
+  .hidden, .off { display:none !important; }
+  input[type=file] { max-width:100%; }
+  .keep { margin-top:12px; }
+  .keep-pair { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px; }
+  .keep-pair figure { margin:0; display:grid; gap:6px; }
+  .keep-pair img { width:100%; aspect-ratio:1; object-fit:cover; border-radius:8px; border:2px solid var(--line); }
+  .keep-pair figcaption { font-size:.8rem; color:var(--muted); text-align:center; }
   dialog { border:1px solid var(--line); border-radius:14px; background:var(--card); color:var(--ink);
            padding:0; width:min(560px, calc(100vw - 32px)); }
   dialog::backdrop { background:rgba(0,0,0,.45); }
@@ -53,14 +64,91 @@
   .hot-species li { border:1px solid var(--line); border-radius:999px; padding:3px 10px; font-size:.85rem; cursor:pointer; }
   .hot-species li.caught { border-color:var(--accent); }
   .dex .close { background:none; color:var(--muted); font-size:1.4rem; line-height:1; padding:0 4px; }
+  .tile .thumb { width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:6px; display:block; margin-bottom:6px; }
+  .tile .friends { font-size:.75rem; color:var(--muted); }
+  .tile.locked.hinted { opacity:.75; }
+  .photos { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin-top:10px; }
+  .photo { border:1px solid var(--line); border-radius:10px; overflow:hidden; font-size:.8rem; background:var(--card); }
+  .photo img { width:100%; aspect-ratio:1; object-fit:cover; display:block; }
+  .photo .meta { padding:6px 8px; display:grid; gap:2px; }
+  .photo .who { font-weight:600; display:flex; justify-content:space-between; gap:6px; }
+  .photo .rank { color:var(--legendary); }
+  .like { background:none; color:var(--ink); border:1px solid var(--line); padding:2px 8px; font-size:.8rem; justify-self:start; }
+  .like.on { border-color:#c0392b; color:#c0392b; }
+  .seg { display:flex; gap:6px; flex-wrap:wrap; margin-top:12px; }
+  .seg button { background:none; color:var(--ink); border:1px solid var(--line); padding:4px 10px; font-size:.85rem; }
+  .seg select { padding:4px 8px; font-size:.85rem; }
+  .seg button.on { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .dex-photos { padding:0 16px 16px; }
+  .dex-photos h3 { margin:16px 0 0; font-size:1rem; }
+  ul.people { list-style:none; padding:0; margin:8px 0; display:grid; gap:6px; }
+  ul.people li { display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; }
+  ul.people button { padding:4px 10px; font-size:.85rem; }
+  button.ghost { background:none; color:var(--muted); border:1px solid var(--line); }
+  .feed { display:grid; gap:10px; margin-top:10px; }
+  .feed-item { display:flex; gap:12px; align-items:center; cursor:pointer; padding:6px; border-radius:10px; }
+  .feed-item:hover { background:var(--bg); }
+  .feed-item img, .feed-item .mystery { width:64px; height:64px; border-radius:8px; object-fit:cover; flex:none; }
+  .feed-item .mystery { display:grid; place-items:center; background:var(--bg); border:1px dashed var(--line);
+                        font-size:1.6rem; color:var(--muted); }
+  .feed-item .what { line-height:1.35; }
+  .feed-item .when { font-size:.8rem; color:var(--muted); }
+  nav#tabs { position:fixed; left:0; right:0; bottom:0; display:flex; background:var(--card);
+             border-top:1px solid var(--line); padding-bottom:env(safe-area-inset-bottom); z-index:10; }
+  nav#tabs button { flex:1; background:none; color:var(--muted); border:none; border-radius:0; padding:8px 2px 6px;
+                    display:grid; justify-items:center; gap:2px; font-size:.72rem; }
+  nav#tabs button .ic { font-size:1.3rem; line-height:1; }
+  nav#tabs button.on { color:var(--accent); font-weight:600; }
+  body.authed main { padding-bottom:84px; }
+  @media (min-width:720px) {
+    nav#tabs { position:sticky; top:0; bottom:auto; margin:12px 0 0; border:1px solid var(--line);
+               border-radius:12px; }
+    nav#tabs button { grid-auto-flow:column; justify-content:center; gap:6px; font-size:.95rem; padding:10px; }
+    body.authed main { padding-bottom:16px; }
+  }
+  button.link.user { font-weight:600; color:inherit; text-align:left; }
+  .profile-actions { margin:12px 0 0; }
+  #album h3 { margin:18px 0 8px; font-size:1rem; }
+  .bar-row { display:grid; grid-template-columns:8.5em 1fr 3.5em; gap:8px; align-items:center; font-size:.85rem; margin:4px 0; }
+  .bar-row .muted { text-align:right; }
+  .bar { height:8px; border-radius:99px; background:var(--bg); border:1px solid var(--line); overflow:hidden; }
+  .bar > div { height:100%; background:var(--accent); }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .chip { border:1px solid var(--line); border-radius:999px; padding:3px 10px; font-size:.85rem; }
+  .chip.legend { border-color:var(--legendary); color:var(--legendary); }
+  .achievements { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; }
+  .ach { border:1px solid var(--line); border-radius:10px; padding:8px; display:grid; gap:2px; font-size:.8rem; opacity:.6; }
+  .ach.on { opacity:1; border-color:var(--legendary); }
+  .grid .tier { grid-column:1/-1; margin:14px 0 0; font-size:.8rem; text-transform:uppercase; letter-spacing:.06em; font-weight:700; }
+  .grid .tier:first-child { margin-top:0; }
+  .tile .status, .dex .status { font-size:.75rem; font-weight:600; margin-top:4px; }
+  .tile.mine { border-color:var(--accent); border-width:2px; }
+  .status.mine { color:var(--accent); }
+  .status.friend { color:var(--muted); }
+  .sprite.shadow { opacity:.55; }
+  .season { margin-top:12px; font-size:.85rem; }
+  .season .months { display:grid; grid-template-columns:repeat(12,1fr); gap:2px; align-items:end; height:40px; margin-top:6px; }
+  .season .months div { background:var(--accent); border-radius:2px 2px 0 0; min-height:2px; }
+  .season .months div.low { opacity:.35; }
+  .season .labels { display:grid; grid-template-columns:repeat(12,1fr); font-size:.6rem; color:var(--muted); text-align:center; }
+  label.inline { display:flex; align-items:center; gap:6px; font-size:.9rem; color:var(--muted); }
 </style>
 </head>
 <body>
 <main>
   <header>
-    <h1>CollectAnimals <span class="muted" style="font-size:1rem">California</span></h1>
-    <div id="who" class="hidden"><span id="username"></span> · <button class="link" id="logout">Log out</button></div>
+    <h1>Capture Animals <span class="muted" style="font-size:1rem">California</span></h1>
+    <div id="who" class="hidden"><button class="link" id="username"></button> · <button class="link" id="logout">Log out</button></div>
   </header>
+
+<nav id="tabs" class="hidden">
+  <button data-tab="catch"><span class="ic">📷</span>Capture</button>
+  <button data-tab="dex"><span class="ic">📖</span>Dex</button>
+  <button data-tab="photos"><span class="ic">🖼️</span>Photos</button>
+  <button data-tab="feed"><span class="ic">📰</span>Feed</button>
+  <button data-tab="parks"><span class="ic">🏞️</span>Parks</button>
+  <button data-tab="friends"><span class="ic">👥</span>Friends</button>
+</nav>
 
   <section id="auth" class="card">
     <h2 id="auth-title">Log in</h2>
@@ -75,15 +163,25 @@
   </section>
 
   <section id="game" class="hidden">
-    <div class="card">
+    <div class="card" data-tab="catch">
       <h2>Capture an animal</h2>
       <form id="upload-form">
-        <input id="photo" type="file" accept="image/*" capture="environment" required>
+        <input id="photo" type="file" accept="image/*" required>
         <button type="submit">Identify</button>
+        <label class="inline"><input type="checkbox" id="use-location" checked> Save where I captured it</label>
       </form>
       <div id="result" class="card hidden"></div>
     </div>
-    <div class="card" id="hotspots-card">
+    <div class="card off" data-tab="feed">
+      <h2>Latest captures</h2>
+      <div class="seg" id="feed-seg"></div>
+      <label class="inline" style="margin-top:8px"><input type="checkbox" id="feed-uncaught"> Only animals I haven't captured</label>
+      <p class="muted" id="feed-note" style="margin:8px 0 0;font-size:.85rem"></p>
+      <div id="feed" class="feed"></div>
+      <p><button class="ghost hidden" id="feed-more">Show more</button></p>
+      <label class="inline"><input type="checkbox" id="share-feed"> Show my captures in this feed</label>
+    </div>
+    <div class="card off" id="hotspots-card" data-tab="parks">
       <h2>Hotspots</h2>
       <p class="muted" style="margin-top:0">Parks where you can spot lots of the 100. Tap a park to see which ones.</p>
       <div class="hot-wrap">
@@ -92,21 +190,39 @@
       </div>
       <div id="hot-list" class="hot-list"></div>
     </div>
-    <div class="card">
+    <div class="card off" data-tab="dex">
       <h2>Your collection <span id="progress" class="muted"></span></h2>
       <div id="grid" class="grid"></div>
+    </div>
+    <div class="card off" data-tab="photos">
+      <h2>My photos</h2>
+      <p class="muted" style="margin-top:0">Your album: one photo for each animal you captured.</p>
+      <div id="my-photos" class="photos"></div>
+    </div>
+    <div class="card off" data-tab="friends">
+      <h2>Friends</h2>
+      <p class="muted">Animals your friends capture show up by name in your collection, and you can see each other's albums.</p>
+      <form id="friend-form">
+        <input id="friend-name" placeholder="Friend's username" required autocomplete="off">
+        <button type="submit">Add friend</button>
+      </form>
+      <p id="friend-msg" class="muted"></p>
+      <div id="friend-lists"></div>
     </div>
   </section>
 </main>
 <dialog id="dex"><div class="dex">
   <div class="dex-head">
-    <div><div class="num muted" id="dex-num"></div><h2 id="dex-name"></h2>
-      <div class="muted" id="dex-sci"></div><div class="rarity" id="dex-rarity"></div></div>
+    <img class="sprite dex-sprite" id="dex-sprite" alt="">
+    <div style="flex:1"><div class="num muted" id="dex-num"></div><h2 id="dex-name"></h2>
+      <div class="muted" id="dex-sci"></div><div class="rarity" id="dex-rarity"></div>
+      <div class="status" id="dex-status"></div></div>
     <button class="close" id="dex-close" aria-label="Close">×</button>
   </div>
   <div class="dex-body">
     <div class="dex-map"><div id="dex-map"></div><div class="muted" id="dex-map-note" style="font-size:.8rem"></div>
-      <p id="dex-where" style="margin:8px 0 0"></p></div>
+      <p id="dex-where" style="margin:8px 0 0"></p>
+      <div id="dex-season" class="season"></div></div>
     <dl>
       <dt>Most active</dt><dd id="dex-active"></dd>
       <dt>Spotting tip</dt><dd id="dex-tip"></dd>
@@ -116,6 +232,15 @@
       <dt>Fun fact</dt><dd id="dex-fact"></dd>
     </dl>
   </div>
+</div>
+<div class="dex-photos" id="dex-photos"></div>
+</dialog>
+<dialog id="album"><div class="dex">
+  <div class="dex-head">
+    <div><h2 id="album-title"></h2><div class="muted" id="album-sub"></div></div>
+    <button class="close" id="album-close" aria-label="Close">×</button>
+  </div>
+  <div id="album-photos"></div>
 </div></dialog>
 <script>
 const $ = (id) => document.getElementById(id);
@@ -168,16 +293,27 @@ $("auth-form").onsubmit = async (e) => {
 };
 
 $("logout").onclick = () => setToken(null);
+$("username").onclick = () => openProfile($("username").textContent);
+
+function here() {
+  if (!$("use-location").checked || !navigator.geolocation) return Promise.resolve(null);
+  return new Promise((ok) => navigator.geolocation.getCurrentPosition(
+    (p) => ok(p.coords), () => ok(null), { timeout: 8000, maximumAge: 300000 }));
+}
 
 $("upload-form").onsubmit = async (e) => {
   e.preventDefault();
   const fd = new FormData();
-  fd.append("photo", $("photo").files[0]);
+  const file = $("photo").files[0];
+  fd.append("photo", file);
   const box = $("result");
   box.classList.remove("hidden", "win");
   box.textContent = "Identifying…";
+  const pos = await here();
+  if (pos) { fd.append("latitude", pos.latitude); fd.append("longitude", pos.longitude); }
   try {
     const r = await api("/captures", { method: "POST", body: fd });
+    r.file = file;
     box.classList.toggle("win", r.matched);
     box.innerHTML = "";
     const h = document.createElement("strong");
@@ -185,35 +321,152 @@ $("upload-form").onsubmit = async (e) => {
     const p = document.createElement("p");
     p.className = "muted";
     p.textContent = "Top guesses: " + r.top_predictions
-      .map((x) => `${x.common_name || x.label} ${(x.probability * 100).toFixed(0)}%`).join(", ");
+      .map((x) => `${x.common_name || (x.label === "other" ? "not on the list" : "???")} ${(x.probability * 100).toFixed(0)}%`).join(", ");
     box.append(h, p);
-    loadCollection();
+    if (r.choices && r.choices.length) box.append(pickPanel(r, box));
+    if (r.matched && !r.album_photo_id) keepWhich(r.species, r.capture_id, file, box);
+    loadCollection(); loadFeed();
   } catch (err) { box.textContent = err.message; }
 };
 
-let caughtSlugs = new Set();
+// Caught an animal you already have: show your album photo next to the new one
+// and let the player choose which to keep.
+async function keepWhich(species, captureId, file, box) {
+  const wrap = el("div", "keep");
+  box.append(wrap);
+  let old = null;
+  try {
+    old = (await api("/me/album")).photos.find((p) => p.species.number === species.number);
+  } catch {}
+  if (!old) return wrap.remove();
+  wrap.append(el("strong", "", "You already have this one. Which photo do you want to keep?"));
+  const pair = el("div", "keep-pair");
+  const side = (src, caption, label, onPick) => {
+    const f = el("figure");
+    const img = el("img"); img.src = src; img.alt = caption;
+    const b = el("button", "", label);
+    b.type = "button";
+    b.onclick = async () => {
+      pair.querySelectorAll("button").forEach((x) => (x.disabled = true));
+      try { await onPick(); } catch (err) { b.textContent = err.message; return; }
+      pair.querySelectorAll("img").forEach((x) => (x.style.borderColor = x === img ? "var(--accent)" : "var(--line)"));
+      b.textContent = "✓ Kept";
+    };
+    f.append(img, el("figcaption", "", caption), b);
+    pair.append(f);
+  };
+  side(old.url, old.taken_on ? `Album photo · ${fmtDate(old.taken_on)}` : "Album photo", "Keep this one", async () => {});
+  side(URL.createObjectURL(file), "New photo", "Keep the new one", async () => {
+    await api(`/me/album/${species.number}`, { method: "PUT",
+      headers: { "Content-Type": "application/json" }, body: JSON.stringify({ capture_id: captureId }) });
+    loadCollection(); loadFeed(); loadMyPhotos();
+  });
+  wrap.append(pair);
+  if (old.like_count) wrap.append(el("p", "muted", `Your album photo has ${old.like_count} like${old.like_count > 1 ? "s" : ""}. They reset if you switch.`));
+}
+
+// "Not this animal?": the player picks from the model's top guesses. We trust them.
+function pickPanel(r, box) {
+  const wrap = document.createElement("div");
+  const open = document.createElement("button");
+  open.type = "button";
+  open.textContent = r.matched ? "Not this animal? Pick the right one" : "Know what it is? Pick it";
+  const list = document.createElement("div");
+  list.className = "pick hidden";
+  const choose = async (label, b) => {
+    list.querySelectorAll("button").forEach((x) => { x.disabled = true; });
+    try {
+      const res = await api(`/captures/${r.capture_id}/pick`, { method: "POST",
+        headers: { "Content-Type": "application/json" }, body: JSON.stringify({ label }) });
+      box.classList.toggle("win", res.matched);
+      const h = box.querySelector("strong");
+      h.textContent = (res.new_badge ? "🏅 " : "") + res.message;
+      wrap.remove();
+      box.querySelector(".keep")?.remove();
+      if (res.matched && !res.album_photo_id) keepWhich(res.species, r.capture_id, r.file, box);
+      loadCollection(); loadFeed();
+    } catch (err) {
+      b.textContent = err.message;
+      list.querySelectorAll("button").forEach((x) => { x.disabled = false; });
+    }
+  };
+  for (const c of r.choices) {
+    if (r.matched && r.species && c.slug === r.species.slug) continue;
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = `${c.common_name} · ${(c.probability * 100).toFixed(0)}%`;
+    b.onclick = () => choose(c.slug, b);
+    list.append(b);
+  }
+  const none = document.createElement("button");
+  none.type = "button"; none.className = "none";
+  none.textContent = "None of these";
+  none.onclick = () => choose("none", none);
+  list.append(none);
+  open.onclick = () => { list.classList.toggle("hidden"); };
+  wrap.append(open, list);
+  return wrap;
+}
+
+let caughtNums = new Set();
 let dexNumbers = {};
+
+// Dex order: common animals first, legendaries last; grouped by kind within each tier.
+const RARITY_ORDER = ["common", "uncommon", "rare", "legendary"];
+const CATEGORY_ORDER = ["mammal", "bird", "reptile", "amphibian", "invertebrate", "marine"];
+const dexSort = (a, b) => RARITY_ORDER.indexOf(a.rarity) - RARITY_ORDER.indexOf(b.rarity)
+  || CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category) || a.number - b.number;
+const silhouetteUrl = (number) => `/sprites/silhouette/${number}.png`;
 
 async function loadCollection() {
   const c = await api("/me/collection");
-  caughtSlugs = new Set(c.entries.filter((e) => e.caught).map((e) => e.species.slug));
-  c.entries.forEach((e, i) => { dexNumbers[e.species.slug] = i + 1; });
+  const entries = [...c.entries].sort((a, b) => dexSort(a.species, b.species));
+  caughtNums = new Set(entries.filter((e) => e.caught).map((e) => e.species.number));
+  entries.forEach((e, i) => { dexNumbers[e.species.number] = i + 1; });
   loadHotspots();
   $("progress").textContent = `${c.caught} / ${c.total}`;
   const grid = $("grid");
   grid.innerHTML = "";
-  c.entries.forEach((e, i) => {
-    const t = document.createElement("div");
-    t.className = "tile" + (e.caught ? "" : " locked");
+  let tier = null;
+  entries.forEach((e, i) => {
     const s = e.species;
-    t.innerHTML = `<div class="num">#${String(i + 1).padStart(3, "0")}</div><div class="name"></div>
-      <div class="muted sci"></div><div class="rarity" style="color:var(--${s.rarity})">${s.rarity}</div>`;
-    t.querySelector(".name").textContent = s.common_name + (e.capture_count > 1 ? ` ×${e.capture_count}` : "");
-    t.querySelector(".sci").textContent = s.scientific_name;
-    t.onclick = () => openDex(s.slug, i + 1, e.caught);
+    if (s.rarity !== tier) {
+      tier = s.rarity;
+      const all = entries.filter((x) => x.species.rarity === tier);
+      const h = el("div", "tier", `${tier} · ${all.filter((x) => x.caught).length}/${all.length}`);
+      h.style.color = `var(--${tier})`;
+      grid.append(h);
+    }
+    const t = document.createElement("div");
+    // Three looks: yours (captured), seen by a friend (colour sprite, not yours), unknown (silhouette).
+    const state = e.caught ? "mine" : s.revealed ? "friend" : "unknown";
+    t.className = "tile " + state + (state === "mine" ? "" : " locked") + (state === "friend" ? " hinted" : "");
+    const sprite = s.slug ? spriteUrl(s.slug, true) : silhouetteUrl(s.number);
+    t.innerHTML = `<div class="num">#${String(i + 1).padStart(3, "0")}</div>
+      <img class="sprite${state === "unknown" ? " shadow" : ""}" alt="" src="${sprite}"><div class="name"></div>
+      <div class="muted sci"></div><div class="rarity" style="color:var(--${s.rarity})">${s.rarity}</div>
+      <div class="status"></div>`;
+    if (e.photo_url) {
+      const img = document.createElement("img");
+      img.className = "thumb"; img.src = e.photo_url; img.alt = ""; img.loading = "lazy";
+      t.prepend(img);
+    }
+    t.querySelector(".name").textContent = s.revealed
+      ? s.common_name + (e.capture_count > 1 ? ` ×${e.capture_count}` : "") : "???";
+    t.querySelector(".sci").textContent = s.revealed ? s.scientific_name : `Unknown ${s.category}`;
+    const st = t.querySelector(".status");
+    if (state === "mine") { st.textContent = "✓ Captured"; st.classList.add("mine"); }
+    else if (state === "friend") {
+      st.textContent = `Not yours yet · 👥 ${e.friends_caught} friend${e.friends_caught > 1 ? "s" : ""} captured it`;
+      st.classList.add("friend");
+    }
+    t.onclick = () => openDex(s.number, i + 1, e.caught);
     grid.append(t);
   });
 }
+
+// Colour pixel art once caught, a silhouette until then.
+const spriteUrl = (slug, caught) => `/sprites/${encodeURIComponent(slug)}${caught ? "" : "_silhouette"}.png`;
 
 // California outline rings as [lon, lat]; this rough fallback is replaced by
 // the Natural Earth outline from /map/california when it loads.
@@ -243,12 +496,57 @@ function rangeSvg(range) {
     <path class="land" d="${land}"/>${cells}</svg>`;
 }
 
-async function openDex(slug, num, caught) {
-  const d = await api(`/species/${encodeURIComponent(slug)}/dex`);
+// "When to look": sightings by month (Animal Crossing style) and a day/night hint.
+const MONTHS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+function bestMonths(months) {
+  const max = Math.max(...months);
+  const good = months.map((n) => n >= 0.6 * max);
+  if (good.every(Boolean)) return "All year";
+  // Runs of good months, wrapping from December into January.
+  const start = good.findIndex((g, i) => g && !good[(i + 11) % 12]);
+  const runs = [];
+  for (let k = 0, i = start; k < 12; k++, i = (i + 1) % 12) {
+    if (good[i] && !good[(i + 11) % 12]) runs.push([i, i]);
+    else if (good[i]) runs[runs.length - 1][1] = i;
+  }
+  return runs.map(([a, b]) => a === b ? MONTH_NAMES[a] : `${MONTH_NAMES[a]}–${MONTH_NAMES[b]}`).join(", ");
+}
+function drawSeason(season) {
+  const box = $("dex-season");
+  box.innerHTML = "";
+  if (!season || !season.months.some((n) => n)) return;
+  const r = season.night_ratio;
+  const when = r == null ? "" : r >= 1.8 ? "🌙 Often out at night" : r >= 1.2 ? "🌗 Day and night"
+    : r <= 0.5 ? "☀️ Daytime" : "☀️ Mostly daytime";
+  box.append(el("strong", "", "When to look"), el("div", "", `📅 Best months: ${bestMonths(season.months)}`));
+  if (when) box.append(el("div", "", when));
+  const max = Math.max(...season.months);
+  const bars = el("div", "months");
+  season.months.forEach((n, i) => {
+    const b = el("div", n < 0.6 * max ? "low" : "");
+    b.style.height = `${Math.max(5, (100 * n) / max)}%`;
+    b.title = `${MONTH_NAMES[i]}: ${n} sightings`;
+    bars.append(b);
+  });
+  const labels = el("div", "labels");
+  MONTHS.forEach((m) => labels.append(el("span", "", m)));
+  box.append(bars, labels);
+}
+
+async function openDex(key, num, caught) {
+  const d = await api(`/species/${encodeURIComponent(key)}/dex`);
   const s = d.species;
+  $("dex-sprite").src = s.slug ? spriteUrl(s.slug, true) : silhouetteUrl(s.number);
+  $("dex-sprite").classList.toggle("shadow", !s.slug);
+  const st = $("dex-status");
+  st.className = "status " + (d.captured ? "mine" : s.revealed ? "friend" : "");
+  st.textContent = d.captured ? "✓ Captured by you"
+    : s.revealed ? "Not captured by you yet. A friend has seen it." : "";
   $("dex-num").textContent = `#${String(num).padStart(3, "0")}`;
-  $("dex-name").textContent = s.common_name;
-  $("dex-sci").textContent = s.scientific_name;
+  $("dex-name").textContent = s.revealed ? s.common_name : "???";
+  $("dex-sci").textContent = s.revealed ? s.scientific_name
+    : `An unknown ${s.category}. Capture it, or have a friend capture it, to learn its name.`;
   $("dex-rarity").textContent = s.rarity;
   $("dex-rarity").style.color = `var(--${s.rarity})`;
   $("dex-map").innerHTML = rangeSvg(d.range);
@@ -259,9 +557,364 @@ async function openDex(slug, num, caught) {
   $("dex-hotspots").textContent = d.hotspots.length ? d.hotspots.join(", ") : "—";
   $("dex-size").textContent = d.size || "Unknown";
   $("dex-weight").textContent = d.weight || "Unknown";
-  $("dex-fact").textContent = caught ? (d.fun_fact || "—") : "🔒 Catch one to unlock its fun fact.";
+  $("dex-fact").textContent = d.fun_fact || "🔒 Capture one, or have a friend capture one, to unlock its fun fact.";
+  drawSeason(d.season);
+  gallery = { species: s, scope: "all", sort: "top" };
+  loadGallery();
   $("dex").showModal();
 }
+
+// --- photos: gallery in the Pokédex entry, friends' albums -------------------
+
+let gallery = null;
+const el = (tag, cls, text) => {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text != null) n.textContent = text;
+  return n;
+};
+const fmtDate = (d) => new Date(d + "T12:00:00").toLocaleDateString(undefined,
+  { year: "numeric", month: "short", day: "numeric" });
+
+function photoCard(p, { showSpecies = false, onChange } = {}) {
+  const card = el("div", "photo");
+  const img = el("img"); img.src = p.url; img.alt = p.species.common_name || "Animal photo"; img.loading = "lazy";
+  const meta = el("div", "meta");
+  const who = el("div", "who");
+  who.append(showSpecies ? el("span", "", p.species.common_name || "???")
+                         : userLink(p.username, p.username + (p.is_mine ? " (you)" : "")));
+  if (p.rank) who.append(el("span", "rank", p.rank <= 3 ? ["🥇", "🥈", "🥉"][p.rank - 1] : `#${p.rank}`));
+  meta.append(who, el("span", "muted", fmtDate(p.taken_on)));
+  if (p.latitude != null) {
+    const a = el("a", "", p.place || `${p.latitude}, ${p.longitude}`);
+    a.href = `https://www.openstreetmap.org/?mlat=${p.latitude}&mlon=${p.longitude}#map=${p.location_precise ? 14 : 10}/${p.latitude}/${p.longitude}`;
+    a.target = "_blank"; a.rel = "noopener"; a.style.color = "var(--accent)";
+    meta.append(a);
+  } else if (p.place) meta.append(el("span", "muted", p.place));
+  const like = el("button", "like" + (p.liked_by_me ? " on" : ""), `♥ ${p.like_count}`);
+  if (p.is_mine) { like.disabled = true; like.title = "Your photo"; }
+  else like.onclick = async () => {
+    like.disabled = true;
+    try {
+      await api(`/photos/${p.id}/like`, { method: p.liked_by_me ? "DELETE" : "POST" });
+      p.like_count += p.liked_by_me ? -1 : 1;
+      p.liked_by_me = !p.liked_by_me;
+      like.textContent = `♥ ${p.like_count}`;
+      like.classList.toggle("on", p.liked_by_me);
+      if (onChange) onChange();
+    } catch {}
+    like.disabled = false;
+  };
+  meta.append(like);
+  if (p.is_mine) {
+    const del = el("button", "like ghost", "Delete photo");
+    del.onclick = async () => {
+      if (!confirm("Delete this photo? It disappears from your album, the gallery and the feed, " +
+                   "and its likes are lost. The animal also leaves your collection until you capture it again.")) return;
+      try { await deletePhoto(p.id); card.remove(); if ($("dex").open && gallery) loadGallery(); } catch (err) { alert(err.message); }
+    };
+    meta.append(del);
+  }
+  card.append(img, meta);
+  return card;
+}
+
+async function deletePhoto(id) {
+  await api(`/photos/${id}`, { method: "DELETE" });
+  loadCollection(); loadFeed(); loadMyPhotos();
+}
+
+async function loadMyPhotos() {
+  const grid = $("my-photos");
+  try {
+    const a = await api("/me/album");
+    grid.innerHTML = "";
+    if (!a.photos.length) grid.append(el("p", "muted", "No photos yet. Capture an animal to start your album."));
+    a.photos.forEach((p) => grid.append(photoCard(p, { showSpecies: true })));
+  } catch (err) { grid.textContent = err.message; }
+}
+
+// One section at a time, picked from the tab bar (bottom on phones, top on wide screens).
+const TABS = ["catch", "dex", "photos", "feed", "parks", "friends"];
+function showTab(name) {
+  if (!TABS.includes(name)) name = "catch";
+  document.querySelectorAll("#game > [data-tab]").forEach((c) => c.classList.toggle("off", c.dataset.tab !== name));
+  document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b.dataset.tab === name));
+  if (location.hash !== "#" + name) history.replaceState(null, "", "#" + name);
+  if (name === "photos") loadMyPhotos();
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll("#tabs button").forEach((b) => (b.onclick = () => showTab(b.dataset.tab)));
+window.addEventListener("hashchange", () => showTab(location.hash.slice(1)));
+
+async function loadGallery() {
+  const box = $("dex-photos");
+  box.innerHTML = "";
+  const s = gallery.species;
+  box.append(el("h3", "", "Photos"));
+  if (!s.revealed) {
+    box.append(el("p", "muted", "Capture it, or have a friend capture it, to see everyone's photos."));
+    return;
+  }
+  const seg = el("div", "seg");
+  for (const [k, v, label] of [["scope", "all", "Everyone"], ["scope", "friends", "Friends"],
+                               ["sort", "top", "Most liked"], ["sort", "new", "Newest"]]) {
+    const b = el("button", gallery[k] === v ? "on" : "", label);
+    b.onclick = () => { gallery[k] = v; loadGallery(); };
+    seg.append(b);
+  }
+  const grid = el("div", "photos");
+  const note = el("p", "muted", "Loading…");
+  box.append(seg, note, grid);
+  try {
+    const g = await api(`/species/${s.number}/photos?scope=${gallery.scope}&sort=${gallery.sort}&limit=60`);
+    note.textContent = g.total ? `${g.total} photo${g.total > 1 ? "s" : ""}` : "No photos yet.";
+    g.photos.forEach((p) => grid.append(photoCard(p)));
+  } catch (err) { note.textContent = err.message; }
+}
+
+// --- player profiles ----------------------------------------------------------
+
+const CATEGORY_NAMES = { mammal: "Mammals", bird: "Birds", reptile: "Reptiles", amphibian: "Amphibians",
+                         invertebrate: "Bugs & critters", marine: "Ocean" };
+
+function userLink(username, label) {
+  const b = el("button", "link user", label || username);
+  b.type = "button";
+  b.onclick = (e) => { e.stopPropagation(); openProfile(username); };
+  return b;
+}
+
+function bar(label, t, color) {
+  const row = el("div", "bar-row");
+  const track = el("div", "bar");
+  const fill = el("div");
+  fill.style.width = `${t.total ? (100 * t.caught) / t.total : 0}%`;
+  if (color) fill.style.background = color;
+  track.append(fill);
+  row.append(el("span", "", label), track, el("span", "muted", `${t.caught}/${t.total}`));
+  return row;
+}
+
+async function openProfile(username) {
+  const box = $("album-photos");
+  box.innerHTML = "";
+  $("album-title").textContent = username;
+  $("album-sub").textContent = "Loading…";
+  if (!$("album").open) $("album").showModal();
+  let u;
+  try { u = await api(`/users/${encodeURIComponent(username)}`); }
+  catch (err) { $("album-sub").textContent = err.message; return; }
+  const joined = new Date(u.joined).toLocaleDateString(undefined, { month: "short", year: "numeric" });
+  $("album-title").textContent = (u.friendship === "self" ? `${u.username} (you)` : u.username) + (u.is_bot ? " 🤖" : "");
+  $("album-sub").textContent = `${u.caught} / ${u.total} captured · ♥ ${u.likes_received} · joined ${joined}`;
+
+  const act = el("div", "profile-actions");
+  const friendBtn = (label, cls, fn) => {
+    const b = el("button", cls, label);
+    b.onclick = async () => {
+      b.disabled = true;
+      try { await fn(); openProfile(u.username); loadFriends(); loadCollection(); } catch (err) { b.textContent = err.message; }
+    };
+    act.append(b);
+  };
+  const name = encodeURIComponent(u.username);
+  if (u.friendship === "none") friendBtn("Add friend", "", () => api("/friends/requests", { method: "POST",
+    headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: u.username }) }));
+  else if (u.friendship === "incoming") friendBtn("Accept friend request", "", () =>
+    api(`/friends/requests/${name}/accept`, { method: "POST" }));
+  else if (u.friendship === "requested") act.append(el("span", "muted", "Friend request sent"));
+  else if (u.friendship === "friends") act.append(el("span", "muted", "✓ Friends"));
+  if (u.is_bot) act.append(el("p", "muted", "A bot friend: a sample player who comes with the game."));
+  if (act.childNodes.length) box.append(act);
+
+  const sec = (title) => { const h = el("h3", "", title); box.append(h); return h; };
+  sec("Rarity");
+  for (const r of ["common", "uncommon", "rare", "legendary"])
+    if (u.by_rarity[r]) box.append(bar(r[0].toUpperCase() + r.slice(1), u.by_rarity[r], `var(--${r})`));
+  if (u.legendaries.length) {
+    const shelf = el("div", "chips");
+    u.legendaries.forEach((s) => shelf.append(el("span", "chip legend", "⭐ " + (s.common_name || "???"))));
+    box.append(shelf);
+  }
+  sec("Groups");
+  for (const [cat, t] of Object.entries(u.by_category)) box.append(bar(CATEGORY_NAMES[cat] || cat, t));
+
+  sec("Photos");
+  const grid = el("div", "photos");
+  if (!u.photos.length) grid.append(el("p", "muted", "No photos yet."));
+  u.photos.forEach((p) => grid.append(photoCard(p, { showSpecies: true })));
+  box.append(grid);
+  if (u.hidden_photos) box.append(el("p", "muted",
+    `${u.hidden_photos} more photo${u.hidden_photos > 1 ? "s" : ""} of animals you haven't discovered yet.`));
+  const earned = u.achievements.filter((a) => a.earned).length;
+  sec(`Achievements · ${earned}/${u.achievements.length}`);
+  const ach = el("div", "achievements");
+  for (const a of [...u.achievements].sort((x, y) => y.earned - x.earned)) {
+    const d = el("div", "ach" + (a.earned ? " on" : ""));
+    d.title = a.description;
+    d.append(el("strong", "", (a.earned ? "🏆 " : "🔒 ") + a.title),
+             el("span", "muted", a.earned ? a.description : `${a.progress}/${a.goal} · ${a.description}`));
+    ach.append(d);
+  }
+  box.append(ach);
+
+}
+$("album-close").onclick = () => $("album").close();
+$("album").onclick = (e) => { if (e.target === $("album")) $("album").close(); };
+
+// --- news feed ----------------------------------------------------------------
+
+let feedScope = "near", feedBefore = null, feedRadius = 50, feedPos = null;
+try { feedRadius = +localStorage.getItem("feedRadius") || 50; } catch {}
+
+function myPosition() {
+  if (feedPos) return Promise.resolve(feedPos);
+  if (!navigator.geolocation) return Promise.resolve(null);
+  return new Promise((ok) => navigator.geolocation.getCurrentPosition(
+    (p) => ok(feedPos = { lat: p.coords.latitude, lon: p.coords.longitude }), () => ok(null),
+    { timeout: 8000, maximumAge: 600000, enableHighAccuracy: false }));
+}
+const article = (w) => (/^[aeiou]/i.test(w) ? "an " : "a ") + w;
+
+function ago(iso) {
+  const t = new Date(iso.endsWith("Z") || iso.includes("+") ? iso : iso + "Z");
+  const m = Math.round((Date.now() - t) / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m} min ago`;
+  if (m < 60 * 24) return `${Math.round(m / 60)} h ago`;
+  if (m < 60 * 24 * 7) return `${Math.round(m / 1440)} d ago`;
+  return t.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function feedItem(p) {
+  const s = p.species;
+  const row = el("div", "feed-item");
+  if (p.url) { const img = el("img"); img.src = p.url; img.alt = s.common_name || ""; img.loading = "lazy"; row.append(img); }
+  else row.append(el("div", "mystery", "?"));
+  const what = el("div", "what");
+  const line = el("div");
+  line.append(p.is_mine ? el("strong", "", "You") : userLink(p.username), " captured ");
+  const name = el("strong", "", s.revealed ? article(s.common_name) : `a mystery ${s.category}`);
+  name.style.color = `var(--${s.rarity})`;
+  line.append(name);
+  const when = el("div", "when", [p.place, ago(p.caught_at)].filter(Boolean).join(" · "));
+  what.append(line, when);
+  if (s.revealed && p.like_count) what.append(el("div", "when", `♥ ${p.like_count}`));
+  row.append(what);
+  row.onclick = () => openDex(s.number, dexNumbers[s.number] || s.number, caughtNums.has(s.number));
+  return row;
+}
+
+async function loadFeed(more = false) {
+  if (!more) { feedBefore = null; $("feed").innerHTML = ""; }
+  const seg = $("feed-seg");
+  seg.innerHTML = "";
+  for (const [v, label] of [["near", "Near me"], ["friends", "Friends"], ["all", "All California"]]) {
+    const b = el("button", feedScope === v ? "on" : "", label);
+    b.onclick = () => { feedScope = v; loadFeed(); };
+    seg.append(b);
+  }
+  const params = new URLSearchParams({ scope: feedScope, limit: 10 });
+  $("feed-note").textContent = "";
+  if (feedScope === "near") {
+    const sel = el("select");
+    for (const km of [10, 25, 50, 100, 200]) {
+      const o = el("option", "", `within ${km} km`); o.value = km; o.selected = km === feedRadius; sel.append(o);
+    }
+    sel.onchange = () => {
+      feedRadius = +sel.value;
+      try { localStorage.setItem("feedRadius", feedRadius); } catch {}
+      loadFeed();
+    };
+    seg.append(sel);
+    const pos = await myPosition();
+    if (!pos) {
+      // No location permission: fall back to the whole state.
+      feedScope = "all";
+      $("feed-note").textContent = "Allow location to see captures near you. Showing all of California.";
+      seg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.textContent === "All California"));
+      sel.remove();
+      params.set("scope", "all");
+    } else {
+      params.set("lat", pos.lat.toFixed(2)); params.set("lon", pos.lon.toFixed(2));
+      params.set("radius_km", feedRadius);
+    }
+  }
+  if ($("feed-uncaught").checked) params.set("uncaught", "true");
+  if (feedBefore) params.set("before", feedBefore);
+  try {
+    const f = await api(`/feed?${params}`);
+    f.photos.forEach((p) => $("feed").append(feedItem(p)));
+    if (!f.photos.length && !more) $("feed").append(el("p", "muted", params.get("scope") === "near"
+      ? `No captures within ${feedRadius} km yet. Try a bigger radius, or be the first!`
+      : $("feed-uncaught").checked ? "Nothing here you haven't captured yet." : "No captures yet. Be the first!"));
+    feedBefore = f.next_before;
+    $("feed-more").classList.toggle("hidden", !feedBefore);
+  } catch (err) { $("feed").append(el("p", "muted", err.message)); }
+}
+$("feed-more").onclick = () => loadFeed(true);
+$("feed-uncaught").onchange = () => loadFeed();
+$("share-feed").onchange = async (e) => {
+  try { await api("/me/settings", { method: "PATCH", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ show_in_feed: e.target.checked }) }); } catch { e.target.checked = !e.target.checked; }
+};
+
+// --- friends ------------------------------------------------------------------
+
+async function loadFriends() {
+  const f = await api("/friends");
+  const box = $("friend-lists");
+  box.innerHTML = "";
+  const section = (title, people, actions) => {
+    if (!people.length) return;
+    box.append(el("h3", "", title));
+    const ul = el("ul", "people");
+    for (const p of people) {
+      const li = el("li");
+      const who = el("span");
+      who.append(userLink(p.username), p.is_bot ? " 🤖" : "", p.caught ? ` · ${p.caught} captured` : "");
+      li.append(who);
+      const btns = el("span");
+      for (const [label, cls, fn] of actions) {
+        const b = el("button", cls, label);
+        b.onclick = async () => {
+          try { await fn(p.username); } catch (err) { $("friend-msg").textContent = err.message; }
+          loadFriends(); loadCollection();
+        };
+        btns.append(b, " ");
+      }
+      li.append(btns);
+      ul.append(li);
+    }
+    box.append(ul);
+  };
+  const del = (u) => api(`/friends/${encodeURIComponent(u)}`, { method: "DELETE" });
+  section("Friend requests", f.incoming, [
+    ["Accept", "", (u) => api(`/friends/requests/${encodeURIComponent(u)}/accept`, { method: "POST" })],
+    ["Decline", "ghost", del]]);
+  section("Your friends", f.friends, [["Profile", "", openProfile], ["Remove", "ghost", del]]);
+  section("Waiting for them to accept", f.outgoing, [["Cancel", "ghost", del]]);
+  if (!f.friends.length && !f.incoming.length && !f.outgoing.length)
+    box.append(el("p", "muted", "No friends yet. Add someone by their username."));
+  // Bot friends: sample players anyone can add, so the game isn't lonely at the start.
+  let bots = [];
+  try { bots = await api("/friends/suggestions"); } catch {}
+  section("Bot friends to add 🤖", bots, [["Add", "", (u) => api("/friends/requests", { method: "POST",
+    headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: u }) })]]);
+}
+
+$("friend-form").onsubmit = async (e) => {
+  e.preventDefault();
+  const name = $("friend-name").value.trim();
+  try {
+    const r = await api("/friends/requests", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: name }) });
+    $("friend-msg").textContent = r.status === "friends" ? `You and ${name} are now friends.` : `Request sent to ${name}.`;
+    $("friend-name").value = "";
+    loadFriends(); loadCollection();
+  } catch (err) { $("friend-msg").textContent = err.message; }
+};
 let hotspots = [];
 let hotSelected = null;
 
@@ -298,20 +951,20 @@ function drawHotspots() {
 function selectHotspot(i) {
   hotSelected = i;
   const h = hotspots[i];
-  const got = h.species.filter((s) => caughtSlugs.has(s.slug)).length;
+  const got = h.species.filter((s) => caughtNums.has(s.number)).length;
   const box = $("hot-detail");
   box.innerHTML = `<h3 style="margin:0"></h3><p class="muted blurb"></p><p class="count"></p><ul class="hot-species"></ul>`;
   box.querySelector("h3").textContent = h.name;
   box.querySelector(".blurb").textContent = h.blurb;
   box.querySelector(".count").textContent =
-    `You can spot ${h.species.length} of the 100 here. You've caught ${got} of them.`;
+    `You can spot ${h.species.length} of the 100 here. You've captured ${got} of them.`;
   const ul = box.querySelector("ul");
   for (const s of h.species) {
     const li = document.createElement("li");
-    li.className = caughtSlugs.has(s.slug) ? "caught" : "";
-    li.textContent = (caughtSlugs.has(s.slug) ? "✓ " : "") + s.common_name;
+    li.className = caughtNums.has(s.number) ? "caught" : "";
+    li.textContent = (caughtNums.has(s.number) ? "✓ " : "") + (s.common_name || "???");
     li.style.color = `var(--${s.rarity})`;
-    li.onclick = () => openDex(s.slug, dexNumbers[s.slug] || 0, caughtSlugs.has(s.slug));
+    li.onclick = () => openDex(s.number, dexNumbers[s.number] || 0, caughtNums.has(s.number));
     ul.append(li);
   }
   drawHotspots();
@@ -325,8 +978,16 @@ async function render() {
   $("auth").classList.toggle("hidden", authed);
   $("game").classList.toggle("hidden", !authed);
   $("who").classList.toggle("hidden", !authed);
+  $("tabs").classList.toggle("hidden", !authed);
+  document.body.classList.toggle("authed", authed);
   if (authed) {
-    try { $("username").textContent = (await api("/me")).username; loadCollection(); } catch {}
+    showTab(location.hash.slice(1));
+    try {
+      const me = await api("/me");
+      $("username").textContent = me.username;
+      $("share-feed").checked = me.show_in_feed !== false;
+      loadCollection(); loadFriends(); loadFeed();
+    } catch {}
   }
 }
 render();

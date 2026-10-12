@@ -1,0 +1,31 @@
+{
+ "note": "Towns used to describe roughly where a catch happened (\"near Santa Cruz\"). Approximate city-centre coordinates.",
+ "towns": [
+  ["San Francisco", 37.77, -122.42], ["Oakland", 37.80, -122.27], ["Berkeley", 37.87, -122.27],
+  ["San Jose", 37.34, -121.89], ["Palo Alto", 37.44, -122.14], ["Fremont", 37.55, -121.99],
+  ["Walnut Creek", 37.91, -122.07], ["San Rafael", 37.97, -122.53], ["Half Moon Bay", 37.46, -122.43],
+  ["Santa Rosa", 38.44, -122.71], ["Napa", 38.30, -122.29], ["Vallejo", 38.10, -122.26],
+  ["Santa Cruz", 36.97, -122.03], ["Monterey", 36.60, -121.89], ["Salinas", 36.68, -121.66],
+  ["Hollister", 36.85, -121.40], ["San Luis Obispo", 35.28, -120.66], ["Paso Robles", 35.63, -120.69],
+  ["Lompoc", 34.64, -120.46], ["Santa Barbara", 34.42, -119.70], ["Ventura", 34.28, -119.29],
+  ["Los Angeles", 34.05, -118.24], ["Santa Monica", 34.02, -118.49], ["Pasadena", 34.15, -118.14],
+  ["Long Beach", 33.77, -118.19], ["Anaheim", 33.84, -117.91], ["Irvine", 33.68, -117.83],
+  ["Riverside", 33.95, -117.40], ["San Bernardino", 34.11, -117.29], ["Lancaster", 34.69, -118.14],
+  ["Palm Springs", 33.83, -116.55], ["Temecula", 33.49, -117.15], ["Oceanside", 33.20, -117.38],
+  ["San Diego", 32.72, -117.16], ["El Centro", 32.79, -115.56], ["Barstow", 34.90, -117.02],
+  ["Ridgecrest", 35.62, -117.67], ["Needles", 34.85, -114.61], ["Furnace Creek", 36.46, -116.87],
+  ["Bishop", 37.36, -118.40], ["Mammoth Lakes", 37.65, -118.97], ["South Lake Tahoe", 38.94, -119.98],
+  ["Truckee", 39.33, -120.18], ["Auburn", 38.90, -121.08], ["Mariposa", 37.48, -119.97],
+  ["Sacramento", 38.58, -121.49], ["Davis", 38.54, -121.74], ["Stockton", 37.96, -121.29],
+  ["Modesto", 37.64, -121.00], ["Merced", 37.30, -120.48], ["Fresno", 36.74, -119.79],
+  ["Visalia", 36.33, -119.29], ["Bakersfield", 35.37, -119.02], ["Chico", 39.73, -121.84],
+  ["Redding", 40.59, -122.39], ["Mount Shasta", 41.31, -122.31], ["Yreka", 41.74, -122.63],
+  ["Susanville", 40.42, -120.65], ["Ukiah", 39.15, -123.21], ["Fort Bragg", 39.45, -123.81],
+  ["Eureka", 40.80, -124.16], ["Arcata", 40.87, -124.08], ["Crescent City", 41.76, -124.20]
+ ],
+ "regions": [
+  ["Northern California", 40.8, -122.5], ["the Bay Area", 37.8, -122.2], ["the Central Coast", 35.9, -121.0],
+  ["the Central Valley", 37.0, -120.2], ["the Sierra Nevada", 37.8, -119.2], ["Southern California", 33.9, -117.9],
+  ["the California deserts", 34.8, -116.0]
+ ]
+}
