@@ -97,7 +97,9 @@
              border-top:1px solid var(--line); padding-bottom:env(safe-area-inset-bottom); z-index:10; }
   nav#tabs button { flex:1; background:none; color:var(--muted); border:none; border-radius:0; padding:8px 2px 6px;
                     display:grid; justify-items:center; gap:2px; font-size:.72rem; }
-  nav#tabs button .ic { font-size:1.3rem; line-height:1; }
+  nav#tabs button .ic { width:28px; height:28px; image-rendering:pixelated; opacity:.75; }
+  nav#tabs button.on .ic { opacity:1; transform:translateY(-1px); }
+  nav#tabs button { white-space:nowrap; }
   nav#tabs button.on { color:var(--accent); font-weight:600; }
   body.authed main { padding-bottom:84px; }
   @media (min-width:720px) {
@@ -142,12 +144,12 @@
   </header>
 
 <nav id="tabs" class="hidden">
-  <button data-tab="catch"><span class="ic">📷</span>Capture</button>
-  <button data-tab="dex"><span class="ic">📖</span>Dex</button>
-  <button data-tab="photos"><span class="ic">🖼️</span>Photos</button>
-  <button data-tab="feed"><span class="ic">📰</span>Feed</button>
-  <button data-tab="parks"><span class="ic">🏞️</span>Parks</button>
-  <button data-tab="friends"><span class="ic">👥</span>Friends</button>
+  <button data-tab="catch"><img class="ic" src="/sprites/ui_tab_capture.png" alt="">Capture</button>
+  <button data-tab="dex"><img class="ic" src="/sprites/ui_tab_guide.png" alt="">Field Guide</button>
+  <button data-tab="photos"><img class="ic" src="/sprites/ui_tab_photos.png" alt="">Photos</button>
+  <button data-tab="feed"><img class="ic" src="/sprites/ui_tab_feed.png" alt="">Feed</button>
+  <button data-tab="parks"><img class="ic" src="/sprites/ui_tab_parks.png" alt="">Parks</button>
+  <button data-tab="friends"><img class="ic" src="/sprites/ui_tab_friends.png" alt="">Friends</button>
 </nav>
 
   <section id="auth" class="card">
@@ -191,7 +193,7 @@
       <div id="hot-list" class="hot-list"></div>
     </div>
     <div class="card off" data-tab="dex">
-      <h2>Your collection <span id="progress" class="muted"></span></h2>
+      <h2>Field Guide <span id="progress" class="muted"></span></h2>
       <div id="grid" class="grid"></div>
     </div>
     <div class="card off" data-tab="photos">
