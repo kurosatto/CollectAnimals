@@ -91,7 +91,9 @@ fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: Pokedex, onBack:
                 containerColor = rarityColor(s.rarity).copy(alpha = 0.12f))) {
                 Column(Modifier.padding(16.dp)) {
                     Text("Fun fact", style = MaterialTheme.typography.labelLarge, color = rarityColor(s.rarity))
-                    Text(details.funFact, style = MaterialTheme.typography.bodyLarge)
+                    // Same as the web page: the fact is the reward for catching it.
+                    Text(if (badge != null) details.funFact else "🔒 Catch one to unlock its fun fact.",
+                        style = MaterialTheme.typography.bodyLarge)
                 }
             }
         }
