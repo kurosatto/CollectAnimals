@@ -13,6 +13,10 @@ class Settings:
     token_ttl_minutes: int = field(default_factory=lambda: int(os.getenv("TOKEN_TTL_MINUTES", "10080")))
     species_csv: Path = field(default_factory=lambda: Path(os.getenv(
         "SPECIES_CSV", ROOT / "species" / "california_100.csv")))
+    details_csv: Path = field(default_factory=lambda: Path(os.getenv(
+        "DETAILS_CSV", ROOT / "species" / "details.csv")))
+    ranges_json: Path = field(default_factory=lambda: Path(os.getenv(
+        "RANGES_JSON", ROOT / "species" / "ranges.json")))
     model_path: Path = field(default_factory=lambda: Path(os.getenv(
         "MODEL_PATH", ROOT / "models" / "ca100.pt")))
     upload_dir: Path = field(default_factory=lambda: Path(os.getenv(

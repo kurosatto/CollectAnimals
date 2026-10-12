@@ -13,11 +13,12 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from . import classifier as clf
+from . import dex
 from .auth import create_token, current_user, hash_password, verify_password
 from .config import settings
 from .db import Base, SessionLocal, engine, get_db
 from .models import Badge, Capture, Species, User
-from .schemas import (CaptureOut, CollectionEntry, CollectionOut, PredictionOut, RegisterIn,
+from .schemas import (CaptureOut, CollectionEntry, CollectionOut, DexOut, PredictionOut, RegisterIn,
                       SpeciesOut, TokenOut, UserOut)
 
 STATIC_DIR = Path(__file__).parent / "static"
@@ -43,6 +44,7 @@ async def lifespan(app: FastAPI):
     settings.upload_dir.mkdir(parents=True, exist_ok=True)
     with SessionLocal() as db:
         seed_species(db, settings.species_csv)
+    dex.load(settings.details_csv, settings.ranges_json)
     if clf.get_classifier() is None:
         clf.load_classifier(settings.model_path)
     yield
@@ -108,6 +110,23 @@ def get_species(slug: str, db: Session = Depends(get_db)):
     if not s:
         raise HTTPException(404, "Unknown species")
     return s
+
+
+@app.get("/map/california")
+def california_outline():
+    """Outline rings ([[lon, lat], ...]) for drawing range maps."""
+    path = settings.species_csv.parent / "california_outline.json"
+    if not path.exists():
+        raise HTTPException(404, "No outline")
+    return FileResponse(path, media_type="application/json")
+
+
+@app.get("/species/{slug}/dex", response_model=DexOut)
+def get_dex_entry(slug: str, db: Session = Depends(get_db)):
+    s = get_species(slug, db)
+    d = dex.details(slug)
+    return DexOut(species=SpeciesOut.model_validate(s), size=d.get("size"), weight=d.get("weight"),
+                  fun_fact=d.get("fun_fact"), range=dex.range_for(slug))
 
 
 # --- captures & collection --------------------------------------------------

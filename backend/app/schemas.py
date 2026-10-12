@@ -38,6 +38,15 @@ class SpeciesOut(BaseModel):
     rarity: str
 
 
+class DexOut(BaseModel):
+    species: SpeciesOut
+    size: str | None = None
+    weight: str | None = None
+    fun_fact: str | None = None
+    # {"grid": {lon0, lat0, step, cols, rows}, "cells": [[col, row, count], ...]}
+    range: dict | None = None
+
+
 class PredictionOut(BaseModel):
     label: str
     common_name: str | None
