@@ -54,11 +54,18 @@ class ImageList(Dataset):
 
 
 def split_dataset(root: Path, val_frac: float, seed: int):
-    classes = sorted(d.name for d in root.iterdir() if d.is_dir())
+    by_class = {d.name: sorted(p for p in d.iterdir() if p.suffix.lower() in IMG_EXTS)
+                for d in root.iterdir() if d.is_dir()}
+    # A class with < 2 photos can't be split (and would zero-divide the loss
+    # weights); a failed download shouldn't silently break the whole run.
+    for cls, files in sorted(by_class.items()):
+        if len(files) < 2:
+            print(f"warning: skipping class {cls!r} with {len(files)} photos")
+    classes = sorted(c for c, files in by_class.items() if len(files) >= 2)
     rng = random.Random(seed)
     train, val = [], []
     for idx, cls in enumerate(classes):
-        files = sorted(p for p in (root / cls).iterdir() if p.suffix.lower() in IMG_EXTS)
+        files = by_class[cls]
         rng.shuffle(files)
         n_val = max(1, int(len(files) * val_frac))
         val += [(p, idx) for p in files[:n_val]]
