@@ -21,6 +21,8 @@ class Settings:
         "MODEL_PATH", ROOT / "models" / "ca100.pt")))
     upload_dir: Path = field(default_factory=lambda: Path(os.getenv(
         "UPLOAD_DIR", ROOT / "backend" / "uploads")))
+    # Where photo files live; "local" = upload_dir on this server (see app/storage.py).
+    storage_backend: str = field(default_factory=lambda: os.getenv("STORAGE_BACKEND", "local"))
     # A capture only counts if the model is at least this confident.
     match_threshold: float = field(default_factory=lambda: float(os.getenv("MATCH_THRESHOLD", "0.7")))
     max_upload_mb: int = field(default_factory=lambda: int(os.getenv("MAX_UPLOAD_MB", "15")))

@@ -1,0 +1,185 @@
+import io
+
+from PIL import Image
+
+from app.classifier import Prediction
+from test_api import client, fake, signup, upload  # noqa: F401  (fixtures)
+
+
+def catch(client, fake, h, slug, **form):
+    fake.next = [Prediction(slug, 0.95)]
+    r = client.post("/captures", headers=h, data={k: str(v) for k, v in form.items()},
+                    files={"photo": ("p.jpg", _jpeg(), "image/jpeg")})
+    assert r.status_code == 201, r.text
+    return r.json()
+
+
+def _jpeg(exif=None):
+    buf = io.BytesIO()
+    Image.new("RGB", (64, 48), "green").save(buf, "JPEG", **({"exif": exif} if exif is not None else {}))
+    return buf.getvalue()
+
+
+def befriend(client, a, b, b_name, a_name):
+    assert client.post("/friends/requests", headers=a, json={"username": b_name}).json() == \
+        {"status": "requested"}
+    assert client.post(f"/friends/requests/{a_name}/accept", headers=b).json() == {"status": "friends"}
+
+
+def names(client, h):
+    return {e["species"]["slug"] for e in client.get("/me/collection", headers=h).json()["entries"]
+            if e["species"]["revealed"]}
+
+
+def test_friend_requests(client):
+    ana, bob = signup(client, "ana"), signup(client, "bob")
+    assert client.post("/friends/requests", headers=ana, json={"username": "ana"}).status_code == 400
+    assert client.post("/friends/requests", headers=ana, json={"username": "zed"}).status_code == 404
+    assert client.post("/friends/requests", headers=ana, json={"username": "bob"}).status_code == 201
+    assert client.post("/friends/requests", headers=ana, json={"username": "bob"}).status_code == 409
+
+    f = client.get("/friends", headers=bob).json()
+    assert [x["username"] for x in f["incoming"]] == ["ana"] and not f["friends"]
+    assert [x["username"] for x in client.get("/friends", headers=ana).json()["outgoing"]] == ["bob"]
+
+    # Asking someone who already asked you makes you friends.
+    assert client.post("/friends/requests", headers=bob, json={"username": "ana"}).json() == \
+        {"status": "friends"}
+    assert [x["username"] for x in client.get("/friends", headers=ana).json()["friends"]] == ["bob"]
+    assert client.post("/friends/requests", headers=ana, json={"username": "bob"}).status_code == 409
+
+    assert client.delete("/friends/bob", headers=ana).status_code == 204
+    assert client.get("/friends", headers=bob).json() == {"friends": [], "incoming": [], "outgoing": []}
+    assert client.post("/friends/requests/ana/accept", headers=bob).status_code == 404
+
+
+def test_names_revealed_by_friends(client, fake):
+    ana, bob = signup(client, "ana"), signup(client, "bob")
+    catch(client, fake, bob, "bobcat")
+    assert names(client, ana) == set()
+    assert names(client, bob) == {"bobcat"}
+
+    befriend(client, ana, bob, "bob", "ana")
+    assert names(client, ana) == {"bobcat"}
+    entry = next(e for e in client.get("/me/collection", headers=ana).json()["entries"]
+                 if e["species"]["slug"] == "bobcat")
+    assert not entry["caught"] and entry["friends_caught"] == 1
+    # The fun fact still needs your own catch.
+    assert client.get("/species/bobcat/dex", headers=ana).json()["fun_fact"] is None
+
+    client.delete("/friends/ana", headers=bob)
+    assert names(client, ana) == set()
+
+
+def test_album_photo_location_and_date(client, fake):
+    ana = signup(client, "ana")
+    r = catch(client, fake, ana, "coyote", latitude=37.77493, longitude=-122.41942)
+    assert r["album_photo_id"] and "album" in r["message"]
+    # A second catch keeps the first photo unless you swap it.
+    r2 = catch(client, fake, ana, "coyote", latitude=34.05, longitude=-118.24)
+    assert r2["album_photo_id"] is None
+
+    album = client.get("/me/album", headers=ana).json()
+    assert album["caught"] == 1 and len(album["photos"]) == 1
+    p = album["photos"][0]
+    assert p["species"]["slug"] == "coyote" and p["is_mine"]
+    assert (p["latitude"], p["longitude"], p["location_precise"]) == (37.775, -122.419, True)
+    assert p["taken_on"]
+    img = client.get(p["url"])
+    assert img.status_code == 200 and img.headers["content-type"] == "image/jpeg"
+
+    entry = next(e for e in client.get("/me/collection", headers=ana).json()["entries"]
+                 if e["species"]["slug"] == "coyote")
+    assert entry["photo_url"] == p["url"]
+
+    swapped = client.put("/me/album/coyote", headers=ana, json={"capture_id": r2["capture_id"]})
+    assert swapped.status_code == 200 and swapped.json()["latitude"] == 34.05
+    # The old file is no longer served once it leaves the album.
+    assert client.get(p["url"]).status_code == 404
+    assert client.put("/me/album/bobcat", headers=ana,
+                      json={"capture_id": r2["capture_id"]}).status_code == 400
+
+    assert client.delete("/me/album/coyote", headers=ana).status_code == 204
+    assert client.get("/me/album", headers=ana).json()["photos"] == []
+    assert client.get("/me/collection", headers=ana).json()["caught"] == 1
+
+
+def test_location_from_exif(client, fake):
+    exif = Image.Exif()
+    gps = exif.get_ifd(0x8825)
+    gps.update({1: "N", 2: (37.0, 46.0, 30.0), 3: "W", 4: (122.0, 25.0, 0.0)})
+    exif.get_ifd(0x8769)[36867] = "2026:05:04 10:11:12"
+    ana = signup(client, "ana")
+    fake.next = [Prediction("coyote", 0.95)]
+    r = client.post("/captures", headers=ana, files={"photo": ("p.jpg", _jpeg(exif), "image/jpeg")})
+    assert r.status_code == 201
+    p = client.get("/me/album", headers=ana).json()["photos"][0]
+    assert (p["latitude"], p["longitude"], p["taken_on"]) == (37.775, -122.417, "2026-05-04")
+
+
+def test_albums_only_for_friends(client, fake):
+    ana, bob, cyd = signup(client, "ana"), signup(client, "bob"), signup(client, "cyd")
+    catch(client, fake, bob, "coyote")
+    assert client.get("/users/bob/album", headers=ana).status_code == 403
+    assert client.get("/users/nobody/album", headers=ana).status_code == 404
+    befriend(client, ana, bob, "bob", "ana")
+    album = client.get("/users/bob/album", headers=ana).json()
+    assert album["username"] == "bob" and album["photos"][0]["by_friend"]
+    assert client.get("/users/bob/album", headers=cyd).status_code == 403
+
+
+def test_gallery_ranking_and_likes(client, fake):
+    ana, bob, cyd, dee = (signup(client, n) for n in ("ana", "bob", "cyd", "dee"))
+    for h in (ana, bob, cyd):
+        catch(client, fake, h, "coyote", latitude=37.77493, longitude=-122.41942)
+
+    # dee hasn't caught a coyote and has no friends who did.
+    assert client.get("/species/coyote/photos", headers=dee).status_code == 403
+
+    g = client.get("/species/coyote/photos", headers=ana).json()
+    assert g["total"] == 3 and [p["rank"] for p in g["photos"]] == [1, 2, 3]
+    by_user = {p["username"]: p for p in g["photos"]}
+    # Strangers only see a rough location.
+    assert by_user["bob"]["latitude"] == 37.8 and not by_user["bob"]["location_precise"]
+    assert by_user["ana"]["location_precise"]
+
+    cy_photo, bob_photo = by_user["cyd"]["id"], by_user["bob"]["id"]
+    assert client.post(f"/photos/{cy_photo}/like", headers=ana).status_code == 204
+    assert client.post(f"/photos/{cy_photo}/like", headers=ana).status_code == 204  # idempotent
+    assert client.post(f"/photos/{cy_photo}/like", headers=bob).status_code == 204
+    assert client.post(f"/photos/{bob_photo}/like", headers=ana).status_code == 204
+    assert client.post(f"/photos/{cy_photo}/like", headers=cyd).status_code == 400  # own photo
+    assert client.post(f"/photos/{cy_photo}/like", headers=dee).status_code == 404  # not revealed
+
+    g = client.get("/species/coyote/photos", headers=ana).json()
+    assert [(p["username"], p["like_count"], p["rank"]) for p in g["photos"]] == \
+        [("cyd", 2, 1), ("bob", 1, 2), ("ana", 0, 3)]
+    assert g["photos"][0]["liked_by_me"]
+
+    assert client.delete(f"/photos/{cy_photo}/like", headers=ana).status_code == 204
+    g = client.get("/species/coyote/photos?sort=new", headers=ana).json()
+    assert [p["username"] for p in g["photos"]] == ["cyd", "bob", "ana"]
+    assert g["photos"][0]["like_count"] == 1 and g["photos"][0]["rank"] is None
+
+    page = client.get("/species/coyote/photos?limit=1&offset=1", headers=ana).json()
+    assert page["total"] == 3 and page["photos"][0]["rank"] == 2
+
+    befriend(client, ana, bob, "bob", "ana")
+    g = client.get("/species/coyote/photos?scope=friends", headers=ana).json()
+    assert {p["username"] for p in g["photos"]} == {"ana", "bob"}
+    # dee can see the gallery once a friend has caught one.
+    befriend(client, dee, cyd, "cyd", "dee")
+    assert client.get("/species/coyote/photos", headers=dee).json()["total"] == 3
+
+
+def test_unmatched_captures_are_private(client, fake):
+    ana = signup(client, "ana")
+    fake.next = [Prediction("other", 0.95)]
+    r = client.post("/captures", headers=ana, files={"photo": ("p.jpg", _jpeg(), "image/jpeg")})
+    assert r.json()["album_photo_id"] is None
+    from app.models import Capture
+    from app.db import SessionLocal
+    with SessionLocal() as db:
+        key = db.get(Capture, r.json()["capture_id"]).image_path
+    assert client.get(f"/media/{key}").status_code == 404
+    assert client.get("/media/..%2Fsecret").status_code == 404

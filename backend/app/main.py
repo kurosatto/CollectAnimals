@@ -2,24 +2,28 @@ import csv
 import io
 import uuid
 from contextlib import asynccontextmanager
+from datetime import datetime
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, File, HTTPException, UploadFile, status
+from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from PIL import Image, ImageOps, UnidentifiedImageError
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from . import classifier as clf
 from . import dex
-from .auth import create_token, current_user, hash_password, verify_password
+from . import social
+from .auth import create_token, current_user, hash_password, optional_user, verify_password
 from .config import settings
-from .db import Base, SessionLocal, engine, get_db
-from .models import Badge, Capture, Species, User
+from .db import Base, SessionLocal, add_missing_columns, engine, get_db
+from .models import AlbumPhoto, Badge, Capture, Species, User
 from .schemas import (CaptureOut, CollectionEntry, CollectionOut, DexOut, PredictionOut, RegisterIn,
                       SpeciesOut, TokenOut, UserOut)
+from .social import find_species, friend_ids, revealed_species_ids, species_out
+from .storage import get_storage
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -41,7 +45,8 @@ def seed_species(db: Session, csv_path: Path) -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(engine)
-    settings.upload_dir.mkdir(parents=True, exist_ok=True)
+    add_missing_columns()
+    get_storage()
     with SessionLocal() as db:
         seed_species(db, settings.species_csv)
     dex.load(settings.details_csv, settings.ranges_json)
@@ -51,6 +56,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="CollectAnimals", lifespan=lifespan)
+app.include_router(social.router)
 
 
 @app.get("/", include_in_schema=False)
@@ -99,17 +105,19 @@ def me(user: User = Depends(current_user)):
 
 # --- species ----------------------------------------------------------------
 
+# Species are looked up by number or slug. Names stay hidden until the viewer
+# or one of their friends has caught the species (see app/social.py).
+
 @app.get("/species", response_model=list[SpeciesOut])
-def list_species(db: Session = Depends(get_db)):
-    return db.scalars(select(Species).order_by(Species.id)).all()
+def list_species(user: User | None = Depends(optional_user), db: Session = Depends(get_db)):
+    revealed = revealed_species_ids(db, user)
+    return [species_out(s, s.id in revealed) for s in db.scalars(select(Species).order_by(Species.id))]
 
 
-@app.get("/species/{slug}", response_model=SpeciesOut)
-def get_species(slug: str, db: Session = Depends(get_db)):
-    s = db.scalar(select(Species).where(Species.slug == slug))
-    if not s:
-        raise HTTPException(404, "Unknown species")
-    return s
+@app.get("/species/{key}", response_model=SpeciesOut)
+def get_species(key: str, user: User | None = Depends(optional_user), db: Session = Depends(get_db)):
+    s = find_species(db, key)
+    return species_out(s, s.id in revealed_species_ids(db, user))
 
 
 @app.get("/map/california")
@@ -121,12 +129,17 @@ def california_outline():
     return FileResponse(path, media_type="application/json")
 
 
-@app.get("/species/{slug}/dex", response_model=DexOut)
-def get_dex_entry(slug: str, db: Session = Depends(get_db)):
-    s = get_species(slug, db)
-    d = dex.details(slug)
-    return DexOut(species=SpeciesOut.model_validate(s), size=d.get("size"), weight=d.get("weight"),
-                  fun_fact=d.get("fun_fact"), range=dex.range_for(slug))
+@app.get("/species/{key}/dex", response_model=DexOut)
+def get_dex_entry(key: str, user: User | None = Depends(optional_user), db: Session = Depends(get_db)):
+    """Size, weight and the sighting map are hints, so they show even while the
+    name is hidden. The fun fact unlocks when you catch the species yourself."""
+    s = find_species(db, key)
+    d = dex.details(s.slug)
+    caught = user is not None and db.scalar(select(Badge.id).where(
+        Badge.user_id == user.id, Badge.species_id == s.id)) is not None
+    return DexOut(species=species_out(s, s.id in revealed_species_ids(db, user)),
+                  size=d.get("size"), weight=d.get("weight"),
+                  fun_fact=d.get("fun_fact") if caught else None, range=dex.range_for(s.slug))
 
 
 # --- captures & collection --------------------------------------------------
@@ -137,13 +150,37 @@ def _read_image(data: bytes) -> Image.Image:
         im.load()
     except (UnidentifiedImageError, OSError):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Not a valid image")
-    # Phone photos are often rotated via EXIF; apply it before classifying.
-    return ImageOps.exif_transpose(im).convert("RGB")
+    return im
+
+
+def _exif_meta(im: Image.Image) -> tuple[float | None, float | None, datetime | None]:
+    """GPS position and capture time from the photo's EXIF, if the phone kept them."""
+    lat = lon = taken = None
+    try:
+        exif = im.getexif()
+        gps = exif.get_ifd(0x8825)
+        if 2 in gps and 4 in gps:
+            def deg(v):
+                return float(v[0]) + float(v[1]) / 60 + float(v[2]) / 3600
+            lat = deg(gps[2]) * (-1 if gps.get(1) == "S" else 1)
+            lon = deg(gps[4]) * (-1 if gps.get(3) == "W" else 1)
+        stamp = exif.get_ifd(0x8769).get(36867) or exif.get(306)
+        if stamp:
+            taken = datetime.strptime(str(stamp).strip("\x00 ")[:19], "%Y:%m:%d %H:%M:%S")
+    except (ValueError, TypeError, ZeroDivisionError, KeyError, IndexError):
+        pass
+    if lat is not None and not (-90 <= lat <= 90 and -180 <= lon <= 180):
+        lat = lon = None
+    return lat, lon, taken
 
 
 @app.post("/captures", response_model=CaptureOut, status_code=201)
-async def create_capture(photo: UploadFile = File(...), user: User = Depends(current_user),
-                         db: Session = Depends(get_db)):
+async def create_capture(photo: UploadFile = File(...),
+                         latitude: float | None = Form(None, ge=-90, le=90),
+                         longitude: float | None = Form(None, ge=-180, le=180),
+                         user: User = Depends(current_user), db: Session = Depends(get_db)):
+    """Identify a photo. latitude/longitude are where it was taken (the web page
+    sends the phone's location); without them we fall back to the photo's EXIF GPS."""
     model = clf.get_classifier()
     if model is None:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -154,7 +191,12 @@ async def create_capture(photo: UploadFile = File(...), user: User = Depends(cur
     if len(data) > max_bytes:
         raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
                             f"Photo larger than {settings.max_upload_mb} MB")
-    image = _read_image(data)
+    raw = _read_image(data)
+    exif_lat, exif_lon, taken_at = _exif_meta(raw)
+    if latitude is None or longitude is None:
+        latitude, longitude = exif_lat, exif_lon
+    # Phone photos are often rotated via EXIF; apply it before classifying.
+    image = ImageOps.exif_transpose(raw).convert("RGB")
 
     preds = model.predict(image, k=3)
     top = preds[0]
@@ -166,10 +208,13 @@ async def create_capture(photo: UploadFile = File(...), user: User = Depends(cur
     # Re-encode before saving: normalizes the format and strips EXIF (incl. GPS).
     name = f"{uuid.uuid4().hex}.jpg"
     image.thumbnail((1600, 1600))
-    image.save(settings.upload_dir / name, "JPEG", quality=88)
+    buf = io.BytesIO()
+    image.save(buf, "JPEG", quality=88)
+    get_storage().put(name, buf.getvalue(), "image/jpeg")
 
     capture = Capture(user_id=user.id, species_id=species.id if matched else None,
-                      image_path=name, predicted_label=top.label, confidence=top.probability)
+                      image_path=name, predicted_label=top.label, confidence=top.probability,
+                      latitude=latitude, longitude=longitude, taken_at=taken_at)
     db.add(capture)
     db.flush()
 
@@ -182,39 +227,59 @@ async def create_capture(photo: UploadFile = File(...), user: User = Depends(cur
         else:
             db.add(Badge(user_id=user.id, species_id=species.id, first_capture_id=capture.id))
             new_badge = True
+    album_photo = social.ensure_album_photo(db, capture) if matched else None
     db.commit()
 
+    # Don't give away names the player hasn't unlocked yet.
+    revealed = revealed_species_ids(db, user)
     if matched:
         message = (f"You caught a {species.common_name}! New badge unlocked."
                    if new_badge else f"Another {species.common_name} for your collection.")
-    elif species is not None:
+        if album_photo:
+            message += " It's now in your album."
+    elif species is not None and species.id in revealed:
         message = f"Might be a {species.common_name}, but we're not sure. Try a clearer photo!"
+    elif species is not None:
+        message = "Might be an animal you haven't discovered yet, but we're not sure. Try a clearer photo!"
     else:
         message = "We couldn't match this to any animal in the California collection."
 
     return CaptureOut(
         capture_id=capture.id,
         matched=matched,
-        species=SpeciesOut.model_validate(species) if matched else None,
+        species=species_out(species, True) if matched else None,
         confidence=round(top.probability, 4),
         new_badge=new_badge,
         message=message,
         top_predictions=[
             PredictionOut(label=p.label, probability=round(p.probability, 4),
-                          common_name=species_by_slug[p.label].common_name
-                          if p.label in species_by_slug else None)
+                          common_name=species_by_slug[p.label].common_name)
+            if p.label in species_by_slug and species_by_slug[p.label].id in revealed
+            else PredictionOut(label="other" if p.label not in species_by_slug else "hidden",
+                               probability=round(p.probability, 4), common_name=None)
             for p in preds
         ],
+        album_photo_id=album_photo.id if album_photo else None,
     )
 
 
 @app.get("/me/collection", response_model=CollectionOut)
 def my_collection(user: User = Depends(current_user), db: Session = Depends(get_db)):
     badges = {b.species_id: b for b in db.scalars(select(Badge).where(Badge.user_id == user.id))}
+    friends = friend_ids(db, user.id)
+    friends_caught = dict(db.execute(
+        select(Badge.species_id, func.count()).where(Badge.user_id.in_(friends))
+        .group_by(Badge.species_id)).all()) if friends else {}
+    photos = dict(db.execute(select(AlbumPhoto.species_id, Capture.image_path)
+                             .join(Capture, Capture.id == AlbumPhoto.capture_id)
+                             .where(AlbumPhoto.user_id == user.id)).all())
+    storage = get_storage()
     entries = []
     for s in db.scalars(select(Species).order_by(Species.id)):
         b = badges.get(s.id)
         entries.append(CollectionEntry(
-            species=SpeciesOut.model_validate(s), caught=b is not None,
-            capture_count=b.capture_count if b else 0, earned_at=b.earned_at if b else None))
+            species=species_out(s, b is not None or friends_caught.get(s.id, 0) > 0),
+            caught=b is not None, capture_count=b.capture_count if b else 0,
+            earned_at=b.earned_at if b else None, friends_caught=friends_caught.get(s.id, 0),
+            photo_url=storage.url(photos[s.id]) if s.id in photos else None))
     return CollectionOut(caught=len(badges), total=len(entries), entries=entries)

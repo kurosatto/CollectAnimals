@@ -61,10 +61,21 @@ def upload(client, headers):
                        files={"photo": ("p.jpg", jpeg_bytes(), "image/jpeg")})
 
 
-def test_species_seeded(client):
+def test_species_seeded(client, fake):
     species = client.get("/species").json()
     assert len(species) == 100
-    assert client.get("/species/coyote").json()["scientific_name"] == "Canis latrans"
+    # Names stay hidden until caught.
+    assert all(s["common_name"] is None and s["slug"] is None for s in species)
+    hidden = client.get("/species/coyote").json()
+    assert hidden["revealed"] is False and hidden["scientific_name"] is None
+    assert hidden["rarity"] and hidden["category"]
+
+    h = signup(client)
+    fake.next = [Prediction("coyote", 0.93)]
+    upload(client, h)
+    r = client.get("/species/coyote", headers=h).json()
+    assert r["revealed"] and r["scientific_name"] == "Canis latrans"
+    assert client.get(f"/species/{r['number']}", headers=h).json()["slug"] == "coyote"
 
 
 def test_register_login_me(client):
@@ -94,7 +105,9 @@ def test_capture_awards_badge_once(client, fake):
     r = upload(client, h).json()
     assert r["matched"] and r["new_badge"]
     assert r["species"]["slug"] == "coyote"
-    assert r["top_predictions"][1]["common_name"] == "Gray Fox"
+    # Runner-up guesses don't reveal species the player hasn't unlocked.
+    assert r["top_predictions"][0]["common_name"] == "Coyote"
+    assert r["top_predictions"][1] == {"label": "hidden", "common_name": None, "probability": 0.04}
 
     r = upload(client, h).json()
     assert r["matched"] and not r["new_badge"]
@@ -112,12 +125,19 @@ def test_low_confidence_and_other_do_not_match(client, fake):
     h = signup(client)
     fake.next = [Prediction("bobcat", 0.41), Prediction("gray_fox", 0.3)]
     r = upload(client, h).json()
-    assert not r["matched"] and r["species"] is None and "Bobcat" in r["message"]
+    assert not r["matched"] and r["species"] is None
+    assert "Bobcat" not in r["message"] and "haven't discovered" in r["message"]
+
+    fake.next = [Prediction("bobcat", 0.95)]
+    upload(client, h)
+    fake.next = [Prediction("bobcat", 0.41), Prediction("gray_fox", 0.3)]
+    r = upload(client, h).json()
+    assert not r["matched"] and "Bobcat" in r["message"]
 
     fake.next = [Prediction("other", 0.97)]
     r = upload(client, h).json()
     assert not r["matched"] and r["top_predictions"][0]["common_name"] is None
-    assert client.get("/me/collection", headers=h).json()["caught"] == 0
+    assert client.get("/me/collection", headers=h).json()["caught"] == 1
 
 
 def test_rejects_non_image(client, fake):
@@ -126,7 +146,7 @@ def test_rejects_non_image(client, fake):
     assert r.status_code == 400
 
 
-def test_dex_entry(client):
+def test_dex_entry(client, fake):
     from app import dex
     from app.config import settings
 
@@ -138,13 +158,20 @@ def test_dex_entry(client):
     from pathlib import Path
     dex.load(settings.details_csv, Path(ranges))
 
+    # Before catching: size, weight and map are hints; name and fun fact are locked.
     r = client.get("/species/coyote/dex").json()
-    assert r["species"]["common_name"] == "Coyote"
-    assert r["size"] and r["weight"] and r["fun_fact"]
+    assert r["species"]["common_name"] is None and r["fun_fact"] is None
+    assert r["size"] and r["weight"]
     assert r["range"]["cells"] == [[10, 20, 5]] and r["range"]["grid"]["step"] == 0.25
 
-    r = client.get("/species/bobcat/dex").json()
-    assert r["fun_fact"] and r["range"] is None
+    h = signup(client)
+    fake.next = [Prediction("coyote", 0.93)]
+    upload(client, h)
+    r = client.get("/species/coyote/dex", headers=h).json()
+    assert r["species"]["common_name"] == "Coyote" and r["fun_fact"]
+
+    r = client.get("/species/bobcat/dex", headers=h).json()
+    assert r["fun_fact"] is None and r["range"] is None and r["size"]
     assert client.get("/species/nope/dex").status_code == 404
 
 

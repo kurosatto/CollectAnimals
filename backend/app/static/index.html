@@ -43,6 +43,27 @@
   .dex dt { font-size:.75rem; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin-top:10px; }
   .dex dd { margin:2px 0 0; }
   .dex .close { background:none; color:var(--muted); font-size:1.4rem; line-height:1; padding:0 4px; }
+  .tile .thumb { width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:6px; display:block; margin-bottom:6px; }
+  .tile .friends { font-size:.75rem; color:var(--muted); }
+  .tile.locked.hinted { opacity:.75; }
+  .photos { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin-top:10px; }
+  .photo { border:1px solid var(--line); border-radius:10px; overflow:hidden; font-size:.8rem; background:var(--card); }
+  .photo img { width:100%; aspect-ratio:1; object-fit:cover; display:block; }
+  .photo .meta { padding:6px 8px; display:grid; gap:2px; }
+  .photo .who { font-weight:600; display:flex; justify-content:space-between; gap:6px; }
+  .photo .rank { color:var(--legendary); }
+  .like { background:none; color:var(--ink); border:1px solid var(--line); padding:2px 8px; font-size:.8rem; justify-self:start; }
+  .like.on { border-color:#c0392b; color:#c0392b; }
+  .seg { display:flex; gap:6px; flex-wrap:wrap; margin-top:12px; }
+  .seg button { background:none; color:var(--ink); border:1px solid var(--line); padding:4px 10px; font-size:.85rem; }
+  .seg button.on { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .dex-photos { padding:0 16px 16px; }
+  .dex-photos h3 { margin:16px 0 0; font-size:1rem; }
+  ul.people { list-style:none; padding:0; margin:8px 0; display:grid; gap:6px; }
+  ul.people li { display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; }
+  ul.people button { padding:4px 10px; font-size:.85rem; }
+  button.ghost { background:none; color:var(--muted); border:1px solid var(--line); }
+  label.inline { display:flex; align-items:center; gap:6px; font-size:.9rem; color:var(--muted); }
 </style>
 </head>
 <body>
@@ -70,12 +91,23 @@
       <form id="upload-form">
         <input id="photo" type="file" accept="image/*" capture="environment" required>
         <button type="submit">Identify</button>
+        <label class="inline"><input type="checkbox" id="use-location" checked> Save where I caught it</label>
       </form>
       <div id="result" class="card hidden"></div>
     </div>
     <div class="card">
       <h2>Your collection <span id="progress" class="muted"></span></h2>
       <div id="grid" class="grid"></div>
+    </div>
+    <div class="card">
+      <h2>Friends</h2>
+      <p class="muted">Animals your friends catch show up by name in your collection, and you can see each other's albums.</p>
+      <form id="friend-form">
+        <input id="friend-name" placeholder="Friend's username" required autocomplete="off">
+        <button type="submit">Add friend</button>
+      </form>
+      <p id="friend-msg" class="muted"></p>
+      <div id="friend-lists"></div>
     </div>
   </section>
 </main>
@@ -93,6 +125,15 @@
       <dt>Fun fact</dt><dd id="dex-fact"></dd>
     </dl>
   </div>
+</div>
+<div class="dex-photos" id="dex-photos"></div>
+</dialog>
+<dialog id="album"><div class="dex">
+  <div class="dex-head">
+    <div><h2 id="album-title"></h2><div class="muted" id="album-sub"></div></div>
+    <button class="close" id="album-close" aria-label="Close">×</button>
+  </div>
+  <div id="album-photos" class="photos"></div>
 </div></dialog>
 <script>
 const $ = (id) => document.getElementById(id);
@@ -146,6 +187,12 @@ $("auth-form").onsubmit = async (e) => {
 
 $("logout").onclick = () => setToken(null);
 
+function here() {
+  if (!$("use-location").checked || !navigator.geolocation) return Promise.resolve(null);
+  return new Promise((ok) => navigator.geolocation.getCurrentPosition(
+    (p) => ok(p.coords), () => ok(null), { timeout: 8000, maximumAge: 300000 }));
+}
+
 $("upload-form").onsubmit = async (e) => {
   e.preventDefault();
   const fd = new FormData();
@@ -153,6 +200,8 @@ $("upload-form").onsubmit = async (e) => {
   const box = $("result");
   box.classList.remove("hidden", "win");
   box.textContent = "Identifying…";
+  const pos = await here();
+  if (pos) { fd.append("latitude", pos.latitude); fd.append("longitude", pos.longitude); }
   try {
     const r = await api("/captures", { method: "POST", body: fd });
     box.classList.toggle("win", r.matched);
@@ -162,8 +211,23 @@ $("upload-form").onsubmit = async (e) => {
     const p = document.createElement("p");
     p.className = "muted";
     p.textContent = "Top guesses: " + r.top_predictions
-      .map((x) => `${x.common_name || x.label} ${(x.probability * 100).toFixed(0)}%`).join(", ");
+      .map((x) => `${x.common_name || (x.label === "other" ? "not on the list" : "???")} ${(x.probability * 100).toFixed(0)}%`).join(", ");
     box.append(h, p);
+    if (r.matched && !r.album_photo_id) {
+      // Already have an album photo for this animal: offer to swap in this one.
+      const b = document.createElement("button");
+      b.textContent = "Use this photo in my album instead";
+      b.onclick = async () => {
+        b.disabled = true;
+        try {
+          await api(`/me/album/${r.species.number}`, { method: "PUT",
+            headers: { "Content-Type": "application/json" }, body: JSON.stringify({ capture_id: r.capture_id }) });
+          b.textContent = "Album photo updated";
+          loadCollection();
+        } catch (err) { b.textContent = err.message; }
+      };
+      box.append(b);
+    }
     loadCollection();
   } catch (err) { box.textContent = err.message; }
 };
@@ -175,13 +239,22 @@ async function loadCollection() {
   grid.innerHTML = "";
   c.entries.forEach((e, i) => {
     const t = document.createElement("div");
-    t.className = "tile" + (e.caught ? "" : " locked");
     const s = e.species;
+    t.className = "tile" + (e.caught ? "" : " locked") + (!e.caught && s.revealed ? " hinted" : "");
     t.innerHTML = `<div class="num">#${String(i + 1).padStart(3, "0")}</div><div class="name"></div>
-      <div class="muted sci"></div><div class="rarity" style="color:var(--${s.rarity})">${s.rarity}</div>`;
-    t.querySelector(".name").textContent = s.common_name + (e.capture_count > 1 ? ` ×${e.capture_count}` : "");
-    t.querySelector(".sci").textContent = s.scientific_name;
-    t.onclick = () => openDex(s.slug, i + 1, e.caught);
+      <div class="muted sci"></div><div class="rarity" style="color:var(--${s.rarity})">${s.rarity}</div>
+      <div class="friends"></div>`;
+    if (e.photo_url) {
+      const img = document.createElement("img");
+      img.className = "thumb"; img.src = e.photo_url; img.alt = ""; img.loading = "lazy";
+      t.prepend(img);
+    }
+    t.querySelector(".name").textContent = s.revealed
+      ? s.common_name + (e.capture_count > 1 ? ` ×${e.capture_count}` : "") : "???";
+    t.querySelector(".sci").textContent = s.revealed ? s.scientific_name : `Unknown ${s.category}`;
+    if (e.friends_caught) t.querySelector(".friends").textContent =
+      `👥 ${e.friends_caught} friend${e.friends_caught > 1 ? "s" : ""} caught it`;
+    t.onclick = () => openDex(s.number, i + 1, e.caught);
     grid.append(t);
   });
 }
@@ -214,12 +287,13 @@ function rangeSvg(range) {
     <path class="land" d="${land}"/>${cells}</svg>`;
 }
 
-async function openDex(slug, num, caught) {
-  const d = await api(`/species/${encodeURIComponent(slug)}/dex`);
+async function openDex(key, num, caught) {
+  const d = await api(`/species/${encodeURIComponent(key)}/dex`);
   const s = d.species;
   $("dex-num").textContent = `#${String(num).padStart(3, "0")}`;
-  $("dex-name").textContent = s.common_name;
-  $("dex-sci").textContent = s.scientific_name;
+  $("dex-name").textContent = s.revealed ? s.common_name : "???";
+  $("dex-sci").textContent = s.revealed ? s.scientific_name
+    : `An unknown ${s.category}. Catch it, or have a friend catch it, to learn its name.`;
   $("dex-rarity").textContent = s.rarity;
   $("dex-rarity").style.color = `var(--${s.rarity})`;
   $("dex-map").innerHTML = rangeSvg(d.range);
@@ -227,8 +301,143 @@ async function openDex(slug, num, caught) {
   $("dex-size").textContent = d.size || "Unknown";
   $("dex-weight").textContent = d.weight || "Unknown";
   $("dex-fact").textContent = caught ? (d.fun_fact || "—") : "🔒 Catch one to unlock its fun fact.";
+  gallery = { species: s, scope: "all", sort: "top" };
+  loadGallery();
   $("dex").showModal();
 }
+
+// --- photos: gallery in the Pokédex entry, friends' albums -------------------
+
+let gallery = null;
+const el = (tag, cls, text) => {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text != null) n.textContent = text;
+  return n;
+};
+const fmtDate = (d) => new Date(d + "T12:00:00").toLocaleDateString(undefined,
+  { year: "numeric", month: "short", day: "numeric" });
+
+function photoCard(p, { showSpecies = false, onChange } = {}) {
+  const card = el("div", "photo");
+  const img = el("img"); img.src = p.url; img.alt = p.species.common_name || "Animal photo"; img.loading = "lazy";
+  const meta = el("div", "meta");
+  const who = el("div", "who");
+  who.append(el("span", "", showSpecies ? (p.species.common_name || "???") : p.username + (p.is_mine ? " (you)" : "")));
+  if (p.rank) who.append(el("span", "rank", p.rank <= 3 ? ["🥇", "🥈", "🥉"][p.rank - 1] : `#${p.rank}`));
+  meta.append(who, el("span", "muted", fmtDate(p.taken_on)));
+  if (p.latitude != null) {
+    const a = el("a", "", (p.location_precise ? "" : "near ") + `${p.latitude}, ${p.longitude}`);
+    a.href = `https://www.openstreetmap.org/?mlat=${p.latitude}&mlon=${p.longitude}#map=${p.location_precise ? 14 : 10}/${p.latitude}/${p.longitude}`;
+    a.target = "_blank"; a.rel = "noopener"; a.style.color = "var(--accent)";
+    meta.append(a);
+  }
+  const like = el("button", "like" + (p.liked_by_me ? " on" : ""), `♥ ${p.like_count}`);
+  if (p.is_mine) { like.disabled = true; like.title = "Your photo"; }
+  else like.onclick = async () => {
+    like.disabled = true;
+    try {
+      await api(`/photos/${p.id}/like`, { method: p.liked_by_me ? "DELETE" : "POST" });
+      p.like_count += p.liked_by_me ? -1 : 1;
+      p.liked_by_me = !p.liked_by_me;
+      like.textContent = `♥ ${p.like_count}`;
+      like.classList.toggle("on", p.liked_by_me);
+      if (onChange) onChange();
+    } catch {}
+    like.disabled = false;
+  };
+  meta.append(like);
+  card.append(img, meta);
+  return card;
+}
+
+async function loadGallery() {
+  const box = $("dex-photos");
+  box.innerHTML = "";
+  const s = gallery.species;
+  box.append(el("h3", "", "Photos"));
+  if (!s.revealed) {
+    box.append(el("p", "muted", "Catch it, or have a friend catch it, to see everyone's photos."));
+    return;
+  }
+  const seg = el("div", "seg");
+  for (const [k, v, label] of [["scope", "all", "Everyone"], ["scope", "friends", "Friends"],
+                               ["sort", "top", "Most liked"], ["sort", "new", "Newest"]]) {
+    const b = el("button", gallery[k] === v ? "on" : "", label);
+    b.onclick = () => { gallery[k] = v; loadGallery(); };
+    seg.append(b);
+  }
+  const grid = el("div", "photos");
+  const note = el("p", "muted", "Loading…");
+  box.append(seg, note, grid);
+  try {
+    const g = await api(`/species/${s.number}/photos?scope=${gallery.scope}&sort=${gallery.sort}&limit=60`);
+    note.textContent = g.total ? `${g.total} photo${g.total > 1 ? "s" : ""}` : "No photos yet.";
+    g.photos.forEach((p) => grid.append(photoCard(p)));
+  } catch (err) { note.textContent = err.message; }
+}
+
+async function openAlbum(username) {
+  const a = await api(`/users/${encodeURIComponent(username)}/album`);
+  $("album-title").textContent = `${a.username}'s album`;
+  $("album-sub").textContent = `${a.caught} / ${a.total} caught`;
+  const grid = $("album-photos");
+  grid.innerHTML = "";
+  if (!a.photos.length) grid.append(el("p", "muted", "No photos yet."));
+  a.photos.forEach((p) => grid.append(photoCard(p, { showSpecies: true })));
+  $("album").showModal();
+}
+$("album-close").onclick = () => $("album").close();
+$("album").onclick = (e) => { if (e.target === $("album")) $("album").close(); };
+
+// --- friends ------------------------------------------------------------------
+
+async function loadFriends() {
+  const f = await api("/friends");
+  const box = $("friend-lists");
+  box.innerHTML = "";
+  const section = (title, people, actions) => {
+    if (!people.length) return;
+    box.append(el("h3", "", title));
+    const ul = el("ul", "people");
+    for (const p of people) {
+      const li = el("li");
+      li.append(el("span", "", p.username + (p.caught ? ` · ${p.caught} caught` : "")));
+      const btns = el("span");
+      for (const [label, cls, fn] of actions) {
+        const b = el("button", cls, label);
+        b.onclick = async () => {
+          try { await fn(p.username); } catch (err) { $("friend-msg").textContent = err.message; }
+          loadFriends(); loadCollection();
+        };
+        btns.append(b, " ");
+      }
+      li.append(btns);
+      ul.append(li);
+    }
+    box.append(ul);
+  };
+  const del = (u) => api(`/friends/${encodeURIComponent(u)}`, { method: "DELETE" });
+  section("Friend requests", f.incoming, [
+    ["Accept", "", (u) => api(`/friends/requests/${encodeURIComponent(u)}/accept`, { method: "POST" })],
+    ["Decline", "ghost", del]]);
+  section("Your friends", f.friends, [["Album", "", openAlbum], ["Remove", "ghost", del]]);
+  section("Waiting for them to accept", f.outgoing, [["Cancel", "ghost", del]]);
+  if (!f.friends.length && !f.incoming.length && !f.outgoing.length)
+    box.append(el("p", "muted", "No friends yet. Add someone by their username."));
+}
+
+$("friend-form").onsubmit = async (e) => {
+  e.preventDefault();
+  const name = $("friend-name").value.trim();
+  try {
+    const r = await api("/friends/requests", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: name }) });
+    $("friend-msg").textContent = r.status === "friends" ? `You and ${name} are now friends.` : `Request sent to ${name}.`;
+    $("friend-name").value = "";
+    loadFriends(); loadCollection();
+  } catch (err) { $("friend-msg").textContent = err.message; }
+};
 $("dex-close").onclick = () => $("dex").close();
 $("dex").onclick = (e) => { if (e.target === $("dex")) $("dex").close(); };
 
@@ -238,7 +447,7 @@ async function render() {
   $("game").classList.toggle("hidden", !authed);
   $("who").classList.toggle("hidden", !authed);
   if (authed) {
-    try { $("username").textContent = (await api("/me")).username; loadCollection(); } catch {}
+    try { $("username").textContent = (await api("/me")).username; loadCollection(); loadFriends(); } catch {}
   }
 }
 render();
