@@ -32,7 +32,7 @@ def main():
         r = requests.post(f"{u}/auth/login", data={"username": args.username, "password": password})
     r.raise_for_status()
     h = {"Authorization": f"Bearer {r.json()['access_token']}"}
-    requests.patch(f"{u}/me/settings", json={"show_in_feed": False}, headers=h).raise_for_status()
+    requests.patch(f"{u}/me/settings", json={"show_in_feed": False, "is_private": True}, headers=h).raise_for_status()
 
     have = {p["species"]["slug"] for p in requests.get(f"{u}/me/album", headers=h).json()["photos"]}
     rng = random.Random(1)
