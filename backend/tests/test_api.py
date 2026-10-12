@@ -297,3 +297,19 @@ def test_player_corrects_a_wrong_match(client, fake):
     n = client.post(f"/captures/{r['capture_id']}/pick", json={"label": "none"}, headers=h).json()
     assert not n["matched"]
     assert client.get("/me/collection", headers=h).json()["caught"] == 0
+
+
+def test_bots_befriend_new_players(client):
+    from app.db import SessionLocal
+    from app.models import User
+
+    signup(client, "birdnerd")
+    with SessionLocal() as db:
+        db.query(User).filter_by(username="birdnerd").update({"is_bot": True})
+        db.commit()
+    h = signup(client, "newbie")
+    friends = client.get("/friends", headers=h).json()["friends"]
+    assert [(f["username"], f["is_bot"]) for f in friends] == [("birdnerd", True)]
+    # Removing a bot works like removing anyone.
+    assert client.delete("/friends/birdnerd", headers=h).status_code == 204
+    assert client.get("/friends", headers=h).json()["friends"] == []

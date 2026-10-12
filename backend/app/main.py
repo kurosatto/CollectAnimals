@@ -20,7 +20,7 @@ from . import places, social
 from .auth import create_token, current_user, hash_password, optional_user, verify_password
 from .config import settings
 from .db import Base, SessionLocal, add_missing_columns, engine, get_db
-from .models import AlbumPhoto, Badge, Capture, PhotoLike, Species, User
+from .models import AlbumPhoto, Badge, Capture, Friendship, PhotoLike, Species, User
 from .schemas import (CaptureOut, ChoiceOut, CollectionEntry, CollectionOut, DexOut, HotspotOut, HotspotSpecies,
                       PickIn, PredictionOut, RegisterIn, SpeciesOut, TokenOut, UserOut)
 from .social import find_species, friend_ids, revealed_species_ids, species_out
@@ -113,6 +113,11 @@ def register(body: RegisterIn, db: Session = Depends(get_db)):
         db.commit()
     except IntegrityError:
         raise HTTPException(status.HTTP_409_CONFLICT, "Email or username already registered")
+    # The example bot players add every new player as a friend (clearly labelled
+    # as bots in the app); players can remove them from the Friends tab.
+    for bot in db.scalars(select(User).where(User.is_bot.is_(True), User.id != user.id)):
+        db.add(Friendship(requester_id=bot.id, addressee_id=user.id, accepted=True))
+    db.commit()
     return TokenOut(access_token=create_token(user.id))
 
 
