@@ -146,3 +146,8 @@ def test_dex_entry(client):
     r = client.get("/species/bobcat/dex").json()
     assert r["fun_fact"] and r["range"] is None
     assert client.get("/species/nope/dex").status_code == 404
+
+
+def test_california_outline(client):
+    r = client.get("/map/california")
+    assert r.status_code == 200 and len(r.json()["rings"][0]) > 100

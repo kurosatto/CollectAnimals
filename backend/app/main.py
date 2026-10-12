@@ -112,6 +112,15 @@ def get_species(slug: str, db: Session = Depends(get_db)):
     return s
 
 
+@app.get("/map/california")
+def california_outline():
+    """Outline rings ([[lon, lat], ...]) for drawing range maps."""
+    path = settings.species_csv.parent / "california_outline.json"
+    if not path.exists():
+        raise HTTPException(404, "No outline")
+    return FileResponse(path, media_type="application/json")
+
+
 @app.get("/species/{slug}/dex", response_model=DexOut)
 def get_dex_entry(slug: str, db: Session = Depends(get_db)):
     s = get_species(slug, db)

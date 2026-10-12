@@ -186,22 +186,19 @@ async function loadCollection() {
   });
 }
 
-// California outline as [lon, lat]: coast from the Mexican border north, then the
-// Oregon line, the Nevada border and the Colorado River. Simplified, game-map detail.
-const CALIFORNIA = [[-117.12,32.53],[-117.25,32.75],[-117.28,33.0],[-117.4,33.2],[-117.6,33.39],
-  [-117.93,33.6],[-118.1,33.75],[-118.29,33.71],[-118.41,33.8],[-118.52,34.03],[-118.8,34.0],
-  [-119.2,34.15],[-119.7,34.4],[-120.47,34.45],[-120.62,34.75],[-120.64,35.15],[-120.88,35.4],
-  [-121.3,35.65],[-121.9,36.3],[-121.95,36.6],[-121.8,36.85],[-122.0,36.96],[-122.4,37.2],
-  [-122.5,37.5],[-122.51,37.78],[-122.75,37.95],[-123.0,38.0],[-123.1,38.3],[-123.7,38.95],
-  [-123.8,39.4],[-123.85,39.9],[-124.35,40.3],[-124.15,40.8],[-124.1,41.3],[-124.2,41.75],
-  [-124.21,42.0],[-120.0,42.0],[-120.0,39.0],[-114.63,35.0],[-114.57,34.8],[-114.43,34.3],
-  [-114.13,34.27],[-114.5,33.9],[-114.53,33.03],[-114.47,32.85],[-114.72,32.72]];
+// California outline rings as [lon, lat]; this rough fallback is replaced by
+// the Natural Earth outline from /map/california when it loads.
+let CALIFORNIA = [[[-124.21,42.0],[-120.0,42.0],[-120.0,39.0],[-114.63,35.0],[-114.72,32.72],
+  [-117.12,32.53],[-118.52,34.03],[-120.47,34.45],[-121.95,36.6],[-122.51,37.78],[-124.35,40.3]]];
+fetch("/map/california").then((r) => r.ok ? r.json() : null)
+  .then((o) => { if (o && o.rings) CALIFORNIA = o.rings; }).catch(() => {});
 const MAP = { lon0: -124.6, lat1: 42.2, kx: 40 * Math.cos(37 * Math.PI / 180), ky: 40 };
 const px = (lon, lat) => [(lon - MAP.lon0) * MAP.kx, (MAP.lat1 - lat) * MAP.ky];
 
 function rangeSvg(range) {
   const w = px(-113.9, 0)[0], h = px(0, 32.3)[1];
-  const land = CALIFORNIA.map(([lon, lat]) => px(lon, lat).map((v) => v.toFixed(1)).join(",")).join(" ");
+  const land = CALIFORNIA.map((ring) => "M" + ring.map(([lon, lat]) =>
+    px(lon, lat).map((v) => v.toFixed(1)).join(",")).join("L") + "Z").join("");
   let cells = "";
   if (range) {
     const { lon0, lat0, step } = range.grid;
@@ -214,7 +211,7 @@ function rangeSvg(range) {
     }
   }
   return `<svg viewBox="0 0 ${w.toFixed(0)} ${h.toFixed(0)}" role="img" aria-label="Map of California sightings">
-    <polygon class="land" points="${land}"/>${cells}</svg>`;
+    <path class="land" d="${land}"/>${cells}</svg>`;
 }
 
 async function openDex(slug, num, caught) {
