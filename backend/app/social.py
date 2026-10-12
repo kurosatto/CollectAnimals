@@ -24,7 +24,7 @@ from . import places
 from .auth import current_user
 from .db import get_db
 from .models import AlbumPhoto, Badge, Capture, Friendship, PhotoLike, Species, User
-from .schemas import (AchievementOut, AlbumOut, AlbumPick, FeedOut, ProfileOut, Tally, FriendOut, FriendRequestIn, FriendsOut,
+from .schemas import (AchievementOut, AlbumOut, AlbumPick, FeedOut, ProfileOut, SuggestionOut, Tally, FriendOut, FriendRequestIn, FriendsOut,
                       GalleryOut, PhotoOut, SettingsIn, SpeciesOut)
 from .storage import get_storage
 
@@ -265,6 +265,7 @@ def user_profile(username: str, user: User = Depends(current_user), db: Session 
 
     return ProfileOut(
         username=owner.username, joined=owner.created_at, friendship=friendship,
+        is_bot=bool(owner.is_bot),
         caught=len(caught_ids), total=len(species), by_rarity=by_rarity, by_category=by_category,
         likes_received=likes_received,
         achievements=_achievements(len(caught_ids), len(species), by_rarity, by_category, likes_received),
@@ -441,7 +442,7 @@ def list_friends(user: User = Depends(current_user), db: Session = Depends(get_d
     for f in sorted(rows, key=lambda f: f.created_at):
         other = f.requester if f.addressee_id == user.id else f.addressee
         entry = FriendOut(username=other.username, caught=caught.get(other.id, 0) if f.accepted else 0,
-                          since=f.created_at)
+                          since=f.created_at, is_bot=bool(other.is_bot))
         if f.accepted:
             out.friends.append(entry)
         elif f.addressee_id == user.id:
@@ -455,7 +456,8 @@ def list_friends(user: User = Depends(current_user), db: Session = Depends(get_d
 @router.post("/friends/requests", status_code=201)
 def send_friend_request(body: FriendRequestIn, user: User = Depends(current_user),
                         db: Session = Depends(get_db)):
-    """Ask someone to be friends. If they already asked you, you're friends now."""
+    """Ask someone to be friends. If they already asked you, or they're a bot
+    friend, you're friends now."""
     other = _user_by_name(db, body.username)
     if other.id == user.id:
         raise HTTPException(400, "You can't add yourself")
@@ -467,9 +469,22 @@ def send_friend_request(body: FriendRequestIn, user: User = Depends(current_user
     if f:
         f.accepted = True
     else:
-        db.add(Friendship(requester_id=user.id, addressee_id=other.id))
+        db.add(Friendship(requester_id=user.id, addressee_id=other.id, accepted=bool(other.is_bot)))
     db.commit()
-    return {"status": "friends" if f else "requested"}
+    return {"status": "friends" if f or other.is_bot else "requested"}
+
+
+@router.get("/friends/suggestions", response_model=list[SuggestionOut])
+def friend_suggestions(user: User = Depends(current_user), db: Session = Depends(get_db)):
+    """Bot friends you haven't added or asked yet."""
+    linked = {a if b == user.id else b for a, b in db.execute(
+        select(Friendship.requester_id, Friendship.addressee_id).where(
+            or_(Friendship.requester_id == user.id, Friendship.addressee_id == user.id)))}
+    bots = db.scalars(select(User).where(User.is_bot, User.id != user.id,
+                                         User.id.not_in(linked)).order_by(User.username)).all()
+    caught = dict(db.execute(select(Badge.user_id, func.count()).where(
+        Badge.user_id.in_([b.id for b in bots])).group_by(Badge.user_id)).all()) if bots else {}
+    return [SuggestionOut(username=b.username, caught=caught.get(b.id, 0), is_bot=True) for b in bots]
 
 
 @router.post("/friends/requests/{username}/accept")

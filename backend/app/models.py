@@ -19,6 +19,8 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(100))
     # Whether new catches appear in everyone's news feed (None = default, yes).
     show_in_feed: Mapped[bool | None] = mapped_column(nullable=True, default=True)
+    # Built-in "bot friends" new players can add; requests to them are accepted at once.
+    is_bot: Mapped[bool | None] = mapped_column(nullable=True, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 

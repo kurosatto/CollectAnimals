@@ -171,6 +171,7 @@ class ProfileOut(BaseModel):
     joined: datetime
     # self | friends | requested (you asked them) | incoming (they asked you) | none
     friendship: str
+    is_bot: bool = False
     caught: int
     total: int
     by_rarity: dict[str, Tally]
@@ -212,6 +213,13 @@ class FriendOut(BaseModel):
     username: str
     caught: int = 0
     since: datetime
+    is_bot: bool = False
+
+
+class SuggestionOut(BaseModel):
+    username: str
+    caught: int = 0
+    is_bot: bool = False
 
 
 class FriendsOut(BaseModel):

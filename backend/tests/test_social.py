@@ -367,3 +367,32 @@ def test_profile(client, fake):
     assert p["friendship"] == "friends" and len(p["photos"]) == 3 and p["hidden_photos"] == 0
     assert p["legendaries"][0]["common_name"] == "Mountain Lion"
     assert client.get("/users/ana", headers=ana).json()["friendship"] == "self"
+
+
+def test_bot_friends(client, fake):
+    from app.db import SessionLocal
+    from app.models import User
+
+    ana, bot = signup(client, "ana"), signup(client, "birdnerd")
+    signup(client, "trailblazer")
+    signup(client, "human")
+    with SessionLocal() as db:
+        for u in db.query(User).filter(User.username.in_(["birdnerd", "trailblazer"])):
+            u.is_bot = True
+        db.commit()
+    catch(client, fake, bot, "coyote")
+
+    s = client.get("/friends/suggestions", headers=ana).json()
+    assert s == [{"username": "birdnerd", "caught": 1, "is_bot": True},
+                 {"username": "trailblazer", "caught": 0, "is_bot": True}]
+    # Bots accept right away, and their catches reveal names.
+    assert client.post("/friends/requests", headers=ana, json={"username": "birdnerd"}).json() == \
+        {"status": "friends"}
+    f = client.get("/friends", headers=ana).json()
+    assert f["friends"][0] == {**f["friends"][0], "username": "birdnerd", "is_bot": True, "caught": 1}
+    assert client.get("/species/coyote", headers=ana).json()["revealed"]
+    assert [x["username"] for x in client.get("/friends/suggestions", headers=ana).json()] == ["trailblazer"]
+    assert client.get("/users/birdnerd", headers=ana).json()["is_bot"] is True
+    assert client.get("/users/human", headers=ana).json()["is_bot"] is False
+    assert client.post("/friends/requests", headers=ana, json={"username": "human"}).json() == \
+        {"status": "requested"}
