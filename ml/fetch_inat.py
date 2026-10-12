@@ -50,18 +50,26 @@ _last_call = 0.0
 def api_get(path: str, **params) -> dict:
     """GET an iNat API endpoint, throttled to ~1 req/sec with simple retries."""
     global _last_call
-    for attempt in range(5):
+    resp = None
+    for attempt in range(6):
         wait = 1.05 - (time.monotonic() - _last_call)
         if wait > 0:
             time.sleep(wait)
         _last_call = time.monotonic()
-        resp = session.get(f"{API}{path}", params=params, timeout=30)
+        try:
+            resp = session.get(f"{API}{path}", params=params, timeout=30)
+        except (requests.ConnectionError, requests.Timeout) as exc:
+            # Dropped connections happen on long pulls; back off and retry.
+            print(f"  retrying {path} after {type(exc).__name__}")
+            time.sleep(2**attempt * 5)
+            continue
         if resp.status_code == 429 or resp.status_code >= 500:
             time.sleep(2**attempt * 5)
             continue
         resp.raise_for_status()
         return resp.json()
-    resp.raise_for_status()
+    if resp is not None:
+        resp.raise_for_status()
     raise RuntimeError(f"giving up on {path}")
 
 
@@ -124,7 +132,7 @@ def download(url: str, dest: Path) -> bool:
         return False
     tmp = dest.with_suffix(".part")
     tmp.write_bytes(resp.content)
-    tmp.rename(dest)
+    tmp.replace(dest)  # rename() fails on Windows if dest already exists
     return True
 
 
@@ -136,12 +144,15 @@ def fetch_class(name: str, out_dir: Path, limit: int, size: str, pool, attributi
     for obs in iter_observations(limit, **filters):
         photo = obs["photos"][0]
         pid = str(photo["id"])
-        attribution.writerow(
-            [name, pid, obs["id"], obs.get("taxon", {}).get("name", ""),
-             photo.get("license_code", ""), photo.get("attribution", ""),
-             f"https://www.inaturalist.org/observations/{obs['id']}"]
-        )
         if pid not in have:
+            # Photos already on disk were recorded by an earlier run; the same
+            # photo can also show up twice in the paging, so queue it once.
+            have.add(pid)
+            attribution.writerow(
+                [name, pid, obs["id"], obs.get("taxon", {}).get("name", ""),
+                 photo.get("license_code", ""), photo.get("attribution", ""),
+                 f"https://www.inaturalist.org/observations/{obs['id']}"]
+            )
             jobs.append(pool.submit(download, photo_url(photo, size), class_dir / f"{pid}.jpg"))
     ok = sum(j.result() for j in jobs)
     total = len(list(class_dir.glob("*.jpg")))
@@ -158,8 +169,12 @@ def main():
     ap.add_argument("--size", default="medium", choices=["small", "medium", "large"],
                     help="medium is ~500px, plenty for 224-384px training")
     ap.add_argument("--only", nargs="*", help="limit to these slugs")
-    ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--workers", type=int, default=16,
+                    help="parallel photo downloads (from the AWS open-data bucket; "
+                         "API calls stay at ~1/sec regardless)")
     args = ap.parse_args()
+    # One pooled connection per download thread (requests defaults to 10).
+    session.mount("https://", requests.adapters.HTTPAdapter(pool_maxsize=args.workers))
 
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
