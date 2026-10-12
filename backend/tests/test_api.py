@@ -178,3 +178,11 @@ def test_hotspots(client):
     r = client.get("/species/coyote/dex").json()
     assert r["hotspots"] == ["Big Park", "Small Park"]
     assert r["active_time"] and r["spotting_tip"]
+
+
+def test_sprites(client):
+    r = client.get("/sprites/coyote.png")
+    assert r.status_code == 200 and r.headers["content-type"] == "image/png"
+    assert client.get("/sprites/coyote_silhouette.png").status_code == 200
+    assert client.get("/sprites/nope.png").status_code == 404
+    assert client.get("/sprites/..%2Fcalifornia_100.png").status_code == 404
