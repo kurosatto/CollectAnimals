@@ -8,6 +8,7 @@ accepts count, which is what a visitor would see too.
 """
 
 import argparse
+import json
 import random
 from pathlib import Path
 
@@ -22,16 +23,29 @@ PLAYERS = {
                  "california_scrub_jay", "bald_eagle", "california_quail"],
 }
 PASSWORD = "demo-password-123"
-# Rough spots so photos show a place on the feed.
+# Fallback spots for species without a hotspot park.
 SPOTS = [(36.49, -121.18), (38.07, -122.88), (36.82, -121.76), (34.09, -118.83), (37.74, -119.59)]
+
+
+def best_parks(hotspots_json: Path) -> dict[str, tuple[float, float]]:
+    """Each species' most-observed park, so a harbor seal isn't 'caught' in Yosemite."""
+    best: dict[str, tuple[int, float, float]] = {}
+    if hotspots_json.exists():
+        for park in json.loads(hotspots_json.read_text(encoding="utf-8"))["parks"]:
+            for sp in park["species"]:
+                if sp["observations"] > best.get(sp["slug"], (0,))[0]:
+                    best[sp["slug"]] = (sp["observations"], park["lat"], park["lon"])
+    return {slug: (lat, lon) for slug, (_, lat, lon) in best.items()}
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", default="http://127.0.0.1:8000")
     ap.add_argument("--images", default="data/images")
+    ap.add_argument("--hotspots", default=str(Path(__file__).resolve().parents[1] / "species" / "hotspots.json"))
     args = ap.parse_args()
     rng = random.Random(7)
+    parks = best_parks(Path(args.hotspots))
     tokens = {}
     for name in PLAYERS:
         r = requests.post(f"{args.url}/auth/register",
@@ -51,7 +65,7 @@ def main():
         for slug in slugs:
             photos = sorted((Path(args.images) / slug).glob("*.jpg"))
             for photo in rng.sample(photos, min(4, len(photos))):  # try a few until one matches
-                lat, lon = rng.choice(SPOTS)
+                lat, lon = parks.get(slug) or rng.choice(SPOTS)
                 with open(photo, "rb") as fh:
                     r = requests.post(f"{args.url}/captures", headers=tokens[name],
                                       files={"photo": (photo.name, fh, "image/jpeg")},
