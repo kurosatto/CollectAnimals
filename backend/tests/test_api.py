@@ -289,3 +289,11 @@ def test_old_database_gets_state_column(client):
         with engine.begin() as conn:
             conn.execute(text("DROP TABLE users"))
             conn.execute(text("ALTER TABLE users_new RENAME TO users"))
+
+
+def test_sprites(client):
+    r = client.get("/sprites/coyote.png")
+    assert r.status_code == 200 and r.headers["content-type"] == "image/png"
+    assert client.get("/sprites/coyote_silhouette.png").status_code == 200
+    assert client.get("/sprites/nope.png").status_code == 404
+    assert client.get("/sprites/..%2Fcalifornia_100.png").status_code == 404

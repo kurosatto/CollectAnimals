@@ -34,6 +34,8 @@ class Settings:
         "STATES_JSON", ROOT / "species" / "states.json")))
     details_csv: Path = field(default_factory=lambda: Path(os.getenv(
         "DETAILS_CSV", ROOT / "species" / "details.csv")))
+    sprites_dir: Path = field(default_factory=lambda: Path(os.getenv(
+        "SPRITES_DIR", ROOT / "species" / "sprites")))
     model_path: Path = field(default_factory=lambda: Path(os.getenv(
         "MODEL_PATH", ROOT / "models" / "ca100.pt")))
     upload_dir: Path = field(default_factory=lambda: Path(os.getenv(
