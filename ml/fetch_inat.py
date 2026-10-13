@@ -1,15 +1,22 @@
-"""Download training photos for the species list from iNaturalist.
+"""Download training photos for the species lists from iNaturalist.
 
-For each species in the CSV this script:
+The lists are the states in species/states.json (or a single --species CSV).
+A species on several lists (coyote, mallard...) is one class. For each species
+this script:
   1. resolves the scientific name to an iNaturalist taxon id,
-  2. pages through research-grade observations in California that carry an
-     open license (CC0 / CC-BY / CC-BY-NC),
+  2. pages through research-grade observations in the states that list it
+     and carry an open license (CC0 / CC-BY / CC-BY-NC), topping up from the
+     whole US if those states don't have enough,
   3. downloads one photo per observation (so train/val splits never share an
      observation) into  <out>/<slug>/<photo_id>.jpg
+Species that already have --per-species photos on disk are skipped, so adding
+a state only downloads its new species.
 
-It also builds an "other" class from random California animal observations
-that are NOT in the species list. Without it, a closed-set classifier would
-force every upload (a dog, a pigeon, a houseplant...) into one of the 100.
+It also builds an "other" class from random animal observations in each state
+that are NOT on any list. Without it, a closed-set classifier would force every
+upload (a dog, a pigeon, a houseplant...) into one of the species. Photos
+already in "other" whose taxon is now on a list (e.g. a wild turkey after
+adding North Carolina) are moved out to <out>/../other_pruned/.
 
 Every downloaded photo is recorded in <out>/attribution.csv. The licenses
 require attribution, so keep that file alongside the images.
@@ -17,7 +24,8 @@ require attribution, so keep that file alongside the images.
 The script is resumable: re-running it skips photos already on disk.
 
 Usage:
-    python ml/fetch_inat.py --per-species 1000 --negatives 5000 --out data/images
+    python ml/fetch_inat.py --per-species 1000 --negatives 5000 --out data/images   # all states
+    python ml/fetch_inat.py --states NC --size small --out data/images              # just add NC
 
 Please be polite to iNaturalist: the API asks for <= 1 request/sec. For much
 larger pulls, use the iNaturalist Open Data bucket on AWS instead
@@ -37,6 +45,8 @@ import requests
 
 API = "https://api.inaturalist.org/v1"
 CALIFORNIA_PLACE_ID = 14
+US_PLACE_ID = 1
+STATES_JSON = Path(__file__).resolve().parents[1] / "species" / "states.json"
 ANIMALIA_TAXON_ID = 1
 # The "other" class is spread evenly over these groups and over the 12 months,
 # so it isn't dominated by whatever is most observed right now (e.g. this
@@ -78,6 +88,27 @@ def api_get(path: str, **params) -> dict:
     raise RuntimeError(f"giving up on {path}")
 
 
+def load_states(path: Path = STATES_JSON, only: list[str] | None = None) -> list[dict]:
+    """states.json entries with file names made into paths; `only` filters by code."""
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    out = []
+    for s in data["states"]:
+        if only and s["code"] not in {c.upper() for c in only}:
+            continue
+        for k in ("species", "dex", "outline", "ranges", "hotspots"):
+            if s.get(k):
+                s[k] = Path(path).parent / s[k]
+        out.append(s)
+    return out
+
+
+def check_place(place_id: int, name: str) -> None:
+    """Fail fast if states.json has the wrong iNaturalist place id for a state."""
+    got = api_get(f"/places/{place_id}")["results"][0]["name"]
+    if got.lower() != name.lower():
+        raise SystemExit(f"states.json: iNaturalist place {place_id} is {got!r}, not {name!r}")
+
+
 def resolve_taxon(scientific_name: str) -> dict:
     """Map a scientific name to an iNat taxon (handles synonyms/renames)."""
     data = api_get("/taxa", q=scientific_name, rank="species", is_active="true", per_page=10)
@@ -98,13 +129,14 @@ def photo_url(photo: dict, size: str) -> str:
     return photo["url"].replace("/square.", f"/{size}.")
 
 
-def iter_observations(limit: int, **filters):
-    """Yield up to `limit` observations, paging with id_below (deep-paging safe)."""
+def iter_observations(limit: int, place_id=CALIFORNIA_PLACE_ID, **filters):
+    """Yield up to `limit` observations, paging with id_below (deep-paging safe).
+    place_id may be a comma-separated list of places."""
     id_below = None
     seen = 0
     while seen < limit:
         params = dict(
-            place_id=CALIFORNIA_PLACE_ID,
+            place_id=place_id,
             photo_license=LICENSES,
             photos="true",
             per_page=200,
@@ -141,12 +173,17 @@ def download(url: str, dest: Path) -> bool:
     return True
 
 
-def fetch_class(name: str, out_dir: Path, limit: int, size: str, pool, attribution, **filters):
+def fetch_class(name: str, out_dir: Path, limit: int, size: str, pool, attribution,
+                target: int | None = None, **filters):
+    """Download the photos of up to `limit` observations, stopping early once the
+    class folder holds `target` photos."""
     class_dir = out_dir / name
     class_dir.mkdir(parents=True, exist_ok=True)
     have = {p.stem for p in class_dir.glob("*.jpg")}
     jobs = []
     for obs in iter_observations(limit, **filters):
+        if target and len(have) >= target:
+            break
         photo = obs["photos"][0]
         pid = str(photo["id"])
         if pid not in have:
@@ -162,15 +199,36 @@ def fetch_class(name: str, out_dir: Path, limit: int, size: str, pool, attributi
     ok = sum(j.result() for j in jobs)
     total = len(list(class_dir.glob("*.jpg")))
     print(f"  {name}: +{ok} new, {total} on disk")
+    return total
+
+
+def prune_other(out_dir: Path, listed_names: set[str]) -> None:
+    """Move "other" photos of species that are now on a list out of "other"."""
+    attr_path, other = out_dir / "attribution.csv", out_dir / OTHER_CLASS
+    if not attr_path.exists() or not other.is_dir():
+        return
+    pruned = out_dir.parent / "other_pruned"
+    moved = 0
+    with open(attr_path, newline="", encoding="utf-8") as fh:
+        for row in csv.DictReader(fh):
+            # Subspecies ("Meleagris gallopavo silvestris") count as the species.
+            species = " ".join(row["taxon"].split()[:2]).lower()
+            src = other / f"{row['photo_id']}.jpg"
+            if row["class"] == OTHER_CLASS and species in listed_names and src.exists():
+                pruned.mkdir(parents=True, exist_ok=True)
+                src.replace(pruned / src.name)
+                moved += 1
+    print(f"moved {moved} 'other' photos of listed species to {pruned}")
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--species", default="species/california_100.csv")
+    ap.add_argument("--states", nargs="*", help="state codes from species/states.json (default: all)")
+    ap.add_argument("--species", help="a single species CSV instead of the states (photos from California)")
     ap.add_argument("--out", default="data/images")
     ap.add_argument("--per-species", type=int, default=1000)
     ap.add_argument("--negatives", type=int, default=5000,
-                    help="photos for the 'other' class (0 to skip)")
+                    help="photos per state for the 'other' class (0 to skip)")
     ap.add_argument("--size", default="medium", choices=["small", "medium", "large"],
                     help="medium is ~500px, plenty for 224-384px training")
     ap.add_argument("--only", nargs="*", help="limit to these slugs")
@@ -181,21 +239,40 @@ def main():
     # One pooled connection per download thread (requests defaults to 10).
     session.mount("https://", requests.adapters.HTTPAdapter(pool_maxsize=args.workers))
 
+    if args.species:
+        lists = all_lists = [{"code": "CA", "name": "California", "species": Path(args.species),
+                              "inat_place_id": CALIFORNIA_PLACE_ID}]
+    else:
+        lists, all_lists = load_states(only=args.states), load_states()
+        if not lists:
+            raise SystemExit(f"no states match {args.states}")
+        for st in lists:
+            check_place(st["inat_place_id"], st["name"])
+
+    # Every listed species in every state (so "other" never includes one), with
+    # the places that list it.
+    species: dict[str, dict] = {}
+    for st in all_lists:
+        for row in csv.DictReader(open(st["species"], encoding="utf-8")):
+            species.setdefault(row["slug"], {**row, "places": []})["places"].append(st["inat_place_id"])
+    wanted = [r["slug"] for st in lists for r in csv.DictReader(open(st["species"], encoding="utf-8"))]
+    wanted = list(dict.fromkeys(s for s in wanted if not args.only or s in set(args.only)))
+
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
-    species = list(csv.DictReader(open(args.species, encoding="utf-8")))
-    if args.only:
-        species = [s for s in species if s["slug"] in set(args.only)]
-
     # Taxon ids are cached so re-runs (and the backend) don't need to re-resolve.
     taxa_path = out_dir / "taxa.json"
     taxa = json.loads(taxa_path.read_text(encoding="utf-8")) if taxa_path.exists() else {}
-    for s in species:
-        if s["slug"] not in taxa:
+    for slug, s in species.items():
+        if slug not in taxa:
             t = resolve_taxon(s["scientific_name"])
-            taxa[s["slug"]] = {"taxon_id": t["id"], "name": t["name"],
-                               "observations_count": t.get("observations_count")}
+            taxa[slug] = {"taxon_id": t["id"], "name": t["name"],
+                          "observations_count": t.get("observations_count")}
             taxa_path.write_text(json.dumps(taxa, indent=2), encoding="utf-8")
+
+    listed_names = {s["scientific_name"].lower() for s in species.values()}
+    listed_names |= {taxa[slug]["name"].lower() for slug in species}
+    prune_other(out_dir, listed_names)
 
     attr_path = out_dir / "attribution.csv"
     new_file = not attr_path.exists()
@@ -204,28 +281,42 @@ def main():
         if new_file:
             attribution.writerow(["class", "photo_id", "observation_id", "taxon",
                                   "license", "attribution", "url"])
-        for s in species:
-            print(f"{s['slug']} ({taxa[s['slug']]['name']})")
-            fetch_class(s["slug"], out_dir, args.per_species, args.size, pool, attribution,
-                        taxon_id=taxa[s["slug"]]["taxon_id"], quality_grade="research")
+        for slug in wanted:
+            on_disk = len(list((out_dir / slug).glob("*.jpg")))
+            if on_disk >= args.per_species:
+                print(f"{slug}: {on_disk} on disk, skipping")
+                continue
+            print(f"{slug} ({taxa[slug]['name']})")
+            places = ",".join(str(p) for p in species[slug]["places"])
+            total = fetch_class(slug, out_dir, args.per_species, args.size, pool, attribution,
+                                target=args.per_species, place_id=places,
+                                taxon_id=taxa[slug]["taxon_id"], quality_grade="research")
+            if total < args.per_species:
+                # Rare species (red wolf, hellbender...) need photos from their whole US range.
+                print("  topping up from the whole US")
+                fetch_class(slug, out_dir, 2 * args.per_species, args.size, pool, attribution,
+                            target=args.per_species, place_id=US_PLACE_ID,
+                            taxon_id=taxa[slug]["taxon_id"], quality_grade="research")
             fh.flush()
 
         if args.negatives and not args.only:
-            print(f"{OTHER_CLASS} (animals not in the list)")
-            all_ids = ",".join(str(t["taxon_id"]) for t in taxa.values())
+            all_ids = ",".join(str(taxa[slug]["taxon_id"]) for slug in species)
             # Include casual/needs_id too: "other" just needs to be "an animal
             # photo that isn't one of ours", not a confirmed ID. But it must be
             # identified to species: a coarse ID like "Taricha" or "Sciuridae"
             # passes without_taxon_id yet may well be one of our species, and
             # ~22% of an unfiltered pull was such coarse IDs.
             per_slice = max(1, args.negatives // (len(NEGATIVE_GROUPS) * 12))
-            for group in NEGATIVE_GROUPS:
-                for month in range(1, 13):
-                    print(f"  {group}, month {month}")
-                    fetch_class(OTHER_CLASS, out_dir, per_slice, args.size, pool, attribution,
-                                taxon_id=ANIMALIA_TAXON_ID, without_taxon_id=all_ids,
-                                iconic_taxa=group, month=month, hrank="species")
-                    fh.flush()
+            for st in lists:
+                print(f"{OTHER_CLASS} (animals in {st['name']} not on any list)")
+                for group in NEGATIVE_GROUPS:
+                    for month in range(1, 13):
+                        print(f"  {group}, month {month}")
+                        fetch_class(OTHER_CLASS, out_dir, per_slice, args.size, pool, attribution,
+                                    place_id=st["inat_place_id"],
+                                    taxon_id=ANIMALIA_TAXON_ID, without_taxon_id=all_ids,
+                                    iconic_taxa=group, month=month, hrank="species")
+                        fh.flush()
 
 
 if __name__ == "__main__":

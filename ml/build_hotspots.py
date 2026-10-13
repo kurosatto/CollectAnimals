@@ -1,8 +1,9 @@
-"""Find which listed species can be spotted at well-known California parks.
+"""Find which listed species can be spotted at a state's well-known parks.
 
-For each park in PARKS (a centre point and a radius), asks iNaturalist how many
-research-grade observations of each of our species fall within the radius, and
-writes species/hotspots.json:
+For each of the state's parks in PARKS (a centre point and a radius), asks
+iNaturalist how many research-grade observations of each species on the
+state's list fall within the radius, and writes the state's hotspots file
+(species/states.json names it; California's is species/hotspots.json):
 
     {"source": "...", "min_observations": 3,
      "parks": [{"id": "pinnacles", "name": "Pinnacles National Park", "lat": 36.49,
@@ -13,7 +14,8 @@ A species is listed for a park once it has at least --min-observations there,
 most-observed first. One API call per park (~30 s for the whole list).
 
 Usage:
-    python ml/build_hotspots.py
+    python ml/build_hotspots.py              # California
+    python ml/build_hotspots.py --state NC
 """
 
 from __future__ import annotations
@@ -25,10 +27,10 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from fetch_inat import api_get, resolve_taxon  # noqa: E402
+from fetch_inat import api_get, load_states, resolve_taxon  # noqa: E402
 
-# id, name, lat, lon, radius_km, blurb
-PARKS = [
+# state code -> [(id, name, lat, lon, radius_km, blurb)]
+PARKS = {"CA": [
     ("point_reyes", "Point Reyes National Seashore", 38.07, -122.88, 18,
      "Tule elk, seals, bobcats and huge flocks of shorebirds on wild coastal bluffs."),
     ("marin_headlands", "Marin Headlands", 37.83, -122.51, 6,
@@ -77,19 +79,68 @@ PARKS = [
      "Desert lizards, jackrabbits, roadrunners and ravens among Joshua trees."),
     ("mono_lake", "Mono Lake", 38.00, -119.03, 12,
      "Salty lake with tufa towers, gulls, and sagebrush wildlife on the Sierra's east side."),
-]
+], "NC": [
+    ("cataloochee", "Cataloochee Valley", 35.63, -83.09, 6,
+     "Elk grazing in mountain meadows, plus black bears, wild turkeys and groundhogs."),
+    ("smokies_nc", "Great Smoky Mountains (Oconaluftee & Deep Creek)", 35.53, -83.31, 12,
+     "Elk by the visitor center, salamanders found nowhere else, bears and mountain streams."),
+    ("clingmans_heintooga", "Clingmans Dome & Heintooga Ridge", 35.58, -83.30, 8,
+     "High spruce-fir forest where red-cheeked salamanders come out on wet nights."),
+    ("asheville_blue_ridge", "Blue Ridge Parkway near Asheville", 35.57, -82.48, 15,
+     "Overlooks with fall monarch migration, groundhogs, turkeys and black bears."),
+    ("grandfather_linville", "Grandfather Mountain & Linville Gorge", 36.05, -81.85, 12,
+     "Rugged peaks with chipmunks, ravens, red efts and rushing trout streams."),
+    ("dupont_pisgah", "DuPont State Forest & Pisgah", 35.22, -82.65, 12,
+     "Waterfalls, brook trout streams, salamanders and swallowtails."),
+    ("hanging_rock_pilot", "Hanging Rock & Pilot Mountain", 36.38, -80.36, 12,
+     "Piedmont monadnocks with fence lizards, chipmunks, hawks and spring wildflowers."),
+    ("umstead_raleigh", "Umstead State Park & Raleigh greenways", 35.85, -78.72, 12,
+     "Big city park forests with barred owls, pileated woodpeckers, deer and beavers."),
+    ("eno_durham", "Eno River & Durham", 36.06, -78.97, 10,
+     "River trails with zebra swallowtails, beavers, turtles and woodland birds."),
+    ("chapel_hill", "Chapel Hill & NC Botanical Garden", 35.90, -79.03, 6,
+     "Campus squirrels, garden butterflies, hummingbirds and Mason Farm's wetlands."),
+    ("jordan_lake", "Jordan Lake", 35.75, -79.03, 12,
+     "North Carolina's bald eagle hotspot, with ospreys, herons and turtles."),
+    ("charlotte", "Charlotte & McDowell Nature Preserve", 35.15, -80.95, 15,
+     "City and lakeside wildlife: joro spiders, herons, deer and backyard birds."),
+    ("sandhills", "Weymouth Woods & the Sandhills", 35.15, -79.40, 20,
+     "Longleaf pines with red-cockaded woodpeckers, fox squirrels and Pine Barrens treefrogs."),
+    ("merchants_millpond", "Merchants Millpond State Park", 36.44, -76.70, 8,
+     "A blackwater swamp of cypress and tupelo with prothonotary warblers, otters and turtles."),
+    ("mattamuskeet", "Lake Mattamuskeet", 35.48, -76.18, 15,
+     "Tens of thousands of tundra swans and ducks in winter, plus bald eagles and alligators."),
+    ("alligator_river_pocosin", "Alligator River & Pocosin Lakes", 35.80, -76.00, 30,
+     "Home of the world's only wild red wolves, plus black bears, alligators and swans."),
+    ("outer_banks_north", "Nags Head & Jockey's Ridge", 35.95, -75.63, 12,
+     "Dunes, sound-side marsh and piers with dolphins, pelicans and ghost crabs."),
+    ("pea_island", "Pea Island National Wildlife Refuge", 35.72, -75.49, 10,
+     "Barrier island ponds full of herons, egrets, swans, terns and shorebirds."),
+    ("cape_hatteras", "Cape Hatteras & Ocracoke", 35.20, -75.70, 20,
+     "Cape Point's surf fishing, sea turtle nests, skimmers and storm-tossed shells."),
+    ("beaufort_cape_lookout", "Beaufort, Shackleford Banks & Cape Lookout", 34.68, -76.60, 15,
+     "Wild horses, oystercatchers, dolphins, fiddler crabs and the Rachel Carson Reserve."),
+    ("croatan", "Croatan National Forest", 34.85, -77.05, 20,
+     "Pine savannas and pocosins with red-cockaded woodpeckers, alligators and carnivorous plants."),
+    ("wilmington", "Wilmington & Greenfield Lake", 34.21, -77.92, 8,
+     "Alligators, herons, egrets, anoles and painted buntings in town."),
+    ("carolina_beach_fort_fisher", "Carolina Beach & Fort Fisher", 33.98, -77.92, 10,
+     "Painted buntings, terrapins, ghost crabs, ibises and lubber grasshoppers."),
+    ("lake_waccamaw", "Lake Waccamaw & Green Swamp", 34.28, -78.50, 15,
+     "Cypress-lined lake with alligators, prothonotary warblers, and pine savanna wildlife."),
+]}
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--species", default="species/california_100.csv")
+    ap.add_argument("--state", default="CA", help="state code from species/states.json")
     ap.add_argument("--taxa", default="data/images/taxa.json",
                     help="taxon ids cached by fetch_inat.py (resolved from the API if missing)")
-    ap.add_argument("--out", default="species/hotspots.json")
     ap.add_argument("--min-observations", type=int, default=3)
     args = ap.parse_args()
 
-    species = list(csv.DictReader(open(args.species, encoding="utf-8")))
+    state = load_states(only=[args.state])[0]
+    species = list(csv.DictReader(open(state["species"], encoding="utf-8")))
     taxa_path = Path(args.taxa)
     taxa = json.loads(taxa_path.read_text(encoding="utf-8")) if taxa_path.exists() else {}
     slug_by_taxon = {}
@@ -99,7 +150,7 @@ def main():
     taxon_ids = ",".join(str(t) for t in slug_by_taxon)
 
     parks = []
-    for pid, name, lat, lon, radius, blurb in PARKS:
+    for pid, name, lat, lon, radius, blurb in PARKS[state["code"]]:
         data = api_get("/observations/species_counts", lat=lat, lng=lon, radius=radius,
                        taxon_id=taxon_ids, quality_grade="research", per_page=500)
         counts = {}
@@ -119,8 +170,8 @@ def main():
 
     out = {"source": "iNaturalist research-grade observations (species_counts by radius)",
            "min_observations": args.min_observations, "parks": parks}
-    Path(args.out).write_text(json.dumps(out, indent=1), encoding="utf-8")
-    print(f"wrote {args.out}")
+    state["hotspots"].write_text(json.dumps(out, indent=1), encoding="utf-8")
+    print(f"wrote {state['hotspots']}")
 
 
 if __name__ == "__main__":

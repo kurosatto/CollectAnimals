@@ -17,6 +17,8 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     username: Mapped[str] = mapped_column(String(40), unique=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(100))
+    # Two-letter code from species/states.json; picks the Dex, Hotspots and maps.
+    state: Mapped[str] = mapped_column(String(2), default="CA", server_default="CA")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
@@ -30,6 +32,22 @@ class Species(Base):
     category: Mapped[str] = mapped_column(String(32))
     rarity: Mapped[str] = mapped_column(String(16))
     region: Mapped[str] = mapped_column(String(32), default="california")
+
+
+class StateSpecies(Base):
+    """A species on one state's list. Rarity (and the display name) can differ by state."""
+
+    __tablename__ = "state_species"
+    __table_args__ = (UniqueConstraint("state", "species_id"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    state: Mapped[str] = mapped_column(String(2), index=True)
+    species_id: Mapped[int] = mapped_column(ForeignKey("species.id"))
+    position: Mapped[int] = mapped_column(Integer)  # order in the state's CSV = Dex number
+    common_name: Mapped[str] = mapped_column(String(128))
+    rarity: Mapped[str] = mapped_column(String(16))
+
+    species: Mapped[Species] = relationship()
 
 
 class Capture(Base):

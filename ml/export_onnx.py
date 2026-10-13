@@ -18,6 +18,7 @@ import argparse
 import csv
 import json
 import random
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -26,6 +27,9 @@ import torch
 from PIL import Image
 from torch import nn
 from torchvision import transforms
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from fetch_inat import load_states  # noqa: E402
 
 
 class WithSoftmax(nn.Module):
@@ -47,7 +51,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("checkpoint")
     ap.add_argument("--out", default="android/app/src/main/assets")
-    ap.add_argument("--species", default="species/california_100.csv")
+    ap.add_argument("--species", default="species/california_100.csv",
+                    help="the list written as model.json 'species' (the app's default Dex)")
     ap.add_argument("--threshold", type=float, default=0.7,
                     help="confidence needed to award a badge (backend default MATCH_THRESHOLD)")
     ap.add_argument("--quantize", action="store_true", help="int8 weights (smaller APK)")
@@ -85,6 +90,11 @@ def main():
         "match_threshold": args.threshold,
         "other_label": "other",
         "species": [{"slug": s, **species[s]} for s in species],  # CSV order
+        # Every state's list (CSV order). A capture should only count the
+        # player's state: drop other classes and rescale, as the backend does.
+        "states": [{"code": st["code"], "name": st["name"],
+                    "species": [{"slug": s, **v} for s, v in load_species(st["species"]).items()]}
+                   for st in load_states()],
         "val_top1": ckpt.get("val_top1"),
     }
     (out / "model.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")

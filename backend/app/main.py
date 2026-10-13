@@ -5,47 +5,101 @@ import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, File, HTTPException, UploadFile, status
+from fastapi import Depends, FastAPI, File, HTTPException, Query, UploadFile, status
 from fastapi.responses import FileResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from PIL import Image, ImageOps, UnidentifiedImageError
-from sqlalchemy import or_, select
+from sqlalchemy import inspect, or_, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from . import classifier as clf
 from . import dex
+from . import states as st
 from .auth import create_token, current_user, hash_password, verify_password
 from .config import settings
 from .db import Base, SessionLocal, engine, get_db
-from .models import Badge, Capture, Species, User
+from .classifier import OTHER_LABEL, Prediction
+from .models import Badge, Capture, Species, StateSpecies, User
 from .schemas import (CaptureOut, CollectionEntry, CollectionOut, DexOut, HotspotOut, HotspotSpecies,
-                      PredictionOut, RegisterIn, SpeciesOut, TokenOut, UserOut)
+                      PredictionOut, RegisterIn, SpeciesOut, StateOut, TokenOut, UserOut, UserUpdate)
 
 STATIC_DIR = Path(__file__).parent / "static"
 
 
-def seed_species(db: Session, csv_path: Path) -> None:
-    """Upsert species from the CSV so editing the list doesn't need a migration."""
+def seed_species(db: Session, state_list: list[st.State]) -> None:
+    """Upsert species and each state's list from the CSVs, so editing a list doesn't
+    need a migration. A species on several lists is one row; its shared fields
+    come from the first state that lists it, rarity and name are kept per state."""
     existing = {s.slug: s for s in db.scalars(select(Species))}
-    with open(csv_path, newline="", encoding="utf-8") as fh:
-        for row in csv.DictReader(fh):
-            s = existing.get(row["slug"]) or Species(slug=row["slug"])
-            s.common_name = row["common_name"]
-            s.scientific_name = row["scientific_name"]
-            s.category = row["category"]
-            s.rarity = row["rarity"]
-            db.add(s)
+    members = {(m.state, m.species_id): m for m in db.scalars(select(StateSpecies))}
+    seen: set[str] = set()
+    for state in state_list:
+        with open(state.species_csv, newline="", encoding="utf-8") as fh:
+            rows = list(csv.DictReader(fh))
+        for row in rows:
+            s = existing.get(row["slug"])
+            if s is None:
+                s = existing[row["slug"]] = Species(slug=row["slug"])
+            if row["slug"] not in seen:
+                seen.add(row["slug"])
+                s.common_name = row["common_name"]
+                s.scientific_name = row["scientific_name"]
+                s.category = row["category"]
+                s.rarity = row["rarity"]
+                s.region = state.name.lower().replace(" ", "_")
+                db.add(s)
+        db.flush()
+        keep = set()
+        for pos, row in enumerate(rows, 1):
+            sid = existing[row["slug"]].id
+            m = members.get((state.code, sid)) or StateSpecies(state=state.code, species_id=sid)
+            m.position, m.common_name, m.rarity = pos, row["common_name"], row["rarity"]
+            db.add(m)
+            keep.add(sid)
+        for (code, sid), m in members.items():
+            if code == state.code and sid not in keep:
+                db.delete(m)
     db.commit()
+
+
+def add_missing_columns() -> None:
+    """create_all() doesn't add columns to existing tables; add the few added since."""
+    insp = inspect(engine)
+    if "users" in insp.get_table_names() and "state" not in {c["name"] for c in insp.get_columns("users")}:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE users ADD COLUMN state VARCHAR(2) NOT NULL DEFAULT 'CA'"))
+
+
+def state_or_404(code: str | None) -> st.State:
+    state = st.get(code)
+    if state is None:
+        raise HTTPException(404, f"Unknown state {code!r}")
+    return state
+
+
+def state_species(db: Session, code: str) -> list[StateSpecies]:
+    return list(db.scalars(select(StateSpecies).where(StateSpecies.state == code)
+                           .order_by(StateSpecies.position)))
+
+
+def species_out(s: Species, m: StateSpecies | None) -> SpeciesOut:
+    """The species as one state shows it (that state's name and rarity)."""
+    out = SpeciesOut.model_validate(s)
+    if m is not None:
+        out = out.model_copy(update={"common_name": m.common_name, "rarity": m.rarity})
+    return out
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(engine)
+    add_missing_columns()
     settings.upload_dir.mkdir(parents=True, exist_ok=True)
+    st.load(settings.states_json)
     with SessionLocal() as db:
-        seed_species(db, settings.species_csv)
-    dex.load(settings.details_csv, settings.ranges_json, settings.hotspots_json)
+        seed_species(db, st.all_states())
+    dex.load(settings.details_csv, st.all_states())
     if clf.get_classifier() is None:
         clf.load_classifier(settings.model_path)
     yield
@@ -78,8 +132,11 @@ def register(body: RegisterIn, db: Session = Depends(get_db)):
                                              User.username == body.username)))
     if taken:
         raise HTTPException(status.HTTP_409_CONFLICT, "Email or username already registered")
+    state = st.get(body.state)
+    if state is None:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, f"Unknown state {body.state!r}")
     user = User(email=body.email.lower(), username=body.username,
-                password_hash=hash_password(body.password))
+                password_hash=hash_password(body.password), state=state.code)
     db.add(user)
     try:
         db.commit()
@@ -110,46 +167,79 @@ def me(user: User = Depends(current_user)):
     return user
 
 
+@app.patch("/me", response_model=UserOut)
+def update_me(body: UserUpdate, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    """Change the player's state; their Dex, Hotspots and maps follow it."""
+    user.state = state_or_404(body.state).code
+    db.commit()
+    return user
+
+
+@app.get("/states", response_model=list[StateOut])
+def list_states(db: Session = Depends(get_db)):
+    return [StateOut(code=s.code, name=s.name, species_count=len(state_species(db, s.code)),
+                     bounds=s.bounds) for s in st.all_states()]
+
+
 # --- species ----------------------------------------------------------------
 
+# Endpoints that take ?state= default to the first state in states.json (California).
+
 @app.get("/species", response_model=list[SpeciesOut])
-def list_species(db: Session = Depends(get_db)):
-    return db.scalars(select(Species).order_by(Species.id)).all()
+def list_species(state: str | None = Query(None), db: Session = Depends(get_db)):
+    """One state's list, in Dex order."""
+    code = state_or_404(state).code
+    return [species_out(m.species, m) for m in state_species(db, code)]
 
 
-@app.get("/species/{slug}", response_model=SpeciesOut)
-def get_species(slug: str, db: Session = Depends(get_db)):
+def _species_in(slug: str, code: str, db: Session) -> tuple[Species, StateSpecies | None]:
     s = db.scalar(select(Species).where(Species.slug == slug))
     if not s:
         raise HTTPException(404, "Unknown species")
-    return s
+    m = db.scalar(select(StateSpecies).where(StateSpecies.state == code,
+                                             StateSpecies.species_id == s.id))
+    return s, m
+
+
+@app.get("/species/{slug}", response_model=SpeciesOut)
+def get_species(slug: str, state: str | None = Query(None), db: Session = Depends(get_db)):
+    return species_out(*_species_in(slug, state_or_404(state).code, db))
 
 
 @app.get("/map/california")
 def california_outline():
     """Outline rings ([[lon, lat], ...]) for drawing range maps."""
-    path = settings.species_csv.parent / "california_outline.json"
+    return state_outline("CA")
+
+
+@app.get("/map/{state}")
+def state_outline(state: str):
+    """A state's outline rings ([[lon, lat], ...]) for drawing range maps."""
+    path = state_or_404(state).outline
     if not path.exists():
         raise HTTPException(404, "No outline")
     return FileResponse(path, media_type="application/json")
 
 
 @app.get("/species/{slug}/dex", response_model=DexOut)
-def get_dex_entry(slug: str, db: Session = Depends(get_db)):
-    s = get_species(slug, db)
-    d = dex.details(slug)
-    return DexOut(species=SpeciesOut.model_validate(s), size=d.get("size"), weight=d.get("weight"),
+def get_dex_entry(slug: str, state: str | None = Query(None), db: Session = Depends(get_db)):
+    code = state_or_404(state).code
+    s, m = _species_in(slug, code, db)
+    d = dex.details(slug, code)
+    return DexOut(species=species_out(s, m), size=d.get("size"), weight=d.get("weight"),
                   fun_fact=d.get("fun_fact"), where_to_find=d.get("where_to_find"),
                   active_time=d.get("active_time"), spotting_tip=d.get("spotting_tip"),
-                  hotspots=dex.hotspots_for(slug), range=dex.range_for(slug))
+                  caution=d.get("caution") or None,
+                  hotspots=dex.hotspots_for(slug, code), range=dex.range_for(slug, code))
 
 
 @app.get("/hotspots", response_model=list[HotspotOut])
-def list_hotspots(db: Session = Depends(get_db)):
-    """Parks and the listed species seen there, parks with the most species first."""
-    by_slug = {s.slug: s for s in db.scalars(select(Species))}
+def list_hotspots(state: str | None = Query(None), db: Session = Depends(get_db)):
+    """A state's parks and its listed species seen there, parks with the most species first."""
+    code = state_or_404(state).code
+    by_slug = {m.species.slug: m for m in state_species(db, code)}
     out = []
-    for p in dex.hotspots():
+    for p in dex.hotspots(code):
         species = [HotspotSpecies(slug=sp["slug"], common_name=by_slug[sp["slug"]].common_name,
                                   rarity=by_slug[sp["slug"]].rarity, observations=sp["observations"])
                    for sp in p["species"] if sp["slug"] in by_slug]
@@ -185,11 +275,14 @@ async def create_capture(photo: UploadFile = File(...), user: User = Depends(cur
                             f"Photo larger than {settings.max_upload_mb} MB")
     image = _read_image(data)
 
-    preds = model.predict(image, k=3)
+    # Only the player's state counts: drop the other states' species and rescale,
+    # so e.g. a bluebird photo in North Carolina isn't split between the eastern
+    # and western bluebird.
+    state = st.get(user.state) or st.get(None)
+    members = {m.species.slug: m for m in state_species(db, state.code)}
+    preds = restrict(model.predict(image, k=1000), set(members) | {OTHER_LABEL})[:3]
     top = preds[0]
-    species_by_slug = {s.slug: s for s in db.scalars(
-        select(Species).where(Species.slug.in_([p.label for p in preds])))}
-    species = species_by_slug.get(top.label)
+    species = members[top.label].species if top.label in members else None
     matched = species is not None and top.probability >= settings.match_threshold
 
     # Re-encode before saving: normalizes the format and strips EXIF (incl. GPS).
@@ -213,37 +306,52 @@ async def create_capture(photo: UploadFile = File(...), user: User = Depends(cur
             new_badge = True
     db.commit()
 
+    name = members[top.label].common_name if species is not None else None
     if matched:
-        message = (f"You caught a {species.common_name}! New badge unlocked."
-                   if new_badge else f"Another {species.common_name} for your collection.")
+        message = (f"You caught a {name}! New badge unlocked."
+                   if new_badge else f"Another {name} for your collection.")
     elif species is not None:
-        message = f"Might be a {species.common_name}, but we're not sure. Try a clearer photo!"
+        message = f"Might be a {name}, but we're not sure. Try a clearer photo!"
     else:
-        message = "We couldn't match this to any animal in the California collection."
+        message = f"We couldn't match this to any animal in the {state.name} collection."
 
     return CaptureOut(
         capture_id=capture.id,
         matched=matched,
-        species=SpeciesOut.model_validate(species) if matched else None,
+        species=species_out(species, members[top.label]) if matched else None,
         confidence=round(top.probability, 4),
         new_badge=new_badge,
         message=message,
         top_predictions=[
             PredictionOut(label=p.label, probability=round(p.probability, 4),
-                          common_name=species_by_slug[p.label].common_name
-                          if p.label in species_by_slug else None)
+                          common_name=members[p.label].common_name
+                          if p.label in members else None)
             for p in preds
         ],
     )
 
 
+def restrict(preds: list[Prediction], allowed: set[str]) -> list[Prediction]:
+    """Keep only the allowed labels, rescaled so their probabilities sum to 1."""
+    kept = [p for p in preds if p.label in allowed]
+    total = sum(p.probability for p in kept)
+    if not kept or total <= 0:
+        return [Prediction(OTHER_LABEL, 1.0)]
+    return [Prediction(p.label, p.probability / total) for p in kept]
+
+
 @app.get("/me/collection", response_model=CollectionOut)
-def my_collection(user: User = Depends(current_user), db: Session = Depends(get_db)):
+def my_collection(state: str | None = Query(None), user: User = Depends(current_user),
+                  db: Session = Depends(get_db)):
+    """The player's Dex for their state (or ?state=). Badges are per species, so a
+    coyote caught in California is also caught in North Carolina's Dex."""
+    code = state_or_404(state or user.state).code
     badges = {b.species_id: b for b in db.scalars(select(Badge).where(Badge.user_id == user.id))}
     entries = []
-    for s in db.scalars(select(Species).order_by(Species.id)):
-        b = badges.get(s.id)
+    for m in state_species(db, code):
+        b = badges.get(m.species_id)
         entries.append(CollectionEntry(
-            species=SpeciesOut.model_validate(s), caught=b is not None,
+            species=species_out(m.species, m), caught=b is not None,
             capture_count=b.capture_count if b else 0, earned_at=b.earned_at if b else None))
-    return CollectionOut(caught=len(badges), total=len(entries), entries=entries)
+    return CollectionOut(state=code, caught=sum(e.caught for e in entries), total=len(entries),
+                         entries=entries)

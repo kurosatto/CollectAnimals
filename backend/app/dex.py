@@ -1,6 +1,8 @@
-"""Pokédex entries: size, weight and fun fact (species/details.csv) plus where
-each species has been seen in California (species/ranges.json, built by
-ml/build_ranges.py). Both are optional; missing data just leaves fields empty.
+"""Pokédex entries: size, weight and fun fact (species/details.csv, shared by
+all states) plus, per state, where each species has been seen (ranges), the
+parks it shows up at (hotspots) and state-specific text (the state's dex CSV:
+where_to_find, a caution, and overrides of shared facts that only make sense
+in another state). All files are optional; missing data just leaves fields empty.
 """
 
 from __future__ import annotations
@@ -9,45 +11,73 @@ import csv
 import json
 from pathlib import Path
 
+from .states import State
+
 _details: dict[str, dict] = {}
-_ranges: dict | None = None
-_hotspots: list[dict] = []
+# state code -> data
+_ranges: dict[str, dict] = {}
+_hotspots: dict[str, list[dict]] = {}
+_state_text: dict[str, dict[str, dict]] = {}
+# The state whose where_to_find text lives in details.csv (the original list).
+_base_state: str | None = None
 # hotspots.json lists every species with >= 3 sightings at a park; only show the
 # ones a visitor has a real chance of finding.
 MIN_HOTSPOT_OBSERVATIONS = 20
+STATE_FIELDS = ("where_to_find", "fun_fact", "active_time", "spotting_tip", "caution")
 
 
-def load(details_csv: Path, ranges_json: Path, hotspots_json: Path | None = None) -> None:
-    global _ranges, _hotspots
+def _read_csv(path: Path) -> dict[str, dict]:
+    with open(path, newline="", encoding="utf-8") as fh:
+        return {row["slug"]: row for row in csv.DictReader(fh)}
+
+
+def load(details_csv: Path, states: list[State]) -> None:
+    global _base_state
     _details.clear()
+    _ranges.clear()
+    _hotspots.clear()
+    _state_text.clear()
     if details_csv.exists():
-        with open(details_csv, newline="", encoding="utf-8") as fh:
-            _details.update({row["slug"]: row for row in csv.DictReader(fh)})
-    _ranges = json.loads(ranges_json.read_text(encoding="utf-8")) if ranges_json.exists() else None
-    _hotspots = []
-    if hotspots_json and hotspots_json.exists():
-        _hotspots = json.loads(hotspots_json.read_text(encoding="utf-8"))["parks"]
-        for p in _hotspots:
-            p["species"] = [sp for sp in p["species"]
-                            if sp["observations"] >= MIN_HOTSPOT_OBSERVATIONS]
+        _details.update(_read_csv(details_csv))
+    _base_state = next((s.code for s in states if s.dex_csv is None), None)
+    for st in states:
+        if st.ranges.exists():
+            _ranges[st.code] = json.loads(st.ranges.read_text(encoding="utf-8"))
+        parks = []
+        if st.hotspots.exists():
+            parks = json.loads(st.hotspots.read_text(encoding="utf-8"))["parks"]
+            for p in parks:
+                p["species"] = [sp for sp in p["species"]
+                                if sp["observations"] >= MIN_HOTSPOT_OBSERVATIONS]
+        _hotspots[st.code] = parks
+        if st.dex_csv and st.dex_csv.exists():
+            _state_text[st.code] = _read_csv(st.dex_csv)
 
 
-def hotspots() -> list[dict]:
-    return _hotspots
+def hotspots(state: str) -> list[dict]:
+    return _hotspots.get(state, [])
 
 
-def hotspots_for(slug: str, limit: int = 3) -> list[str]:
-    """Names of the parks with the most sightings of this species."""
-    hits = [(sp["observations"], p["name"]) for p in _hotspots
+def hotspots_for(slug: str, state: str, limit: int = 3) -> list[str]:
+    """Names of the state's parks with the most sightings of this species."""
+    hits = [(sp["observations"], p["name"]) for p in hotspots(state)
             for sp in p["species"] if sp["slug"] == slug]
     return [name for _, name in sorted(hits, reverse=True)[:limit]]
 
 
-def details(slug: str) -> dict:
-    return _details.get(slug, {})
+def details(slug: str, state: str) -> dict:
+    """Shared facts with the state's own text laid over them."""
+    d = dict(_details.get(slug, {}))
+    if state != _base_state:
+        d["where_to_find"] = ""  # details.csv's where_to_find is about the base state
+    for k, v in _state_text.get(state, {}).get(slug, {}).items():
+        if k in STATE_FIELDS and v:
+            d[k] = v
+    return d
 
 
-def range_for(slug: str) -> dict | None:
-    if not _ranges or slug not in _ranges.get("species", {}):
+def range_for(slug: str, state: str) -> dict | None:
+    r = _ranges.get(state)
+    if not r or slug not in r.get("species", {}):
         return None
-    return {"grid": _ranges["grid"], "cells": _ranges["species"][slug]}
+    return {"grid": r["grid"], "cells": r["species"][slug]}

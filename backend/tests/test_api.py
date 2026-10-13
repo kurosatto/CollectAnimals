@@ -49,9 +49,11 @@ def jpeg_bytes():
     return buf.getvalue()
 
 
-def signup(client, name="ana"):
-    r = client.post("/auth/register", json={"email": f"{name}@example.com", "username": name,
-                                            "password": "hunter22!"})
+def signup(client, name="ana", state=None):
+    body = {"email": f"{name}@example.com", "username": name, "password": "hunter22!"}
+    if state:
+        body["state"] = state
+    r = client.post("/auth/register", json=body)
     assert r.status_code == 201, r.text
     return {"Authorization": f"Bearer {r.json()['access_token']}"}
 
@@ -78,6 +80,16 @@ def test_register_login_me(client):
     token = r.json()["access_token"]
     assert client.get("/me", headers={"Authorization": f"Bearer {token}"}).json()["username"] == "ana"
     assert client.get("/me", headers={"Authorization": "Bearer garbage"}).status_code == 401
+
+
+def with_files(code, **paths):
+    """The real states, with one state's map files swapped for test files."""
+    import dataclasses
+    from pathlib import Path
+
+    from app import states
+    return [dataclasses.replace(s, **{k: Path(v) for k, v in paths.items()}) if s.code == code else s
+            for s in states.all_states()]
 
 
 def test_capture_requires_auth(client, fake):
@@ -135,8 +147,7 @@ def test_dex_entry(client):
     with open(ranges, "w") as fh:
         fh.write('{"grid": {"lon0": -124.5, "lat0": 32.5, "step": 0.25, "cols": 42, "rows": 38},'
                  ' "species": {"coyote": [[10, 20, 5]]}}')
-    from pathlib import Path
-    dex.load(settings.details_csv, Path(ranges))
+    dex.load(settings.details_csv, with_files("CA", ranges=ranges))
 
     r = client.get("/species/coyote/dex").json()
     assert r["species"]["common_name"] == "Coyote"
@@ -168,7 +179,7 @@ def test_hotspots(client):
          "species": [{"slug": "california_condor", "observations": 800},
                      {"slug": "coyote", "observations": 50}, {"slug": "not_listed", "observations": 9}]},
     ]}))
-    dex.load(settings.details_csv, settings.ranges_json, tmp / "hotspots.json")
+    dex.load(settings.details_csv, with_files("CA", hotspots=tmp / "hotspots.json"))
 
     parks = client.get("/hotspots").json()
     assert [p["name"] for p in parks] == ["Big Park", "Small Park"]
@@ -186,3 +197,95 @@ def test_login_rate_limit(client):
         assert client.post("/auth/login", data={"username": "carol", "password": "wrong-pass"}).status_code == 401
     r = client.post("/auth/login", data={"username": "carol", "password": "hunter2hunter2"})
     assert r.status_code == 429
+
+
+def test_states_and_signup_state(client):
+    states = {s["code"]: s for s in client.get("/states").json()}
+    assert states["CA"]["species_count"] == 100 and states["NC"]["species_count"] == 100
+    assert states["NC"]["name"] == "North Carolina" and states["NC"]["bounds"]["west"] < -84
+
+    h = signup(client, "nina", state="nc")
+    assert client.get("/me", headers=h).json()["state"] == "NC"
+    assert client.get("/me", headers=signup(client)).json()["state"] == "CA"  # default
+    r = client.post("/auth/register", json={"email": "x@example.com", "username": "xx",
+                                            "password": "hunter22!", "state": "ZZ"})
+    assert r.status_code == 422
+
+
+def test_species_per_state(client):
+    nc = client.get("/species", params={"state": "NC"}).json()
+    assert len(nc) == 100 and nc[0]["slug"] == "red_wolf"
+    assert "northern_cardinal" in {s["slug"] for s in nc}
+    assert "california_condor" not in {s["slug"] for s in nc}
+    assert client.get("/species").json()[0]["slug"] == "mountain_lion"  # California by default
+    # Shared species: one identity, rarity and name per state.
+    assert client.get("/species/american_black_bear").json()["rarity"] == "rare"
+    assert client.get("/species/american_black_bear", params={"state": "NC"}).json()["rarity"] == "uncommon"
+    assert client.get("/species/elk", params={"state": "NC"}).json()["common_name"] == "Elk"
+    assert client.get("/species", params={"state": "TX"}).status_code == 404
+
+
+def test_change_state_and_shared_badges(client, fake):
+    h = signup(client)
+    fake.next = [Prediction("coyote", 0.95)]
+    assert upload(client, h).json()["new_badge"]
+
+    r = client.patch("/me", headers=h, json={"state": "NC"})
+    assert r.status_code == 200 and r.json()["state"] == "NC"
+    col = client.get("/me/collection", headers=h).json()
+    assert col["state"] == "NC" and col["total"] == 100 and col["caught"] == 1  # coyote counts here too
+    ca = client.get("/me/collection", headers=h, params={"state": "CA"}).json()
+    assert ca["state"] == "CA" and ca["caught"] == 1
+    assert client.patch("/me", headers=h, json={"state": "ZZ"}).status_code == 404
+
+
+def test_capture_only_counts_the_players_state(client, fake):
+    h = signup(client, "nina", state="NC")
+    # The model splits a bluebird photo between the western (CA) and eastern (NC)
+    # bluebird; in North Carolina only the eastern one is possible.
+    fake.next = [Prediction("western_bluebird", 0.5), Prediction("eastern_bluebird", 0.4),
+                 Prediction("other", 0.1)]
+    r = upload(client, h).json()
+    assert r["matched"] and r["species"]["slug"] == "eastern_bluebird"
+    assert r["confidence"] == 0.8 and [p["label"] for p in r["top_predictions"]] == ["eastern_bluebird", "other"]
+
+    fake.next = [Prediction("california_condor", 0.99), Prediction("other", 0.01)]
+    r = upload(client, h).json()
+    assert not r["matched"] and "North Carolina" in r["message"]
+
+
+def test_dex_entry_per_state(client):
+    r = client.get("/species/american_alligator/dex", params={"state": "NC"}).json()
+    assert "Greenfield Lake" in r["where_to_find"] and r["caution"] and r["size"]
+    # Shared species: North Carolina text replaces California-only text.
+    ca = client.get("/species/elk/dex").json()
+    nc = client.get("/species/elk/dex", params={"state": "NC"}).json()
+    assert "Point Reyes" in ca["where_to_find"] and "Cataloochee" in nc["where_to_find"]
+    assert "Tule" in ca["fun_fact"] and "Tule" not in nc["fun_fact"]
+    assert nc["size"] == ca["size"] and ca["caution"] is None
+    assert client.get("/map/NC").json()["rings"]
+
+
+def test_old_database_gets_state_column(client):
+    from sqlalchemy import inspect, text
+
+    from app.db import engine
+    from app.main import add_missing_columns
+
+    with engine.begin() as conn:
+        conn.execute(text("DROP TABLE IF EXISTS users_old"))
+        conn.execute(text("CREATE TABLE users_old (id INTEGER PRIMARY KEY, email VARCHAR(255))"))
+    # Pretend users_old is the users table of an old install.
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE users RENAME TO users_new"))
+        conn.execute(text("ALTER TABLE users_old RENAME TO users"))
+        conn.execute(text("INSERT INTO users (id, email) VALUES (1, 'a@example.com')"))
+    try:
+        add_missing_columns()
+        assert "state" in {c["name"] for c in inspect(engine).get_columns("users")}
+        with engine.begin() as conn:
+            assert conn.execute(text("SELECT state FROM users")).scalar() == "CA"
+    finally:
+        with engine.begin() as conn:
+            conn.execute(text("DROP TABLE users"))
+            conn.execute(text("ALTER TABLE users_new RENAME TO users"))
