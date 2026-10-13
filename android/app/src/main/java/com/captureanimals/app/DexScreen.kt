@@ -44,6 +44,7 @@ import java.text.DateFormat
 import java.util.Date
 import kotlin.math.cos
 import kotlin.math.ln
+import kotlin.math.roundToInt
 
 /** Full-page Field Guide entry for one species. */
 @Composable
@@ -115,7 +116,9 @@ fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: FieldGuide, onBa
         if (dex.parks.isNotEmpty()) {
             LabeledLine("Hotspots", dex.hotspotsFor(s.slug).joinToString(", ").ifEmpty { "—" })
         }
-        Text("Each square is about 25 km (15 mi) across; darker means more of the " +
+        // A grid step of 0.25° is about 25 km; NC's finer 0.125° grid is about 12 km.
+        val km = (dex.ranges.step * 100).roundToInt()
+        Text("Each square is about $km km (${(km * 0.62).roundToInt()} mi) across; darker means more of the " +
             "${dex.ranges.sightings(s.slug)} recent iNaturalist sightings in ${dex.region}.",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
     }
