@@ -1,0 +1,5914 @@
+{
+ "source": "iNaturalist research-grade observations (species_counts by radius)",
+ "min_observations": 3,
+ "parks": [
+  {
+   "id": "cataloochee",
+   "name": "Cataloochee Valley",
+   "lat": 35.63,
+   "lon": -83.09,
+   "radius_km": 6,
+   "blurb": "Elk grazing in mountain meadows, plus black bears, wild turkeys and groundhogs.",
+   "species": [
+    {
+     "slug": "elk",
+     "observations": 104
+    },
+    {
+     "slug": "wild_turkey",
+     "observations": 75
+    },
+    {
+     "slug": "eastern_tiger_swallowtail",
+     "observations": 54
+    },
+    {
+     "slug": "american_toad",
+     "observations": 26
+    },
+    {
+     "slug": "northern_water_snake",
+     "observations": 19
+    },
+    {
+     "slug": "eastern_ratsnake",
+     "observations": 18
+    },
+    {
+     "slug": "american_black_bear",
+     "observations": 12
+    },
+    {
+     "slug": "red_cheeked_salamander",
+     "observations": 9
+    },
+    {
+     "slug": "eastern_cottontail",
+     "observations": 9
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 9
+    },
+    {
+     "slug": "monarch",
+     "observations": 9
+    },
+    {
+     "slug": "luna_moth",
+     "observations": 8
+    },
+    {
+     "slug": "gulf_fritillary",
+     "observations": 7
+    },
+    {
+     "slug": "brook_trout",
+     "observations": 6
+    },
+    {
+     "slug": "american_robin",
+     "observations": 5
+    },
+    {
+     "slug": "barred_owl",
+     "observations": 5
+    },
+    {
+     "slug": "eastern_box_turtle",
+     "observations": 5
+    },
+    {
+     "slug": "eastern_bluebird",
+     "observations": 4
+    },
+    {
+     "slug": "white_tailed_deer",
+     "observations": 4
+    },
+    {
+     "slug": "pileated_woodpecker",
+     "observations": 3
+    },
+    {
+     "slug": "eastern_fence_lizard",
+     "observations": 3
+    },
+    {
+     "slug": "american_goldfinch",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "smokies_nc",
+   "name": "Great Smoky Mountains (Oconaluftee & Deep Creek)",
+   "lat": 35.53,
+   "lon": -83.31,
+   "radius_km": 12,
+   "blurb": "Elk by the visitor center, salamanders found nowhere else, bears and mountain streams.",
+   "species": [
+    {
+     "slug": "elk",
+     "observations": 1745
+    },
+    {
+     "slug": "red_cheeked_salamander",
+     "observations": 178
+    },
+    {
+     "slug": "wild_turkey",
+     "observations": 162
+    },
+    {
+     "slug": "eastern_tiger_swallowtail",
+     "observations": 118
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 59
+    },
+    {
+     "slug": "american_black_bear",
+     "observations": 53
+    },
+    {
+     "slug": "eastern_gray_squirrel",
+     "observations": 53
+    },
+    {
+     "slug": "groundhog",
+     "observations": 51
+    },
+    {
+     "slug": "five_lined_skink",
+     "observations": 43
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 39
+    },
+    {
+     "slug": "eastern_ratsnake",
+     "observations": 39
+    },
+    {
+     "slug": "eastern_box_turtle",
+     "observations": 37
+    },
+    {
+     "slug": "mallard",
+     "observations": 36
+    },
+    {
+     "slug": "eastern_bluebird",
+     "observations": 34
+    },
+    {
+     "slug": "white_tailed_deer",
+     "observations": 32
+    },
+    {
+     "slug": "american_robin",
+     "observations": 26
+    },
+    {
+     "slug": "american_toad",
+     "observations": 23
+    },
+    {
+     "slug": "northern_cardinal",
+     "observations": 19
+    },
+    {
+     "slug": "northern_water_snake",
+     "observations": 19
+    },
+    {
+     "slug": "luna_moth",
+     "observations": 18
+    },
+    {
+     "slug": "copes_gray_treefrog",
+     "observations": 18
+    },
+    {
+     "slug": "pileated_woodpecker",
+     "observations": 17
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 16
+    },
+    {
+     "slug": "tufted_titmouse",
+     "observations": 16
+    },
+    {
+     "slug": "brook_trout",
+     "observations": 15
+    },
+    {
+     "slug": "carolina_wren",
+     "observations": 14
+    },
+    {
+     "slug": "joro_spider",
+     "observations": 13
+    },
+    {
+     "slug": "eastern_fence_lizard",
+     "observations": 12
+    },
+    {
+     "slug": "red_shouldered_hawk",
+     "observations": 11
+    },
+    {
+     "slug": "gulf_fritillary",
+     "observations": 11
+    },
+    {
+     "slug": "blue_jay",
+     "observations": 9
+    },
+    {
+     "slug": "barred_owl",
+     "observations": 9
+    },
+    {
+     "slug": "american_beaver",
+     "observations": 9
+    },
+    {
+     "slug": "carolina_chickadee",
+     "observations": 9
+    },
+    {
+     "slug": "american_goldfinch",
+     "observations": 9
+    },
+    {
+     "slug": "ruby_throated_hummingbird",
+     "observations": 8
+    },
+    {
+     "slug": "spring_peeper",
+     "observations": 8
+    },
+    {
+     "slug": "eastern_newt",
+     "observations": 8
+    },
+    {
+     "slug": "common_eastern_firefly",
+     "observations": 8
+    },
+    {
+     "slug": "bald_eagle",
+     "observations": 7
+    },
+    {
+     "slug": "northern_mockingbird",
+     "observations": 7
+    },
+    {
+     "slug": "red_bellied_woodpecker",
+     "observations": 7
+    },
+    {
+     "slug": "coyote",
+     "observations": 7
+    },
+    {
+     "slug": "eastern_chipmunk",
+     "observations": 7
+    },
+    {
+     "slug": "eastern_cottontail",
+     "observations": 6
+    },
+    {
+     "slug": "monarch",
+     "observations": 6
+    },
+    {
+     "slug": "green_frog",
+     "observations": 6
+    },
+    {
+     "slug": "common_snapping_turtle",
+     "observations": 5
+    },
+    {
+     "slug": "raccoon",
+     "observations": 5
+    },
+    {
+     "slug": "eastern_hellbender",
+     "observations": 4
+    },
+    {
+     "slug": "osprey",
+     "observations": 4
+    },
+    {
+     "slug": "belted_kingfisher",
+     "observations": 3
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "clingmans_heintooga",
+   "name": "Clingmans Dome & Heintooga Ridge",
+   "lat": 35.58,
+   "lon": -83.3,
+   "radius_km": 8,
+   "blurb": "High spruce-fir forest where red-cheeked salamanders come out on wet nights.",
+   "species": [
+    {
+     "slug": "elk",
+     "observations": 706
+    },
+    {
+     "slug": "wild_turkey",
+     "observations": 112
+    },
+    {
+     "slug": "eastern_tiger_swallowtail",
+     "observations": 75
+    },
+    {
+     "slug": "red_cheeked_salamander",
+     "observations": 49
+    },
+    {
+     "slug": "eastern_gray_squirrel",
+     "observations": 41
+    },
+    {
+     "slug": "groundhog",
+     "observations": 33
+    },
+    {
+     "slug": "five_lined_skink",
+     "observations": 30
+    },
+    {
+     "slug": "eastern_bluebird",
+     "observations": 29
+    },
+    {
+     "slug": "american_black_bear",
+     "observations": 21
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 19
+    },
+    {
+     "slug": "eastern_ratsnake",
+     "observations": 19
+    },
+    {
+     "slug": "white_tailed_deer",
+     "observations": 17
+    },
+    {
+     "slug": "american_robin",
+     "observations": 16
+    },
+    {
+     "slug": "northern_water_snake",
+     "observations": 14
+    },
+    {
+     "slug": "eastern_box_turtle",
+     "observations": 14
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 13
+    },
+    {
+     "slug": "american_toad",
+     "observations": 12
+    },
+    {
+     "slug": "northern_cardinal",
+     "observations": 11
+    },
+    {
+     "slug": "pileated_woodpecker",
+     "observations": 10
+    },
+    {
+     "slug": "red_shouldered_hawk",
+     "observations": 9
+    },
+    {
+     "slug": "brook_trout",
+     "observations": 9
+    },
+    {
+     "slug": "american_beaver",
+     "observations": 8
+    },
+    {
+     "slug": "gulf_fritillary",
+     "observations": 8
+    },
+    {
+     "slug": "tufted_titmouse",
+     "observations": 7
+    },
+    {
+     "slug": "common_eastern_firefly",
+     "observations": 7
+    },
+    {
+     "slug": "carolina_wren",
+     "observations": 6
+    },
+    {
+     "slug": "red_bellied_woodpecker",
+     "observations": 6
+    },
+    {
+     "slug": "luna_moth",
+     "observations": 6
+    },
+    {
+     "slug": "copes_gray_treefrog",
+     "observations": 6
+    },
+    {
+     "slug": "blue_jay",
+     "observations": 5
+    },
+    {
+     "slug": "barred_owl",
+     "observations": 5
+    },
+    {
+     "slug": "spring_peeper",
+     "observations": 5
+    },
+    {
+     "slug": "eastern_newt",
+     "observations": 5
+    },
+    {
+     "slug": "eastern_chipmunk",
+     "observations": 5
+    },
+    {
+     "slug": "green_frog",
+     "observations": 5
+    },
+    {
+     "slug": "coyote",
+     "observations": 4
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 3
+    },
+    {
+     "slug": "carolina_chickadee",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "asheville_blue_ridge",
+   "name": "Blue Ridge Parkway near Asheville",
+   "lat": 35.57,
+   "lon": -82.48,
+   "radius_km": 15,
+   "blurb": "Overlooks with fall monarch migration, groundhogs, turkeys and black bears.",
+   "species": [
+    {
+     "slug": "eastern_tiger_swallowtail",
+     "observations": 847
+    },
+    {
+     "slug": "american_black_bear",
+     "observations": 809
+    },
+    {
+     "slug": "eastern_gray_squirrel",
+     "observations": 784
+    },
+    {
+     "slug": "mallard",
+     "observations": 769
+    },
+    {
+     "slug": "wild_turkey",
+     "observations": 699
+    },
+    {
+     "slug": "monarch",
+     "observations": 697
+    },
+    {
+     "slug": "eastern_ratsnake",
+     "observations": 623
+    },
+    {
+     "slug": "northern_cardinal",
+     "observations": 598
+    },
+    {
+     "slug": "five_lined_skink",
+     "observations": 576
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 562
+    },
+    {
+     "slug": "copes_gray_treefrog",
+     "observations": 536
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 456
+    },
+    {
+     "slug": "eastern_bluebird",
+     "observations": 449
+    },
+    {
+     "slug": "carolina_wren",
+     "observations": 429
+    },
+    {
+     "slug": "eastern_fence_lizard",
+     "observations": 425
+    },
+    {
+     "slug": "red_shouldered_hawk",
+     "observations": 411
+    },
+    {
+     "slug": "tufted_titmouse",
+     "observations": 389
+    },
+    {
+     "slug": "eastern_newt",
+     "observations": 375
+    },
+    {
+     "slug": "american_robin",
+     "observations": 358
+    },
+    {
+     "slug": "eastern_box_turtle",
+     "observations": 351
+    },
+    {
+     "slug": "american_goldfinch",
+     "observations": 348
+    },
+    {
+     "slug": "groundhog",
+     "observations": 331
+    },
+    {
+     "slug": "american_toad",
+     "observations": 331
+    },
+    {
+     "slug": "carolina_chickadee",
+     "observations": 330
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 323
+    },
+    {
+     "slug": "luna_moth",
+     "observations": 321
+    },
+    {
+     "slug": "northern_mockingbird",
+     "observations": 302
+    },
+    {
+     "slug": "pileated_woodpecker",
+     "observations": 298
+    },
+    {
+     "slug": "white_tailed_deer",
+     "observations": 260
+    },
+    {
+     "slug": "blue_jay",
+     "observations": 257
+    },
+    {
+     "slug": "common_snapping_turtle",
+     "observations": 249
+    },
+    {
+     "slug": "eastern_cottontail",
+     "observations": 237
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 236
+    },
+    {
+     "slug": "yellow_garden_spider",
+     "observations": 235
+    },
+    {
+     "slug": "red_bellied_woodpecker",
+     "observations": 229
+    },
+    {
+     "slug": "common_eastern_firefly",
+     "observations": 226
+    },
+    {
+     "slug": "northern_water_snake",
+     "observations": 218
+    },
+    {
+     "slug": "joro_spider",
+     "observations": 207
+    },
+    {
+     "slug": "green_frog",
+     "observations": 193
+    },
+    {
+     "slug": "virginia_opossum",
+     "observations": 182
+    },
+    {
+     "slug": "gulf_fritillary",
+     "observations": 178
+    },
+    {
+     "slug": "ruby_throated_hummingbird",
+     "observations": 175
+    },
+    {
+     "slug": "american_bullfrog",
+     "observations": 149
+    },
+    {
+     "slug": "raccoon",
+     "observations": 147
+    },
+    {
+     "slug": "carolina_mantis",
+     "observations": 131
+    },
+    {
+     "slug": "eastern_chipmunk",
+     "observations": 110
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 108
+    },
+    {
+     "slug": "turkey_vulture",
+     "observations": 99
+    },
+    {
+     "slug": "spring_peeper",
+     "observations": 67
+    },
+    {
+     "slug": "belted_kingfisher",
+     "observations": 64
+    },
+    {
+     "slug": "black_vulture",
+     "observations": 54
+    },
+    {
+     "slug": "american_beaver",
+     "observations": 54
+    },
+    {
+     "slug": "brown_headed_nuthatch",
+     "observations": 47
+    },
+    {
+     "slug": "wood_duck",
+     "observations": 43
+    },
+    {
+     "slug": "striped_skunk",
+     "observations": 34
+    },
+    {
+     "slug": "red_fox",
+     "observations": 31
+    },
+    {
+     "slug": "bobcat",
+     "observations": 30
+    },
+    {
+     "slug": "coyote",
+     "observations": 30
+    },
+    {
+     "slug": "osprey",
+     "observations": 25
+    },
+    {
+     "slug": "rough_green_snake",
+     "observations": 23
+    },
+    {
+     "slug": "barred_owl",
+     "observations": 19
+    },
+    {
+     "slug": "great_egret",
+     "observations": 19
+    },
+    {
+     "slug": "green_anole",
+     "observations": 18
+    },
+    {
+     "slug": "bald_eagle",
+     "observations": 17
+    },
+    {
+     "slug": "brook_trout",
+     "observations": 17
+    },
+    {
+     "slug": "north_american_river_otter",
+     "observations": 11
+    },
+    {
+     "slug": "prothonotary_warbler",
+     "observations": 9
+    },
+    {
+     "slug": "marbled_salamander",
+     "observations": 9
+    },
+    {
+     "slug": "gray_fox",
+     "observations": 9
+    },
+    {
+     "slug": "green_treefrog",
+     "observations": 8
+    },
+    {
+     "slug": "eastern_hellbender",
+     "observations": 6
+    },
+    {
+     "slug": "elk",
+     "observations": 4
+    },
+    {
+     "slug": "red_cornsnake",
+     "observations": 3
+    },
+    {
+     "slug": "zebra_swallowtail",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "grandfather_linville",
+   "name": "Grandfather Mountain & Linville Gorge",
+   "lat": 36.05,
+   "lon": -81.85,
+   "radius_km": 12,
+   "blurb": "Rugged peaks with chipmunks, ravens, red efts and rushing trout streams.",
+   "species": [
+    {
+     "slug": "white_tailed_deer",
+     "observations": 818
+    },
+    {
+     "slug": "wild_turkey",
+     "observations": 146
+    },
+    {
+     "slug": "eastern_newt",
+     "observations": 146
+    },
+    {
+     "slug": "northern_water_snake",
+     "observations": 109
+    },
+    {
+     "slug": "eastern_tiger_swallowtail",
+     "observations": 108
+    },
+    {
+     "slug": "american_black_bear",
+     "observations": 103
+    },
+    {
+     "slug": "american_robin",
+     "observations": 80
+    },
+    {
+     "slug": "eastern_chipmunk",
+     "observations": 74
+    },
+    {
+     "slug": "coyote",
+     "observations": 68
+    },
+    {
+     "slug": "mallard",
+     "observations": 55
+    },
+    {
+     "slug": "eastern_ratsnake",
+     "observations": 50
+    },
+    {
+     "slug": "spring_peeper",
+     "observations": 49
+    },
+    {
+     "slug": "american_toad",
+     "observations": 47
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 43
+    },
+    {
+     "slug": "ruby_throated_hummingbird",
+     "observations": 42
+    },
+    {
+     "slug": "raccoon",
+     "observations": 42
+    },
+    {
+     "slug": "monarch",
+     "observations": 40
+    },
+    {
+     "slug": "groundhog",
+     "observations": 37
+    },
+    {
+     "slug": "carolina_chickadee",
+     "observations": 37
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 35
+    },
+    {
+     "slug": "northern_cardinal",
+     "observations": 33
+    },
+    {
+     "slug": "eastern_gray_squirrel",
+     "observations": 30
+    },
+    {
+     "slug": "american_goldfinch",
+     "observations": 30
+    },
+    {
+     "slug": "blue_jay",
+     "observations": 25
+    },
+    {
+     "slug": "tufted_titmouse",
+     "observations": 23
+    },
+    {
+     "slug": "barred_owl",
+     "observations": 22
+    },
+    {
+     "slug": "bobcat",
+     "observations": 22
+    },
+    {
+     "slug": "american_bullfrog",
+     "observations": 22
+    },
+    {
+     "slug": "eastern_fence_lizard",
+     "observations": 21
+    },
+    {
+     "slug": "virginia_opossum",
+     "observations": 20
+    },
+    {
+     "slug": "luna_moth",
+     "observations": 19
+    },
+    {
+     "slug": "brook_trout",
+     "observations": 19
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 18
+    },
+    {
+     "slug": "yellow_garden_spider",
+     "observations": 18
+    },
+    {
+     "slug": "turkey_vulture",
+     "observations": 16
+    },
+    {
+     "slug": "eastern_cottontail",
+     "observations": 15
+    },
+    {
+     "slug": "green_frog",
+     "observations": 14
+    },
+    {
+     "slug": "bald_eagle",
+     "observations": 13
+    },
+    {
+     "slug": "copes_gray_treefrog",
+     "observations": 13
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 12
+    },
+    {
+     "slug": "common_snapping_turtle",
+     "observations": 12
+    },
+    {
+     "slug": "american_beaver",
+     "observations": 12
+    },
+    {
+     "slug": "five_lined_skink",
+     "observations": 12
+    },
+    {
+     "slug": "pileated_woodpecker",
+     "observations": 11
+    },
+    {
+     "slug": "eastern_box_turtle",
+     "observations": 11
+    },
+    {
+     "slug": "red_fox",
+     "observations": 8
+    },
+    {
+     "slug": "gray_fox",
+     "observations": 7
+    },
+    {
+     "slug": "eastern_bluebird",
+     "observations": 6
+    },
+    {
+     "slug": "carolina_wren",
+     "observations": 5
+    },
+    {
+     "slug": "red_shouldered_hawk",
+     "observations": 4
+    },
+    {
+     "slug": "wood_duck",
+     "observations": 4
+    },
+    {
+     "slug": "common_eastern_firefly",
+     "observations": 4
+    },
+    {
+     "slug": "belted_kingfisher",
+     "observations": 3
+    },
+    {
+     "slug": "red_bellied_woodpecker",
+     "observations": 3
+    },
+    {
+     "slug": "joro_spider",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "dupont_pisgah",
+   "name": "DuPont State Forest & Pisgah",
+   "lat": 35.22,
+   "lon": -82.65,
+   "radius_km": 12,
+   "blurb": "Waterfalls, brook trout streams, salamanders and swallowtails.",
+   "species": [
+    {
+     "slug": "eastern_newt",
+     "observations": 325
+    },
+    {
+     "slug": "eastern_gray_squirrel",
+     "observations": 315
+    },
+    {
+     "slug": "eastern_tiger_swallowtail",
+     "observations": 289
+    },
+    {
+     "slug": "white_tailed_deer",
+     "observations": 139
+    },
+    {
+     "slug": "eastern_ratsnake",
+     "observations": 135
+    },
+    {
+     "slug": "eastern_box_turtle",
+     "observations": 133
+    },
+    {
+     "slug": "northern_water_snake",
+     "observations": 131
+    },
+    {
+     "slug": "joro_spider",
+     "observations": 117
+    },
+    {
+     "slug": "eastern_fence_lizard",
+     "observations": 86
+    },
+    {
+     "slug": "five_lined_skink",
+     "observations": 84
+    },
+    {
+     "slug": "copes_gray_treefrog",
+     "observations": 78
+    },
+    {
+     "slug": "monarch",
+     "observations": 77
+    },
+    {
+     "slug": "northern_cardinal",
+     "observations": 75
+    },
+    {
+     "slug": "luna_moth",
+     "observations": 64
+    },
+    {
+     "slug": "eastern_hellbender",
+     "observations": 62
+    },
+    {
+     "slug": "tufted_titmouse",
+     "observations": 61
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 60
+    },
+    {
+     "slug": "american_black_bear",
+     "observations": 54
+    },
+    {
+     "slug": "ruby_throated_hummingbird",
+     "observations": 53
+    },
+    {
+     "slug": "american_toad",
+     "observations": 51
+    },
+    {
+     "slug": "wild_turkey",
+     "observations": 46
+    },
+    {
+     "slug": "american_robin",
+     "observations": 44
+    },
+    {
+     "slug": "carolina_chickadee",
+     "observations": 44
+    },
+    {
+     "slug": "pileated_woodpecker",
+     "observations": 41
+    },
+    {
+     "slug": "eastern_bluebird",
+     "observations": 40
+    },
+    {
+     "slug": "red_shouldered_hawk",
+     "observations": 38
+    },
+    {
+     "slug": "common_snapping_turtle",
+     "observations": 36
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 34
+    },
+    {
+     "slug": "gulf_fritillary",
+     "observations": 33
+    },
+    {
+     "slug": "american_goldfinch",
+     "observations": 33
+    },
+    {
+     "slug": "raccoon",
+     "observations": 32
+    },
+    {
+     "slug": "eastern_cottontail",
+     "observations": 31
+    },
+    {
+     "slug": "carolina_wren",
+     "observations": 27
+    },
+    {
+     "slug": "green_frog",
+     "observations": 27
+    },
+    {
+     "slug": "mallard",
+     "observations": 26
+    },
+    {
+     "slug": "blue_jay",
+     "observations": 26
+    },
+    {
+     "slug": "black_vulture",
+     "observations": 25
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 25
+    },
+    {
+     "slug": "groundhog",
+     "observations": 24
+    },
+    {
+     "slug": "eastern_chipmunk",
+     "observations": 24
+    },
+    {
+     "slug": "spring_peeper",
+     "observations": 23
+    },
+    {
+     "slug": "red_bellied_woodpecker",
+     "observations": 21
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 20
+    },
+    {
+     "slug": "brook_trout",
+     "observations": 19
+    },
+    {
+     "slug": "virginia_opossum",
+     "observations": 17
+    },
+    {
+     "slug": "common_eastern_firefly",
+     "observations": 17
+    },
+    {
+     "slug": "yellow_garden_spider",
+     "observations": 16
+    },
+    {
+     "slug": "turkey_vulture",
+     "observations": 14
+    },
+    {
+     "slug": "bald_eagle",
+     "observations": 14
+    },
+    {
+     "slug": "american_bullfrog",
+     "observations": 14
+    },
+    {
+     "slug": "red_fox",
+     "observations": 13
+    },
+    {
+     "slug": "american_beaver",
+     "observations": 12
+    },
+    {
+     "slug": "northern_mockingbird",
+     "observations": 11
+    },
+    {
+     "slug": "belted_kingfisher",
+     "observations": 10
+    },
+    {
+     "slug": "striped_skunk",
+     "observations": 10
+    },
+    {
+     "slug": "coyote",
+     "observations": 10
+    },
+    {
+     "slug": "barred_owl",
+     "observations": 7
+    },
+    {
+     "slug": "great_egret",
+     "observations": 7
+    },
+    {
+     "slug": "bobcat",
+     "observations": 6
+    },
+    {
+     "slug": "osprey",
+     "observations": 6
+    },
+    {
+     "slug": "green_anole",
+     "observations": 5
+    },
+    {
+     "slug": "gray_fox",
+     "observations": 5
+    },
+    {
+     "slug": "tundra_swan",
+     "observations": 4
+    },
+    {
+     "slug": "eastern_kingsnake",
+     "observations": 4
+    },
+    {
+     "slug": "eastern_hognose_snake",
+     "observations": 3
+    },
+    {
+     "slug": "carolina_mantis",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "hanging_rock_pilot",
+   "name": "Hanging Rock & Pilot Mountain",
+   "lat": 36.38,
+   "lon": -80.36,
+   "radius_km": 12,
+   "blurb": "Piedmont monadnocks with fence lizards, chipmunks, hawks and spring wildflowers.",
+   "species": [
+    {
+     "slug": "eastern_fence_lizard",
+     "observations": 204
+    },
+    {
+     "slug": "eastern_newt",
+     "observations": 200
+    },
+    {
+     "slug": "five_lined_skink",
+     "observations": 140
+    },
+    {
+     "slug": "white_tailed_deer",
+     "observations": 88
+    },
+    {
+     "slug": "eastern_box_turtle",
+     "observations": 69
+    },
+    {
+     "slug": "black_vulture",
+     "observations": 65
+    },
+    {
+     "slug": "northern_water_snake",
+     "observations": 63
+    },
+    {
+     "slug": "turkey_vulture",
+     "observations": 60
+    },
+    {
+     "slug": "eastern_ratsnake",
+     "observations": 51
+    },
+    {
+     "slug": "american_toad",
+     "observations": 48
+    },
+    {
+     "slug": "eastern_tiger_swallowtail",
+     "observations": 45
+    },
+    {
+     "slug": "luna_moth",
+     "observations": 31
+    },
+    {
+     "slug": "eastern_gray_squirrel",
+     "observations": 26
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 21
+    },
+    {
+     "slug": "eastern_bluebird",
+     "observations": 19
+    },
+    {
+     "slug": "tufted_titmouse",
+     "observations": 19
+    },
+    {
+     "slug": "pileated_woodpecker",
+     "observations": 19
+    },
+    {
+     "slug": "american_bullfrog",
+     "observations": 19
+    },
+    {
+     "slug": "yellow_garden_spider",
+     "observations": 19
+    },
+    {
+     "slug": "red_bellied_woodpecker",
+     "observations": 18
+    },
+    {
+     "slug": "carolina_wren",
+     "observations": 17
+    },
+    {
+     "slug": "carolina_mantis",
+     "observations": 17
+    },
+    {
+     "slug": "copes_gray_treefrog",
+     "observations": 16
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 15
+    },
+    {
+     "slug": "carolina_chickadee",
+     "observations": 15
+    },
+    {
+     "slug": "northern_cardinal",
+     "observations": 14
+    },
+    {
+     "slug": "coyote",
+     "observations": 14
+    },
+    {
+     "slug": "american_goldfinch",
+     "observations": 13
+    },
+    {
+     "slug": "american_black_bear",
+     "observations": 12
+    },
+    {
+     "slug": "raccoon",
+     "observations": 12
+    },
+    {
+     "slug": "rough_green_snake",
+     "observations": 11
+    },
+    {
+     "slug": "american_beaver",
+     "observations": 11
+    },
+    {
+     "slug": "monarch",
+     "observations": 11
+    },
+    {
+     "slug": "green_frog",
+     "observations": 11
+    },
+    {
+     "slug": "blue_jay",
+     "observations": 10
+    },
+    {
+     "slug": "common_snapping_turtle",
+     "observations": 9
+    },
+    {
+     "slug": "wild_turkey",
+     "observations": 8
+    },
+    {
+     "slug": "red_shouldered_hawk",
+     "observations": 8
+    },
+    {
+     "slug": "american_robin",
+     "observations": 8
+    },
+    {
+     "slug": "groundhog",
+     "observations": 8
+    },
+    {
+     "slug": "eastern_chipmunk",
+     "observations": 8
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 7
+    },
+    {
+     "slug": "virginia_opossum",
+     "observations": 7
+    },
+    {
+     "slug": "eastern_cottontail",
+     "observations": 7
+    },
+    {
+     "slug": "red_cornsnake",
+     "observations": 7
+    },
+    {
+     "slug": "common_eastern_firefly",
+     "observations": 7
+    },
+    {
+     "slug": "northern_mockingbird",
+     "observations": 6
+    },
+    {
+     "slug": "brown_headed_nuthatch",
+     "observations": 4
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 3
+    },
+    {
+     "slug": "ruby_throated_hummingbird",
+     "observations": 3
+    },
+    {
+     "slug": "mallard",
+     "observations": 3
+    },
+    {
+     "slug": "eastern_hognose_snake",
+     "observations": 3
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 3
+    },
+    {
+     "slug": "bobcat",
+     "observations": 3
+    },
+    {
+     "slug": "red_fox",
+     "observations": 3
+    },
+    {
+     "slug": "gray_fox",
+     "observations": 3
+    },
+    {
+     "slug": "fox_squirrel",
+     "observations": 3
+    },
+    {
+     "slug": "gulf_fritillary",
+     "observations": 3
+    },
+    {
+     "slug": "zebra_swallowtail",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "umstead_raleigh",
+   "name": "Umstead State Park & Raleigh greenways",
+   "lat": 35.85,
+   "lon": -78.72,
+   "radius_km": 12,
+   "blurb": "Big city park forests with barred owls, pileated woodpeckers, deer and beavers.",
+   "species": [
+    {
+     "slug": "eastern_gray_squirrel",
+     "observations": 2838
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 1766
+    },
+    {
+     "slug": "green_anole",
+     "observations": 1707
+    },
+    {
+     "slug": "american_robin",
+     "observations": 1621
+    },
+    {
+     "slug": "northern_cardinal",
+     "observations": 1559
+    },
+    {
+     "slug": "eastern_tiger_swallowtail",
+     "observations": 1380
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 1340
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 1321
+    },
+    {
+     "slug": "monarch",
+     "observations": 1098
+    },
+    {
+     "slug": "red_shouldered_hawk",
+     "observations": 993
+    },
+    {
+     "slug": "eastern_bluebird",
+     "observations": 992
+    },
+    {
+     "slug": "white_tailed_deer",
+     "observations": 973
+    },
+    {
+     "slug": "eastern_box_turtle",
+     "observations": 963
+    },
+    {
+     "slug": "northern_mockingbird",
+     "observations": 945
+    },
+    {
+     "slug": "green_treefrog",
+     "observations": 897
+    },
+    {
+     "slug": "mallard",
+     "observations": 894
+    },
+    {
+     "slug": "eastern_cottontail",
+     "observations": 890
+    },
+    {
+     "slug": "carolina_mantis",
+     "observations": 690
+    },
+    {
+     "slug": "northern_water_snake",
+     "observations": 641
+    },
+    {
+     "slug": "carolina_wren",
+     "observations": 605
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 596
+    },
+    {
+     "slug": "copes_gray_treefrog",
+     "observations": 578
+    },
+    {
+     "slug": "blue_jay",
+     "observations": 511
+    },
+    {
+     "slug": "yellow_garden_spider",
+     "observations": 496
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 495
+    },
+    {
+     "slug": "carolina_chickadee",
+     "observations": 476
+    },
+    {
+     "slug": "tufted_titmouse",
+     "observations": 475
+    },
+    {
+     "slug": "luna_moth",
+     "observations": 425
+    },
+    {
+     "slug": "red_bellied_woodpecker",
+     "observations": 416
+    },
+    {
+     "slug": "five_lined_skink",
+     "observations": 403
+    },
+    {
+     "slug": "american_toad",
+     "observations": 393
+    },
+    {
+     "slug": "american_goldfinch",
+     "observations": 390
+    },
+    {
+     "slug": "american_bullfrog",
+     "observations": 372
+    },
+    {
+     "slug": "common_snapping_turtle",
+     "observations": 367
+    },
+    {
+     "slug": "raccoon",
+     "observations": 350
+    },
+    {
+     "slug": "turkey_vulture",
+     "observations": 344
+    },
+    {
+     "slug": "barred_owl",
+     "observations": 320
+    },
+    {
+     "slug": "ruby_throated_hummingbird",
+     "observations": 282
+    },
+    {
+     "slug": "green_frog",
+     "observations": 274
+    },
+    {
+     "slug": "virginia_opossum",
+     "observations": 266
+    },
+    {
+     "slug": "bald_eagle",
+     "observations": 253
+    },
+    {
+     "slug": "brown_headed_nuthatch",
+     "observations": 213
+    },
+    {
+     "slug": "common_eastern_firefly",
+     "observations": 194
+    },
+    {
+     "slug": "gulf_fritillary",
+     "observations": 155
+    },
+    {
+     "slug": "black_vulture",
+     "observations": 153
+    },
+    {
+     "slug": "american_beaver",
+     "observations": 146
+    },
+    {
+     "slug": "eastern_fence_lizard",
+     "observations": 143
+    },
+    {
+     "slug": "coyote",
+     "observations": 143
+    },
+    {
+     "slug": "eastern_chipmunk",
+     "observations": 133
+    },
+    {
+     "slug": "belted_kingfisher",
+     "observations": 121
+    },
+    {
+     "slug": "pileated_woodpecker",
+     "observations": 118
+    },
+    {
+     "slug": "gray_fox",
+     "observations": 118
+    },
+    {
+     "slug": "great_egret",
+     "observations": 114
+    },
+    {
+     "slug": "groundhog",
+     "observations": 112
+    },
+    {
+     "slug": "rough_green_snake",
+     "observations": 109
+    },
+    {
+     "slug": "painted_bunting",
+     "observations": 67
+    },
+    {
+     "slug": "osprey",
+     "observations": 66
+    },
+    {
+     "slug": "eastern_newt",
+     "observations": 62
+    },
+    {
+     "slug": "marbled_salamander",
+     "observations": 60
+    },
+    {
+     "slug": "wood_duck",
+     "observations": 59
+    },
+    {
+     "slug": "wild_turkey",
+     "observations": 56
+    },
+    {
+     "slug": "north_american_river_otter",
+     "observations": 48
+    },
+    {
+     "slug": "prothonotary_warbler",
+     "observations": 37
+    },
+    {
+     "slug": "spring_peeper",
+     "observations": 34
+    },
+    {
+     "slug": "red_fox",
+     "observations": 34
+    },
+    {
+     "slug": "eastern_ratsnake",
+     "observations": 31
+    },
+    {
+     "slug": "eastern_kingsnake",
+     "observations": 26
+    },
+    {
+     "slug": "zebra_swallowtail",
+     "observations": 16
+    },
+    {
+     "slug": "eastern_hognose_snake",
+     "observations": 10
+    },
+    {
+     "slug": "eastern_lubber_grasshopper",
+     "observations": 6
+    },
+    {
+     "slug": "joro_spider",
+     "observations": 5
+    }
+   ]
+  },
+  {
+   "id": "eno_durham",
+   "name": "Eno River & Durham",
+   "lat": 36.06,
+   "lon": -78.97,
+   "radius_km": 10,
+   "blurb": "River trails with zebra swallowtails, beavers, turtles and woodland birds.",
+   "species": [
+    {
+     "slug": "eastern_tiger_swallowtail",
+     "observations": 863
+    },
+    {
+     "slug": "northern_water_snake",
+     "observations": 637
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 594
+    },
+    {
+     "slug": "green_anole",
+     "observations": 593
+    },
+    {
+     "slug": "monarch",
+     "observations": 584
+    },
+    {
+     "slug": "eastern_gray_squirrel",
+     "observations": 582
+    },
+    {
+     "slug": "northern_cardinal",
+     "observations": 556
+    },
+    {
+     "slug": "red_shouldered_hawk",
+     "observations": 525
+    },
+    {
+     "slug": "american_toad",
+     "observations": 507
+    },
+    {
+     "slug": "white_tailed_deer",
+     "observations": 446
+    },
+    {
+     "slug": "eastern_box_turtle",
+     "observations": 440
+    },
+    {
+     "slug": "eastern_ratsnake",
+     "observations": 438
+    },
+    {
+     "slug": "copes_gray_treefrog",
+     "observations": 410
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 391
+    },
+    {
+     "slug": "american_robin",
+     "observations": 370
+    },
+    {
+     "slug": "luna_moth",
+     "observations": 359
+    },
+    {
+     "slug": "mallard",
+     "observations": 353
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 348
+    },
+    {
+     "slug": "five_lined_skink",
+     "observations": 339
+    },
+    {
+     "slug": "yellow_garden_spider",
+     "observations": 316
+    },
+    {
+     "slug": "northern_mockingbird",
+     "observations": 309
+    },
+    {
+     "slug": "green_treefrog",
+     "observations": 305
+    },
+    {
+     "slug": "carolina_wren",
+     "observations": 297
+    },
+    {
+     "slug": "eastern_bluebird",
+     "observations": 293
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 249
+    },
+    {
+     "slug": "eastern_cottontail",
+     "observations": 245
+    },
+    {
+     "slug": "green_frog",
+     "observations": 245
+    },
+    {
+     "slug": "barred_owl",
+     "observations": 234
+    },
+    {
+     "slug": "carolina_mantis",
+     "observations": 202
+    },
+    {
+     "slug": "tufted_titmouse",
+     "observations": 194
+    },
+    {
+     "slug": "american_bullfrog",
+     "observations": 187
+    },
+    {
+     "slug": "american_goldfinch",
+     "observations": 184
+    },
+    {
+     "slug": "carolina_chickadee",
+     "observations": 181
+    },
+    {
+     "slug": "eastern_fence_lizard",
+     "observations": 177
+    },
+    {
+     "slug": "red_bellied_woodpecker",
+     "observations": 174
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 160
+    },
+    {
+     "slug": "ruby_throated_hummingbird",
+     "observations": 158
+    },
+    {
+     "slug": "common_snapping_turtle",
+     "observations": 154
+    },
+    {
+     "slug": "american_beaver",
+     "observations": 147
+    },
+    {
+     "slug": "common_eastern_firefly",
+     "observations": 136
+    },
+    {
+     "slug": "turkey_vulture",
+     "observations": 135
+    },
+    {
+     "slug": "blue_jay",
+     "observations": 126
+    },
+    {
+     "slug": "marbled_salamander",
+     "observations": 120
+    },
+    {
+     "slug": "rough_green_snake",
+     "observations": 112
+    },
+    {
+     "slug": "raccoon",
+     "observations": 109
+    },
+    {
+     "slug": "black_vulture",
+     "observations": 100
+    },
+    {
+     "slug": "eastern_newt",
+     "observations": 88
+    },
+    {
+     "slug": "wood_duck",
+     "observations": 75
+    },
+    {
+     "slug": "virginia_opossum",
+     "observations": 75
+    },
+    {
+     "slug": "groundhog",
+     "observations": 66
+    },
+    {
+     "slug": "pileated_woodpecker",
+     "observations": 61
+    },
+    {
+     "slug": "brown_headed_nuthatch",
+     "observations": 53
+    },
+    {
+     "slug": "eastern_chipmunk",
+     "observations": 51
+    },
+    {
+     "slug": "zebra_swallowtail",
+     "observations": 51
+    },
+    {
+     "slug": "belted_kingfisher",
+     "observations": 47
+    },
+    {
+     "slug": "gray_fox",
+     "observations": 41
+    },
+    {
+     "slug": "coyote",
+     "observations": 35
+    },
+    {
+     "slug": "spring_peeper",
+     "observations": 34
+    },
+    {
+     "slug": "great_egret",
+     "observations": 31
+    },
+    {
+     "slug": "red_fox",
+     "observations": 29
+    },
+    {
+     "slug": "wild_turkey",
+     "observations": 27
+    },
+    {
+     "slug": "bald_eagle",
+     "observations": 17
+    },
+    {
+     "slug": "north_american_river_otter",
+     "observations": 16
+    },
+    {
+     "slug": "osprey",
+     "observations": 15
+    },
+    {
+     "slug": "gulf_fritillary",
+     "observations": 14
+    },
+    {
+     "slug": "eastern_kingsnake",
+     "observations": 6
+    },
+    {
+     "slug": "eastern_hognose_snake",
+     "observations": 6
+    },
+    {
+     "slug": "striped_skunk",
+     "observations": 5
+    },
+    {
+     "slug": "prothonotary_warbler",
+     "observations": 4
+    },
+    {
+     "slug": "bobcat",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "chapel_hill",
+   "name": "Chapel Hill & NC Botanical Garden",
+   "lat": 35.9,
+   "lon": -79.03,
+   "radius_km": 6,
+   "blurb": "Campus squirrels, garden butterflies, hummingbirds and Mason Farm's wetlands.",
+   "species": [
+    {
+     "slug": "eastern_gray_squirrel",
+     "observations": 4134
+    },
+    {
+     "slug": "american_robin",
+     "observations": 2005
+    },
+    {
+     "slug": "white_tailed_deer",
+     "observations": 1634
+    },
+    {
+     "slug": "green_anole",
+     "observations": 1520
+    },
+    {
+     "slug": "northern_cardinal",
+     "observations": 1165
+    },
+    {
+     "slug": "eastern_tiger_swallowtail",
+     "observations": 876
+    },
+    {
+     "slug": "northern_mockingbird",
+     "observations": 736
+    },
+    {
+     "slug": "monarch",
+     "observations": 642
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 640
+    },
+    {
+     "slug": "eastern_chipmunk",
+     "observations": 576
+    },
+    {
+     "slug": "raccoon",
+     "observations": 537
+    },
+    {
+     "slug": "eastern_cottontail",
+     "observations": 516
+    },
+    {
+     "slug": "carolina_wren",
+     "observations": 488
+    },
+    {
+     "slug": "red_shouldered_hawk",
+     "observations": 469
+    },
+    {
+     "slug": "barred_owl",
+     "observations": 469
+    },
+    {
+     "slug": "eastern_bluebird",
+     "observations": 431
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 419
+    },
+    {
+     "slug": "eastern_box_turtle",
+     "observations": 356
+    },
+    {
+     "slug": "eastern_ratsnake",
+     "observations": 349
+    },
+    {
+     "slug": "luna_moth",
+     "observations": 316
+    },
+    {
+     "slug": "copes_gray_treefrog",
+     "observations": 297
+    },
+    {
+     "slug": "green_frog",
+     "observations": 277
+    },
+    {
+     "slug": "tufted_titmouse",
+     "observations": 273
+    },
+    {
+     "slug": "yellow_garden_spider",
+     "observations": 262
+    },
+    {
+     "slug": "green_treefrog",
+     "observations": 260
+    },
+    {
+     "slug": "turkey_vulture",
+     "observations": 255
+    },
+    {
+     "slug": "american_toad",
+     "observations": 255
+    },
+    {
+     "slug": "carolina_mantis",
+     "observations": 251
+    },
+    {
+     "slug": "carolina_chickadee",
+     "observations": 231
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 215
+    },
+    {
+     "slug": "five_lined_skink",
+     "observations": 203
+    },
+    {
+     "slug": "northern_water_snake",
+     "observations": 201
+    },
+    {
+     "slug": "common_snapping_turtle",
+     "observations": 189
+    },
+    {
+     "slug": "virginia_opossum",
+     "observations": 182
+    },
+    {
+     "slug": "red_bellied_woodpecker",
+     "observations": 171
+    },
+    {
+     "slug": "american_goldfinch",
+     "observations": 165
+    },
+    {
+     "slug": "marbled_salamander",
+     "observations": 158
+    },
+    {
+     "slug": "black_vulture",
+     "observations": 146
+    },
+    {
+     "slug": "common_eastern_firefly",
+     "observations": 125
+    },
+    {
+     "slug": "ruby_throated_hummingbird",
+     "observations": 124
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 119
+    },
+    {
+     "slug": "eastern_fence_lizard",
+     "observations": 102
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 101
+    },
+    {
+     "slug": "blue_jay",
+     "observations": 98
+    },
+    {
+     "slug": "rough_green_snake",
+     "observations": 95
+    },
+    {
+     "slug": "zebra_swallowtail",
+     "observations": 94
+    },
+    {
+     "slug": "american_bullfrog",
+     "observations": 89
+    },
+    {
+     "slug": "groundhog",
+     "observations": 83
+    },
+    {
+     "slug": "brown_headed_nuthatch",
+     "observations": 77
+    },
+    {
+     "slug": "mallard",
+     "observations": 70
+    },
+    {
+     "slug": "pileated_woodpecker",
+     "observations": 65
+    },
+    {
+     "slug": "gray_fox",
+     "observations": 46
+    },
+    {
+     "slug": "coyote",
+     "observations": 42
+    },
+    {
+     "slug": "osprey",
+     "observations": 31
+    },
+    {
+     "slug": "eastern_newt",
+     "observations": 29
+    },
+    {
+     "slug": "red_fox",
+     "observations": 27
+    },
+    {
+     "slug": "wood_duck",
+     "observations": 26
+    },
+    {
+     "slug": "prothonotary_warbler",
+     "observations": 23
+    },
+    {
+     "slug": "american_beaver",
+     "observations": 23
+    },
+    {
+     "slug": "bald_eagle",
+     "observations": 20
+    },
+    {
+     "slug": "great_egret",
+     "observations": 16
+    },
+    {
+     "slug": "wild_turkey",
+     "observations": 15
+    },
+    {
+     "slug": "gulf_fritillary",
+     "observations": 15
+    },
+    {
+     "slug": "spring_peeper",
+     "observations": 13
+    },
+    {
+     "slug": "belted_kingfisher",
+     "observations": 9
+    },
+    {
+     "slug": "north_american_river_otter",
+     "observations": 9
+    },
+    {
+     "slug": "eastern_kingsnake",
+     "observations": 7
+    },
+    {
+     "slug": "fox_squirrel",
+     "observations": 7
+    },
+    {
+     "slug": "marsh_rabbit",
+     "observations": 5
+    },
+    {
+     "slug": "bobcat",
+     "observations": 4
+    }
+   ]
+  },
+  {
+   "id": "jordan_lake",
+   "name": "Jordan Lake",
+   "lat": 35.75,
+   "lon": -79.03,
+   "radius_km": 12,
+   "blurb": "North Carolina's bald eagle hotspot, with ospreys, herons and turtles.",
+   "species": [
+    {
+     "slug": "eastern_box_turtle",
+     "observations": 680
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 571
+    },
+    {
+     "slug": "white_tailed_deer",
+     "observations": 563
+    },
+    {
+     "slug": "northern_water_snake",
+     "observations": 441
+    },
+    {
+     "slug": "green_anole",
+     "observations": 430
+    },
+    {
+     "slug": "eastern_tiger_swallowtail",
+     "observations": 409
+    },
+    {
+     "slug": "bald_eagle",
+     "observations": 324
+    },
+    {
+     "slug": "green_treefrog",
+     "observations": 309
+    },
+    {
+     "slug": "eastern_gray_squirrel",
+     "observations": 300
+    },
+    {
+     "slug": "osprey",
+     "observations": 272
+    },
+    {
+     "slug": "raccoon",
+     "observations": 231
+    },
+    {
+     "slug": "copes_gray_treefrog",
+     "observations": 231
+    },
+    {
+     "slug": "eastern_cottontail",
+     "observations": 224
+    },
+    {
+     "slug": "eastern_bluebird",
+     "observations": 215
+    },
+    {
+     "slug": "red_shouldered_hawk",
+     "observations": 198
+    },
+    {
+     "slug": "northern_cardinal",
+     "observations": 198
+    },
+    {
+     "slug": "black_vulture",
+     "observations": 195
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 182
+    },
+    {
+     "slug": "turkey_vulture",
+     "observations": 175
+    },
+    {
+     "slug": "monarch",
+     "observations": 158
+    },
+    {
+     "slug": "coyote",
+     "observations": 150
+    },
+    {
+     "slug": "carolina_wren",
+     "observations": 147
+    },
+    {
+     "slug": "eastern_ratsnake",
+     "observations": 147
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 145
+    },
+    {
+     "slug": "northern_mockingbird",
+     "observations": 130
+    },
+    {
+     "slug": "virginia_opossum",
+     "observations": 129
+    },
+    {
+     "slug": "five_lined_skink",
+     "observations": 129
+    },
+    {
+     "slug": "luna_moth",
+     "observations": 124
+    },
+    {
+     "slug": "green_frog",
+     "observations": 119
+    },
+    {
+     "slug": "american_robin",
+     "observations": 118
+    },
+    {
+     "slug": "tufted_titmouse",
+     "observations": 117
+    },
+    {
+     "slug": "mallard",
+     "observations": 113
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 112
+    },
+    {
+     "slug": "common_snapping_turtle",
+     "observations": 109
+    },
+    {
+     "slug": "american_goldfinch",
+     "observations": 108
+    },
+    {
+     "slug": "yellow_garden_spider",
+     "observations": 107
+    },
+    {
+     "slug": "barred_owl",
+     "observations": 100
+    },
+    {
+     "slug": "eastern_fence_lizard",
+     "observations": 100
+    },
+    {
+     "slug": "carolina_mantis",
+     "observations": 95
+    },
+    {
+     "slug": "american_bullfrog",
+     "observations": 93
+    },
+    {
+     "slug": "red_bellied_woodpecker",
+     "observations": 90
+    },
+    {
+     "slug": "american_beaver",
+     "observations": 84
+    },
+    {
+     "slug": "prothonotary_warbler",
+     "observations": 80
+    },
+    {
+     "slug": "wood_duck",
+     "observations": 79
+    },
+    {
+     "slug": "ruby_throated_hummingbird",
+     "observations": 78
+    },
+    {
+     "slug": "carolina_chickadee",
+     "observations": 77
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 73
+    },
+    {
+     "slug": "american_toad",
+     "observations": 67
+    },
+    {
+     "slug": "rough_green_snake",
+     "observations": 66
+    },
+    {
+     "slug": "great_egret",
+     "observations": 63
+    },
+    {
+     "slug": "pileated_woodpecker",
+     "observations": 53
+    },
+    {
+     "slug": "north_american_river_otter",
+     "observations": 49
+    },
+    {
+     "slug": "wild_turkey",
+     "observations": 48
+    },
+    {
+     "slug": "eastern_newt",
+     "observations": 48
+    },
+    {
+     "slug": "brown_headed_nuthatch",
+     "observations": 46
+    },
+    {
+     "slug": "belted_kingfisher",
+     "observations": 45
+    },
+    {
+     "slug": "common_eastern_firefly",
+     "observations": 42
+    },
+    {
+     "slug": "marbled_salamander",
+     "observations": 39
+    },
+    {
+     "slug": "blue_jay",
+     "observations": 37
+    },
+    {
+     "slug": "gray_fox",
+     "observations": 33
+    },
+    {
+     "slug": "red_fox",
+     "observations": 32
+    },
+    {
+     "slug": "spring_peeper",
+     "observations": 29
+    },
+    {
+     "slug": "eastern_hognose_snake",
+     "observations": 26
+    },
+    {
+     "slug": "eastern_kingsnake",
+     "observations": 23
+    },
+    {
+     "slug": "zebra_swallowtail",
+     "observations": 22
+    },
+    {
+     "slug": "bobcat",
+     "observations": 21
+    },
+    {
+     "slug": "groundhog",
+     "observations": 19
+    },
+    {
+     "slug": "eastern_chipmunk",
+     "observations": 19
+    },
+    {
+     "slug": "gulf_fritillary",
+     "observations": 10
+    },
+    {
+     "slug": "striped_skunk",
+     "observations": 7
+    },
+    {
+     "slug": "american_black_bear",
+     "observations": 4
+    },
+    {
+     "slug": "red_cornsnake",
+     "observations": 4
+    },
+    {
+     "slug": "white_ibis",
+     "observations": 3
+    },
+    {
+     "slug": "royal_tern",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "charlotte",
+   "name": "Charlotte & McDowell Nature Preserve",
+   "lat": 35.15,
+   "lon": -80.95,
+   "radius_km": 15,
+   "blurb": "City and lakeside wildlife: joro spiders, herons, deer and backyard birds.",
+   "species": [
+    {
+     "slug": "green_anole",
+     "observations": 750
+    },
+    {
+     "slug": "eastern_tiger_swallowtail",
+     "observations": 387
+    },
+    {
+     "slug": "green_treefrog",
+     "observations": 329
+    },
+    {
+     "slug": "northern_cardinal",
+     "observations": 325
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 323
+    },
+    {
+     "slug": "eastern_gray_squirrel",
+     "observations": 319
+    },
+    {
+     "slug": "eastern_ratsnake",
+     "observations": 293
+    },
+    {
+     "slug": "mallard",
+     "observations": 280
+    },
+    {
+     "slug": "white_tailed_deer",
+     "observations": 276
+    },
+    {
+     "slug": "american_robin",
+     "observations": 259
+    },
+    {
+     "slug": "eastern_box_turtle",
+     "observations": 258
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 255
+    },
+    {
+     "slug": "red_shouldered_hawk",
+     "observations": 253
+    },
+    {
+     "slug": "five_lined_skink",
+     "observations": 239
+    },
+    {
+     "slug": "copes_gray_treefrog",
+     "observations": 217
+    },
+    {
+     "slug": "northern_mockingbird",
+     "observations": 210
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 196
+    },
+    {
+     "slug": "gulf_fritillary",
+     "observations": 189
+    },
+    {
+     "slug": "monarch",
+     "observations": 187
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 186
+    },
+    {
+     "slug": "carolina_mantis",
+     "observations": 186
+    },
+    {
+     "slug": "eastern_bluebird",
+     "observations": 185
+    },
+    {
+     "slug": "barred_owl",
+     "observations": 178
+    },
+    {
+     "slug": "northern_water_snake",
+     "observations": 171
+    },
+    {
+     "slug": "yellow_garden_spider",
+     "observations": 158
+    },
+    {
+     "slug": "carolina_wren",
+     "observations": 153
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 122
+    },
+    {
+     "slug": "luna_moth",
+     "observations": 116
+    },
+    {
+     "slug": "eastern_cottontail",
+     "observations": 108
+    },
+    {
+     "slug": "american_goldfinch",
+     "observations": 98
+    },
+    {
+     "slug": "american_bullfrog",
+     "observations": 89
+    },
+    {
+     "slug": "red_bellied_woodpecker",
+     "observations": 75
+    },
+    {
+     "slug": "marbled_salamander",
+     "observations": 75
+    },
+    {
+     "slug": "ruby_throated_hummingbird",
+     "observations": 73
+    },
+    {
+     "slug": "common_snapping_turtle",
+     "observations": 73
+    },
+    {
+     "slug": "tufted_titmouse",
+     "observations": 71
+    },
+    {
+     "slug": "carolina_chickadee",
+     "observations": 71
+    },
+    {
+     "slug": "brown_headed_nuthatch",
+     "observations": 69
+    },
+    {
+     "slug": "common_eastern_firefly",
+     "observations": 69
+    },
+    {
+     "slug": "raccoon",
+     "observations": 68
+    },
+    {
+     "slug": "eastern_kingsnake",
+     "observations": 64
+    },
+    {
+     "slug": "eastern_chipmunk",
+     "observations": 62
+    },
+    {
+     "slug": "osprey",
+     "observations": 59
+    },
+    {
+     "slug": "black_vulture",
+     "observations": 56
+    },
+    {
+     "slug": "blue_jay",
+     "observations": 52
+    },
+    {
+     "slug": "great_egret",
+     "observations": 46
+    },
+    {
+     "slug": "turkey_vulture",
+     "observations": 45
+    },
+    {
+     "slug": "green_frog",
+     "observations": 41
+    },
+    {
+     "slug": "virginia_opossum",
+     "observations": 40
+    },
+    {
+     "slug": "american_toad",
+     "observations": 39
+    },
+    {
+     "slug": "rough_green_snake",
+     "observations": 24
+    },
+    {
+     "slug": "red_fox",
+     "observations": 24
+    },
+    {
+     "slug": "american_beaver",
+     "observations": 24
+    },
+    {
+     "slug": "wood_duck",
+     "observations": 23
+    },
+    {
+     "slug": "eastern_fence_lizard",
+     "observations": 23
+    },
+    {
+     "slug": "belted_kingfisher",
+     "observations": 22
+    },
+    {
+     "slug": "prothonotary_warbler",
+     "observations": 19
+    },
+    {
+     "slug": "coyote",
+     "observations": 18
+    },
+    {
+     "slug": "groundhog",
+     "observations": 18
+    },
+    {
+     "slug": "bald_eagle",
+     "observations": 17
+    },
+    {
+     "slug": "joro_spider",
+     "observations": 15
+    },
+    {
+     "slug": "spring_peeper",
+     "observations": 14
+    },
+    {
+     "slug": "zebra_swallowtail",
+     "observations": 14
+    },
+    {
+     "slug": "pileated_woodpecker",
+     "observations": 12
+    },
+    {
+     "slug": "wild_turkey",
+     "observations": 11
+    },
+    {
+     "slug": "gray_fox",
+     "observations": 10
+    },
+    {
+     "slug": "north_american_river_otter",
+     "observations": 6
+    },
+    {
+     "slug": "white_ibis",
+     "observations": 5
+    },
+    {
+     "slug": "eastern_hognose_snake",
+     "observations": 5
+    },
+    {
+     "slug": "eastern_newt",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "sandhills",
+   "name": "Weymouth Woods & the Sandhills",
+   "lat": 35.15,
+   "lon": -79.4,
+   "radius_km": 20,
+   "blurb": "Longleaf pines with red-cockaded woodpeckers, fox squirrels and Pine Barrens treefrogs.",
+   "species": [
+    {
+     "slug": "green_anole",
+     "observations": 155
+    },
+    {
+     "slug": "eastern_fence_lizard",
+     "observations": 137
+    },
+    {
+     "slug": "red_cockaded_woodpecker",
+     "observations": 135
+    },
+    {
+     "slug": "fox_squirrel",
+     "observations": 129
+    },
+    {
+     "slug": "white_tailed_deer",
+     "observations": 101
+    },
+    {
+     "slug": "northern_cardinal",
+     "observations": 80
+    },
+    {
+     "slug": "eastern_box_turtle",
+     "observations": 80
+    },
+    {
+     "slug": "eastern_tiger_swallowtail",
+     "observations": 76
+    },
+    {
+     "slug": "brown_headed_nuthatch",
+     "observations": 67
+    },
+    {
+     "slug": "eastern_gray_squirrel",
+     "observations": 67
+    },
+    {
+     "slug": "eastern_bluebird",
+     "observations": 63
+    },
+    {
+     "slug": "eastern_newt",
+     "observations": 56
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 53
+    },
+    {
+     "slug": "mallard",
+     "observations": 50
+    },
+    {
+     "slug": "red_bellied_woodpecker",
+     "observations": 49
+    },
+    {
+     "slug": "eastern_hognose_snake",
+     "observations": 48
+    },
+    {
+     "slug": "yellow_garden_spider",
+     "observations": 46
+    },
+    {
+     "slug": "northern_mockingbird",
+     "observations": 44
+    },
+    {
+     "slug": "pileated_woodpecker",
+     "observations": 42
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 40
+    },
+    {
+     "slug": "american_bullfrog",
+     "observations": 38
+    },
+    {
+     "slug": "carolina_chickadee",
+     "observations": 38
+    },
+    {
+     "slug": "american_robin",
+     "observations": 37
+    },
+    {
+     "slug": "red_cornsnake",
+     "observations": 36
+    },
+    {
+     "slug": "ruby_throated_hummingbird",
+     "observations": 34
+    },
+    {
+     "slug": "carolina_mantis",
+     "observations": 33
+    },
+    {
+     "slug": "copes_gray_treefrog",
+     "observations": 33
+    },
+    {
+     "slug": "green_frog",
+     "observations": 31
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 30
+    },
+    {
+     "slug": "carolina_wren",
+     "observations": 29
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 28
+    },
+    {
+     "slug": "blue_jay",
+     "observations": 27
+    },
+    {
+     "slug": "tufted_titmouse",
+     "observations": 26
+    },
+    {
+     "slug": "green_treefrog",
+     "observations": 25
+    },
+    {
+     "slug": "american_goldfinch",
+     "observations": 24
+    },
+    {
+     "slug": "rough_green_snake",
+     "observations": 22
+    },
+    {
+     "slug": "eastern_cottontail",
+     "observations": 22
+    },
+    {
+     "slug": "american_beaver",
+     "observations": 22
+    },
+    {
+     "slug": "luna_moth",
+     "observations": 22
+    },
+    {
+     "slug": "monarch",
+     "observations": 22
+    },
+    {
+     "slug": "wild_turkey",
+     "observations": 21
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 21
+    },
+    {
+     "slug": "gulf_fritillary",
+     "observations": 20
+    },
+    {
+     "slug": "common_snapping_turtle",
+     "observations": 19
+    },
+    {
+     "slug": "raccoon",
+     "observations": 18
+    },
+    {
+     "slug": "gray_fox",
+     "observations": 18
+    },
+    {
+     "slug": "coyote",
+     "observations": 16
+    },
+    {
+     "slug": "spring_peeper",
+     "observations": 13
+    },
+    {
+     "slug": "turkey_vulture",
+     "observations": 12
+    },
+    {
+     "slug": "red_shouldered_hawk",
+     "observations": 12
+    },
+    {
+     "slug": "eastern_kingsnake",
+     "observations": 10
+    },
+    {
+     "slug": "bobcat",
+     "observations": 9
+    },
+    {
+     "slug": "zebra_swallowtail",
+     "observations": 9
+    },
+    {
+     "slug": "north_american_river_otter",
+     "observations": 8
+    },
+    {
+     "slug": "wood_duck",
+     "observations": 7
+    },
+    {
+     "slug": "pine_barrens_treefrog",
+     "observations": 6
+    },
+    {
+     "slug": "bald_eagle",
+     "observations": 5
+    },
+    {
+     "slug": "prothonotary_warbler",
+     "observations": 5
+    },
+    {
+     "slug": "virginia_opossum",
+     "observations": 5
+    },
+    {
+     "slug": "striped_skunk",
+     "observations": 4
+    },
+    {
+     "slug": "five_lined_skink",
+     "observations": 4
+    },
+    {
+     "slug": "northern_water_snake",
+     "observations": 3
+    },
+    {
+     "slug": "red_fox",
+     "observations": 3
+    },
+    {
+     "slug": "osprey",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "merchants_millpond",
+   "name": "Merchants Millpond State Park",
+   "lat": 36.44,
+   "lon": -76.7,
+   "radius_km": 8,
+   "blurb": "A blackwater swamp of cypress and tupelo with prothonotary warblers, otters and turtles.",
+   "species": [
+    {
+     "slug": "green_treefrog",
+     "observations": 41
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 31
+    },
+    {
+     "slug": "green_frog",
+     "observations": 13
+    },
+    {
+     "slug": "prothonotary_warbler",
+     "observations": 11
+    },
+    {
+     "slug": "eastern_box_turtle",
+     "observations": 11
+    },
+    {
+     "slug": "five_lined_skink",
+     "observations": 9
+    },
+    {
+     "slug": "wild_turkey",
+     "observations": 8
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 8
+    },
+    {
+     "slug": "wood_duck",
+     "observations": 7
+    },
+    {
+     "slug": "american_alligator",
+     "observations": 7
+    },
+    {
+     "slug": "eastern_gray_squirrel",
+     "observations": 7
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 7
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 6
+    },
+    {
+     "slug": "ruby_throated_hummingbird",
+     "observations": 6
+    },
+    {
+     "slug": "eastern_tiger_swallowtail",
+     "observations": 6
+    },
+    {
+     "slug": "rough_green_snake",
+     "observations": 5
+    },
+    {
+     "slug": "american_beaver",
+     "observations": 5
+    },
+    {
+     "slug": "luna_moth",
+     "observations": 5
+    },
+    {
+     "slug": "red_shouldered_hawk",
+     "observations": 4
+    },
+    {
+     "slug": "white_tailed_deer",
+     "observations": 4
+    },
+    {
+     "slug": "carolina_chickadee",
+     "observations": 4
+    },
+    {
+     "slug": "turkey_vulture",
+     "observations": 3
+    },
+    {
+     "slug": "tufted_titmouse",
+     "observations": 3
+    },
+    {
+     "slug": "pileated_woodpecker",
+     "observations": 3
+    },
+    {
+     "slug": "barred_owl",
+     "observations": 3
+    },
+    {
+     "slug": "green_anole",
+     "observations": 3
+    },
+    {
+     "slug": "american_bullfrog",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "mattamuskeet",
+   "name": "Lake Mattamuskeet",
+   "lat": 35.48,
+   "lon": -76.18,
+   "radius_km": 15,
+   "blurb": "Tens of thousands of tundra swans and ducks in winter, plus bald eagles and alligators.",
+   "species": [
+    {
+     "slug": "tundra_swan",
+     "observations": 114
+    },
+    {
+     "slug": "great_egret",
+     "observations": 77
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 59
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 53
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 44
+    },
+    {
+     "slug": "green_anole",
+     "observations": 44
+    },
+    {
+     "slug": "bald_eagle",
+     "observations": 41
+    },
+    {
+     "slug": "white_ibis",
+     "observations": 40
+    },
+    {
+     "slug": "white_tailed_deer",
+     "observations": 37
+    },
+    {
+     "slug": "american_alligator",
+     "observations": 35
+    },
+    {
+     "slug": "turkey_vulture",
+     "observations": 30
+    },
+    {
+     "slug": "eastern_box_turtle",
+     "observations": 30
+    },
+    {
+     "slug": "common_snapping_turtle",
+     "observations": 29
+    },
+    {
+     "slug": "osprey",
+     "observations": 25
+    },
+    {
+     "slug": "belted_kingfisher",
+     "observations": 24
+    },
+    {
+     "slug": "ruby_throated_hummingbird",
+     "observations": 21
+    },
+    {
+     "slug": "green_treefrog",
+     "observations": 20
+    },
+    {
+     "slug": "north_american_river_otter",
+     "observations": 17
+    },
+    {
+     "slug": "american_black_bear",
+     "observations": 16
+    },
+    {
+     "slug": "northern_cardinal",
+     "observations": 15
+    },
+    {
+     "slug": "virginia_opossum",
+     "observations": 14
+    },
+    {
+     "slug": "yellow_garden_spider",
+     "observations": 12
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 11
+    },
+    {
+     "slug": "mallard",
+     "observations": 11
+    },
+    {
+     "slug": "wood_duck",
+     "observations": 11
+    },
+    {
+     "slug": "eastern_kingsnake",
+     "observations": 11
+    },
+    {
+     "slug": "carolina_chickadee",
+     "observations": 11
+    },
+    {
+     "slug": "red_bellied_woodpecker",
+     "observations": 10
+    },
+    {
+     "slug": "raccoon",
+     "observations": 10
+    },
+    {
+     "slug": "marsh_rabbit",
+     "observations": 10
+    },
+    {
+     "slug": "northern_mockingbird",
+     "observations": 9
+    },
+    {
+     "slug": "gulf_fritillary",
+     "observations": 9
+    },
+    {
+     "slug": "eastern_gray_squirrel",
+     "observations": 8
+    },
+    {
+     "slug": "luna_moth",
+     "observations": 8
+    },
+    {
+     "slug": "monarch",
+     "observations": 8
+    },
+    {
+     "slug": "red_shouldered_hawk",
+     "observations": 7
+    },
+    {
+     "slug": "black_vulture",
+     "observations": 6
+    },
+    {
+     "slug": "carolina_wren",
+     "observations": 6
+    },
+    {
+     "slug": "pileated_woodpecker",
+     "observations": 6
+    },
+    {
+     "slug": "rough_green_snake",
+     "observations": 6
+    },
+    {
+     "slug": "carolina_mantis",
+     "observations": 6
+    },
+    {
+     "slug": "eastern_bluebird",
+     "observations": 5
+    },
+    {
+     "slug": "northern_water_snake",
+     "observations": 5
+    },
+    {
+     "slug": "zebra_swallowtail",
+     "observations": 5
+    },
+    {
+     "slug": "prothonotary_warbler",
+     "observations": 4
+    },
+    {
+     "slug": "bobcat",
+     "observations": 4
+    },
+    {
+     "slug": "coyote",
+     "observations": 4
+    },
+    {
+     "slug": "gray_fox",
+     "observations": 4
+    },
+    {
+     "slug": "american_bullfrog",
+     "observations": 4
+    },
+    {
+     "slug": "american_goldfinch",
+     "observations": 4
+    },
+    {
+     "slug": "brown_headed_nuthatch",
+     "observations": 3
+    },
+    {
+     "slug": "eastern_hognose_snake",
+     "observations": 3
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 3
+    },
+    {
+     "slug": "eastern_tiger_swallowtail",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "alligator_river_pocosin",
+   "name": "Alligator River & Pocosin Lakes",
+   "lat": 35.8,
+   "lon": -76.0,
+   "radius_km": 30,
+   "blurb": "Home of the world's only wild red wolves, plus black bears, alligators and swans.",
+   "species": [
+    {
+     "slug": "american_black_bear",
+     "observations": 1013
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 452
+    },
+    {
+     "slug": "american_alligator",
+     "observations": 374
+    },
+    {
+     "slug": "monarch",
+     "observations": 219
+    },
+    {
+     "slug": "barred_owl",
+     "observations": 189
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 184
+    },
+    {
+     "slug": "yellow_garden_spider",
+     "observations": 173
+    },
+    {
+     "slug": "green_treefrog",
+     "observations": 152
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 144
+    },
+    {
+     "slug": "eastern_box_turtle",
+     "observations": 144
+    },
+    {
+     "slug": "green_anole",
+     "observations": 130
+    },
+    {
+     "slug": "red_wolf",
+     "observations": 121
+    },
+    {
+     "slug": "prothonotary_warbler",
+     "observations": 119
+    },
+    {
+     "slug": "north_american_river_otter",
+     "observations": 114
+    },
+    {
+     "slug": "gulf_fritillary",
+     "observations": 111
+    },
+    {
+     "slug": "tundra_swan",
+     "observations": 108
+    },
+    {
+     "slug": "carolina_mantis",
+     "observations": 90
+    },
+    {
+     "slug": "turkey_vulture",
+     "observations": 89
+    },
+    {
+     "slug": "eastern_gray_squirrel",
+     "observations": 89
+    },
+    {
+     "slug": "common_snapping_turtle",
+     "observations": 85
+    },
+    {
+     "slug": "great_egret",
+     "observations": 85
+    },
+    {
+     "slug": "eastern_tiger_swallowtail",
+     "observations": 79
+    },
+    {
+     "slug": "bald_eagle",
+     "observations": 77
+    },
+    {
+     "slug": "rough_green_snake",
+     "observations": 73
+    },
+    {
+     "slug": "white_tailed_deer",
+     "observations": 63
+    },
+    {
+     "slug": "green_frog",
+     "observations": 61
+    },
+    {
+     "slug": "brown_headed_nuthatch",
+     "observations": 55
+    },
+    {
+     "slug": "osprey",
+     "observations": 55
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 52
+    },
+    {
+     "slug": "wild_turkey",
+     "observations": 49
+    },
+    {
+     "slug": "wood_duck",
+     "observations": 48
+    },
+    {
+     "slug": "carolina_chickadee",
+     "observations": 48
+    },
+    {
+     "slug": "belted_kingfisher",
+     "observations": 46
+    },
+    {
+     "slug": "raccoon",
+     "observations": 43
+    },
+    {
+     "slug": "red_cockaded_woodpecker",
+     "observations": 43
+    },
+    {
+     "slug": "northern_water_snake",
+     "observations": 41
+    },
+    {
+     "slug": "northern_cardinal",
+     "observations": 40
+    },
+    {
+     "slug": "american_bullfrog",
+     "observations": 39
+    },
+    {
+     "slug": "bobcat",
+     "observations": 37
+    },
+    {
+     "slug": "carolina_wren",
+     "observations": 34
+    },
+    {
+     "slug": "american_robin",
+     "observations": 34
+    },
+    {
+     "slug": "pileated_woodpecker",
+     "observations": 33
+    },
+    {
+     "slug": "red_bellied_woodpecker",
+     "observations": 33
+    },
+    {
+     "slug": "eastern_kingsnake",
+     "observations": 33
+    },
+    {
+     "slug": "copes_gray_treefrog",
+     "observations": 33
+    },
+    {
+     "slug": "eastern_cottontail",
+     "observations": 31
+    },
+    {
+     "slug": "northern_mockingbird",
+     "observations": 30
+    },
+    {
+     "slug": "coyote",
+     "observations": 30
+    },
+    {
+     "slug": "ruby_throated_hummingbird",
+     "observations": 28
+    },
+    {
+     "slug": "brown_pelican",
+     "observations": 27
+    },
+    {
+     "slug": "eastern_bluebird",
+     "observations": 27
+    },
+    {
+     "slug": "red_cornsnake",
+     "observations": 27
+    },
+    {
+     "slug": "luna_moth",
+     "observations": 25
+    },
+    {
+     "slug": "five_lined_skink",
+     "observations": 25
+    },
+    {
+     "slug": "spring_peeper",
+     "observations": 24
+    },
+    {
+     "slug": "mallard",
+     "observations": 21
+    },
+    {
+     "slug": "red_shouldered_hawk",
+     "observations": 20
+    },
+    {
+     "slug": "virginia_opossum",
+     "observations": 20
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 19
+    },
+    {
+     "slug": "american_beaver",
+     "observations": 18
+    },
+    {
+     "slug": "white_ibis",
+     "observations": 16
+    },
+    {
+     "slug": "marsh_rabbit",
+     "observations": 16
+    },
+    {
+     "slug": "royal_tern",
+     "observations": 14
+    },
+    {
+     "slug": "marbled_salamander",
+     "observations": 11
+    },
+    {
+     "slug": "atlantic_ghost_crab",
+     "observations": 11
+    },
+    {
+     "slug": "black_vulture",
+     "observations": 8
+    },
+    {
+     "slug": "blue_jay",
+     "observations": 6
+    },
+    {
+     "slug": "eastern_newt",
+     "observations": 6
+    },
+    {
+     "slug": "zebra_swallowtail",
+     "observations": 5
+    },
+    {
+     "slug": "loggerhead_sea_turtle",
+     "observations": 4
+    },
+    {
+     "slug": "diamondback_terrapin",
+     "observations": 3
+    },
+    {
+     "slug": "red_fox",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "outer_banks_north",
+   "name": "Nags Head & Jockey's Ridge",
+   "lat": 35.95,
+   "lon": -75.63,
+   "radius_km": 12,
+   "blurb": "Dunes, sound-side marsh and piers with dolphins, pelicans and ghost crabs.",
+   "species": [
+    {
+     "slug": "atlantic_ghost_crab",
+     "observations": 604
+    },
+    {
+     "slug": "yellow_garden_spider",
+     "observations": 296
+    },
+    {
+     "slug": "green_anole",
+     "observations": 281
+    },
+    {
+     "slug": "monarch",
+     "observations": 271
+    },
+    {
+     "slug": "brown_pelican",
+     "observations": 257
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 234
+    },
+    {
+     "slug": "osprey",
+     "observations": 229
+    },
+    {
+     "slug": "gulf_fritillary",
+     "observations": 181
+    },
+    {
+     "slug": "carolina_mantis",
+     "observations": 144
+    },
+    {
+     "slug": "green_treefrog",
+     "observations": 144
+    },
+    {
+     "slug": "eastern_gray_squirrel",
+     "observations": 133
+    },
+    {
+     "slug": "northern_mockingbird",
+     "observations": 104
+    },
+    {
+     "slug": "eastern_box_turtle",
+     "observations": 102
+    },
+    {
+     "slug": "atlantic_horseshoe_crab",
+     "observations": 81
+    },
+    {
+     "slug": "american_bullfrog",
+     "observations": 81
+    },
+    {
+     "slug": "eastern_cottontail",
+     "observations": 73
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 72
+    },
+    {
+     "slug": "royal_tern",
+     "observations": 70
+    },
+    {
+     "slug": "northern_cardinal",
+     "observations": 68
+    },
+    {
+     "slug": "ruby_throated_hummingbird",
+     "observations": 67
+    },
+    {
+     "slug": "northern_water_snake",
+     "observations": 66
+    },
+    {
+     "slug": "great_egret",
+     "observations": 62
+    },
+    {
+     "slug": "raccoon",
+     "observations": 59
+    },
+    {
+     "slug": "eastern_bluebird",
+     "observations": 58
+    },
+    {
+     "slug": "rough_green_snake",
+     "observations": 58
+    },
+    {
+     "slug": "american_robin",
+     "observations": 54
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 50
+    },
+    {
+     "slug": "common_snapping_turtle",
+     "observations": 48
+    },
+    {
+     "slug": "copes_gray_treefrog",
+     "observations": 47
+    },
+    {
+     "slug": "eastern_tiger_swallowtail",
+     "observations": 45
+    },
+    {
+     "slug": "carolina_wren",
+     "observations": 43
+    },
+    {
+     "slug": "white_tailed_deer",
+     "observations": 43
+    },
+    {
+     "slug": "cannonball_jellyfish",
+     "observations": 43
+    },
+    {
+     "slug": "carolina_chickadee",
+     "observations": 43
+    },
+    {
+     "slug": "turkey_vulture",
+     "observations": 40
+    },
+    {
+     "slug": "mallard",
+     "observations": 38
+    },
+    {
+     "slug": "brown_headed_nuthatch",
+     "observations": 37
+    },
+    {
+     "slug": "marbled_salamander",
+     "observations": 33
+    },
+    {
+     "slug": "white_ibis",
+     "observations": 29
+    },
+    {
+     "slug": "red_cornsnake",
+     "observations": 29
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 26
+    },
+    {
+     "slug": "red_drum",
+     "observations": 26
+    },
+    {
+     "slug": "pileated_woodpecker",
+     "observations": 24
+    },
+    {
+     "slug": "north_american_river_otter",
+     "observations": 19
+    },
+    {
+     "slug": "bald_eagle",
+     "observations": 18
+    },
+    {
+     "slug": "luna_moth",
+     "observations": 18
+    },
+    {
+     "slug": "red_bellied_woodpecker",
+     "observations": 17
+    },
+    {
+     "slug": "coyote",
+     "observations": 16
+    },
+    {
+     "slug": "marsh_rabbit",
+     "observations": 16
+    },
+    {
+     "slug": "eastern_newt",
+     "observations": 15
+    },
+    {
+     "slug": "belted_kingfisher",
+     "observations": 14
+    },
+    {
+     "slug": "blue_jay",
+     "observations": 13
+    },
+    {
+     "slug": "eastern_kingsnake",
+     "observations": 13
+    },
+    {
+     "slug": "green_frog",
+     "observations": 13
+    },
+    {
+     "slug": "eastern_hognose_snake",
+     "observations": 11
+    },
+    {
+     "slug": "american_black_bear",
+     "observations": 11
+    },
+    {
+     "slug": "virginia_opossum",
+     "observations": 11
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 10
+    },
+    {
+     "slug": "red_fox",
+     "observations": 10
+    },
+    {
+     "slug": "wood_duck",
+     "observations": 8
+    },
+    {
+     "slug": "prothonotary_warbler",
+     "observations": 8
+    },
+    {
+     "slug": "gray_fox",
+     "observations": 8
+    },
+    {
+     "slug": "tundra_swan",
+     "observations": 7
+    },
+    {
+     "slug": "american_alligator",
+     "observations": 7
+    },
+    {
+     "slug": "tufted_titmouse",
+     "observations": 6
+    },
+    {
+     "slug": "loggerhead_sea_turtle",
+     "observations": 6
+    },
+    {
+     "slug": "black_skimmer",
+     "observations": 4
+    },
+    {
+     "slug": "scotch_bonnet",
+     "observations": 4
+    },
+    {
+     "slug": "american_oystercatcher",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "pea_island",
+   "name": "Pea Island National Wildlife Refuge",
+   "lat": 35.72,
+   "lon": -75.49,
+   "radius_km": 10,
+   "blurb": "Barrier island ponds full of herons, egrets, swans, terns and shorebirds.",
+   "species": [
+    {
+     "slug": "pond_slider",
+     "observations": 339
+    },
+    {
+     "slug": "common_snapping_turtle",
+     "observations": 300
+    },
+    {
+     "slug": "white_ibis",
+     "observations": 234
+    },
+    {
+     "slug": "brown_pelican",
+     "observations": 204
+    },
+    {
+     "slug": "tundra_swan",
+     "observations": 197
+    },
+    {
+     "slug": "great_egret",
+     "observations": 180
+    },
+    {
+     "slug": "atlantic_ghost_crab",
+     "observations": 166
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 138
+    },
+    {
+     "slug": "royal_tern",
+     "observations": 124
+    },
+    {
+     "slug": "american_oystercatcher",
+     "observations": 80
+    },
+    {
+     "slug": "black_skimmer",
+     "observations": 76
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 74
+    },
+    {
+     "slug": "northern_mockingbird",
+     "observations": 73
+    },
+    {
+     "slug": "white_tailed_deer",
+     "observations": 60
+    },
+    {
+     "slug": "atlantic_horseshoe_crab",
+     "observations": 53
+    },
+    {
+     "slug": "north_american_river_otter",
+     "observations": 37
+    },
+    {
+     "slug": "belted_kingfisher",
+     "observations": 34
+    },
+    {
+     "slug": "bald_eagle",
+     "observations": 31
+    },
+    {
+     "slug": "mallard",
+     "observations": 28
+    },
+    {
+     "slug": "northern_water_snake",
+     "observations": 22
+    },
+    {
+     "slug": "cannonball_jellyfish",
+     "observations": 21
+    },
+    {
+     "slug": "eastern_cottontail",
+     "observations": 20
+    },
+    {
+     "slug": "raccoon",
+     "observations": 16
+    },
+    {
+     "slug": "carolina_wren",
+     "observations": 15
+    },
+    {
+     "slug": "monarch",
+     "observations": 14
+    },
+    {
+     "slug": "osprey",
+     "observations": 13
+    },
+    {
+     "slug": "rough_green_snake",
+     "observations": 12
+    },
+    {
+     "slug": "red_drum",
+     "observations": 12
+    },
+    {
+     "slug": "diamondback_terrapin",
+     "observations": 11
+    },
+    {
+     "slug": "red_cornsnake",
+     "observations": 11
+    },
+    {
+     "slug": "northern_cardinal",
+     "observations": 10
+    },
+    {
+     "slug": "turkey_vulture",
+     "observations": 6
+    },
+    {
+     "slug": "loggerhead_sea_turtle",
+     "observations": 6
+    },
+    {
+     "slug": "green_treefrog",
+     "observations": 6
+    },
+    {
+     "slug": "eastern_kingsnake",
+     "observations": 5
+    },
+    {
+     "slug": "coyote",
+     "observations": 4
+    },
+    {
+     "slug": "eastern_hognose_snake",
+     "observations": 3
+    },
+    {
+     "slug": "green_anole",
+     "observations": 3
+    },
+    {
+     "slug": "marsh_rabbit",
+     "observations": 3
+    },
+    {
+     "slug": "carolina_mantis",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "cape_hatteras",
+   "name": "Cape Hatteras & Ocracoke",
+   "lat": 35.2,
+   "lon": -75.7,
+   "radius_km": 20,
+   "blurb": "Cape Point's surf fishing, sea turtle nests, skimmers and storm-tossed shells.",
+   "species": [
+    {
+     "slug": "atlantic_ghost_crab",
+     "observations": 256
+    },
+    {
+     "slug": "royal_tern",
+     "observations": 167
+    },
+    {
+     "slug": "brown_pelican",
+     "observations": 145
+    },
+    {
+     "slug": "american_oystercatcher",
+     "observations": 135
+    },
+    {
+     "slug": "green_anole",
+     "observations": 132
+    },
+    {
+     "slug": "white_tailed_deer",
+     "observations": 131
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 117
+    },
+    {
+     "slug": "great_egret",
+     "observations": 88
+    },
+    {
+     "slug": "green_treefrog",
+     "observations": 85
+    },
+    {
+     "slug": "scotch_bonnet",
+     "observations": 82
+    },
+    {
+     "slug": "white_ibis",
+     "observations": 67
+    },
+    {
+     "slug": "osprey",
+     "observations": 67
+    },
+    {
+     "slug": "yellow_garden_spider",
+     "observations": 58
+    },
+    {
+     "slug": "cannonball_jellyfish",
+     "observations": 58
+    },
+    {
+     "slug": "northern_mockingbird",
+     "observations": 52
+    },
+    {
+     "slug": "atlantic_horseshoe_crab",
+     "observations": 50
+    },
+    {
+     "slug": "common_snapping_turtle",
+     "observations": 48
+    },
+    {
+     "slug": "black_skimmer",
+     "observations": 46
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 38
+    },
+    {
+     "slug": "eastern_cottontail",
+     "observations": 38
+    },
+    {
+     "slug": "turkey_vulture",
+     "observations": 37
+    },
+    {
+     "slug": "gulf_fritillary",
+     "observations": 36
+    },
+    {
+     "slug": "carolina_mantis",
+     "observations": 27
+    },
+    {
+     "slug": "red_drum",
+     "observations": 27
+    },
+    {
+     "slug": "loggerhead_sea_turtle",
+     "observations": 26
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 24
+    },
+    {
+     "slug": "raccoon",
+     "observations": 19
+    },
+    {
+     "slug": "rough_green_snake",
+     "observations": 18
+    },
+    {
+     "slug": "eastern_box_turtle",
+     "observations": 17
+    },
+    {
+     "slug": "northern_cardinal",
+     "observations": 15
+    },
+    {
+     "slug": "eastern_gray_squirrel",
+     "observations": 15
+    },
+    {
+     "slug": "north_american_river_otter",
+     "observations": 14
+    },
+    {
+     "slug": "eastern_kingsnake",
+     "observations": 13
+    },
+    {
+     "slug": "carolina_wren",
+     "observations": 11
+    },
+    {
+     "slug": "atlantic_sand_fiddler_crab",
+     "observations": 11
+    },
+    {
+     "slug": "american_bullfrog",
+     "observations": 10
+    },
+    {
+     "slug": "belted_kingfisher",
+     "observations": 9
+    },
+    {
+     "slug": "tundra_swan",
+     "observations": 9
+    },
+    {
+     "slug": "northern_water_snake",
+     "observations": 8
+    },
+    {
+     "slug": "monarch",
+     "observations": 8
+    },
+    {
+     "slug": "mallard",
+     "observations": 6
+    },
+    {
+     "slug": "eastern_hognose_snake",
+     "observations": 6
+    },
+    {
+     "slug": "diamondback_terrapin",
+     "observations": 6
+    },
+    {
+     "slug": "virginia_opossum",
+     "observations": 6
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 6
+    },
+    {
+     "slug": "wood_duck",
+     "observations": 5
+    },
+    {
+     "slug": "bald_eagle",
+     "observations": 4
+    },
+    {
+     "slug": "common_bottlenose_dolphin",
+     "observations": 4
+    },
+    {
+     "slug": "blue_jay",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "beaufort_cape_lookout",
+   "name": "Beaufort, Shackleford Banks & Cape Lookout",
+   "lat": 34.68,
+   "lon": -76.6,
+   "radius_km": 15,
+   "blurb": "Wild horses, oystercatchers, dolphins, fiddler crabs and the Rachel Carson Reserve.",
+   "species": [
+    {
+     "slug": "white_ibis",
+     "observations": 265
+    },
+    {
+     "slug": "green_anole",
+     "observations": 165
+    },
+    {
+     "slug": "atlantic_sand_fiddler_crab",
+     "observations": 159
+    },
+    {
+     "slug": "great_egret",
+     "observations": 158
+    },
+    {
+     "slug": "atlantic_ghost_crab",
+     "observations": 136
+    },
+    {
+     "slug": "atlantic_horseshoe_crab",
+     "observations": 127
+    },
+    {
+     "slug": "brown_pelican",
+     "observations": 120
+    },
+    {
+     "slug": "marsh_rabbit",
+     "observations": 119
+    },
+    {
+     "slug": "cannonball_jellyfish",
+     "observations": 118
+    },
+    {
+     "slug": "gulf_fritillary",
+     "observations": 89
+    },
+    {
+     "slug": "eastern_box_turtle",
+     "observations": 71
+    },
+    {
+     "slug": "northern_mockingbird",
+     "observations": 64
+    },
+    {
+     "slug": "yellow_garden_spider",
+     "observations": 62
+    },
+    {
+     "slug": "royal_tern",
+     "observations": 56
+    },
+    {
+     "slug": "american_oystercatcher",
+     "observations": 47
+    },
+    {
+     "slug": "painted_bunting",
+     "observations": 47
+    },
+    {
+     "slug": "monarch",
+     "observations": 46
+    },
+    {
+     "slug": "osprey",
+     "observations": 46
+    },
+    {
+     "slug": "red_drum",
+     "observations": 46
+    },
+    {
+     "slug": "scotch_bonnet",
+     "observations": 42
+    },
+    {
+     "slug": "green_treefrog",
+     "observations": 42
+    },
+    {
+     "slug": "northern_cardinal",
+     "observations": 38
+    },
+    {
+     "slug": "carolina_mantis",
+     "observations": 32
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 31
+    },
+    {
+     "slug": "eastern_bluebird",
+     "observations": 27
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 26
+    },
+    {
+     "slug": "diamondback_terrapin",
+     "observations": 25
+    },
+    {
+     "slug": "common_snapping_turtle",
+     "observations": 24
+    },
+    {
+     "slug": "eastern_gray_squirrel",
+     "observations": 24
+    },
+    {
+     "slug": "red_cornsnake",
+     "observations": 23
+    },
+    {
+     "slug": "black_skimmer",
+     "observations": 21
+    },
+    {
+     "slug": "carolina_chickadee",
+     "observations": 20
+    },
+    {
+     "slug": "blue_jay",
+     "observations": 19
+    },
+    {
+     "slug": "bald_eagle",
+     "observations": 16
+    },
+    {
+     "slug": "american_robin",
+     "observations": 16
+    },
+    {
+     "slug": "loggerhead_sea_turtle",
+     "observations": 16
+    },
+    {
+     "slug": "belted_kingfisher",
+     "observations": 14
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 14
+    },
+    {
+     "slug": "white_tailed_deer",
+     "observations": 14
+    },
+    {
+     "slug": "eastern_cottontail",
+     "observations": 14
+    },
+    {
+     "slug": "rough_green_snake",
+     "observations": 13
+    },
+    {
+     "slug": "north_american_river_otter",
+     "observations": 13
+    },
+    {
+     "slug": "virginia_opossum",
+     "observations": 13
+    },
+    {
+     "slug": "gray_fox",
+     "observations": 10
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 10
+    },
+    {
+     "slug": "carolina_wren",
+     "observations": 9
+    },
+    {
+     "slug": "red_bellied_woodpecker",
+     "observations": 9
+    },
+    {
+     "slug": "eastern_kingsnake",
+     "observations": 9
+    },
+    {
+     "slug": "ruby_throated_hummingbird",
+     "observations": 8
+    },
+    {
+     "slug": "turkey_vulture",
+     "observations": 7
+    },
+    {
+     "slug": "eastern_tiger_swallowtail",
+     "observations": 7
+    },
+    {
+     "slug": "american_bullfrog",
+     "observations": 7
+    },
+    {
+     "slug": "mallard",
+     "observations": 6
+    },
+    {
+     "slug": "raccoon",
+     "observations": 6
+    },
+    {
+     "slug": "luna_moth",
+     "observations": 6
+    },
+    {
+     "slug": "tufted_titmouse",
+     "observations": 5
+    },
+    {
+     "slug": "american_alligator",
+     "observations": 5
+    },
+    {
+     "slug": "northern_water_snake",
+     "observations": 5
+    },
+    {
+     "slug": "wild_turkey",
+     "observations": 4
+    },
+    {
+     "slug": "coyote",
+     "observations": 4
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 3
+    },
+    {
+     "slug": "brown_headed_nuthatch",
+     "observations": 3
+    },
+    {
+     "slug": "pileated_woodpecker",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "croatan",
+   "name": "Croatan National Forest",
+   "lat": 34.85,
+   "lon": -77.05,
+   "radius_km": 20,
+   "blurb": "Pine savannas and pocosins with red-cockaded woodpeckers, alligators and carnivorous plants.",
+   "species": [
+    {
+     "slug": "green_anole",
+     "observations": 238
+    },
+    {
+     "slug": "eastern_box_turtle",
+     "observations": 177
+    },
+    {
+     "slug": "yellow_garden_spider",
+     "observations": 95
+    },
+    {
+     "slug": "american_alligator",
+     "observations": 76
+    },
+    {
+     "slug": "great_egret",
+     "observations": 51
+    },
+    {
+     "slug": "eastern_kingsnake",
+     "observations": 48
+    },
+    {
+     "slug": "luna_moth",
+     "observations": 48
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 42
+    },
+    {
+     "slug": "atlantic_sand_fiddler_crab",
+     "observations": 42
+    },
+    {
+     "slug": "rough_green_snake",
+     "observations": 40
+    },
+    {
+     "slug": "northern_cardinal",
+     "observations": 38
+    },
+    {
+     "slug": "green_treefrog",
+     "observations": 38
+    },
+    {
+     "slug": "red_cockaded_woodpecker",
+     "observations": 36
+    },
+    {
+     "slug": "red_cornsnake",
+     "observations": 34
+    },
+    {
+     "slug": "osprey",
+     "observations": 34
+    },
+    {
+     "slug": "eastern_tiger_swallowtail",
+     "observations": 31
+    },
+    {
+     "slug": "carolina_mantis",
+     "observations": 29
+    },
+    {
+     "slug": "wild_turkey",
+     "observations": 28
+    },
+    {
+     "slug": "common_snapping_turtle",
+     "observations": 28
+    },
+    {
+     "slug": "eastern_gray_squirrel",
+     "observations": 28
+    },
+    {
+     "slug": "gulf_fritillary",
+     "observations": 28
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 27
+    },
+    {
+     "slug": "eastern_bluebird",
+     "observations": 27
+    },
+    {
+     "slug": "white_tailed_deer",
+     "observations": 27
+    },
+    {
+     "slug": "copes_gray_treefrog",
+     "observations": 27
+    },
+    {
+     "slug": "northern_mockingbird",
+     "observations": 26
+    },
+    {
+     "slug": "white_ibis",
+     "observations": 25
+    },
+    {
+     "slug": "brown_headed_nuthatch",
+     "observations": 25
+    },
+    {
+     "slug": "red_bellied_woodpecker",
+     "observations": 24
+    },
+    {
+     "slug": "american_bullfrog",
+     "observations": 22
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 21
+    },
+    {
+     "slug": "turkey_vulture",
+     "observations": 20
+    },
+    {
+     "slug": "monarch",
+     "observations": 20
+    },
+    {
+     "slug": "painted_bunting",
+     "observations": 18
+    },
+    {
+     "slug": "carolina_chickadee",
+     "observations": 18
+    },
+    {
+     "slug": "blue_jay",
+     "observations": 17
+    },
+    {
+     "slug": "fox_squirrel",
+     "observations": 17
+    },
+    {
+     "slug": "american_robin",
+     "observations": 16
+    },
+    {
+     "slug": "pileated_woodpecker",
+     "observations": 16
+    },
+    {
+     "slug": "raccoon",
+     "observations": 15
+    },
+    {
+     "slug": "eastern_cottontail",
+     "observations": 15
+    },
+    {
+     "slug": "prothonotary_warbler",
+     "observations": 14
+    },
+    {
+     "slug": "tufted_titmouse",
+     "observations": 14
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 14
+    },
+    {
+     "slug": "brown_pelican",
+     "observations": 13
+    },
+    {
+     "slug": "loggerhead_sea_turtle",
+     "observations": 13
+    },
+    {
+     "slug": "carolina_wren",
+     "observations": 11
+    },
+    {
+     "slug": "american_black_bear",
+     "observations": 11
+    },
+    {
+     "slug": "red_drum",
+     "observations": 11
+    },
+    {
+     "slug": "red_shouldered_hawk",
+     "observations": 10
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 10
+    },
+    {
+     "slug": "virginia_opossum",
+     "observations": 10
+    },
+    {
+     "slug": "bald_eagle",
+     "observations": 9
+    },
+    {
+     "slug": "mallard",
+     "observations": 9
+    },
+    {
+     "slug": "barred_owl",
+     "observations": 9
+    },
+    {
+     "slug": "spring_peeper",
+     "observations": 9
+    },
+    {
+     "slug": "ruby_throated_hummingbird",
+     "observations": 8
+    },
+    {
+     "slug": "north_american_river_otter",
+     "observations": 8
+    },
+    {
+     "slug": "green_frog",
+     "observations": 8
+    },
+    {
+     "slug": "black_skimmer",
+     "observations": 7
+    },
+    {
+     "slug": "eastern_hognose_snake",
+     "observations": 7
+    },
+    {
+     "slug": "cannonball_jellyfish",
+     "observations": 7
+    },
+    {
+     "slug": "american_oystercatcher",
+     "observations": 6
+    },
+    {
+     "slug": "gray_fox",
+     "observations": 6
+    },
+    {
+     "slug": "marsh_rabbit",
+     "observations": 5
+    },
+    {
+     "slug": "american_beaver",
+     "observations": 5
+    },
+    {
+     "slug": "common_eastern_firefly",
+     "observations": 5
+    },
+    {
+     "slug": "black_vulture",
+     "observations": 4
+    },
+    {
+     "slug": "marbled_salamander",
+     "observations": 4
+    },
+    {
+     "slug": "eastern_newt",
+     "observations": 4
+    },
+    {
+     "slug": "diamondback_terrapin",
+     "observations": 4
+    },
+    {
+     "slug": "bobcat",
+     "observations": 4
+    },
+    {
+     "slug": "coyote",
+     "observations": 4
+    },
+    {
+     "slug": "red_fox",
+     "observations": 4
+    },
+    {
+     "slug": "five_lined_skink",
+     "observations": 4
+    },
+    {
+     "slug": "american_goldfinch",
+     "observations": 4
+    },
+    {
+     "slug": "wood_duck",
+     "observations": 3
+    },
+    {
+     "slug": "atlantic_horseshoe_crab",
+     "observations": 3
+    },
+    {
+     "slug": "atlantic_ghost_crab",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "wilmington",
+   "name": "Wilmington & Greenfield Lake",
+   "lat": 34.21,
+   "lon": -77.92,
+   "radius_km": 8,
+   "blurb": "Alligators, herons, egrets, anoles and painted buntings in town.",
+   "species": [
+    {
+     "slug": "green_anole",
+     "observations": 468
+    },
+    {
+     "slug": "eastern_gray_squirrel",
+     "observations": 374
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 310
+    },
+    {
+     "slug": "gulf_fritillary",
+     "observations": 304
+    },
+    {
+     "slug": "northern_cardinal",
+     "observations": 288
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 282
+    },
+    {
+     "slug": "red_shouldered_hawk",
+     "observations": 262
+    },
+    {
+     "slug": "great_egret",
+     "observations": 262
+    },
+    {
+     "slug": "green_treefrog",
+     "observations": 243
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 211
+    },
+    {
+     "slug": "northern_mockingbird",
+     "observations": 198
+    },
+    {
+     "slug": "mallard",
+     "observations": 189
+    },
+    {
+     "slug": "white_ibis",
+     "observations": 188
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 151
+    },
+    {
+     "slug": "yellow_garden_spider",
+     "observations": 137
+    },
+    {
+     "slug": "eastern_bluebird",
+     "observations": 135
+    },
+    {
+     "slug": "american_alligator",
+     "observations": 119
+    },
+    {
+     "slug": "monarch",
+     "observations": 117
+    },
+    {
+     "slug": "carolina_wren",
+     "observations": 112
+    },
+    {
+     "slug": "eastern_box_turtle",
+     "observations": 98
+    },
+    {
+     "slug": "carolina_mantis",
+     "observations": 97
+    },
+    {
+     "slug": "common_snapping_turtle",
+     "observations": 92
+    },
+    {
+     "slug": "carolina_chickadee",
+     "observations": 92
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 83
+    },
+    {
+     "slug": "blue_jay",
+     "observations": 82
+    },
+    {
+     "slug": "red_bellied_woodpecker",
+     "observations": 75
+    },
+    {
+     "slug": "turkey_vulture",
+     "observations": 71
+    },
+    {
+     "slug": "eastern_tiger_swallowtail",
+     "observations": 70
+    },
+    {
+     "slug": "eastern_cottontail",
+     "observations": 66
+    },
+    {
+     "slug": "tufted_titmouse",
+     "observations": 65
+    },
+    {
+     "slug": "fox_squirrel",
+     "observations": 65
+    },
+    {
+     "slug": "pileated_woodpecker",
+     "observations": 57
+    },
+    {
+     "slug": "osprey",
+     "observations": 57
+    },
+    {
+     "slug": "american_robin",
+     "observations": 53
+    },
+    {
+     "slug": "virginia_opossum",
+     "observations": 47
+    },
+    {
+     "slug": "american_bullfrog",
+     "observations": 47
+    },
+    {
+     "slug": "brown_headed_nuthatch",
+     "observations": 45
+    },
+    {
+     "slug": "barred_owl",
+     "observations": 41
+    },
+    {
+     "slug": "luna_moth",
+     "observations": 40
+    },
+    {
+     "slug": "brown_pelican",
+     "observations": 36
+    },
+    {
+     "slug": "belted_kingfisher",
+     "observations": 30
+    },
+    {
+     "slug": "ruby_throated_hummingbird",
+     "observations": 30
+    },
+    {
+     "slug": "painted_bunting",
+     "observations": 30
+    },
+    {
+     "slug": "eastern_hognose_snake",
+     "observations": 30
+    },
+    {
+     "slug": "red_cornsnake",
+     "observations": 29
+    },
+    {
+     "slug": "black_skimmer",
+     "observations": 19
+    },
+    {
+     "slug": "wood_duck",
+     "observations": 18
+    },
+    {
+     "slug": "red_fox",
+     "observations": 17
+    },
+    {
+     "slug": "royal_tern",
+     "observations": 17
+    },
+    {
+     "slug": "raccoon",
+     "observations": 16
+    },
+    {
+     "slug": "white_tailed_deer",
+     "observations": 14
+    },
+    {
+     "slug": "rough_green_snake",
+     "observations": 13
+    },
+    {
+     "slug": "american_oystercatcher",
+     "observations": 12
+    },
+    {
+     "slug": "bald_eagle",
+     "observations": 11
+    },
+    {
+     "slug": "atlantic_sand_fiddler_crab",
+     "observations": 10
+    },
+    {
+     "slug": "copes_gray_treefrog",
+     "observations": 9
+    },
+    {
+     "slug": "black_vulture",
+     "observations": 6
+    },
+    {
+     "slug": "diamondback_terrapin",
+     "observations": 6
+    },
+    {
+     "slug": "marsh_rabbit",
+     "observations": 6
+    },
+    {
+     "slug": "cannonball_jellyfish",
+     "observations": 6
+    },
+    {
+     "slug": "wild_turkey",
+     "observations": 5
+    },
+    {
+     "slug": "prothonotary_warbler",
+     "observations": 5
+    },
+    {
+     "slug": "atlantic_ghost_crab",
+     "observations": 5
+    },
+    {
+     "slug": "red_drum",
+     "observations": 5
+    },
+    {
+     "slug": "five_lined_skink",
+     "observations": 4
+    },
+    {
+     "slug": "eastern_kingsnake",
+     "observations": 3
+    },
+    {
+     "slug": "loggerhead_sea_turtle",
+     "observations": 3
+    },
+    {
+     "slug": "north_american_river_otter",
+     "observations": 3
+    },
+    {
+     "slug": "coyote",
+     "observations": 3
+    },
+    {
+     "slug": "american_beaver",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "carolina_beach_fort_fisher",
+   "name": "Carolina Beach & Fort Fisher",
+   "lat": 33.98,
+   "lon": -77.92,
+   "radius_km": 10,
+   "blurb": "Painted buntings, terrapins, ghost crabs, ibises and lubber grasshoppers.",
+   "species": [
+    {
+     "slug": "brown_pelican",
+     "observations": 355
+    },
+    {
+     "slug": "green_anole",
+     "observations": 241
+    },
+    {
+     "slug": "american_alligator",
+     "observations": 189
+    },
+    {
+     "slug": "white_ibis",
+     "observations": 175
+    },
+    {
+     "slug": "atlantic_sand_fiddler_crab",
+     "observations": 156
+    },
+    {
+     "slug": "gulf_fritillary",
+     "observations": 146
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 134
+    },
+    {
+     "slug": "great_egret",
+     "observations": 128
+    },
+    {
+     "slug": "royal_tern",
+     "observations": 120
+    },
+    {
+     "slug": "yellow_garden_spider",
+     "observations": 98
+    },
+    {
+     "slug": "painted_bunting",
+     "observations": 87
+    },
+    {
+     "slug": "cannonball_jellyfish",
+     "observations": 86
+    },
+    {
+     "slug": "american_oystercatcher",
+     "observations": 78
+    },
+    {
+     "slug": "fox_squirrel",
+     "observations": 75
+    },
+    {
+     "slug": "northern_mockingbird",
+     "observations": 62
+    },
+    {
+     "slug": "american_bullfrog",
+     "observations": 62
+    },
+    {
+     "slug": "green_treefrog",
+     "observations": 61
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 56
+    },
+    {
+     "slug": "mallard",
+     "observations": 55
+    },
+    {
+     "slug": "atlantic_ghost_crab",
+     "observations": 55
+    },
+    {
+     "slug": "osprey",
+     "observations": 53
+    },
+    {
+     "slug": "northern_cardinal",
+     "observations": 52
+    },
+    {
+     "slug": "turkey_vulture",
+     "observations": 51
+    },
+    {
+     "slug": "carolina_mantis",
+     "observations": 51
+    },
+    {
+     "slug": "eastern_bluebird",
+     "observations": 50
+    },
+    {
+     "slug": "white_tailed_deer",
+     "observations": 49
+    },
+    {
+     "slug": "monarch",
+     "observations": 47
+    },
+    {
+     "slug": "rough_green_snake",
+     "observations": 45
+    },
+    {
+     "slug": "eastern_gray_squirrel",
+     "observations": 44
+    },
+    {
+     "slug": "carolina_wren",
+     "observations": 43
+    },
+    {
+     "slug": "eastern_box_turtle",
+     "observations": 42
+    },
+    {
+     "slug": "red_shouldered_hawk",
+     "observations": 41
+    },
+    {
+     "slug": "brown_headed_nuthatch",
+     "observations": 40
+    },
+    {
+     "slug": "tufted_titmouse",
+     "observations": 35
+    },
+    {
+     "slug": "carolina_chickadee",
+     "observations": 31
+    },
+    {
+     "slug": "black_skimmer",
+     "observations": 30
+    },
+    {
+     "slug": "raccoon",
+     "observations": 30
+    },
+    {
+     "slug": "marsh_rabbit",
+     "observations": 29
+    },
+    {
+     "slug": "eastern_newt",
+     "observations": 27
+    },
+    {
+     "slug": "red_bellied_woodpecker",
+     "observations": 25
+    },
+    {
+     "slug": "diamondback_terrapin",
+     "observations": 25
+    },
+    {
+     "slug": "belted_kingfisher",
+     "observations": 20
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 20
+    },
+    {
+     "slug": "luna_moth",
+     "observations": 20
+    },
+    {
+     "slug": "common_snapping_turtle",
+     "observations": 19
+    },
+    {
+     "slug": "pileated_woodpecker",
+     "observations": 16
+    },
+    {
+     "slug": "red_cornsnake",
+     "observations": 16
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 15
+    },
+    {
+     "slug": "bald_eagle",
+     "observations": 15
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 14
+    },
+    {
+     "slug": "blue_jay",
+     "observations": 13
+    },
+    {
+     "slug": "eastern_hognose_snake",
+     "observations": 11
+    },
+    {
+     "slug": "virginia_opossum",
+     "observations": 11
+    },
+    {
+     "slug": "red_drum",
+     "observations": 10
+    },
+    {
+     "slug": "coyote",
+     "observations": 9
+    },
+    {
+     "slug": "atlantic_horseshoe_crab",
+     "observations": 9
+    },
+    {
+     "slug": "prothonotary_warbler",
+     "observations": 8
+    },
+    {
+     "slug": "wild_turkey",
+     "observations": 7
+    },
+    {
+     "slug": "black_vulture",
+     "observations": 7
+    },
+    {
+     "slug": "ruby_throated_hummingbird",
+     "observations": 7
+    },
+    {
+     "slug": "loggerhead_sea_turtle",
+     "observations": 7
+    },
+    {
+     "slug": "eastern_kingsnake",
+     "observations": 6
+    },
+    {
+     "slug": "north_american_river_otter",
+     "observations": 5
+    },
+    {
+     "slug": "red_fox",
+     "observations": 5
+    },
+    {
+     "slug": "eastern_tiger_swallowtail",
+     "observations": 5
+    },
+    {
+     "slug": "american_robin",
+     "observations": 4
+    },
+    {
+     "slug": "eastern_cottontail",
+     "observations": 4
+    },
+    {
+     "slug": "red_cockaded_woodpecker",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "lake_waccamaw",
+   "name": "Lake Waccamaw & Green Swamp",
+   "lat": 34.28,
+   "lon": -78.5,
+   "radius_km": 15,
+   "blurb": "Cypress-lined lake with alligators, prothonotary warblers, and pine savanna wildlife.",
+   "species": [
+    {
+     "slug": "american_alligator",
+     "observations": 239
+    },
+    {
+     "slug": "green_anole",
+     "observations": 64
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 55
+    },
+    {
+     "slug": "great_egret",
+     "observations": 35
+    },
+    {
+     "slug": "yellow_garden_spider",
+     "observations": 16
+    },
+    {
+     "slug": "green_treefrog",
+     "observations": 16
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 15
+    },
+    {
+     "slug": "prothonotary_warbler",
+     "observations": 15
+    },
+    {
+     "slug": "mallard",
+     "observations": 14
+    },
+    {
+     "slug": "white_tailed_deer",
+     "observations": 12
+    },
+    {
+     "slug": "wood_duck",
+     "observations": 9
+    },
+    {
+     "slug": "barred_owl",
+     "observations": 9
+    },
+    {
+     "slug": "common_snapping_turtle",
+     "observations": 9
+    },
+    {
+     "slug": "northern_mockingbird",
+     "observations": 8
+    },
+    {
+     "slug": "eastern_box_turtle",
+     "observations": 8
+    },
+    {
+     "slug": "turkey_vulture",
+     "observations": 7
+    },
+    {
+     "slug": "eastern_gray_squirrel",
+     "observations": 7
+    },
+    {
+     "slug": "red_shouldered_hawk",
+     "observations": 6
+    },
+    {
+     "slug": "zebra_swallowtail",
+     "observations": 6
+    },
+    {
+     "slug": "eastern_cottontail",
+     "observations": 5
+    },
+    {
+     "slug": "gulf_fritillary",
+     "observations": 5
+    },
+    {
+     "slug": "five_lined_skink",
+     "observations": 5
+    },
+    {
+     "slug": "osprey",
+     "observations": 5
+    },
+    {
+     "slug": "wild_turkey",
+     "observations": 4
+    },
+    {
+     "slug": "belted_kingfisher",
+     "observations": 4
+    },
+    {
+     "slug": "brown_headed_nuthatch",
+     "observations": 4
+    },
+    {
+     "slug": "red_bellied_woodpecker",
+     "observations": 4
+    },
+    {
+     "slug": "marbled_salamander",
+     "observations": 4
+    },
+    {
+     "slug": "carolina_mantis",
+     "observations": 4
+    },
+    {
+     "slug": "carolina_chickadee",
+     "observations": 4
+    },
+    {
+     "slug": "copes_gray_treefrog",
+     "observations": 4
+    },
+    {
+     "slug": "american_robin",
+     "observations": 3
+    },
+    {
+     "slug": "eastern_bluebird",
+     "observations": 3
+    },
+    {
+     "slug": "eastern_newt",
+     "observations": 3
+    },
+    {
+     "slug": "rough_green_snake",
+     "observations": 3
+    },
+    {
+     "slug": "eastern_kingsnake",
+     "observations": 3
+    },
+    {
+     "slug": "virginia_opossum",
+     "observations": 3
+    },
+    {
+     "slug": "luna_moth",
+     "observations": 3
+    },
+    {
+     "slug": "eastern_tiger_swallowtail",
+     "observations": 3
+    },
+    {
+     "slug": "american_bullfrog",
+     "observations": 3
+    }
+   ]
+  }
+ ]
+}
