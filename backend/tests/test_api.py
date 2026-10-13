@@ -80,6 +80,33 @@ def test_species_seeded(client, fake):
     assert client.get(f"/species/{r['number']}", headers=h).json()["slug"] == "coyote"
 
 
+def test_safety_on_dex_entry(client):
+    bear = client.get("/species/american_black_bear/dex").json()
+    assert bear["safety"] == "danger" and bear["safe_distance"] and bear["safety_note"]
+    assert client.get("/species/house_finch/dex").json()["safety"] == "none"
+
+
+def test_dropped_species_are_retired(client, tmp_path):
+    from app import states
+    from app.db import SessionLocal
+    from app.main import seed_species
+    ca = states.get("CA")
+    trimmed = tmp_path / "species.csv"
+    lines = ca.species_csv.read_text(encoding="utf-8").splitlines()
+    trimmed.write_text("\n".join(l for l in lines if not l.startswith(("garibaldi,", "coyote,")))
+                       + "\n", encoding="utf-8")
+    with SessionLocal() as db:
+        seed_species(db, with_files("CA", species_csv=trimmed))
+    assert client.get("/species/garibaldi").status_code == 404  # on no list any more
+    assert len(client.get("/species").json()) == 98
+    # The coyote left California's list but is still on North Carolina's.
+    assert "coyote" not in {s["slug"] for s in client.get("/species").json()}
+    assert client.get("/species/coyote", params={"state": "NC"}).status_code == 200
+    with SessionLocal() as db:
+        seed_species(db, states.all_states())
+    assert client.get("/species/garibaldi").status_code == 200
+
+
 def test_register_login_me(client):
     signup(client)
     assert client.post("/auth/register", json={"email": "ANA@example.com", "username": "other",
@@ -298,7 +325,7 @@ def test_species_per_state(client):
     assert len(nc) == 100 and nc[0]["slug"] == "red_wolf"
     assert "northern_cardinal" in {s["slug"] for s in nc}
     assert "california_condor" not in {s["slug"] for s in nc}
-    assert client.get("/species", headers=h).json()[0]["slug"] == "mountain_lion"  # California by default
+    assert client.get("/species", headers=h).json()[0]["slug"] == "ringtail"  # California by default
     # Shared species: one identity, rarity and name per state.
     assert client.get("/species/american_black_bear").json()["rarity"] == "rare"
     assert client.get("/species/american_black_bear", params={"state": "NC"}).json()["rarity"] == "uncommon"
@@ -338,13 +365,15 @@ def test_capture_only_counts_the_players_state(client, fake):
 def test_dex_entry_per_state(client):
     h = seen_everything(client)
     r = client.get("/species/american_alligator/dex", params={"state": "NC"}, headers=h).json()
-    assert "Greenfield Lake" in r["where_to_find"] and r["caution"] and r["size"]
+    assert "Greenfield Lake" in r["where_to_find"] and r["size"]
+    assert r["safety"] == "danger" and r["safe_distance"] and r["safety_note"]
     # Shared species: North Carolina text replaces California-only text.
     ca = client.get("/species/elk/dex", headers=h).json()
     nc = client.get("/species/elk/dex", params={"state": "NC"}, headers=h).json()
     assert "Point Reyes" in ca["where_to_find"] and "Cataloochee" in nc["where_to_find"]
     assert "Tule" in ca["fun_fact"] and "Tule" not in nc["fun_fact"]
-    assert nc["size"] == ca["size"] and ca["caution"] is None
+    assert nc["size"] == ca["size"] and nc["safety"] == ca["safety"] == "danger"
+    assert "Smoky" in nc["safety_note"] and "Smoky" not in ca["safety_note"]
     assert client.get("/map/NC").json()["rings"]
 
 

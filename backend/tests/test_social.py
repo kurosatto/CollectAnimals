@@ -190,7 +190,7 @@ def test_news_feed(client, fake):
     ana, bob, cyd = (signup(client, n) for n in ("ana", "bob", "cyd"))
     catch(client, fake, bob, "coyote", latitude=36.9741, longitude=-122.0308)       # Santa Cruz
     catch(client, fake, cyd, "bobcat", latitude=36.9741, longitude=-122.0308)       # rare
-    catch(client, fake, cyd, "mountain_lion", latitude=34.10, longitude=-118.80)    # legendary
+    catch(client, fake, cyd, "ringtail", latitude=34.10, longitude=-118.80)    # legendary
     catch(client, fake, ana, "coyote")                                              # no location
 
     feed = client.get("/feed", headers=ana).json()
@@ -200,7 +200,7 @@ def test_news_feed(client, fake):
     coyote = items["bob:coyote"]
     assert coyote["place"] == "near Santa Cruz" and coyote["latitude"] == 37.0
     assert coyote["url"] and coyote["caught_at"]
-    # ana hasn't unlocked the bobcat or the mountain lion: no name, no photo.
+    # ana hasn't unlocked the bobcat or the ringtail: no name, no photo.
     hidden = [p for p in feed["photos"] if p["username"] == "cyd"]
     assert all(p["url"] is None and p["species"]["common_name"] is None for p in hidden)
     rare, legendary = sorted(hidden, key=lambda p: p["species"]["rarity"] == "legendary")
@@ -334,7 +334,7 @@ def test_profile(client, fake):
     ana, bob, cyd = (signup(client, n) for n in ("ana", "bob", "cyd"))
     catch(client, fake, bob, "coyote", latitude=36.9741, longitude=-122.0308)
     catch(client, fake, bob, "bobcat")
-    catch(client, fake, bob, "mountain_lion", latitude=34.10, longitude=-118.80)
+    catch(client, fake, bob, "ringtail", latitude=34.10, longitude=-118.80)
     catch(client, fake, ana, "coyote")
     catch(client, fake, cyd, "coyote")
     coyote_id = next(p["id"] for p in client.get("/species/coyote/photos", headers=ana).json()["photos"]
@@ -366,7 +366,7 @@ def test_profile(client, fake):
     client.post("/friends/requests/ana/accept", headers=bob)
     p = client.get("/users/bob", headers=ana).json()
     assert p["friendship"] == "friends" and len(p["photos"]) == 3 and p["hidden_photos"] == 0
-    assert p["legendaries"][0]["common_name"] == "Mountain Lion"
+    assert p["legendaries"][0]["common_name"] == "Ringtail"
     assert client.get("/users/ana", headers=ana).json()["friendship"] == "self"
 
 

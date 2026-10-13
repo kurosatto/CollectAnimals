@@ -1,7 +1,7 @@
 """Pokédex entries: size, weight and fun fact (species/details.csv, shared by
 all states) plus, per state, where each species has been seen (ranges), the
 parks it shows up at (hotspots) and state-specific text (the state's dex CSV:
-where_to_find, a caution, and overrides of shared facts that only make sense
+where_to_find, and overrides of shared facts that only make sense
 in another state). All files are optional; missing data just leaves fields empty.
 """
 
@@ -27,7 +27,8 @@ _base_state: str | None = None
 # hotspots.json lists every species with >= 3 sightings at a park; only show the
 # ones a visitor has a real chance of finding.
 MIN_HOTSPOT_OBSERVATIONS = 20
-STATE_FIELDS = ("where_to_find", "fun_fact", "active_time", "spotting_tip", "caution")
+STATE_FIELDS = ("where_to_find", "fun_fact", "active_time", "spotting_tip",
+                "safety", "safe_distance", "safety_note")
 
 
 def _read_csv(path: Path) -> dict[str, dict]:

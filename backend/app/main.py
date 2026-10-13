@@ -33,7 +33,8 @@ STATIC_DIR = Path(__file__).parent / "static"
 
 def seed_species(db: Session, state_list: list[st.State]) -> None:
     """Upsert species and each state's list from the CSVs, so editing a list doesn't
-    need a migration. A species on several lists is one row; its shared fields
+    need a migration. Species dropped from a list leave that state's Dex, Hotspots
+    and matching; their rows stay because old captures point at them. A species on several lists is one row; its shared fields
     come from the first state that lists it, rarity and name are kept per state."""
     existing = {s.slug: s for s in db.scalars(select(Species))}
     members = {(m.state, m.species_id): m for m in db.scalars(select(StateSpecies))}
@@ -227,11 +228,21 @@ def list_species(state: str | None = Query(None), user: User | None = Depends(op
     return [species_out(m.species, m.species_id in revealed, m) for m in state_species(db, code)]
 
 
+def _species_in(key: str, code: str, db: Session) -> tuple[Species, StateSpecies | None]:
+    """A species by number or slug, with its entry on `code`'s list if it has one."""
+    s = find_species(db, key)
+    lists = {m.state: m for m in db.scalars(select(StateSpecies).where(StateSpecies.species_id == s.id))}
+    # A species dropped from every list is retired: old captures keep pointing at it,
+    # but it's gone from the game.
+    if not lists:
+        raise HTTPException(404, "Unknown species")
+    return s, lists.get(code)
+
+
 @app.get("/species/{key}", response_model=SpeciesOut)
 def get_species(key: str, state: str | None = Query(None), user: User | None = Depends(optional_user),
                 db: Session = Depends(get_db)):
-    s = find_species(db, key)
-    m = state_member(db, state_or_404(state).code, s.id)
+    s, m = _species_in(key, state_or_404(state).code, db)
     return species_out(s, s.id in revealed_species_ids(db, user), m)
 
 
@@ -254,12 +265,11 @@ def state_outline(state: str):
 def get_dex_entry(key: str, state: str | None = Query(None), user: User | None = Depends(optional_user),
                   db: Session = Depends(get_db)):
     """Size, weight, active time, season, hotspot parks, the sighting map and
-    safety cautions show even while the name is hidden. The where-to-find and
+    safety advice show even while the name is hidden. The where-to-find and
     spotting tips can name the animal, so they wait until it's revealed, and so
     does the fun fact (your own capture or a friend's reveals it)."""
     code = state_or_404(state).code
-    s = find_species(db, key)
-    m = state_member(db, code, s.id)
+    s, m = _species_in(key, code, db)
     d = dex.details(s.slug, code)
     revealed = s.id in revealed_species_ids(db, user)
     caught = user is not None and db.scalar(select(Badge.id).where(
@@ -269,7 +279,8 @@ def get_dex_entry(key: str, state: str | None = Query(None), user: User | None =
                   where_to_find=d.get("where_to_find") if revealed else None,
                   active_time=d.get("active_time"),
                   spotting_tip=d.get("spotting_tip") if revealed else None,
-                  caution=d.get("caution") or None,
+                  safety=d.get("safety") or "none", safe_distance=d.get("safe_distance") or None,
+                  safety_note=d.get("safety_note") or None,
                   hotspots=dex.hotspots_for(s.slug, code), range=dex.range_for(s.slug, code),
                   season=dex.season_for(s.slug, code), captured=caught)
 
