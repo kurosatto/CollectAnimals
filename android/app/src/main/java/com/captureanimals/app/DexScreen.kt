@@ -1,4 +1,4 @@
-package com.collectanimals.app
+package com.captureanimals.app
 
 import android.graphics.BitmapFactory
 import androidx.activity.compose.BackHandler
@@ -45,9 +45,9 @@ import java.util.Date
 import kotlin.math.cos
 import kotlin.math.ln
 
-/** Full-page Pokédex entry for one species. */
+/** Full-page Field Guide entry for one species. */
 @Composable
-fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: Pokedex, onBack: () -> Unit) {
+fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: FieldGuide, onBack: () -> Unit) {
     BackHandler(onBack = onBack)
     val details = dex.details[s.slug]
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -72,12 +72,12 @@ fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: Pokedex, onBack:
             } else {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     PixelSprite(s.slug, caught = false, Modifier.size(128.dp))
-                    Text("Not caught yet", color = MaterialTheme.colorScheme.outline)
+                    Text("Not captured yet", color = MaterialTheme.colorScheme.outline)
                 }
             }
         }
         if (badge != null) {
-            Text("Caught ${badge.count}× — first on " +
+            Text("Captured ${badge.count}× — first on " +
                 DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(badge.firstCaughtAt)),
                 style = MaterialTheme.typography.bodyMedium)
         }
@@ -92,7 +92,7 @@ fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: Pokedex, onBack:
                 Column(Modifier.padding(16.dp)) {
                     Text("Fun fact", style = MaterialTheme.typography.labelLarge, color = rarityColor(s.rarity))
                     // Same as the web page: the fact is the reward for catching it.
-                    Text(if (badge != null) details.funFact else "🔒 Catch one to unlock its fun fact.",
+                    Text(if (badge != null) details.funFact else "🔒 Capture one to unlock its fun fact.",
                         style = MaterialTheme.typography.bodyLarge)
                 }
             }
@@ -159,7 +159,7 @@ class CaliforniaFrame(o: Outline) {
 
 /** California outline with the species' sighting cells shaded on top. */
 @Composable
-fun RangeMap(dex: Pokedex, slug: String, color: Color, modifier: Modifier = Modifier) {
+fun RangeMap(dex: FieldGuide, slug: String, color: Color, modifier: Modifier = Modifier) {
     val g = dex.ranges
     val frame = remember(dex) { CaliforniaFrame(dex.outline) }
     val land = MaterialTheme.colorScheme.surfaceVariant

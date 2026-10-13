@@ -1,15 +1,15 @@
-package com.collectanimals.app
+package com.captureanimals.app
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
-class PokedexTest {
+class FieldGuideTest {
 
     @Test
     fun csvHandlesQuotesAndCommas() {
-        val rows = Pokedex.parseCsv("a,b\r\n\"x, y\",\"say \"\"hi\"\"\"\n")
+        val rows = FieldGuide.parseCsv("a,b\r\n\"x, y\",\"say \"\"hi\"\"\"\n")
         assertEquals(listOf(listOf("a", "b"), listOf("x, y", "say \"hi\"")), rows)
     }
 
@@ -17,9 +17,9 @@ class PokedexTest {
     @Test
     fun everySpeciesHasDetailsAndARange() {
         val dir = File("../../species")
-        val dex = Pokedex.parse(File(dir, "details.csv").readText(), File(dir, "ranges.json").readText(),
+        val dex = FieldGuide.parse(File(dir, "details.csv").readText(), File(dir, "ranges.json").readText(),
             File(dir, "california_outline.json").readText())
-        val slugs = Pokedex.parseCsv(File(dir, "california_100.csv").readText()).drop(1).map { it[0] }
+        val slugs = FieldGuide.parseCsv(File(dir, "california_100.csv").readText()).drop(1).map { it[0] }
         assertEquals(100, slugs.size)
         for (slug in slugs) {
             val d = dex.details[slug]
@@ -40,10 +40,10 @@ class PokedexTest {
     @Test
     fun hotspotsMatchTheWeb() {
         val dir = File("../../species")
-        val dex = Pokedex.parse(File(dir, "details.csv").readText(), File(dir, "ranges.json").readText(),
+        val dex = FieldGuide.parse(File(dir, "details.csv").readText(), File(dir, "ranges.json").readText(),
             File(dir, "california_outline.json").readText(), File(dir, "hotspots.json").readText())
         assertTrue(dex.parks.size >= 20)
-        assertTrue(dex.parks.all { p -> p.species.all { it.observations >= Pokedex.MIN_HOTSPOT_OBSERVATIONS } })
+        assertTrue(dex.parks.all { p -> p.species.all { it.observations >= FieldGuide.MIN_HOTSPOT_OBSERVATIONS } })
         assertEquals("Pinnacles National Park", dex.hotspotsFor("california_condor").first())
         assertTrue("Elkhorn Slough & Moss Landing" in dex.hotspotsFor("sea_otter"))
         val d = dex.details.getValue("california_condor")

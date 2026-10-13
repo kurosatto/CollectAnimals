@@ -1,4 +1,4 @@
-package com.collectanimals.app
+package com.captureanimals.app
 
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image

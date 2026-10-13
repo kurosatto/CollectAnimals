@@ -159,12 +159,43 @@ cd android && ./gradlew assembleDebug testDebugUnitTest
 # APK: android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Needs JDK 17 and the Android SDK (platform 35; set `sdk.dir` in
+Needs JDK 17 and the Android SDK (platform 36; set `sdk.dir` in
 `android/local.properties` or `ANDROID_HOME`). The APK is ~88 MB, mostly the
 60 MB model; int8 quantization shrank it to 15 MB but changed the top-1
 answer on 11% of photos, so it ships in float32. `PreprocessTest` checks the
 Kotlin resize/crop against PIL/torchvision; `ClassifierTest` runs the real
 model through it when `data/images` is present.
+
+### Release build for Google Play
+
+Play takes a signed app bundle (`.aab`). Make an upload key once and keep it
+and its passwords backed up in two places outside the repo (losing it means
+asking Google support to reset it):
+
+```bash
+keytool -genkeypair -v -keystore ~/capture-animals-upload.jks -alias upload \
+  -keyalg RSA -keysize 2048 -validity 10000
+```
+
+Then create `android/keystore.properties` (git-ignored, never commit it):
+
+```properties
+storeFile=/full/path/to/capture-animals-upload.jks
+storePassword=...
+keyAlias=upload
+keyPassword=...
+```
+
+```bash
+cd android && ./gradlew bundleRelease
+# AAB: android/app/build/outputs/bundle/release/app-release.aab
+```
+
+On CI the same values can come from `UPLOAD_STORE_FILE`, `UPLOAD_STORE_PASSWORD`,
+`UPLOAD_KEY_ALIAS` and `UPLOAD_KEY_PASSWORD`. Without any of them the bundle is
+built unsigned. The package name `com.captureanimals.app` is permanent once
+uploaded. CI also checks that the native libraries are 16 KB page-aligned,
+which Play requires.
 
 ## Tests
 

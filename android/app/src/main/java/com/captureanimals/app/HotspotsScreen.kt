@@ -1,4 +1,4 @@
-package com.collectanimals.app
+package com.captureanimals.app
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
@@ -43,13 +43,13 @@ import kotlin.math.min
 /**
  * Parks where many of the 100 can be spotted (species/hotspots.json), matching the
  * web page's Hotspots card: a map with a pin per park, a list sorted by species count,
- * and a detail card whose species chips open their Pokédex pages.
+ * and a detail card whose species chips open their Field Guide pages.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun HotspotsScreen(info: ModelInfo, dex: Pokedex, collection: Map<String, Badge>,
-                   onOpenDex: (String) -> Unit, onBack: () -> Unit) {
-    BackHandler(onBack = onBack)
+fun HotspotsScreen(info: ModelInfo, dex: FieldGuide, collection: Map<String, Badge>,
+                   onOpenDex: (String) -> Unit, onBack: (() -> Unit)? = null) {
+    if (onBack != null) BackHandler(onBack = onBack)
     val parks = remember(dex) { dex.parks.sortedByDescending { it.species.size } }
     var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
     val selected = parks.firstOrNull { it.id == selectedId }
@@ -57,10 +57,12 @@ fun HotspotsScreen(info: ModelInfo, dex: Pokedex, collection: Map<String, Badge>
     val scroll = rememberScrollState()
 
     Column(Modifier.fillMaxSize().verticalScroll(scroll).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        TextButton(onClick = onBack, contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) {
-            Text("‹ Back")
+        if (onBack != null) {
+            TextButton(onClick = onBack, contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) {
+                Text("‹ Back")
+            }
+            Text("Hotspots", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         }
-        Text("Hotspots", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         Text("Parks where you can spot lots of the 100. Tap a park to see which ones.",
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
 
@@ -73,7 +75,7 @@ fun HotspotsScreen(info: ModelInfo, dex: Pokedex, collection: Map<String, Badge>
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(park.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                     Text(park.blurb, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
-                    Text("You can spot ${park.species.size} of the 100 here. You've caught $caught of them.",
+                    Text("You can spot ${park.species.size} of the 100 here. You've captured $caught of them.",
                         style = MaterialTheme.typography.bodyLarge)
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         park.species.forEach { ps ->
@@ -110,7 +112,7 @@ fun HotspotsScreen(info: ModelInfo, dex: Pokedex, collection: Map<String, Badge>
 
 /** California outline with a pin per park; bigger pins have more species. Tap a pin to select it. */
 @Composable
-private fun HotspotsMap(dex: Pokedex, parks: List<Park>, selectedId: String?, modifier: Modifier,
+private fun HotspotsMap(dex: FieldGuide, parks: List<Park>, selectedId: String?, modifier: Modifier,
                        onSelect: (String) -> Unit) {
     val frame = remember(dex) { CaliforniaFrame(dex.outline) }
     val land = MaterialTheme.colorScheme.surfaceVariant

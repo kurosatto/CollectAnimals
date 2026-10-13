@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -5,22 +7,45 @@ plugins {
 }
 
 android {
-    namespace = "com.collectanimals.app"
-    compileSdk = 35
+    namespace = "com.captureanimals.app"
+    compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.collectanimals.app"
+        // Permanent once uploaded to Google Play.
+        applicationId = "com.captureanimals.app"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 3
-        versionName = "0.2.0"
+        targetSdk = 36
+        versionCode = 7
+        versionName = "0.6.0"
         // Phones are arm64; leaving out other ABIs keeps the APK ~15 MB smaller.
         ndk { abiFilters += listOf("arm64-v8a") }
+    }
+
+    // Upload key for Google Play, read from android/keystore.properties (git-ignored) or,
+    // on CI, from UPLOAD_* environment variables. Without either, bundleRelease still
+    // builds, just unsigned. See "Release build" in the README.
+    val keystoreProps = Properties().apply {
+        rootProject.file("keystore.properties").takeIf { it.exists() }?.inputStream()?.use(::load)
+    }
+    fun signingValue(prop: String, env: String): String? =
+        keystoreProps.getProperty(prop) ?: System.getenv(env)
+    val uploadStoreFile = signingValue("storeFile", "UPLOAD_STORE_FILE")
+
+    signingConfigs {
+        if (uploadStoreFile != null) {
+            create("upload") {
+                storeFile = rootProject.file(uploadStoreFile)
+                storePassword = signingValue("storePassword", "UPLOAD_STORE_PASSWORD")
+                keyAlias = signingValue("keyAlias", "UPLOAD_KEY_ALIAS")
+                keyPassword = signingValue("keyPassword", "UPLOAD_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfigs.findByName("upload")?.let { signingConfig = it }
         }
     }
     compileOptions {
@@ -29,7 +54,7 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true }
-    // Pokédex data (details.csv, ranges.json, california_outline.json) is shared with
+    // Field Guide data (details.csv, ranges.json, california_outline.json) is shared with
     // the web app, so it's packaged straight from species/ rather than copied.
     sourceSets { getByName("main") { assets.srcDir("../../species") } }
     // The model is read straight from the APK; compressing 60 MB of floats gains little.
@@ -47,11 +72,11 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
     implementation("androidx.exifinterface:exifinterface:1.3.7")
-    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.20.0")
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.22.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     testImplementation("junit:junit:4.13.2")
     // Desktop build of the same runtime, so the classifier can be checked on the JVM.
-    testImplementation("com.microsoft.onnxruntime:onnxruntime:1.20.0")
+    testImplementation("com.microsoft.onnxruntime:onnxruntime:1.22.0")
     testImplementation("org.json:json:20240303")
 }
