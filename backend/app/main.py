@@ -3,7 +3,7 @@ import io
 import time
 import uuid
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, UploadFile, status
@@ -539,7 +539,9 @@ def my_collection(state: str | None = Query(None), user: User = Depends(current_
                   db: Session = Depends(get_db)):
     """The player's Field Guide for their state (or ?state=). Badges are per
     species, so a coyote captured in California also counts in North Carolina."""
-    code = state_or_404(state or user.state).code
+    st = state_or_404(state or user.state)
+    code = st.code
+    month = (datetime.now(timezone.utc) + timedelta(hours=st.utc_offset)).month
     badges = {b.species_id: b for b in db.scalars(select(Badge).where(Badge.user_id == user.id))}
     friends = friend_ids(db, user.id)
     friends_caught = dict(db.execute(
@@ -556,6 +558,7 @@ def my_collection(state: str | None = Query(None), user: User = Depends(current_
             species=species_out(m.species, b is not None or friends_caught.get(m.species_id, 0) > 0, m),
             caught=b is not None, capture_count=b.capture_count if b else 0,
             earned_at=b.earned_at if b else None, friends_caught=friends_caught.get(m.species_id, 0),
-            photo_url=storage.url(photos[m.species_id]) if m.species_id in photos else None))
+            photo_url=storage.url(photos[m.species_id]) if m.species_id in photos else None,
+            in_season=dex.in_season(m.species.slug, code, month)))
     return CollectionOut(state=code, caught=sum(e.caught for e in entries), total=len(entries),
                          entries=entries)

@@ -85,6 +85,21 @@ def season_for(slug: str, state: str) -> dict | None:
     return {"months": entry["months"], "hours": entry["hours"], "night_ratio": ratio}
 
 
+# A month counts as "maybe visible" when it has at least this share of the
+# species' best month's sightings.
+IN_SEASON_SHARE = 0.25
+
+
+def in_season(slug: str, state: str, month: int) -> bool:
+    """Could the species turn up in this state this month (1-12)? True without
+    season data, since nothing rules it out."""
+    entry = _seasons.get(state, {}).get(slug)
+    months = entry["months"] if entry else None
+    if not months or not max(months):
+        return True
+    return months[month - 1] >= IN_SEASON_SHARE * max(months)
+
+
 def hotspots(state: str) -> list[dict]:
     return _hotspots.get(state, [])
 

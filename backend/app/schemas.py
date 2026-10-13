@@ -140,6 +140,8 @@ class CollectionEntry(BaseModel):
     earned_at: datetime | None = None
     friends_caught: int = 0
     photo_url: str | None = None
+    # Seen in the state this month in real sightings (or no data to say otherwise).
+    in_season: bool = True
 
 
 class CollectionOut(BaseModel):

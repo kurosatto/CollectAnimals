@@ -26,6 +26,13 @@ class Season(val months: IntArray, val hours: IntArray) {
         return NIGHT_HOURS.sumOf { hours.getOrElse(it) { 0 } }.toDouble() / total
     }
 
+    /** Could it turn up in this month (1-12)? Like the website: at least a quarter
+     *  of its best month's sightings, or true with no data to rule it out. */
+    fun likelyIn(month: Int): Boolean {
+        val max = months.maxOrNull() ?: 0
+        return max == 0 || months.getOrElse(month - 1) { 0 } >= IN_SEASON_SHARE * max
+    }
+
     /** "Apr–Jun, Sep" style runs of months with at least 60% of the peak, like the website. */
     fun bestMonths(): String {
         val max = months.maxOrNull() ?: 0
@@ -43,6 +50,7 @@ class Season(val months: IntArray, val hours: IntArray) {
 
     companion object {
         val NIGHT_HOURS = (0..5) + (20..23)
+        const val IN_SEASON_SHARE = 0.25
         val MONTH_NAMES = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
     }
 }
@@ -76,6 +84,9 @@ class FieldGuide(val details: Map<String, SpeciesDetails>, val ranges: RangeGrid
     private val avgNightShare: Double? by lazy {
         seasons.values.mapNotNull { it.nightShare }.takeIf { it.isNotEmpty() }?.average()
     }
+
+    /** Whether the species may be out this month (1-12); true without season data. */
+    fun inSeason(slug: String, month: Int): Boolean = seasons[slug]?.likelyIn(month) ?: true
 
     /** The website's day/night hint, or null when there isn't enough data. */
     fun dayNight(slug: String): String? {

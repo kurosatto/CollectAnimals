@@ -44,6 +44,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -174,7 +175,7 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel()) 
                 TABS[tab].key == "social" -> SocialScreen(state, social, onSignIn = { showAccount = true }) { dexSlug = it }
                 TABS[tab].key == "gallery" && state.account != null ->
                     OnlinePhotosScreen(social, onOpenDex = { dexSlug = it }, onDeleted = vm::reloadCollection)
-                TABS[tab].key == "collection" -> CollectionScreen(info, state.collection) { dexSlug = it }
+                TABS[tab].key == "collection" -> CollectionScreen(info, dex, state.collection) { dexSlug = it }
                 TABS[tab].key == "gallery" -> GalleryScreen(state.allSpecies, state.collection, onOpenDex = { dexSlug = it },
                     onDelete = vm::deleteCatch)
                 dex != null -> HotspotsScreen(info, dex, state.collection, onOpenDex = { dexSlug = it })
@@ -350,12 +351,23 @@ fun RarityTag(rarity: String) {
             .padding(horizontal = 10.dp, vertical = 2.dp))
 }
 
+/** Field Guide sections, like the website: captured, maybe out this month, not this time of year. */
+private val SECTIONS = listOf("Captured", "Maybe out now", "Not out this time of year")
+
 @Composable
-fun CollectionScreen(info: ModelInfo, collection: Map<String, Badge>, onOpen: (String) -> Unit) {
+fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, collection: Map<String, Badge>, onOpen: (String) -> Unit) {
     val categories = remember(info) { listOf("all") + info.species.map { it.category }.distinct() }
     var category by rememberSaveable { mutableStateOf("all") }
+    val month = remember { java.util.Calendar.getInstance().get(java.util.Calendar.MONTH) + 1 }
     val shown = info.dexOrder.filter { category == "all" || it.category == category }
-    val tiers = shown.groupBy { it.rarity }
+    // dexOrder is already common to legendary, so each section keeps that order.
+    val sections = shown.groupBy { s ->
+        when {
+            s.slug in collection -> 0
+            dex?.inSeason(s.slug, month) != false -> 1
+            else -> 2
+        }
+    }
 
     LazyVerticalGrid(columns = GridCells.Adaptive(72.dp), modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(8.dp),
@@ -368,14 +380,22 @@ fun CollectionScreen(info: ModelInfo, collection: Map<String, Badge>, onOpen: (S
                 }
             }
         }
-        tiers.forEach { (rarity, list) ->
-            item(span = { GridItemSpan(maxLineSpan) }, key = "tier-$rarity") {
-                Text("${rarity.replaceFirstChar { it.uppercase() }} · ${list.count { it.slug in collection }} / ${list.size} captured",
-                    style = MaterialTheme.typography.titleSmall, color = rarityColor(rarity),
-                    modifier = Modifier.padding(top = 8.dp))
+        SECTIONS.forEachIndexed { i, title ->
+            val list = sections[i] ?: return@forEachIndexed
+            item(span = { GridItemSpan(maxLineSpan) }, key = "section-$i") {
+                Column(Modifier.padding(top = 12.dp)) {
+                    Text("$title · ${list.size}", style = MaterialTheme.typography.titleMedium)
+                    HorizontalDivider()
+                }
             }
-            items(list, key = { it.slug }) { s ->
-                SpeciesTile(info.dexNumber(s.slug), s, collection[s.slug]) { onOpen(s.slug) }
+            list.groupBy { it.rarity }.forEach { (rarity, tier) ->
+                item(span = { GridItemSpan(maxLineSpan) }, key = "tier-$i-$rarity") {
+                    Text(rarity.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.labelMedium,
+                        color = rarityColor(rarity), modifier = Modifier.padding(top = 4.dp))
+                }
+                items(tier, key = { it.slug }) { s ->
+                    SpeciesTile(info.dexNumber(s.slug), s, collection[s.slug]) { onOpen(s.slug) }
+                }
             }
         }
     }
@@ -414,16 +434,16 @@ fun SpeciesTile(number: Int, s: Species, badge: Badge?, onClick: () -> Unit) {
     }
 }
 
-private val LOCATION_PERMISSIONS = arrayOf(
+internal val LOCATION_PERMISSIONS = arrayOf(
     android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION)
 
-private fun hasLocationPermission(context: android.content.Context) = LOCATION_PERMISSIONS.any {
+internal fun hasLocationPermission(context: android.content.Context) = LOCATION_PERMISSIONS.any {
     androidx.core.content.ContextCompat.checkSelfPermission(context, it) == android.content.pm.PackageManager.PERMISSION_GRANTED
 }
 
 /** The phone's last known position; the server blurs it before anyone else sees it. */
 @android.annotation.SuppressLint("MissingPermission")
-private fun lastLocation(context: android.content.Context): Pair<Double, Double>? {
+internal fun lastLocation(context: android.content.Context): Pair<Double, Double>? {
     if (!hasLocationPermission(context)) return null
     val lm = context.getSystemService(android.content.Context.LOCATION_SERVICE) as android.location.LocationManager
     return lm.getProviders(true).mapNotNull { runCatching { lm.getLastKnownLocation(it) }.getOrNull() }

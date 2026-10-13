@@ -64,6 +64,7 @@
   .hot-pin.on { fill:var(--accent); }
   .zoom-map { height:360px; border-radius:10px; overflow:hidden; z-index:0; }
   @media (max-width:640px) { .zoom-map { height:300px; } }
+  .locate-btn { width:34px; height:34px; background:#fff; cursor:pointer; font-size:1rem; padding:0; }
   .hot-list { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
   .hot-list button { background:var(--bg); color:var(--ink); border:1px solid var(--line); padding:6px 10px; font-size:.85rem; }
   .hot-list button.on { border-color:var(--accent); color:var(--accent); }
@@ -143,7 +144,10 @@
   #grid .tile .name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   #grid .tile .sci, #grid .tile .rarity { display:none; }
   #grid .tile .status { margin-top:1px; font-size:.65rem; min-height:1em; }
-  #grid .tier { grid-column:1 / -1; }
+  #grid .tier { grid-column:1 / -1; margin:6px 0 0; font-size:.68rem; }
+  #grid .section { grid-column:1 / -1; margin:16px 0 0; font-weight:700; font-size:.95rem;
+                   border-bottom:1px solid var(--line); padding-bottom:3px; }
+  #grid .section:first-child { margin-top:0; }
   .status.mine { color:var(--accent); }
   .status.friend { color:var(--muted); }
   .sprite.shadow { opacity:.55; }
@@ -474,38 +478,52 @@ async function loadCollection() {
   $("progress").textContent = `${c.caught} / ${c.total}`;
   const grid = $("grid");
   grid.innerHTML = "";
-  let tier = null;
-  entries.forEach((e, i) => {
-    const s = e.species;
-    if (s.rarity !== tier) {
-      tier = s.rarity;
-      const all = entries.filter((x) => x.species.rarity === tier);
-      const h = el("div", "tier", `${tier} · ${all.filter((x) => x.caught).length}/${all.length}`);
-      h.style.color = `var(--${tier})`;
-      grid.append(h);
-    }
-    const t = document.createElement("div");
-    // Three looks: yours (captured), seen by a friend (colour sprite, not yours), unknown (silhouette).
-    const state = e.caught ? "mine" : s.revealed ? "friend" : "unknown";
-    t.className = "tile " + state + (state === "mine" ? "" : " locked") + (state === "friend" ? " hinted" : "");
-    const sprite = s.slug ? spriteUrl(s.slug, true) : silhouetteUrl(s.number);
-    t.innerHTML = `<div class="num">#${String(i + 1).padStart(3, "0")}</div>
-      <img class="sprite${state === "unknown" ? " shadow" : ""}" alt="" src="${sprite}"><div class="name"></div>
-      <div class="muted sci"></div><div class="rarity" style="color:var(--${s.rarity})">${s.rarity}</div>
-      <div class="status"></div>`;
-    t.querySelector(".name").textContent = s.revealed
-      ? s.common_name + (e.capture_count > 1 ? ` ×${e.capture_count}` : "") : "???";
-    t.querySelector(".sci").textContent = s.revealed ? s.scientific_name : `Unknown ${s.category}`;
-    const st = t.querySelector(".status");
-    if (state === "mine") { st.textContent = "✓"; st.classList.add("mine"); t.title = "Captured"; }
-    else if (state === "friend") {
-      st.textContent = `👥 ${e.friends_caught}`;
-      st.classList.add("friend");
-      t.title = `Not yours yet: ${e.friends_caught} friend${e.friends_caught > 1 ? "s" : ""} captured it`;
-    }
-    t.onclick = () => openDex(s.number, i + 1, e.caught);
-    grid.append(t);
-  });
+  // Three sections: captured, could be out now (seen this month), not this time of year.
+  // Inside each, common to legendary; the numbers keep the full Field Guide order.
+  const SECTIONS = [
+    ["Captured", (e) => e.caught],
+    ["Maybe out now", (e) => !e.caught && e.in_season !== false],
+    ["Not out this time of year", (e) => !e.caught && e.in_season === false],
+  ];
+  const numbered = entries.map((e, i) => [e, i]);
+  for (const [title, keep] of SECTIONS) {
+    const list = numbered.filter(([e]) => keep(e));
+    if (!list.length) continue;
+    grid.append(el("div", "section", `${title} · ${list.length}`));
+    let tier = null;
+    list.forEach(([e, i]) => addTile(e, i, tier !== e.species.rarity && (tier = e.species.rarity)));
+  }
+}
+
+function addTile(e, i, tier) {
+  const grid = $("grid");
+  const s = e.species;
+  if (tier) {
+    const h = el("div", "tier", tier);
+    h.style.color = `var(--${tier})`;
+    grid.append(h);
+  }
+  const t = document.createElement("div");
+  // Three looks: yours (captured), seen by a friend (colour sprite, not yours), unknown (silhouette).
+  const state = e.caught ? "mine" : s.revealed ? "friend" : "unknown";
+  t.className = "tile " + state + (state === "mine" ? "" : " locked") + (state === "friend" ? " hinted" : "");
+  const sprite = s.slug ? spriteUrl(s.slug, true) : silhouetteUrl(s.number);
+  t.innerHTML = `<div class="num">#${String(i + 1).padStart(3, "0")}</div>
+    <img class="sprite${state === "unknown" ? " shadow" : ""}" alt="" src="${sprite}"><div class="name"></div>
+    <div class="muted sci"></div><div class="rarity" style="color:var(--${s.rarity})">${s.rarity}</div>
+    <div class="status"></div>`;
+  t.querySelector(".name").textContent = s.revealed
+    ? s.common_name + (e.capture_count > 1 ? ` ×${e.capture_count}` : "") : "???";
+  t.querySelector(".sci").textContent = s.revealed ? s.scientific_name : `Unknown ${s.category}`;
+  const st = t.querySelector(".status");
+  if (state === "mine") { st.textContent = "✓"; st.classList.add("mine"); t.title = "Captured"; }
+  else if (state === "friend") {
+    st.textContent = `👥 ${e.friends_caught}`;
+    st.classList.add("friend");
+    t.title = `Not yours yet: ${e.friends_caught} friend${e.friends_caught > 1 ? "s" : ""} captured it`;
+  }
+  t.onclick = () => openDex(s.number, i + 1, e.caught);
+  grid.append(t);
 }
 
 // Colour pixel art once caught, a silhouette until then.
@@ -718,7 +736,7 @@ function showTab(name) {
   if (location.hash !== "#" + name) history.replaceState(null, "", "#" + name);
   if (name === "photos") loadMyPhotos();
   // Leaflet can't measure a map while its tab is hidden.
-  if (name === "parks" && hotMap) setTimeout(() => hotMap.invalidateSize(), 0);
+  if (name === "parks" && hotMap) setTimeout(frameHotMap, 0);
   window.scrollTo(0, 0);
 }
 document.querySelectorAll("#tabs button").forEach((b) => (b.onclick = () => showTab(b.dataset.tab)));
@@ -1035,6 +1053,8 @@ async function loadHotspots() {
 // Parks map: a zoomable street map (Leaflet + OpenStreetMap: towns, roads,
 // borders). Falls back to the plain outline if the map library can't load.
 let hotMap = null, hotLayer = null;
+// The parks map shows only the player's state: framed to it, no zooming out past it,
+// and everything outside the outline dimmed. 📍 adds a "you are here" dot.
 function drawHotMap() {
   const box = $("hot-map");
   if (!hotMap || hotMap.stateCode !== myState.code) {
@@ -1042,13 +1062,30 @@ function drawHotMap() {
     box.innerHTML = "";
     box.classList.remove("dex-map");  // its svg sizing would break Leaflet's layers
     box.classList.add("zoom-map");
-    hotMap = L.map(box, { scrollWheelZoom: false, zoomSnap: 0.5 });
+    hotMap = L.map(box, { scrollWheelZoom: false, zoomSnap: 0.25, maxBoundsViscosity: 1 });
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 17,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(hotMap);
-    const b = myState.bounds;
-    hotMap.fitBounds([[b.south, b.west], [b.north, b.east]]);
+    if (OUTLINE.length) {
+      const holes = OUTLINE.map((ring) => ring.map(([lon, lat]) => [lat, lon]));
+      const css = getComputedStyle(document.documentElement);
+      L.polygon([[[-89, -360], [-89, 360], [89, 360], [89, -360]], ...holes], { interactive: false,
+        stroke: false, fillColor: css.getPropertyValue("--bg").trim() || "#f4f3ee", fillOpacity: 0.85 }).addTo(hotMap);
+      L.polygon(holes, { interactive: false, fill: false, weight: 2,
+        color: css.getPropertyValue("--accent").trim() || "#2f6f4f" }).addTo(hotMap);
+    }
+    const locate = L.control({ position: "topleft" });
+    locate.onAdd = () => {
+      const b = L.DomUtil.create("button", "leaflet-bar locate-btn");
+      b.type = "button"; b.title = "Show where I am"; b.textContent = "📍";
+      L.DomEvent.disableClickPropagation(b);
+      b.onclick = showMeOnMap;
+      return b;
+    };
+    locate.addTo(hotMap);
     hotMap.stateCode = myState.code;
     hotLayer = L.layerGroup().addTo(hotMap);
+    frameHotMap();
+    if (feedPos) showMeOnMap();
   }
   hotLayer.clearLayers();
   const css = getComputedStyle(document.documentElement);
@@ -1059,6 +1096,34 @@ function drawHotMap() {
       fillOpacity: 0.9 })
       .bindTooltip(`${h.name}: ${h.species.length} species`).on("click", () => selectHotspot(i)).addTo(hotLayer);
   });
+}
+
+// Fit the state to the map's current size; also the furthest you can zoom out.
+function frameHotMap() {
+  if (!hotMap) return;
+  const b = myState.bounds;
+  const state = L.latLngBounds([[b.south, b.west], [b.north, b.east]]);
+  const box = $("hot-map");
+  // Hidden tab: Leaflet can't measure it yet, so just give it a view; showTab re-frames.
+  if (!box.offsetWidth || !box.offsetHeight) { hotMap.fitBounds(state); return; }
+  hotMap.invalidateSize();
+  hotMap.setMinZoom(0);
+  const z = hotMap.getBoundsZoom(state);
+  hotMap.setMinZoom(z);
+  hotMap.setMaxBounds(state.pad(0.15));
+  hotMap.fitBounds(state);
+}
+
+let meMarker = null;
+async function showMeOnMap() {
+  const pos = await myPosition();
+  if (!pos || !hotMap) { if (!pos) alert("Couldn't get your location. Check that location is allowed for this site."); return; }
+  if (meMarker) meMarker.remove();
+  meMarker = L.circleMarker([pos.lat, pos.lon], { radius: 7, weight: 3, color: "#fff", fillColor: "#2a7de1",
+    fillOpacity: 1 }).bindTooltip("You are here").addTo(hotMap);
+  const b = myState.bounds;
+  if (pos.lat >= b.south && pos.lat <= b.north && pos.lon >= b.west && pos.lon <= b.east)
+    hotMap.setView([pos.lat, pos.lon], Math.max(hotMap.getZoom(), 9));
 }
 
 function drawHotspots() {

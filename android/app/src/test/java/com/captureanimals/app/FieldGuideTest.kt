@@ -66,6 +66,15 @@ class FieldGuideTest {
     }
 
     @Test
+    fun inSeasonMatchesTheWebsite() {
+        // Same rule as backend dex.in_season: at least a quarter of the best month.
+        val spring = Season(intArrayOf(0, 0, 1, 8, 10, 4, 2, 0, 0, 0, 0, 0), IntArray(0))
+        assertTrue(spring.likelyIn(5) && spring.likelyIn(6) && spring.likelyIn(4))
+        assertTrue(!spring.likelyIn(3) && !spring.likelyIn(7) && !spring.likelyIn(10))
+        assertTrue(Season(IntArray(12), IntArray(0)).likelyIn(1))  // no data: can't rule it out
+    }
+
+    @Test
     fun fieldGuideOrderIsRarityThenKind() {
         val species = listOf(
             Species("condor", "Condor", "", "bird", "legendary"),

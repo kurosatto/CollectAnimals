@@ -242,6 +242,42 @@ def test_dex_season_compares_night_sightings_with_the_average(client):
     dex.load(settings.details_csv, real)
 
 
+def test_collection_marks_species_in_season(client):
+    import json
+    from dataclasses import replace
+    from datetime import datetime, timedelta, timezone
+    from pathlib import Path
+
+    from app import dex
+    from app import states as st
+    from app.config import settings
+
+    month = (datetime.now(timezone.utc) - timedelta(hours=8)).month
+    now_only = [0] * 12
+    now_only[month - 1] = 9
+    never_now = [9] * 12
+    never_now[month - 1] = 1
+    tmp = Path(tempfile.mkdtemp())
+    (tmp / "seasons.json").write_text(json.dumps({"species": {
+        "coyote": {"months": now_only, "hours": [1] * 24},
+        "ringtail": {"months": never_now, "hours": [1] * 24}}}))
+    real = st.all_states()
+    dex.load(settings.details_csv, [replace(s, seasons=tmp / "seasons.json") if s.code == "CA" else s
+                                    for s in real])
+    try:
+        entries = client.get("/me/collection", headers=signup(client, "sky")).json()["entries"]
+        by_num = {e["species"]["number"]: e["in_season"] for e in entries}
+        from app.db import SessionLocal
+        from app.models import Species
+        with SessionLocal() as db:
+            num = {s.slug: s.id for s in db.query(Species)}
+        assert by_num[num["coyote"]] is True
+        assert by_num[num["ringtail"]] is False
+        assert by_num[num["bobcat"]] is True  # no data: can't rule it out
+    finally:
+        dex.load(settings.details_csv, real)
+
+
 def test_california_outline(client):
     r = client.get("/map/california")
     assert r.status_code == 200 and len(r.json()["rings"][0]) > 100

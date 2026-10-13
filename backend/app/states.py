@@ -26,6 +26,8 @@ class State:
     bounds: dict
     # Sightings by month and hour (ml/build_seasons.py); optional.
     seasons: Path | None = None
+    # Hours from UTC (standard time), for "this month" in the state.
+    utc_offset: int = 0
 
 
 _states: dict[str, State] = {}
@@ -42,7 +44,8 @@ def load(states_json: Path) -> None:
             code=s["code"], name=s["name"], species_csv=root / s["species"],
             dex_csv=root / s["dex"] if s.get("dex") else None,
             outline=root / s["outline"], ranges=root / s["ranges"], hotspots=root / s["hotspots"],
-            bounds=s["bounds"], seasons=root / s["seasons"] if s.get("seasons") else None)
+            bounds=s["bounds"], seasons=root / s["seasons"] if s.get("seasons") else None,
+            utc_offset=s.get("utc_offset", 0))
     default_code = data.get("default", next(iter(_states)))
 
 
