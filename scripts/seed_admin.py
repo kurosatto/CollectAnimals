@@ -33,6 +33,11 @@ def main():
     r.raise_for_status()
     h = {"Authorization": f"Bearer {r.json()['access_token']}"}
     requests.patch(f"{u}/me/settings", json={"show_in_feed": False, "is_private": True}, headers=h).raise_for_status()
+    # New accounts start as friends with the example bots, and friends see
+    # private photos; this account should be visible to nobody else.
+    for f in requests.get(f"{u}/friends", headers=h).json()["friends"]:
+        if f.get("is_bot"):
+            requests.delete(f"{u}/friends/{f['username']}", headers=h)
 
     have = {p["species"]["slug"] for p in requests.get(f"{u}/me/album", headers=h).json()["photos"]}
     rng = random.Random(1)
