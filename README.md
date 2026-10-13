@@ -2,11 +2,16 @@
 
 A Pokémon-style game for real wildlife: photograph animals around you, and if
 the model recognizes one of the species on the list, you earn its badge.
-Starting with 100 California species (`species/california_100.csv`).
+Each state has its own 100 species: California (`species/california_100.csv`)
+and North Carolina (`species/north_carolina_100.csv`), listed in
+`species/states.json`. Players pick a state at sign-up and can change it later;
+the Dex, Hotspots and maps follow it. A species on several lists keeps one
+slug, so a badge counts in every state that lists it.
 
 ## Layout
 
-- `species/` — the species list (slug, names, category, rarity)
+- `species/` — `states.json`, each state's species list (slug, names, category, rarity) and map
+  data, the shared Dex facts (`details.csv`), and per-state Dex text (`<state>_dex.csv`)
 - `ml/` — dataset download from iNaturalist, fine-tuning, and a predict CLI
 - `backend/` — FastAPI app: accounts, photo captures, badges, collection, and a minimal web page
 - `android/` — offline Android app: runs the model on the phone, badges stored on the device
@@ -32,6 +37,22 @@ python ml/predict.py models/ca100.pt some_photo.jpg
 
 The backend loads `models/ca100.pt` by default (override with `MODEL_PATH`).
 A capture only counts above `MATCH_THRESHOLD` (default 0.7; see the table below).
+
+### Adding a state
+
+Add its CSV, `<state>_dex.csv` and an entry in `species/states.json`, then:
+
+```bash
+python ml/fetch_inat.py --states NC --size small --out data/images   # only the new species + NC "other"
+python ml/build_ranges.py --state NC      # sighting maps + state outline
+python ml/build_hotspots.py --state NC    # parks (add the state's parks to PARKS first)
+python ml/train.py --data data/images --out models/ca_nc.pt
+MODEL_PATH=models/ca_nc.pt uvicorn app.main:app   # or copy it over models/ca100.pt
+```
+
+The model has one class per species across all states; the backend only
+counts the player's state (other states' classes are dropped and the rest
+rescaled).
 
 ## Current model
 
