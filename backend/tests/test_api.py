@@ -67,6 +67,28 @@ def test_species_seeded(client):
     assert client.get("/species/coyote").json()["scientific_name"] == "Canis latrans"
 
 
+def test_safety_on_dex_entry(client):
+    bear = client.get("/species/american_black_bear/dex").json()
+    assert bear["safety"] == "danger" and bear["safe_distance"] and bear["safety_note"]
+    assert client.get("/species/house_finch/dex").json()["safety"] == "none"
+
+
+def test_dropped_species_are_retired(client, tmp_path):
+    from app.db import SessionLocal
+    from app.main import seed_species
+    from app.config import settings
+    trimmed = tmp_path / "species.csv"
+    lines = settings.species_csv.read_text(encoding="utf-8").splitlines()
+    trimmed.write_text("\n".join(l for l in lines if not l.startswith("coyote,")) + "\n", encoding="utf-8")
+    with SessionLocal() as db:
+        seed_species(db, trimmed)
+    assert client.get("/species/coyote").status_code == 404
+    assert len(client.get("/species").json()) == 99
+    with SessionLocal() as db:
+        seed_species(db, settings.species_csv)
+    assert client.get("/species/coyote").status_code == 200
+
+
 def test_register_login_me(client):
     signup(client)
     assert client.post("/auth/register", json={"email": "ANA@example.com", "username": "other",

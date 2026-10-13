@@ -1,5 +1,5 @@
 slug,common_name,scientific_name,category,rarity
-mountain_lion,Mountain Lion,Puma concolor,mammal,legendary
+ringtail,Ringtail,Bassariscus astutus,mammal,legendary
 bobcat,Bobcat,Lynx rufus,mammal,rare
 coyote,Coyote,Canis latrans,mammal,common
 gray_fox,Gray Fox,Urocyon cinereoargenteus,mammal,uncommon
@@ -11,30 +11,27 @@ raccoon,Raccoon,Procyon lotor,mammal,common
 striped_skunk,Striped Skunk,Mephitis mephitis,mammal,uncommon
 virginia_opossum,Virginia Opossum,Didelphis virginiana,mammal,common
 western_gray_squirrel,Western Gray Squirrel,Sciurus griseus,mammal,common
-fox_squirrel,Fox Squirrel,Sciurus niger,mammal,common
 california_ground_squirrel,California Ground Squirrel,Otospermophilus beecheyi,mammal,common
 desert_cottontail,Desert Cottontail,Sylvilagus audubonii,mammal,common
-brush_rabbit,Brush Rabbit,Sylvilagus bachmani,mammal,common
 black_tailed_jackrabbit,Black-tailed Jackrabbit,Lepus californicus,mammal,common
-sea_otter,Sea Otter,Enhydra lutris,mammal,rare
+sea_otter,Sea Otter,Enhydra lutris,mammal,uncommon
 north_american_river_otter,North American River Otter,Lontra canadensis,mammal,rare
 california_sea_lion,California Sea Lion,Zalophus californianus,mammal,common
 harbor_seal,Harbor Seal,Phoca vitulina,mammal,common
-northern_elephant_seal,Northern Elephant Seal,Mirounga angustirostris,mammal,uncommon
+northern_elephant_seal,Northern Elephant Seal,Mirounga angustirostris,mammal,rare
 humpback_whale,Humpback Whale,Megaptera novaeangliae,mammal,legendary
 yellow_bellied_marmot,Yellow-bellied Marmot,Marmota flaviventris,mammal,uncommon
 american_pika,American Pika,Ochotona princeps,mammal,rare
 california_quail,California Quail,Callipepla californica,bird,common
 red_tailed_hawk,Red-tailed Hawk,Buteo jamaicensis,bird,common
 red_shouldered_hawk,Red-shouldered Hawk,Buteo lineatus,bird,common
-coopers_hawk,Cooper's Hawk,Accipiter cooperii,bird,uncommon
 american_kestrel,American Kestrel,Falco sparverius,bird,uncommon
 bald_eagle,Bald Eagle,Haliaeetus leucocephalus,bird,rare
 golden_eagle,Golden Eagle,Aquila chrysaetos,bird,rare
 osprey,Osprey,Pandion haliaetus,bird,uncommon
 turkey_vulture,Turkey Vulture,Cathartes aura,bird,common
 california_condor,California Condor,Gymnogyps californianus,bird,legendary
-great_horned_owl,Great Horned Owl,Bubo virginianus,bird,rare
+great_horned_owl,Great Horned Owl,Bubo virginianus,bird,uncommon
 barn_owl,Barn Owl,Tyto furcata,bird,rare
 annas_hummingbird,Anna's Hummingbird,Calypte anna,bird,common
 acorn_woodpecker,Acorn Woodpecker,Melanerpes formicivorus,bird,common
@@ -58,6 +55,7 @@ brown_pelican,Brown Pelican,Pelecanus occidentalis,bird,common
 mallard,Mallard,Anas platyrhynchos,bird,common
 canada_goose,Canada Goose,Branta canadensis,bird,common
 western_gull,Western Gull,Larus occidentalis,bird,common
+black_oystercatcher,Black Oystercatcher,Haematopus bachmani,bird,uncommon
 greater_roadrunner,Greater Roadrunner,Geococcyx californianus,bird,rare
 western_fence_lizard,Western Fence Lizard,Sceloporus occidentalis,reptile,common
 southern_alligator_lizard,Southern Alligator Lizard,Elgaria multicarinata,reptile,common
@@ -73,29 +71,31 @@ western_pond_turtle,Western Pond Turtle,Actinemys marmorata,reptile,rare
 desert_tortoise,Mojave Desert Tortoise,Gopherus agassizii,reptile,legendary
 sierran_treefrog,Sierran Treefrog,Pseudacris sierra,amphibian,common
 california_newt,California Newt,Taricha torosa,amphibian,uncommon
-rough_skinned_newt,Rough-skinned Newt,Taricha granulosa,amphibian,uncommon
 ensatina,Ensatina,Ensatina eschscholtzii,amphibian,uncommon
 american_bullfrog,American Bullfrog,Lithobates catesbeianus,amphibian,common
-arboreal_salamander,Arboreal Salamander,Aneides lugubris,amphibian,rare
 monarch,Monarch,Danaus plexippus,invertebrate,uncommon
 western_tiger_swallowtail,Western Tiger Swallowtail,Papilio rutulus,invertebrate,common
-anise_swallowtail,Anise Swallowtail,Papilio zelicaon,invertebrate,uncommon
 pipevine_swallowtail,Pipevine Swallowtail,Battus philenor,invertebrate,uncommon
 mourning_cloak,Mourning Cloak,Nymphalis antiopa,invertebrate,uncommon
 painted_lady,Painted Lady,Vanessa cardui,invertebrate,common
 western_honey_bee,Western Honey Bee,Apis mellifera,invertebrate,common
 convergent_lady_beetle,Convergent Lady Beetle,Hippodamia convergens,invertebrate,common
 flame_skimmer,Flame Skimmer,Libellula saturata,invertebrate,common
-common_green_darner,Common Green Darner,Anax junius,invertebrate,uncommon
 california_mantis,California Mantis,Stagmomantis californica,invertebrate,uncommon
 western_black_widow,Western Black Widow,Latrodectus hesperus,invertebrate,uncommon
-pacific_banana_slug,Pacific Banana Slug,Ariolimax columbianus,invertebrate,uncommon
-ten_lined_june_beetle,Ten-lined June Beetle,Polyphylla decemlineata,invertebrate,rare
+pacific_banana_slug,Banana Slug,Ariolimax,invertebrate,uncommon
 ochre_sea_star,Ochre Sea Star,Pisaster ochraceus,marine,common
 bat_star,Bat Star,Patiria miniata,marine,common
 purple_sea_urchin,Purple Sea Urchin,Strongylocentrotus purpuratus,marine,common
 giant_green_anemone,Giant Green Anemone,Anthopleura xanthogrammica,marine,common
 lined_shore_crab,Lined Shore Crab,Pachygrapsus crassipes,marine,common
-pacific_sea_nettle,Pacific Sea Nettle,Chrysaora fuscescens,marine,uncommon
-garibaldi,Garibaldi,Hypsypops rubicundus,marine,uncommon
-leopard_shark,Leopard Shark,Triakis semifasciata,marine,rare
+blue_banded_hermit_crab,Blue-banded Hermit Crab,Pagurus samuelis,marine,common
+black_turban_snail,Black Turban Snail,Tegula funebralis,marine,common
+california_mussel,California Mussel,Mytilus californianus,marine,common
+gooseneck_barnacle,Gooseneck Barnacle,Pollicipes polymerus,marine,common
+owl_limpet,Owl Limpet,Lottia gigantea,marine,uncommon
+california_sea_hare,California Sea Hare,Aplysia californica,marine,uncommon
+hopkins_rose,Hopkins' Rose,Okenia rosacea,marine,rare
+tidepool_sculpin,Tidepool Sculpin,Oligocottus maculosus,marine,uncommon
+by_the_wind_sailor,By-the-wind Sailor,Velella velella,marine,common
+garibaldi,Garibaldi,Hypsypops rubicundus,marine,rare

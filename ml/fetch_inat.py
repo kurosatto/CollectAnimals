@@ -80,7 +80,9 @@ def api_get(path: str, **params) -> dict:
 
 def resolve_taxon(scientific_name: str) -> dict:
     """Map a scientific name to an iNat taxon (handles synonyms/renames)."""
-    data = api_get("/taxa", q=scientific_name, rank="species", is_active="true", per_page=10)
+    # A one-word name ("Ariolimax") is a genus: all its species count as one class.
+    rank = "genus" if len(scientific_name.split()) == 1 else "species"
+    data = api_get("/taxa", q=scientific_name, rank=rank, is_active="true", per_page=10)
     results = data["results"]
     if not results:
         raise LookupError(f"no iNaturalist taxon for {scientific_name!r}")

@@ -46,6 +46,10 @@ class DexOut(BaseModel):
     where_to_find: str | None = None
     active_time: str | None = None
     spotting_tip: str | None = None
+    # "none", "caution" or "danger"; safe_distance and safety_note are shown on the entry.
+    safety: str = "none"
+    safe_distance: str | None = None
+    safety_note: str | None = None
     hotspots: list[str] = []
     # {"grid": {lon0, lat0, step, cols, rows}, "cells": [[col, row, count], ...]}
     range: dict | None = None

@@ -25,18 +25,36 @@ from .schemas import (CaptureOut, CollectionEntry, CollectionOut, DexOut, Hotspo
 STATIC_DIR = Path(__file__).parent / "static"
 
 
+RETIRED = "retired"
+
+
 def seed_species(db: Session, csv_path: Path) -> None:
-    """Upsert species from the CSV so editing the list doesn't need a migration."""
+    """Upsert species from the CSV so editing the list doesn't need a migration.
+
+    Species dropped from the CSV are kept (old captures point at them) but
+    marked retired, which hides them from the list, the collection and matching.
+    """
     existing = {s.slug: s for s in db.scalars(select(Species))}
+    listed = set()
     with open(csv_path, newline="", encoding="utf-8") as fh:
         for row in csv.DictReader(fh):
+            listed.add(row["slug"])
             s = existing.get(row["slug"]) or Species(slug=row["slug"])
             s.common_name = row["common_name"]
             s.scientific_name = row["scientific_name"]
             s.category = row["category"]
             s.rarity = row["rarity"]
+            if s.region == RETIRED:
+                s.region = "california"
             db.add(s)
+    for slug, s in existing.items():
+        if slug not in listed:
+            s.region = RETIRED
     db.commit()
+
+
+def active_species():
+    return select(Species).where(Species.region != RETIRED)
 
 
 @asynccontextmanager
@@ -114,12 +132,12 @@ def me(user: User = Depends(current_user)):
 
 @app.get("/species", response_model=list[SpeciesOut])
 def list_species(db: Session = Depends(get_db)):
-    return db.scalars(select(Species).order_by(Species.id)).all()
+    return db.scalars(active_species().order_by(Species.id)).all()
 
 
 @app.get("/species/{slug}", response_model=SpeciesOut)
 def get_species(slug: str, db: Session = Depends(get_db)):
-    s = db.scalar(select(Species).where(Species.slug == slug))
+    s = db.scalar(active_species().where(Species.slug == slug))
     if not s:
         raise HTTPException(404, "Unknown species")
     return s
@@ -141,13 +159,15 @@ def get_dex_entry(slug: str, db: Session = Depends(get_db)):
     return DexOut(species=SpeciesOut.model_validate(s), size=d.get("size"), weight=d.get("weight"),
                   fun_fact=d.get("fun_fact"), where_to_find=d.get("where_to_find"),
                   active_time=d.get("active_time"), spotting_tip=d.get("spotting_tip"),
+                  safety=d.get("safety") or "none", safe_distance=d.get("safe_distance") or None,
+                  safety_note=d.get("safety_note") or None,
                   hotspots=dex.hotspots_for(slug), range=dex.range_for(slug))
 
 
 @app.get("/hotspots", response_model=list[HotspotOut])
 def list_hotspots(db: Session = Depends(get_db)):
     """Parks and the listed species seen there, parks with the most species first."""
-    by_slug = {s.slug: s for s in db.scalars(select(Species))}
+    by_slug = {s.slug: s for s in db.scalars(active_species())}
     out = []
     for p in dex.hotspots():
         species = [HotspotSpecies(slug=sp["slug"], common_name=by_slug[sp["slug"]].common_name,
@@ -188,7 +208,7 @@ async def create_capture(photo: UploadFile = File(...), user: User = Depends(cur
     preds = model.predict(image, k=3)
     top = preds[0]
     species_by_slug = {s.slug: s for s in db.scalars(
-        select(Species).where(Species.slug.in_([p.label for p in preds])))}
+        active_species().where(Species.slug.in_([p.label for p in preds])))}
     species = species_by_slug.get(top.label)
     matched = species is not None and top.probability >= settings.match_threshold
 
@@ -241,9 +261,9 @@ async def create_capture(photo: UploadFile = File(...), user: User = Depends(cur
 def my_collection(user: User = Depends(current_user), db: Session = Depends(get_db)):
     badges = {b.species_id: b for b in db.scalars(select(Badge).where(Badge.user_id == user.id))}
     entries = []
-    for s in db.scalars(select(Species).order_by(Species.id)):
+    for s in db.scalars(active_species().order_by(Species.id)):
         b = badges.get(s.id)
         entries.append(CollectionEntry(
             species=SpeciesOut.model_validate(s), caught=b is not None,
             capture_count=b.capture_count if b else 0, earned_at=b.earned_at if b else None))
-    return CollectionOut(caught=len(badges), total=len(entries), entries=entries)
+    return CollectionOut(caught=sum(e.caught for e in entries), total=len(entries), entries=entries)
