@@ -62,6 +62,8 @@
   @media (max-width:640px) { .hot-wrap { grid-template-columns:1fr; } }
   .hot-pin { fill:var(--legendary); stroke:var(--card); stroke-width:2; cursor:pointer; }
   .hot-pin.on { fill:var(--accent); }
+  .zoom-map { height:360px; border-radius:10px; overflow:hidden; z-index:0; }
+  @media (max-width:640px) { .zoom-map { height:300px; } }
   .hot-list { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
   .hot-list button { background:var(--bg); color:var(--ink); border:1px solid var(--line); padding:6px 10px; font-size:.85rem; }
   .hot-list button.on { border-color:var(--accent); color:var(--accent); }
@@ -86,8 +88,11 @@
   .seg button.on { background:var(--accent); color:#fff; border-color:var(--accent); }
   .dex-photos { padding:0 16px 16px; }
   .dex-photos h3 { margin:16px 0 0; font-size:1rem; }
-  ul.people { list-style:none; padding:0; margin:8px 0; display:grid; gap:6px; }
-  ul.people li { display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; }
+  ul.people { list-style:none; padding:0; margin:8px 0; display:grid; grid-template-columns:minmax(0,1fr); gap:6px; }
+  /* One line per person, bot or not: the name shortens, the buttons don't wrap. */
+  ul.people li { display:flex; justify-content:space-between; align-items:center; gap:8px; min-width:0; }
+  ul.people .who { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  ul.people li > span:last-child { flex-shrink:0; white-space:nowrap; }
   ul.people button { padding:4px 10px; font-size:.85rem; }
   button.ghost { background:none; color:var(--muted); border:1px solid var(--line); }
   .feed { display:grid; gap:10px; margin-top:10px; }
@@ -130,6 +135,15 @@
   .grid .tier:first-child { margin-top:0; }
   .tile .status, .dex .status { font-size:.75rem; font-weight:600; margin-top:4px; }
   .tile.mine { border-color:var(--accent); border-width:2px; }
+  /* Field Guide: small sprite tiles so lots fit on a phone screen. */
+  #grid { grid-template-columns:repeat(auto-fill,minmax(64px,1fr)); gap:5px; }
+  #grid .tile { padding:5px 4px; font-size:.72rem; text-align:center; line-height:1.2; }
+  #grid .tile .sprite { width:100%; height:auto; aspect-ratio:1; max-width:56px; margin:2px auto; display:block; }
+  #grid .tile .num { font-size:.62rem; }
+  #grid .tile .name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #grid .tile .sci, #grid .tile .rarity { display:none; }
+  #grid .tile .status { margin-top:1px; font-size:.65rem; min-height:1em; }
+  #grid .tier { grid-column:1 / -1; }
   .status.mine { color:var(--accent); }
   .status.friend { color:var(--muted); }
   .sprite.shadow { opacity:.55; }
@@ -260,6 +274,8 @@
   </div>
   <div id="album-photos"></div>
 </div></dialog>
+<link rel="stylesheet" href="/vendor/leaflet/leaflet.css">
+<script src="/vendor/leaflet/leaflet.js"></script>
 <script>
 const $ = (id) => document.getElementById(id);
 let token = null;
@@ -477,19 +493,15 @@ async function loadCollection() {
       <img class="sprite${state === "unknown" ? " shadow" : ""}" alt="" src="${sprite}"><div class="name"></div>
       <div class="muted sci"></div><div class="rarity" style="color:var(--${s.rarity})">${s.rarity}</div>
       <div class="status"></div>`;
-    if (e.photo_url) {
-      const img = document.createElement("img");
-      img.className = "thumb"; img.src = e.photo_url; img.alt = ""; img.loading = "lazy";
-      t.prepend(img);
-    }
     t.querySelector(".name").textContent = s.revealed
       ? s.common_name + (e.capture_count > 1 ? ` ×${e.capture_count}` : "") : "???";
     t.querySelector(".sci").textContent = s.revealed ? s.scientific_name : `Unknown ${s.category}`;
     const st = t.querySelector(".status");
-    if (state === "mine") { st.textContent = "✓ Captured"; st.classList.add("mine"); }
+    if (state === "mine") { st.textContent = "✓"; st.classList.add("mine"); t.title = "Captured"; }
     else if (state === "friend") {
-      st.textContent = `Not yours yet · 👥 ${e.friends_caught} friend${e.friends_caught > 1 ? "s" : ""} captured it`;
+      st.textContent = `👥 ${e.friends_caught}`;
       st.classList.add("friend");
+      t.title = `Not yours yet: ${e.friends_caught} friend${e.friends_caught > 1 ? "s" : ""} captured it`;
     }
     t.onclick = () => openDex(s.number, i + 1, e.caught);
     grid.append(t);
@@ -705,6 +717,8 @@ function showTab(name) {
   document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b.dataset.tab === name));
   if (location.hash !== "#" + name) history.replaceState(null, "", "#" + name);
   if (name === "photos") loadMyPhotos();
+  // Leaflet can't measure a map while its tab is hidden.
+  if (name === "parks" && hotMap) setTimeout(() => hotMap.invalidateSize(), 0);
   window.scrollTo(0, 0);
 }
 document.querySelectorAll("#tabs button").forEach((b) => (b.onclick = () => showTab(b.dataset.tab)));
@@ -873,7 +887,7 @@ async function loadFeed(more = false) {
   if (!more) { feedBefore = null; $("feed").innerHTML = ""; }
   const seg = $("feed-seg");
   seg.innerHTML = "";
-  for (const [v, label] of [["near", "Near me"], ["friends", "Friends"], ["all", "All California"]]) {
+  for (const [v, label] of [["near", "Near me"], ["friends", "Friends"], ["state", myState.name], ["all", "🌎 Global"]]) {
     const b = el("button", feedScope === v ? "on" : "", label);
     b.onclick = () => { feedScope = v; loadFeed(); };
     seg.append(b);
@@ -894,16 +908,17 @@ async function loadFeed(more = false) {
     const pos = await myPosition();
     if (!pos) {
       // No location permission: fall back to the whole state.
-      feedScope = "all";
-      $("feed-note").textContent = "Allow location to see captures near you. Showing all of California.";
-      seg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.textContent === "All California"));
+      feedScope = "state";
+      $("feed-note").textContent = `Allow location to see captures near you. Showing all of ${myState.name}.`;
+      seg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.textContent === myState.name));
       sel.remove();
-      params.set("scope", "all");
+      params.set("scope", "state");
     } else {
       params.set("lat", pos.lat.toFixed(2)); params.set("lon", pos.lon.toFixed(2));
       params.set("radius_km", feedRadius);
     }
   }
+  if (params.get("scope") === "state") params.set("state", myState.code);
   if ($("feed-uncaught").checked) params.set("uncaught", "true");
   if (feedBefore) params.set("before", feedBefore);
   try {
@@ -936,7 +951,8 @@ async function loadFriends() {
     for (const p of people) {
       const li = el("li");
       const who = el("span");
-      who.append(userLink(p.username), p.is_bot ? " 🤖" : "", p.caught ? ` · ${p.caught} captured` : "");
+      who.className = "who";
+      who.append(p.is_bot ? "🤖 " : "", userLink(p.username), p.caught ? ` · ${p.caught} captured` : "");
       li.append(who);
       const btns = el("span");
       for (const [label, cls, fn] of actions) {
@@ -1016,7 +1032,37 @@ async function loadHotspots() {
   if (hotspots.length) drawHotspots();
 }
 
+// Parks map: a zoomable street map (Leaflet + OpenStreetMap: towns, roads,
+// borders). Falls back to the plain outline if the map library can't load.
+let hotMap = null, hotLayer = null;
+function drawHotMap() {
+  const box = $("hot-map");
+  if (!hotMap || hotMap.stateCode !== myState.code) {
+    if (hotMap) hotMap.remove();
+    box.innerHTML = "";
+    box.classList.remove("dex-map");  // its svg sizing would break Leaflet's layers
+    box.classList.add("zoom-map");
+    hotMap = L.map(box, { scrollWheelZoom: false, zoomSnap: 0.5 });
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 17,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(hotMap);
+    const b = myState.bounds;
+    hotMap.fitBounds([[b.south, b.west], [b.north, b.east]]);
+    hotMap.stateCode = myState.code;
+    hotLayer = L.layerGroup().addTo(hotMap);
+  }
+  hotLayer.clearLayers();
+  const css = getComputedStyle(document.documentElement);
+  hotspots.forEach((h, i) => {
+    const on = hotSelected === i;
+    L.circleMarker([h.lat, h.lon], { radius: 5 + Math.min(6, h.species.length / 10), weight: on ? 3 : 1.5,
+      color: "#fff", fillColor: css.getPropertyValue(on ? "--accent" : "--legendary").trim() || "#c78a1e",
+      fillOpacity: 0.9 })
+      .bindTooltip(`${h.name}: ${h.species.length} species`).on("click", () => selectHotspot(i)).addTo(hotLayer);
+  });
+}
+
 function drawHotspots() {
+  if (window.L) { drawHotMap(); drawHotList(); return; }
   const svg = rangeSvg(null).replace("</svg>", hotspots.map((h, i) => {
     const [x, y] = px(h.lon, h.lat);
     const r = 5 + Math.min(7, h.species.length / 6);
@@ -1029,6 +1075,10 @@ function drawHotspots() {
     c.querySelector("title").textContent = `${h.name}: ${h.species.length} species`;
     c.onclick = () => selectHotspot(+c.dataset.i);
   });
+  drawHotList();
+}
+
+function drawHotList() {
   const list = $("hot-list");
   list.innerHTML = "";
   hotspots.forEach((h, i) => {
