@@ -2,6 +2,10 @@
 
     python tools/make_sprites.py            # writes species/sprites/*.png
     python tools/make_sprites.py --sheet docs/sprites.png   # plus a preview sheet
+    python tools/make_sprites.py --state NC --sheet nc.png  # sheet for one state's list
+
+Species come from every list in species/states.json; one sprite per slug is shared
+by all states.
 
 Every sprite is drawn from code (no photos), so the art is original to this repo
 and has no third-party licence. species/sprites/credits.csv records that per sprite.
@@ -10,30 +14,23 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import sys
 from pathlib import Path
 
 from PIL import Image, ImageDraw
 
 sys.path.insert(0, str(Path(__file__).parent))
+import species_ca_tidepool  # noqa: E402,F401  (registers the drawings in these modules)
+import species_nc  # noqa: E402,F401
 from archetypes import (BLACK, NOSE, PINK, WHITE, beetle_top, bee, bird, butterfly,  # noqa: E402
                         dragonfly, duck, frog, goose, hummingbird, lizard, mammal, owl, pelican,
-                        pinniped, snake, star, turtle, vulture, wader, whale)
+                        mantis, pinniped, S, snake, sprite, star, turtle, vulture, wader, whale)
 from pixel import Sprite, mix, silhouette  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
-SPECIES_CSV = ROOT / "species" / "california_100.csv"
+STATES_JSON = ROOT / "species" / "states.json"
 OUT = ROOT / "species" / "sprites"
-
-S: dict = {}
-
-
-def sprite(slug):
-    def deco(fn):
-        S[slug] = fn
-        return fn
-    return deco
-
 
 # --------------------------------------------------------------------------- mammals
 @sprite("mountain_lion")
@@ -775,23 +772,7 @@ def _(s):
 
 @sprite("california_mantis")
 def _(s):
-    c = "#7ab048"
-    d = mix(c, "#000000", 0.2)
-    s.line(18, 22, 14, 30, d)
-    s.line(21, 22, 24, 30, d)
-    s.line(23, 21, 29, 28, d)
-    s.ellipse(23, 21, 8, 3.2, c, rot=-15)
-    s.ellipse(24, 19, 6, 2.2, "#a8d07a", rot=-15, edge=True)
-    s.path([(17, 22), (13, 14)], 1.4, c)
-    s.path([(12, 16), (8, 19), (7, 14)], 1.1, d)
-    s.path([(14, 17), (11, 21), (10, 16)], 1.1, c)
-    s.poly([(7, 6), (17, 6), (12, 14)], c, edge=True)
-    s.ellipse(8, 6.5, 2.2, 2.2, "#c8e08a", shade=False)
-    s.ellipse(16, 6.5, 2.2, 2.2, "#c8e08a", shade=False)
-    s.px([(8, 6), (16, 6)], EYE_DOT)
-    s.line(10, 5, 6, 0, d)
-    s.line(14, 5, 18, 0, d)
-    s.blush(10, 9)
+    mantis(s, "#7ab048", "#a8d07a", "#c8e08a")
 
 
 @sprite("western_black_widow")
@@ -937,9 +918,19 @@ def _(s):
 
 
 # --------------------------------------------------------------------------- output
-def load_species():
-    with open(SPECIES_CSV, newline="", encoding="utf-8") as f:
-        return list(csv.DictReader(f))
+def load_species(state=None):
+    """Rows from each state's species list (or just `state`), first occurrence of a slug wins."""
+    states = json.loads(STATES_JSON.read_text(encoding="utf-8"))["states"]
+    rows, seen = [], set()
+    for st in states:
+        if state and st["code"] != state.upper():
+            continue
+        with open(STATES_JSON.parent / st["species"], newline="", encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                if r["slug"] not in seen:
+                    seen.add(r["slug"])
+                    rows.append(r)
+    return rows
 
 
 def draw(slug) -> Image.Image:
@@ -969,23 +960,28 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--out", type=Path, default=OUT)
     ap.add_argument("--sheet", type=Path, help="also write a preview sheet PNG here")
+    ap.add_argument("--state", help="only this state's species (e.g. NC)")
     args = ap.parse_args()
 
-    rows = load_species()
+    rows = load_species(args.state)
     missing = [r["slug"] for r in rows if r["slug"] not in S]
     if missing:
         sys.exit(f"no sprite drawn for: {', '.join(missing)}")
+    # Every drawing is written, listed or not, so a species can move between lists
+    # (or a list branch can land later) without the art going missing.
+    slugs = list(S) if not args.state else [r["slug"] for r in rows]
     args.out.mkdir(parents=True, exist_ok=True)
-    for r in rows:
-        img = draw(r["slug"])
-        img.save(args.out / f"{r['slug']}.png", optimize=True)
-        silhouette(img).save(args.out / f"{r['slug']}_silhouette.png", optimize=True)
-    with open(args.out / "credits.csv", "w", newline="", encoding="utf-8") as f:
-        w = csv.writer(f)
-        w.writerow(["slug", "file", "silhouette", "source", "license"])
-        for r in rows:
-            w.writerow([r["slug"], f"{r['slug']}.png", f"{r['slug']}_silhouette.png",
-                        "drawn by tools/make_sprites.py (original pixel art, no photo source)", "CC0-1.0"])
+    for slug in slugs:
+        img = draw(slug)
+        img.save(args.out / f"{slug}.png", optimize=True)
+        silhouette(img).save(args.out / f"{slug}_silhouette.png", optimize=True)
+    if not args.state:
+        with open(args.out / "credits.csv", "w", newline="", encoding="utf-8") as f:
+            w = csv.writer(f)
+            w.writerow(["slug", "file", "silhouette", "source", "license"])
+            for slug in sorted(slugs):
+                w.writerow([slug, f"{slug}.png", f"{slug}_silhouette.png",
+                            "drawn by tools/make_sprites.py (original pixel art, no photo source)", "CC0-1.0"])
     if args.sheet:
         args.sheet.parent.mkdir(parents=True, exist_ok=True)
         color = sheet(rows)
@@ -994,7 +990,7 @@ def main():
         both.alpha_composite(color, (0, 0))
         both.alpha_composite(sil, (0, color.height + 16))
         both.save(args.sheet, optimize=True)
-    print(f"wrote {len(rows) * 2} sprites to {args.out}")
+    print(f"wrote {len(slugs) * 2} sprites to {args.out}")
 
 
 if __name__ == "__main__":

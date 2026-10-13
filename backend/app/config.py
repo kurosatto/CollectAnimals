@@ -29,14 +29,11 @@ class Settings:
     # and internal error details.
     public: bool = field(default_factory=lambda: os.getenv("PUBLIC", "") not in ("", "0", "false"))
     token_ttl_minutes: int = field(default_factory=lambda: int(os.getenv("TOKEN_TTL_MINUTES", "10080")))
-    species_csv: Path = field(default_factory=lambda: Path(os.getenv(
-        "SPECIES_CSV", ROOT / "species" / "california_100.csv")))
+    # Lists each state's species CSV and map files (all in the same folder).
+    states_json: Path = field(default_factory=lambda: Path(os.getenv(
+        "STATES_JSON", ROOT / "species" / "states.json")))
     details_csv: Path = field(default_factory=lambda: Path(os.getenv(
         "DETAILS_CSV", ROOT / "species" / "details.csv")))
-    ranges_json: Path = field(default_factory=lambda: Path(os.getenv(
-        "RANGES_JSON", ROOT / "species" / "ranges.json")))
-    hotspots_json: Path = field(default_factory=lambda: Path(os.getenv(
-        "HOTSPOTS_JSON", ROOT / "species" / "hotspots.json")))
     sprites_dir: Path = field(default_factory=lambda: Path(os.getenv(
         "SPRITES_DIR", ROOT / "species" / "sprites")))
     model_path: Path = field(default_factory=lambda: Path(os.getenv(
