@@ -1,0 +1,280 @@
+package com.captureanimals.app
+
+import android.content.Context
+import android.content.SharedPreferences
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.util.LruCache
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.ByteArrayOutputStream
+import java.net.HttpURLConnection
+import java.net.URL
+import java.net.URLEncoder
+import java.time.OffsetDateTime
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+
+/**
+ * The game server (backend/) for accounts, friends, the news feed and likes: the
+ * same API the website uses. Playing offline needs none of this.
+ *
+ * The server runs on the developer's PC behind a tunnel whose address changes on
+ * every restart, so the app looks up the current one in server.json on the repo's
+ * `server-url` branch (scripts/publish_server_url.py updates it). A typed-in address
+ * wins over the lookup.
+ */
+object Online {
+    const val SERVER_JSON = "https://raw.githubusercontent.com/kurosatto/CollectAnimals/server-url/server.json"
+
+    private lateinit var prefs: SharedPreferences
+    var base: String? = null
+        private set
+    var token: String? = null
+        private set
+    val signedIn get() = token != null && base != null
+
+    fun init(context: Context) {
+        if (::prefs.isInitialized) return
+        prefs = context.getSharedPreferences("online", Context.MODE_PRIVATE)
+        base = prefs.getString("manual_url", null) ?: prefs.getString("looked_up_url", null)
+        token = prefs.getString("token", null)
+    }
+
+    val manualUrl: String? get() = prefs.getString("manual_url", null)
+
+    /** Finds the server: a typed-in address, else the published one. Returns it, or null. */
+    suspend fun resolve(): String? = withContext(Dispatchers.IO) {
+        manualUrl?.let { return@withContext it.also { base = it } }
+        runCatching {
+            val c = URL("$SERVER_JSON?t=${System.currentTimeMillis() / 60_000}").openConnection() as HttpURLConnection
+            c.connectTimeout = 8000; c.readTimeout = 8000
+            c.inputStream.bufferedReader().use { JSONObject(it.readText()).getString("url") }.trimEnd('/')
+        }.getOrNull()?.let { url ->
+            prefs.edit().putString("looked_up_url", url).apply()
+            base = url
+        }
+        base
+    }
+
+    /** A typed-in server address (blank goes back to the published one). */
+    fun setManualUrl(url: String?) {
+        val clean = url?.trim()?.trimEnd('/')?.takeIf { it.isNotEmpty() }
+            ?.let { if (it.startsWith("http")) it else "https://$it" }
+        prefs.edit().apply { if (clean == null) remove("manual_url") else putString("manual_url", clean) }.apply()
+        base = clean ?: prefs.getString("looked_up_url", null)
+    }
+
+    fun setToken(t: String?) {
+        token = t
+        prefs.edit().apply { if (t == null) remove("token") else putString("token", t) }.apply()
+    }
+
+    fun absolute(path: String) = if (path.startsWith("http")) path else "${base ?: ""}$path"
+
+    // --- HTTP -------------------------------------------------------------------------
+
+    class ApiError(val code: Int, message: String) : Exception(message)
+
+    private fun request(method: String, path: String, body: ByteArray? = null, contentType: String? = null,
+                        auth: Boolean = true): String {
+        val server = base ?: throw ApiError(0, "Can't find the game server")
+        val c = URL(server + path).openConnection() as HttpURLConnection
+        c.requestMethod = method
+        c.connectTimeout = 15_000
+        c.readTimeout = 60_000
+        if (auth) token?.let { c.setRequestProperty("Authorization", "Bearer $it") }
+        if (body != null) {
+            c.doOutput = true
+            contentType?.let { c.setRequestProperty("Content-Type", it) }
+            c.outputStream.use { it.write(body) }
+        }
+        val code = try { c.responseCode } catch (e: java.io.IOException) {
+            throw ApiError(0, "Can't reach the game server. Is the PC on?")
+        }
+        val text = (if (code < 400) c.inputStream else c.errorStream)?.bufferedReader()?.use { it.readText() }.orEmpty()
+        if (code == 401 && auth && token != null) setToken(null)
+        if (code >= 400) throw ApiError(code, errorMessage(code, text))
+        return text
+    }
+
+    /** FastAPI errors: {"detail": "..."} or {"detail": [{"msg": ...}]} for validation. */
+    private fun errorMessage(code: Int, text: String): String = runCatching {
+        when (val d = JSONObject(text).get("detail")) {
+            is JSONArray -> (0 until d.length()).joinToString("; ") { d.getJSONObject(it).getString("msg") }
+            else -> d.toString()
+        }
+    }.getOrElse { if (code == 502 || code == 530) "The game server is offline right now" else "Server error ($code)" }
+
+    private suspend fun call(method: String, path: String, json: JSONObject? = null): String =
+        withContext(Dispatchers.IO) {
+            request(method, path, json?.toString()?.toByteArray(), json?.let { "application/json" })
+        }
+
+    private fun q(s: String) = URLEncoder.encode(s, "UTF-8")
+
+    // --- Accounts ---------------------------------------------------------------------
+
+    suspend fun register(email: String, username: String, password: String, state: String) {
+        val r = call("POST", "/auth/register", JSONObject().put("email", email).put("username", username)
+            .put("password", password).put("state", state))
+        setToken(JSONObject(r).getString("access_token"))
+    }
+
+    suspend fun login(ident: String, password: String) = withContext(Dispatchers.IO) {
+        val form = "username=${q(ident)}&password=${q(password)}".toByteArray()
+        val r = request("POST", "/auth/login", form, "application/x-www-form-urlencoded", auth = false)
+        setToken(JSONObject(r).getString("access_token"))
+    }
+
+    fun logout() = setToken(null)
+
+    suspend fun me(): Account = Account.parse(JSONObject(call("GET", "/me")))
+    suspend fun setState(code: String) { call("PATCH", "/me", JSONObject().put("state", code)) }
+    suspend fun setShowInFeed(on: Boolean) { call("PATCH", "/me/settings", JSONObject().put("show_in_feed", on)) }
+
+    // --- Captures ---------------------------------------------------------------------
+
+    /** Uploads a photo for the server to identify, as the website's capture form does. */
+    suspend fun capture(photo: Bitmap, lat: Double?, lon: Double?): JSONObject = withContext(Dispatchers.IO) {
+        val boundary = "----captureanimals${System.nanoTime()}"
+        val out = ByteArrayOutputStream()
+        fun part(name: String, value: String) = out.write(
+            "--$boundary\r\nContent-Disposition: form-data; name=\"$name\"\r\n\r\n$value\r\n".toByteArray())
+        if (lat != null && lon != null) { part("latitude", lat.toString()); part("longitude", lon.toString()) }
+        out.write(("--$boundary\r\nContent-Disposition: form-data; name=\"photo\"; filename=\"photo.jpg\"\r\n" +
+            "Content-Type: image/jpeg\r\n\r\n").toByteArray())
+        jpeg(ImageLoader.thumbnail(photo, 1600), out)
+        out.write("\r\n--$boundary--\r\n".toByteArray())
+        JSONObject(request("POST", "/captures", out.toByteArray(), "multipart/form-data; boundary=$boundary"))
+    }
+
+    suspend fun pick(captureId: Int, label: String): JSONObject =
+        JSONObject(call("POST", "/captures/$captureId/pick", JSONObject().put("label", label)))
+
+    /** Badges for the given state, keyed by slug (caught animals are always named). */
+    suspend fun collection(state: String): Map<String, Badge> {
+        val o = JSONObject(call("GET", "/me/collection?state=${q(state)}"))
+        val entries = o.getJSONArray("entries")
+        return buildMap {
+            for (i in 0 until entries.length()) {
+                val e = entries.getJSONObject(i)
+                val slug = e.getJSONObject("species").optStringOrNull("slug") ?: continue
+                if (!e.getBoolean("caught")) continue
+                put(slug, Badge(e.optInt("capture_count", 1), parseTime(e.optStringOrNull("earned_at")),
+                    e.optStringOrNull("photo_url")))
+            }
+        }
+    }
+
+    // --- Photos, feed, likes -----------------------------------------------------------
+
+    suspend fun album(): List<OnlinePhoto> = OnlinePhoto.list(JSONObject(call("GET", "/me/album")).getJSONArray("photos"))
+
+    /** scope: "state" (needs [state]), "all" (every state) or "friends". */
+    suspend fun feed(scope: String, state: String, before: Int?): Pair<List<OnlinePhoto>, Int?> {
+        val o = JSONObject(call("GET", "/feed?scope=$scope&limit=20&state=${q(state)}" +
+            (before?.let { "&before=$it" } ?: "")))
+        return OnlinePhoto.list(o.getJSONArray("photos")) to o.optIntOrNull("next_before")
+    }
+
+    suspend fun like(photoId: Int, on: Boolean) { call(if (on) "POST" else "DELETE", "/photos/$photoId/like") }
+    suspend fun deletePhoto(photoId: Int) { call("DELETE", "/photos/$photoId") }
+
+    // --- Friends ----------------------------------------------------------------------
+
+    suspend fun friends(): Friends = Friends.parse(JSONObject(call("GET", "/friends")))
+    suspend fun suggestions(): List<FriendEntry> {
+        val a = JSONArray(call("GET", "/friends/suggestions"))
+        return List(a.length()) { FriendEntry.parse(a.getJSONObject(it)) }
+    }
+    /** Returns "friends" or "requested". */
+    suspend fun addFriend(username: String): String =
+        JSONObject(call("POST", "/friends/requests", JSONObject().put("username", username))).getString("status")
+    suspend fun acceptFriend(username: String) { call("POST", "/friends/requests/${q(username)}/accept") }
+    suspend fun removeFriend(username: String) { call("DELETE", "/friends/${q(username)}") }
+
+    // --- Images -----------------------------------------------------------------------
+
+    private val images = object : LruCache<String, Bitmap>(24 * 1024 * 1024) {
+        override fun sizeOf(key: String, value: Bitmap) = value.byteCount
+    }
+
+    suspend fun image(path: String, maxSide: Int = 800): Bitmap? = images.get(path) ?: withContext(Dispatchers.IO) {
+        runCatching {
+            val c = URL(absolute(path)).openConnection() as HttpURLConnection
+            token?.let { c.setRequestProperty("Authorization", "Bearer $it") }
+            c.connectTimeout = 15_000; c.readTimeout = 30_000
+            val bytes = c.inputStream.use { it.readBytes() }
+            val b = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return@runCatching null
+            ImageLoader.thumbnail(b, maxSide).also { images.put(path, it) }
+        }.getOrNull()
+    }
+
+    private fun jpeg(b: Bitmap, out: ByteArrayOutputStream) {
+        val bmp = if (b.config == Bitmap.Config.ARGB_8888) b else b.copy(Bitmap.Config.ARGB_8888, false)
+        bmp.compress(Bitmap.CompressFormat.JPEG, 88, out)
+    }
+
+    /** Server times are UTC, with or without an offset. */
+    fun parseTime(s: String?): Long = s?.let { t ->
+        runCatching { OffsetDateTime.parse(t).toInstant().toEpochMilli() }
+            .recoverCatching { LocalDateTime.parse(t).toInstant(ZoneOffset.UTC).toEpochMilli() }.getOrNull()
+    } ?: 0L
+}
+
+fun JSONObject.optStringOrNull(key: String): String? = if (isNull(key) || !has(key)) null else getString(key)
+fun JSONObject.optIntOrNull(key: String): Int? = if (isNull(key) || !has(key)) null else getInt(key)
+
+data class Account(val username: String, val email: String, val state: String, val showInFeed: Boolean) {
+    companion object {
+        fun parse(o: JSONObject) = Account(o.getString("username"), o.getString("email"), o.getString("state"),
+            o.isNull("show_in_feed") || o.optBoolean("show_in_feed", true))
+    }
+}
+
+/** An album photo as the server shows it to this player (PhotoOut). */
+data class OnlinePhoto(
+    val id: Int,
+    val url: String?,
+    val username: String,
+    val slug: String?,
+    val commonName: String?,
+    val rarity: String,
+    val category: String,
+    val caughtAt: Long,
+    val place: String?,
+    val likeCount: Int,
+    val likedByMe: Boolean,
+    val isMine: Boolean,
+    val byFriend: Boolean,
+) {
+    companion object {
+        fun parse(o: JSONObject): OnlinePhoto {
+            val s = o.getJSONObject("species")
+            return OnlinePhoto(o.getInt("id"), o.optStringOrNull("url"), o.getString("username"),
+                s.optStringOrNull("slug"), s.optStringOrNull("common_name"), s.getString("rarity"),
+                s.getString("category"), Online.parseTime(o.optStringOrNull("caught_at")), o.optStringOrNull("place"),
+                o.optInt("like_count"), o.optBoolean("liked_by_me"), o.optBoolean("is_mine"), o.optBoolean("by_friend"))
+        }
+
+        fun list(a: JSONArray) = List(a.length()) { parse(a.getJSONObject(it)) }
+    }
+}
+
+data class FriendEntry(val username: String, val caught: Int, val isBot: Boolean) {
+    companion object {
+        fun parse(o: JSONObject) = FriendEntry(o.getString("username"), o.optInt("caught"), o.optBoolean("is_bot"))
+    }
+}
+
+data class Friends(val friends: List<FriendEntry>, val incoming: List<FriendEntry>, val outgoing: List<FriendEntry>) {
+    companion object {
+        fun parse(o: JSONObject): Friends {
+            fun l(k: String) = o.getJSONArray(k).let { a -> List(a.length()) { FriendEntry.parse(a.getJSONObject(it)) } }
+            return Friends(l("friends"), l("incoming"), l("outgoing"))
+        }
+    }
+}

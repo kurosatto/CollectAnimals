@@ -68,8 +68,12 @@ fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: FieldGuide, onBa
 
         Box(Modifier.fillMaxWidth().aspectRatio(4f / 3f).clip(RoundedCornerShape(16.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
-            val photo = remember(badge?.photo) { badge?.photo?.let { BitmapFactory.decodeFile(it) } }
-            if (photo != null) {
+            // Signed in, the photo is on the game server; offline it's a file on the phone.
+            val remote = badge?.photo?.takeIf { it.startsWith("/") && !java.io.File(it).exists() }
+            val photo = remember(badge?.photo) { badge?.photo?.takeIf { remote == null }?.let { BitmapFactory.decodeFile(it) } }
+            if (remote != null) {
+                RemoteImage(remote, "Your ${s.commonName}", Modifier.fillMaxSize())
+            } else if (photo != null) {
                 Image(photo.asImageBitmap(), contentDescription = "Your ${s.commonName}",
                     modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
             } else {

@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -104,9 +105,13 @@ fun rarityColor(rarity: String): Color = when (rarity) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun App(vm: GameViewModel = viewModel()) {
+fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
     var tabChoice by rememberSaveable { mutableIntStateOf(0) }
+    var showAccount by rememberSaveable { mutableStateOf(false) }
+    // A different player (or none) sees nothing of the last one's feed and album.
+    androidx.compose.runtime.LaunchedEffect(state.account?.username) { social.clear() }
+    if (showAccount) AccountDialog(state, vm) { showAccount = false }
     var dexSlug by rememberSaveable { mutableStateOf<String?>(null) }
     val info = state.info
     val dex = state.fieldGuide
@@ -135,6 +140,10 @@ fun App(vm: GameViewModel = viewModel()) {
         Column {
             TopAppBar(title = { Text(if (tab == 0) "Capture Animals" else TABS[tab].title) }, actions = {
                 if (state.states.size > 1) StateMenu(state.states, state.stateCode, vm::chooseState)
+                TextButton(onClick = { showAccount = true }) {
+                    Text(state.account?.let { "👤 ${it.username}" } ?: "Log in", maxLines = 1,
+                        overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 120.dp))
+                }
             })
             if (info != null) {
                 Column(Modifier.padding(horizontal = 16.dp)) {
@@ -162,6 +171,9 @@ fun App(vm: GameViewModel = viewModel()) {
             when {
                 info == null -> CircularProgressIndicator(Modifier.align(Alignment.Center))
                 TABS[tab].key == "catch" -> CatchScreen(state, vm::capture, vm::dismissResult, vm::pick) { dexSlug = it }
+                TABS[tab].key == "social" -> SocialScreen(state, social, onSignIn = { showAccount = true }) { dexSlug = it }
+                TABS[tab].key == "gallery" && state.account != null ->
+                    OnlinePhotosScreen(social, onOpenDex = { dexSlug = it }, onDeleted = vm::reloadCollection)
                 TABS[tab].key == "collection" -> CollectionScreen(info, state.collection) { dexSlug = it }
                 TABS[tab].key == "gallery" -> GalleryScreen(state.allSpecies, state.collection, onOpenDex = { dexSlug = it },
                     onDelete = vm::deleteCatch)
@@ -207,13 +219,21 @@ private val TABS = listOf(
     AppTab("catch", "Capture", "ui_tab_capture"),
     AppTab("collection", "Field Guide", "ui_tab_guide"),
     AppTab("gallery", "Photos", "ui_tab_photos"),
+    AppTab("social", "Friends", "ui_tab_friends"),
     AppTab("hotspots", "Parks", "ui_tab_parks"),
 )
 
 @Composable
-fun CatchScreen(state: UiState, onPhoto: (Uri) -> Unit, onDismiss: () -> Unit, onPick: (String?) -> Unit,
-                onOpenDex: (String) -> Unit) {
+fun CatchScreen(state: UiState, onCapture: (Uri, Pair<Double, Double>?) -> Unit, onDismiss: () -> Unit,
+                onPick: (String?) -> Unit, onOpenDex: (String) -> Unit) {
     val context = LocalContext.current
+    var saveLocation by rememberSaveable { mutableStateOf(true) }
+    val askLocation = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
+        if (granted.values.none { it }) saveLocation = false
+    }
+    val onPhoto: (Uri) -> Unit = { uri ->
+        onCapture(uri, if (state.account != null && saveLocation) lastLocation(context) else null)
+    }
     var pendingCameraUri by rememberSaveable { mutableStateOf<Uri?>(null) }
     val takePicture = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
         val uri = pendingCameraUri
@@ -244,6 +264,18 @@ fun CatchScreen(state: UiState, onPhoto: (Uri) -> Unit, onDismiss: () -> Unit, o
                 onClick = { pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
                 enabled = !state.busy,
             ) { Text("Choose photo") }
+        }
+        if (state.account != null) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                androidx.compose.material3.Checkbox(saveLocation, onCheckedChange = { on ->
+                    saveLocation = on
+                    if (on && !hasLocationPermission(context)) askLocation.launch(LOCATION_PERMISSIONS)
+                })
+                Text("Save where I captured it")
+            }
+            androidx.compose.runtime.LaunchedEffect(Unit) {
+                if (saveLocation && !hasLocationPermission(context)) askLocation.launch(LOCATION_PERMISSIONS)
+            }
         }
         if (state.busy) {
             CircularProgressIndicator()
@@ -380,4 +412,20 @@ fun SpeciesTile(number: Int, s: Species, badge: Badge?, onClick: () -> Unit) {
             }
         }
     }
+}
+
+private val LOCATION_PERMISSIONS = arrayOf(
+    android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION)
+
+private fun hasLocationPermission(context: android.content.Context) = LOCATION_PERMISSIONS.any {
+    androidx.core.content.ContextCompat.checkSelfPermission(context, it) == android.content.pm.PackageManager.PERMISSION_GRANTED
+}
+
+/** The phone's last known position; the server blurs it before anyone else sees it. */
+@android.annotation.SuppressLint("MissingPermission")
+private fun lastLocation(context: android.content.Context): Pair<Double, Double>? {
+    if (!hasLocationPermission(context)) return null
+    val lm = context.getSystemService(android.content.Context.LOCATION_SERVICE) as android.location.LocationManager
+    return lm.getProviders(true).mapNotNull { runCatching { lm.getLastKnownLocation(it) }.getOrNull() }
+        .maxByOrNull { it.time }?.let { it.latitude to it.longitude }
 }

@@ -29,6 +29,8 @@ data class CaptureResult(
     val choices: List<RankedGuess> = emptyList(),
     // Set once the player has picked, so the panel isn't offered again.
     val picked: Boolean = false,
+    // The server's capture id when signed in (picks go to the server too).
+    val captureId: Int? = null,
 )
 
 data class UiState(
@@ -45,6 +47,12 @@ data class UiState(
     val busy: Boolean = false,
     val result: CaptureResult? = null,
     val error: String? = null,
+    // Signed in to the game server: captures, badges and photos live there, as on the website.
+    val account: Account? = null,
+    // The server address in use, or null while it can't be found.
+    val server: String? = null,
+    val accountBusy: Boolean = false,
+    val accountError: String? = null,
 )
 
 class GameViewModel(app: Application) : AndroidViewModel(app) {
@@ -58,6 +66,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     private var model: ModelInfo? = null
 
     init {
+        Online.init(app)
+        _state.update { it.copy(server = Online.base) }
         viewModelScope.launch {
             val assets = getApplication<Application>().assets
             fun text(name: String) = assets.open(name).bufferedReader().use { it.readText() }
@@ -74,7 +84,84 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                     allSpecies = list.flatMap { s -> s.species }.distinctBy { s -> s.slug })
             }
             select(saved ?: default)
+            connect()
         }
+    }
+
+    /** Finds the server and, if signed in, loads the account and its badges. */
+    fun connect() {
+        viewModelScope.launch {
+            val server = Online.resolve()
+            _state.update { it.copy(server = server) }
+            if (server == null || !Online.signedIn) return@launch
+            try {
+                val me = Online.me()
+                _state.update { it.copy(account = me) }
+                if (me.state != _state.value.stateCode && _state.value.states.any { it.code == me.state }) {
+                    prefs.edit().putString("state", me.state).apply()
+                    _state.update { it.copy(needsStatePick = false) }
+                    select(me.state)
+                }
+                refreshCollection()
+            } catch (e: Online.ApiError) {
+                // Signed out by the server (401): back to the badges saved on this phone.
+                if (!Online.signedIn) _state.update { it.copy(account = null, collection = store.load()) }
+            }
+        }
+    }
+
+    private suspend fun refreshCollection() {
+        if (!Online.signedIn || _state.value.account == null) return
+        val c = Online.collection(_state.value.stateCode)
+        _state.update { it.copy(collection = c) }
+    }
+
+    fun signIn(ident: String, password: String) = account { Online.login(ident.trim(), password) }
+
+    fun signUp(email: String, username: String, password: String) =
+        account { Online.register(email.trim(), username.trim(), password, _state.value.stateCode) }
+
+    private fun account(block: suspend () -> Unit) {
+        _state.update { it.copy(accountBusy = true, accountError = null) }
+        viewModelScope.launch {
+            try {
+                if (Online.resolve() == null) throw Online.ApiError(0, "Can't find the game server. Is the PC on?")
+                _state.update { it.copy(server = Online.base) }
+                block()
+                val me = Online.me()
+                _state.update { it.copy(account = me, accountBusy = false, result = null) }
+                if (me.state != _state.value.stateCode && _state.value.states.any { it.code == me.state }) {
+                    chooseState(me.state)
+                } else {
+                    refreshCollection()
+                }
+            } catch (e: Exception) {
+                _state.update { it.copy(accountBusy = false, accountError = e.message ?: "Something went wrong") }
+            }
+        }
+    }
+
+    /** Back to playing offline, with the badges saved on this phone. */
+    fun signOut() {
+        Online.logout()
+        _state.update { it.copy(account = null, collection = store.load(), result = null) }
+    }
+
+    fun setServer(url: String?) {
+        Online.setManualUrl(url)
+        _state.update { it.copy(server = Online.base) }
+        connect()
+    }
+
+    fun setShowInFeed(on: Boolean) {
+        val acct = _state.value.account ?: return
+        _state.update { it.copy(account = acct.copy(showInFeed = on)) }
+        viewModelScope.launch { runCatching { Online.setShowInFeed(on) } }
+    }
+
+    /** After the Photos tab deletes an album photo, the badge may be gone too. */
+    fun reloadCollection() {
+        viewModelScope.launch { runCatching { refreshCollection() } }
     }
 
     private fun select(code: String) {
@@ -88,6 +175,13 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         prefs.edit().putString("state", code).apply()
         _state.update { it.copy(needsStatePick = false, result = null) }
         select(code)
+        if (_state.value.account != null) viewModelScope.launch {
+            runCatching {
+                Online.setState(code)
+                _state.update { it.copy(account = it.account?.copy(state = code)) }
+                refreshCollection()
+            }
+        }
     }
 
     private suspend fun classifier(info: ModelInfo): Classifier = classifierLock.withLock {
@@ -97,17 +191,63 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         }.also { classifier = it }
     }
 
-    fun capture(uri: Uri) {
+    /** [location] is (lat, lon) when the player lets us save where they captured it. */
+    fun capture(uri: Uri, location: Pair<Double, Double>? = null) {
         val info = _state.value.info ?: return
         _state.update { it.copy(busy = true, error = null) }
         viewModelScope.launch {
             try {
-                val result = withContext(Dispatchers.Default) { classify(uri, info) }
+                val result = if (_state.value.account != null) {
+                    captureOnline(uri, info, location)
+                } else {
+                    withContext(Dispatchers.Default) { classify(uri, info) }
+                }
                 _state.update { it.copy(busy = false, result = result) }
+            } catch (e: Online.ApiError) {
+                _state.update { it.copy(busy = false, error = e.message) }
             } catch (e: Exception) {
                 _state.update { it.copy(busy = false, error = "Couldn't read that photo (${e.message})") }
             }
         }
+    }
+
+    /** Signed in: the server identifies the photo and keeps the badge, as on the website. */
+    private suspend fun captureOnline(uri: Uri, info: ModelInfo, location: Pair<Double, Double>?): CaptureResult {
+        val bitmap = withContext(Dispatchers.IO) { ImageLoader.load(getApplication(), uri, minShortSide = 1200) }
+        val r = Online.capture(bitmap, location?.first, location?.second)
+        val result = onlineResult(r, ImageLoader.thumbnail(bitmap, 1024), info)
+        runCatching { refreshCollection() }
+        return result
+    }
+
+    private fun onlineResult(r: org.json.JSONObject, photo: Bitmap, info: ModelInfo,
+                             prev: CaptureResult? = null): CaptureResult {
+        val bySlug = (_state.value.allSpecies + info.species).associateBy { it.slug }
+        val species = r.optJSONObject("species")?.optStringOrNull("slug")?.let { bySlug[it] }
+        val matched = r.getBoolean("matched") && species != null
+        val preds = r.optJSONArray("top_predictions")
+        val choices = r.optJSONArray("choices")
+        return CaptureResult(
+            photo = photo,
+            matched = matched,
+            species = if (matched) species else null,
+            confidence = r.optDouble("confidence", 0.0).toFloat(),
+            newBadge = r.optBoolean("new_badge"),
+            message = r.optString("message"),
+            guesses = prev?.guesses ?: List(preds?.length() ?: 0) { i ->
+                preds!!.getJSONObject(i).let { p ->
+                    RankedGuess(p.getString("label"), p.optStringOrNull("common_name") ?: "Something else",
+                        p.getDouble("probability").toFloat())
+                }
+            }.take(3),
+            choices = prev?.choices ?: List(choices?.length() ?: 0) { i ->
+                choices!!.getJSONObject(i).let { c ->
+                    RankedGuess(c.getString("slug"), c.getString("common_name"), c.getDouble("probability").toFloat())
+                }
+            },
+            picked = prev != null,
+            captureId = r.getInt("capture_id"),
+        )
     }
 
     // Same rules as the backend's POST /captures.
@@ -159,6 +299,18 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     fun pick(slug: String?) {
         val r = _state.value.result ?: return
         val info = _state.value.info ?: return
+        r.captureId?.let { id ->
+            viewModelScope.launch {
+                try {
+                    val res = onlineResult(Online.pick(id, slug ?: "none"), r.photo, info, prev = r)
+                    _state.update { it.copy(result = res) }
+                    refreshCollection()
+                } catch (e: Exception) {
+                    _state.update { it.copy(error = e.message) }
+                }
+            }
+            return
+        }
         val species = slug?.let { s -> info.species.firstOrNull { it.slug == s } }
         viewModelScope.launch {
             var collection = _state.value.collection
