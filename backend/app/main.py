@@ -171,11 +171,10 @@ def register(body: RegisterIn, db: Session = Depends(get_db)):
         db.commit()
     except IntegrityError:
         raise HTTPException(status.HTTP_409_CONFLICT, "Email or username already registered")
-    # The example bot players from the player's state add them as a friend
-    # (clearly labelled as bots in the app); players can remove them from the
-    # Friends tab, and add other states' bots from the suggestions.
-    for bot in db.scalars(select(User).where(User.is_bot.is_(True), User.id != user.id,
-                                             User.state == user.state)):
+    # The example bot players (one set for every state, clearly labelled as
+    # bots in the app) add them as a friend; players can remove them from the
+    # Friends tab and add them back from the suggestions.
+    for bot in db.scalars(select(User).where(User.is_bot.is_(True), User.id != user.id)):
         db.add(Friendship(requester_id=bot.id, addressee_id=user.id, accepted=True))
     db.commit()
     return TokenOut(access_token=create_token(user.id))
