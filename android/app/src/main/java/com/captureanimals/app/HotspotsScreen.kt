@@ -110,11 +110,11 @@ fun HotspotsScreen(info: ModelInfo, dex: FieldGuide, collection: Map<String, Bad
     }
 }
 
-/** California outline with a pin per park; bigger pins have more species. Tap a pin to select it. */
+/** State outline with a pin per park; bigger pins have more species. Tap a pin to select it. */
 @Composable
 private fun HotspotsMap(dex: FieldGuide, parks: List<Park>, selectedId: String?, modifier: Modifier,
                        onSelect: (String) -> Unit) {
-    val frame = remember(dex) { CaliforniaFrame(dex.outline) }
+    val frame = remember(dex) { StateFrame(dex.outline) }
     val land = MaterialTheme.colorScheme.surfaceVariant
     val sea = MaterialTheme.colorScheme.surface
     val border = MaterialTheme.colorScheme.outline
