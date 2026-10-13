@@ -43,7 +43,7 @@ import kotlin.math.min
 /**
  * Parks where many of the 100 can be spotted (species/hotspots.json), matching the
  * web page's Hotspots card: a map with a pin per park, a list sorted by species count,
- * and a detail card whose species chips open their Pokédex pages.
+ * and a detail card whose species chips open their Field Guide pages.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

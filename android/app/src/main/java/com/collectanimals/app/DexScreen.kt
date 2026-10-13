@@ -45,7 +45,7 @@ import java.util.Date
 import kotlin.math.cos
 import kotlin.math.ln
 
-/** Full-page Pokédex entry for one species. */
+/** Full-page Field Guide entry for one species. */
 @Composable
 fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: Pokedex, onBack: () -> Unit) {
     BackHandler(onBack = onBack)
@@ -53,7 +53,7 @@ fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: Pokedex, onBack:
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
         TextButton(onClick = onBack, contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) {
-            Text("‹ Collection")
+            Text("‹ Field Guide")
         }
         Text("#%03d · %s".format(number, s.category.replaceFirstChar { it.uppercase() }),
             style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.outline)
@@ -98,6 +98,10 @@ fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: Pokedex, onBack:
             }
         }
 
+        dex.seasons[s.slug]?.takeIf { it.months.any { n -> n > 0 } }?.let { season ->
+            WhenToLook(season, dex.dayNight(s.slug), rarityColor(s.rarity))
+        }
+
         Text("Where to find it", style = MaterialTheme.typography.titleMedium)
         RangeMap(dex, s.slug, rarityColor(s.rarity), Modifier.fillMaxWidth())
         details?.whereToFind?.takeIf { it.isNotBlank() }?.let {
@@ -111,6 +115,29 @@ fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: Pokedex, onBack:
         Text("Each square is about 25 km (15 mi) across; darker means more of the " +
             "${dex.ranges.sightings(s.slug)} recent iNaturalist sightings in California.",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+    }
+}
+
+/** "When to look": best months, a day/night hint and a bar per month, as on the website. */
+@Composable
+private fun WhenToLook(season: Season, dayNight: String?, color: Color) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text("When to look", style = MaterialTheme.typography.titleMedium)
+        Text("📅 Best months: ${season.bestMonths()}", style = MaterialTheme.typography.bodyMedium)
+        dayNight?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
+        val max = season.months.maxOrNull()?.coerceAtLeast(1) ?: 1
+        Row(Modifier.fillMaxWidth().height(56.dp), horizontalArrangement = Arrangement.spacedBy(3.dp),
+            verticalAlignment = Alignment.Bottom) {
+            season.months.forEachIndexed { i, n ->
+                Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                    val frac = (n.toFloat() / max).coerceAtLeast(0.05f)
+                    Box(Modifier.fillMaxWidth().height((40 * frac).dp).clip(RoundedCornerShape(2.dp))
+                        .background(if (n >= 0.6 * max) color else color.copy(alpha = 0.3f)))
+                    Text("JFMAMJJASOND"[i].toString(), style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline)
+                }
+            }
+        }
     }
 }
 

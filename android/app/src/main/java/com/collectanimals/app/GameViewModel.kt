@@ -54,7 +54,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             val loaded = withContext(Dispatchers.IO) {
                 Triple(ModelInfo.parse(text("model.json")),
                        Pokedex.parse(text("details.csv"), text("ranges.json"), text("california_outline.json"),
-                           runCatching { text("hotspots.json") }.getOrNull()),
+                           runCatching { text("hotspots.json") }.getOrNull(),
+                           runCatching { text("seasons.json") }.getOrNull()),
                        store.load())
             }
             _state.update { it.copy(info = loaded.first, pokedex = loaded.second, collection = loaded.third) }

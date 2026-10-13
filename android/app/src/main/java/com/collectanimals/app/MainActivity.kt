@@ -112,7 +112,7 @@ fun App(vm: GameViewModel = viewModel()) {
         Scaffold { padding ->
             Box(Modifier.padding(padding)) {
                 val s = info.species[entry]
-                DexEntryScreen(entry + 1, s, state.collection[s.slug], dex) { dexSlug = null }
+                DexEntryScreen(info.dexNumber(s.slug), s, state.collection[s.slug], dex) { dexSlug = null }
             }
         }
         return
@@ -140,7 +140,7 @@ fun App(vm: GameViewModel = viewModel()) {
             TABS.forEachIndexed { i, t ->
                 if (t.key == "hotspots" && dex?.parks.isNullOrEmpty()) return@forEachIndexed
                 NavigationBarItem(selected = tab == i, onClick = { tab = i },
-                    icon = { Text(t.glyph, fontSize = 20.sp) }, label = { Text(t.title) })
+                    icon = { TabIcon(t.icon, Modifier.size(28.dp)) }, label = { Text(t.title) })
             }
         }
     }) { padding ->
@@ -157,13 +157,14 @@ fun App(vm: GameViewModel = viewModel()) {
     }
 }
 
-private class AppTab(val key: String, val title: String, val glyph: String)
+// Icons are the website's 16x16 pixel-art tab icons (species/sprites/ui_tab_*.png).
+private class AppTab(val key: String, val title: String, val icon: String)
 
 private val TABS = listOf(
-    AppTab("catch", "Capture", "📷"),
-    AppTab("collection", "Collection", "🗂"),
-    AppTab("gallery", "Gallery", "🖼"),
-    AppTab("hotspots", "Hotspots", "📍"),
+    AppTab("catch", "Capture", "ui_tab_capture"),
+    AppTab("collection", "Field Guide", "ui_tab_guide"),
+    AppTab("gallery", "Photos", "ui_tab_photos"),
+    AppTab("hotspots", "Parks", "ui_tab_parks"),
 )
 
 @Composable
@@ -236,7 +237,7 @@ fun ResultCard(r: CaptureResult, onDismiss: () -> Unit, onPick: (String?) -> Uni
             if (!r.picked && r.choices.isNotEmpty()) PickPanel(r, onPick)
             Row(Modifier.align(Alignment.End)) {
                 if (r.matched && r.species != null) {
-                    TextButton(onClick = { onOpenDex(r.species.slug) }) { Text("Pokédex entry") }
+                    TextButton(onClick = { onOpenDex(r.species.slug) }) { Text("Field Guide entry") }
                 }
                 TextButton(onClick = onDismiss) { Text("Done") }
             }
@@ -277,7 +278,8 @@ fun RarityTag(rarity: String) {
 fun CollectionScreen(info: ModelInfo, collection: Map<String, Badge>, onOpen: (String) -> Unit) {
     val categories = remember(info) { listOf("all") + info.species.map { it.category }.distinct() }
     var category by rememberSaveable { mutableStateOf("all") }
-    val shown = info.species.filter { category == "all" || it.category == category }
+    val shown = info.dexOrder.filter { category == "all" || it.category == category }
+    val tiers = shown.groupBy { it.rarity }
 
     LazyVerticalGrid(columns = GridCells.Adaptive(104.dp), modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp),
@@ -290,8 +292,15 @@ fun CollectionScreen(info: ModelInfo, collection: Map<String, Badge>, onOpen: (S
                 }
             }
         }
-        items(shown, key = { it.slug }) { s ->
-            SpeciesTile(info.species.indexOf(s) + 1, s, collection[s.slug]) { onOpen(s.slug) }
+        tiers.forEach { (rarity, list) ->
+            item(span = { GridItemSpan(maxLineSpan) }, key = "tier-$rarity") {
+                Text("${rarity.replaceFirstChar { it.uppercase() }} · ${list.count { it.slug in collection }} / ${list.size} captured",
+                    style = MaterialTheme.typography.titleSmall, color = rarityColor(rarity),
+                    modifier = Modifier.padding(top = 8.dp))
+            }
+            items(list, key = { it.slug }) { s ->
+                SpeciesTile(info.dexNumber(s.slug), s, collection[s.slug]) { onOpen(s.slug) }
+            }
         }
     }
 }
@@ -308,7 +317,7 @@ fun SpeciesTile(number: Int, s: Species, badge: Badge?, onClick: () -> Unit) {
             .border(2.dp, if (caught) rarityColor(s.rarity) else Color.Transparent, RoundedCornerShape(12.dp)),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor =
-            if (caught) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface),
+            if (caught) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface),
     ) {
         Column(Modifier.padding(6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Box(Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(8.dp))
@@ -321,7 +330,12 @@ fun SpeciesTile(number: Int, s: Species, badge: Badge?, onClick: () -> Unit) {
             Text(s.commonName, style = MaterialTheme.typography.labelMedium, maxLines = 2,
                 overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
                 color = if (caught) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline)
-            Box(Modifier.padding(top = 2.dp).size(8.dp).clip(RoundedCornerShape(50)).background(rarityColor(s.rarity)))
+            if (caught) {
+                Text("✓ Captured", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer)
+            } else {
+                Box(Modifier.padding(top = 2.dp).size(8.dp).clip(RoundedCornerShape(50)).background(rarityColor(s.rarity)))
+            }
         }
     }
 }

@@ -13,6 +13,36 @@ data class SpeciesDetails(
 
 data class ParkSpecies(val slug: String, val observations: Int)
 
+/** Sightings per month (Jan..Dec) and per local hour (0..23), from species/seasons.json. */
+class Season(val months: IntArray, val hours: IntArray) {
+    /** Share of timed sightings at night (20:00–05:59), or null with too few to tell. */
+    val nightShare: Double? get() {
+        val total = hours.sum()
+        if (total < 30) return null
+        return NIGHT_HOURS.sumOf { hours.getOrElse(it) { 0 } }.toDouble() / total
+    }
+
+    /** "Apr–Jun, Sep" style runs of months with at least 60% of the peak, like the website. */
+    fun bestMonths(): String {
+        val max = months.maxOrNull() ?: 0
+        if (max == 0) return ""
+        val good = BooleanArray(12) { months[it] >= 0.6 * max }
+        if (good.all { it }) return "All year"
+        val start = (0 until 12).first { good[it] && !good[(it + 11) % 12] }
+        val runs = mutableListOf<IntArray>()
+        for (k in 0 until 12) {
+            val i = (start + k) % 12
+            if (good[i] && !good[(i + 11) % 12]) runs.add(intArrayOf(i, i)) else if (good[i]) runs.last()[1] = i
+        }
+        return runs.joinToString(", ") { (a, b) -> if (a == b) MONTH_NAMES[a] else "${MONTH_NAMES[a]}–${MONTH_NAMES[b]}" }
+    }
+
+    companion object {
+        val NIGHT_HOURS = (0..5) + (20..23)
+        val MONTH_NAMES = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+    }
+}
+
 /** A park from species/hotspots.json (ml/build_hotspots.py). */
 data class Park(val id: String, val name: String, val lat: Double, val lon: Double, val blurb: String,
                 val species: List<ParkSpecies>)
@@ -32,7 +62,24 @@ class Outline(val rings: List<DoubleArray>) {
 }
 
 class Pokedex(val details: Map<String, SpeciesDetails>, val ranges: RangeGrid, val outline: Outline,
-              val parks: List<Park> = emptyList()) {
+              val parks: List<Park> = emptyList(), val seasons: Map<String, Season> = emptyMap()) {
+
+    // People mostly look by day, so compare each species with the average listed one.
+    private val avgNightShare: Double? by lazy {
+        seasons.values.mapNotNull { it.nightShare }.takeIf { it.isNotEmpty() }?.average()
+    }
+
+    /** The website's day/night hint, or null when there isn't enough data. */
+    fun dayNight(slug: String): String? {
+        val share = seasons[slug]?.nightShare ?: return null
+        val r = share / (avgNightShare ?: return null)
+        return when {
+            r >= 1.8 -> "🌙 Often out at night"
+            r >= 1.2 -> "🌗 Day and night"
+            r <= 0.5 -> "☀️ Daytime"
+            else -> "☀️ Mostly daytime"
+        }
+    }
 
     /** Names of the parks with the most sightings of this species (as the web's hotspots_for). */
     fun hotspotsFor(slug: String, limit: Int = 3): List<String> =
@@ -55,7 +102,17 @@ class Pokedex(val details: Map<String, SpeciesDetails>, val ranges: RangeGrid, v
             }
         }
 
-        fun parse(detailsCsv: String, rangesJson: String, outlineJson: String, hotspotsJson: String? = null): Pokedex {
+        fun parseSeasons(json: String): Map<String, Season> {
+            val sp = JSONObject(json).getJSONObject("species")
+            return sp.keys().asSequence().associateWith { k ->
+                val e = sp.getJSONObject(k)
+                fun ints(key: String) = e.optJSONArray(key)?.let { a -> IntArray(a.length()) { a.getInt(it) } } ?: IntArray(0)
+                Season(ints("months"), ints("hours"))
+            }
+        }
+
+        fun parse(detailsCsv: String, rangesJson: String, outlineJson: String, hotspotsJson: String? = null,
+                  seasonsJson: String? = null): Pokedex {
             val rows = parseCsv(detailsCsv)
             val header = rows.first()
             val idx = { name: String -> header.indexOf(name).also { require(it >= 0) { "details.csv lacks $name" } } }
@@ -84,7 +141,8 @@ class Pokedex(val details: Map<String, SpeciesDetails>, val ranges: RangeGrid, v
                 val ring = ringsJson.getJSONArray(i)
                 DoubleArray(ring.length() * 2) { j -> ring.getJSONArray(j / 2).getDouble(j % 2) }
             }
-            return Pokedex(details, ranges, Outline(rings), hotspotsJson?.let(::parseParks).orEmpty())
+            return Pokedex(details, ranges, Outline(rings), hotspotsJson?.let(::parseParks).orEmpty(),
+                seasonsJson?.let(::parseSeasons).orEmpty())
         }
 
         /** Minimal RFC 4180 CSV: quoted fields, doubled quotes, commas/newlines inside quotes. */

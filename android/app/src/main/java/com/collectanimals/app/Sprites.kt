@@ -24,3 +24,14 @@ fun PixelSprite(slug: String, caught: Boolean, modifier: Modifier = Modifier) {
     Image(bitmap.asImageBitmap(), contentDescription = null, modifier = modifier,
         contentScale = ContentScale.Fit, filterQuality = FilterQuality.None)
 }
+
+/** A 16x16 pixel-art tab icon, scaled up without smoothing and left in its own colors. */
+@Composable
+fun TabIcon(name: String, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val bitmap = remember(name) {
+        runCatching { context.assets.open("sprites/$name.png").use { BitmapFactory.decodeStream(it) } }.getOrNull()
+    } ?: return
+    Image(bitmap.asImageBitmap(), contentDescription = null, modifier = modifier,
+        contentScale = ContentScale.Fit, filterQuality = FilterQuality.None)
+}
