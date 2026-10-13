@@ -148,6 +148,7 @@
   #grid .section { grid-column:1 / -1; margin:16px 0 0; font-weight:700; font-size:.95rem;
                    border-bottom:1px solid var(--line); padding-bottom:3px; }
   #grid .section:first-child { margin-top:0; }
+  #grid .divider { grid-column:1 / -1; border-top:1px dashed var(--line); margin:12px 0 0; }
   .status.mine { color:var(--accent); }
   .status.friend { color:var(--muted); }
   .sprite.shadow { opacity:.55; }
@@ -478,18 +479,22 @@ async function loadCollection() {
   $("progress").textContent = `${c.caught} / ${c.total}`;
   const grid = $("grid");
   grid.innerHTML = "";
-  // Three sections: captured, could be out now (seen this month), not this time of year.
-  // Inside each, common to legendary; the numbers keep the full Field Guide order.
-  const SECTIONS = [
+  // Captured first, then the rest: animals seen this month before ones that aren't
+  // around this time of year (split by a plain line, no label). Inside each group,
+  // common to legendary; the numbers keep the full Field Guide order.
+  const GROUPS = [
     ["Captured", (e) => e.caught],
-    ["Maybe out now", (e) => !e.caught && e.in_season !== false],
-    ["Not out this time of year", (e) => !e.caught && e.in_season === false],
+    ["Not captured yet", (e) => !e.caught && e.in_season !== false],
+    [null, (e) => !e.caught && e.in_season === false],
   ];
   const numbered = entries.map((e, i) => [e, i]);
-  for (const [title, keep] of SECTIONS) {
+  let uncaughtShown = false;
+  for (const [title, keep] of GROUPS) {
     const list = numbered.filter(([e]) => keep(e));
     if (!list.length) continue;
-    grid.append(el("div", "section", `${title} · ${list.length}`));
+    if (title) grid.append(el("div", "section", title));
+    else grid.append(el("div", uncaughtShown ? "divider" : "section", uncaughtShown ? "" : "Not captured yet"));
+    if (title === "Not captured yet") uncaughtShown = true;
     let tier = null;
     list.forEach(([e, i]) => addTile(e, i, tier !== e.species.rarity && (tier = e.species.rarity)));
   }

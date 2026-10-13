@@ -351,8 +351,9 @@ fun RarityTag(rarity: String) {
             .padding(horizontal = 10.dp, vertical = 2.dp))
 }
 
-/** Field Guide sections, like the website: captured, maybe out this month, not this time of year. */
-private val SECTIONS = listOf("Captured", "Maybe out now", "Not out this time of year")
+/** Field Guide groups, like the website: captured, then the rest with animals seen this
+ *  month before ones not around this time of year (split by a plain line, no label). */
+private val SECTIONS = listOf("Captured", "Not captured yet", null)
 
 @Composable
 fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, collection: Map<String, Badge>, onOpen: (String) -> Unit) {
@@ -382,9 +383,11 @@ fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, collection: Map<String, 
         }
         SECTIONS.forEachIndexed { i, title ->
             val list = sections[i] ?: return@forEachIndexed
+            // The last group only gets the heading when nothing is in season.
+            val heading = title ?: "Not captured yet".takeIf { sections[1] == null }
             item(span = { GridItemSpan(maxLineSpan) }, key = "section-$i") {
                 Column(Modifier.padding(top = 12.dp)) {
-                    Text("$title · ${list.size}", style = MaterialTheme.typography.titleMedium)
+                    if (heading != null) Text(heading, style = MaterialTheme.typography.titleMedium)
                     HorizontalDivider()
                 }
             }

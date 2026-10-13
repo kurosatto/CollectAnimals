@@ -504,9 +504,9 @@ def test_bots_befriend_new_players(client):
     h = signup(client, "newbie")
     friends = client.get("/friends", headers=h).json()["friends"]
     assert [(f["username"], f["is_bot"]) for f in friends] == [("birdnerd", True)]
-    # Only your own state's bots add you.
+    # The same bots add players from every state.
     nina = signup(client, "nina", state="NC")
-    assert client.get("/friends", headers=nina).json()["friends"] == []
+    assert [f["username"] for f in client.get("/friends", headers=nina).json()["friends"]] == ["birdnerd"]
     # Removing a bot works like removing anyone.
     assert client.delete("/friends/birdnerd", headers=h).status_code == 204
     assert client.get("/friends", headers=h).json()["friends"] == []
