@@ -49,4 +49,31 @@ class FieldGuideTest {
         val d = dex.details.getValue("california_condor")
         assertTrue(d.activeTime.isNotBlank() && d.spottingTip.isNotBlank())
     }
+
+    @Test
+    fun seasonsMatchTheWeb() {
+        val dir = File("../../species")
+        val dex = FieldGuide.parse(File(dir, "details.csv").readText(), File(dir, "ranges.json").readText(),
+            File(dir, "california_outline.json").readText(), null, File(dir, "seasons.json").readText())
+        assertEquals(100, dex.seasons.size)
+        assertEquals("🌙 Often out at night", dex.dayNight("barn_owl"))
+        assertEquals("🌙 Often out at night", dex.dayNight("great_horned_owl"))
+        assertTrue(dex.dayNight("western_fence_lizard")!!.startsWith("☀️"))
+        // A spring-and-summer animal, and the wrap from December into January.
+        assertEquals("Apr–Jun", Season(intArrayOf(1, 1, 1, 9, 10, 8, 2, 1, 1, 1, 1, 1), IntArray(0)).bestMonths())
+        assertEquals("Dec–Jan", Season(intArrayOf(10, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 9), IntArray(0)).bestMonths())
+        assertEquals("All year", Season(IntArray(12) { 5 }, IntArray(0)).bestMonths())
+    }
+
+    @Test
+    fun fieldGuideOrderIsRarityThenKind() {
+        val species = listOf(
+            Species("condor", "Condor", "", "bird", "legendary"),
+            Species("quail", "Quail", "", "bird", "common"),
+            Species("coyote", "Coyote", "", "mammal", "common"),
+            Species("skunk", "Skunk", "", "mammal", "uncommon"))
+        val info = ModelInfo(emptyList(), 224, 256, FloatArray(3), FloatArray(3), 0.7f, "other", species)
+        assertEquals(listOf("coyote", "quail", "skunk", "condor"), info.dexOrder.map { it.slug })
+        assertEquals(4, info.dexNumber("condor"))
+    }
 }

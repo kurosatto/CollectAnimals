@@ -25,7 +25,23 @@ class ModelInfo(
     val otherLabel: String,
     val species: List<Species>,
 ) {
+    /** Dex order, as on the website: common to legendary, then by kind, then list order. */
+    val dexOrder: List<Species> by lazy {
+        species.withIndex().sortedWith(compareBy(
+            { RARITY_ORDER.indexOf(it.value.rarity).let { r -> if (r < 0) RARITY_ORDER.size else r } },
+            { CATEGORY_ORDER.indexOf(it.value.category).let { c -> if (c < 0) CATEGORY_ORDER.size else c } },
+            { it.index },
+        )).map { it.value }
+    }
+    private val dexNumbers by lazy { dexOrder.withIndex().associate { it.value.slug to it.index + 1 } }
+
+    /** The species' display number (#001…), following [dexOrder]. */
+    fun dexNumber(slug: String): Int = dexNumbers[slug] ?: 0
+
     companion object {
+        val RARITY_ORDER = listOf("common", "uncommon", "rare", "legendary")
+        val CATEGORY_ORDER = listOf("mammal", "bird", "reptile", "amphibian", "invertebrate", "marine")
+
         fun parse(json: String): ModelInfo {
             val o = JSONObject(json)
             fun floats(key: String) = o.getJSONArray(key).let { a -> FloatArray(a.length()) { a.getDouble(it).toFloat() } }
