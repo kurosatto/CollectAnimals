@@ -21,6 +21,7 @@ from sqlalchemy import and_, delete, func, or_, select
 from sqlalchemy.orm import Session
 
 from . import places
+from . import states
 from .auth import current_user
 from .db import get_db
 from .models import AlbumPhoto, Badge, Capture, Friendship, PhotoLike, Species, StateSpecies, User
@@ -323,7 +324,8 @@ def species_gallery(species_key: str,
 
 
 @router.get("/feed", response_model=FeedOut)
-def news_feed(scope: Literal["near", "all", "friends"] = "all",
+def news_feed(scope: Literal["near", "state", "all", "friends"] = "all",
+              state: str | None = None,
               lat: float | None = Query(None, ge=-90, le=90),
               lon: float | None = Query(None, ge=-180, le=180),
               radius_km: float = Query(50, ge=places.MIN_RADIUS_KM, le=500),
@@ -332,6 +334,8 @@ def news_feed(scope: Literal["near", "all", "friends"] = "all",
               user: User = Depends(current_user), db: Session = Depends(get_db)):
     """Newest catches first: each album photo, ordered by when it was caught.
 
+    scope=all is global. scope=state keeps catches made inside a state (?state=,
+    default the viewer's), or without a location, by players from that state.
     scope=near (needs lat/lon, the viewer's position) keeps catches within
     radius_km. Distances use each catch's blurred position, not its exact
     GPS, so the filter can't be used to pinpoint anyone (see places.py).
@@ -348,6 +352,14 @@ def news_feed(scope: Literal["near", "all", "friends"] = "all",
                 shown_to(user, friends)))
     if scope == "friends":
         q = q.where(AlbumPhoto.user_id.in_(friends | {user.id}))
+    if scope == "state":
+        st = states.get(state or user.state)
+        if st is None:
+            raise HTTPException(404, f"Unknown state {state!r}")
+        b = st.bounds
+        q = q.where(or_(and_(Capture.latitude.between(b["south"], b["north"]),
+                             Capture.longitude.between(b["west"], b["east"])),
+                        and_(Capture.latitude.is_(None), User.state == st.code)))
     if uncaught:
         q = q.where(AlbumPhoto.species_id.not_in(
             select(Badge.species_id).where(Badge.user_id == user.id)))
