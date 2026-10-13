@@ -1067,7 +1067,7 @@ function drawHotMap() {
     box.innerHTML = "";
     box.classList.remove("dex-map");  // its svg sizing would break Leaflet's layers
     box.classList.add("zoom-map");
-    hotMap = L.map(box, { scrollWheelZoom: false, zoomSnap: 0.25, maxBoundsViscosity: 1 });
+    hotMap = L.map(box, { scrollWheelZoom: false, zoomSnap: 0.1, maxBoundsViscosity: 1 });
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 17,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(hotMap);
     if (OUTLINE.length) {
@@ -1111,6 +1111,11 @@ function frameHotMap() {
   const box = $("hot-map");
   // Hidden tab: Leaflet can't measure it yet, so just give it a view; showTab re-frames.
   if (!box.offsetWidth || !box.offsetHeight) { hotMap.fitBounds(state); return; }
+  // Size the box to the state's shape (tall California, wide North Carolina) so the
+  // whole state fills it, up to most of the screen height.
+  const merc = (lat) => Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360));
+  const shape = (merc(b.north) - merc(b.south)) / (((b.east - b.west) * Math.PI) / 180);
+  box.style.height = Math.round(Math.min(Math.max(box.offsetWidth * shape, 220), window.innerHeight * 0.7)) + "px";
   hotMap.invalidateSize();
   hotMap.setMinZoom(0);
   const z = hotMap.getBoundsZoom(state);
