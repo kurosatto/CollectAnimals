@@ -13,6 +13,8 @@
   body { margin:0; font-family:system-ui,sans-serif; background:var(--bg); color:var(--ink); }
   main { max-width:960px; margin:0 auto; padding:16px; }
   header { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+  #who label { display:inline-flex; align-items:center; gap:4px; white-space:nowrap; }
+  #who:not(.hidden) { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:4px 12px; }
   h1 { font-size:1.5rem; margin:.5rem 0; }
   .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin:16px 0; }
   input, button, select { font:inherit; padding:10px 12px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--ink); }
@@ -145,8 +147,8 @@
 <main>
   <header>
     <h1>Capture Animals <span class="muted" style="font-size:1rem" id="state-name">California</span></h1>
-    <div id="who" class="hidden"><button class="link" id="username"></button> ·
-      <label title="Your state: the Field Guide, Parks and maps follow it">📍 <select id="my-state"></select></label> ·
+    <div id="who" class="hidden"><button class="link" id="username"></button>
+      <label title="Your state: the Field Guide, Parks and maps follow it">📍 <select id="my-state"></select></label>
       <button class="link" id="logout">Log out</button></div>
   </header>
 
