@@ -1,4 +1,4 @@
-package com.collectanimals.app
+package com.captureanimals.app
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
@@ -43,11 +43,11 @@ import kotlin.math.min
 /**
  * Parks where many of the 100 can be spotted (species/hotspots.json), matching the
  * web page's Hotspots card: a map with a pin per park, a list sorted by species count,
- * and a detail card whose species chips open their Pokédex pages.
+ * and a detail card whose species chips open their Field Guide pages.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun HotspotsScreen(info: ModelInfo, dex: Pokedex, collection: Map<String, Badge>,
+fun HotspotsScreen(info: ModelInfo, dex: FieldGuide, collection: Map<String, Badge>,
                    onOpenDex: (String) -> Unit, onBack: (() -> Unit)? = null) {
     if (onBack != null) BackHandler(onBack = onBack)
     val parks = remember(dex) { dex.parks.sortedByDescending { it.species.size } }
@@ -112,7 +112,7 @@ fun HotspotsScreen(info: ModelInfo, dex: Pokedex, collection: Map<String, Badge>
 
 /** California outline with a pin per park; bigger pins have more species. Tap a pin to select it. */
 @Composable
-private fun HotspotsMap(dex: Pokedex, parks: List<Park>, selectedId: String?, modifier: Modifier,
+private fun HotspotsMap(dex: FieldGuide, parks: List<Park>, selectedId: String?, modifier: Modifier,
                        onSelect: (String) -> Unit) {
     val frame = remember(dex) { CaliforniaFrame(dex.outline) }
     val land = MaterialTheme.colorScheme.surfaceVariant

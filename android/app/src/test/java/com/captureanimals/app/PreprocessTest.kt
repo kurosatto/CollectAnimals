@@ -1,4 +1,4 @@
-package com.collectanimals.app
+package com.captureanimals.app
 
 import org.junit.Assert.assertTrue
 import org.junit.Test

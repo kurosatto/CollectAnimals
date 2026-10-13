@@ -21,3 +21,33 @@ jobs:
       - name: Test
         working-directory: backend
         run: python -m pytest -q
+
+  android:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v3
+      - name: Install Android 16 SDK
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Unit tests and builds
+        # No model.onnx in the repo, so the app builds without it and ClassifierTest skips.
+        run: ./gradlew --no-daemon testDebugUnitTest assembleDebug bundleRelease
+      - name: Check 16 KB page alignment (required by Google Play)
+        run: |
+          apk=app/build/outputs/apk/debug/app-debug.apk
+          "$ANDROID_HOME/build-tools/36.0.0/zipalign" -c -P 16 -v 4 "$apk" | tail -1
+          mkdir -p /tmp/apk && unzip -qo "$apk" 'lib/*' -d /tmp/apk
+          bad=0
+          for so in /tmp/apk/lib/arm64-v8a/*.so; do
+            align=$(readelf -lW "$so" | awk '/LOAD/{print $NF}' | sort -u | head -1)
+            echo "$(basename "$so"): $align"
+            [ $((align)) -ge 16384 ] || bad=1
+          done
+          exit $bad

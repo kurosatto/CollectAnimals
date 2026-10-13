@@ -1,4 +1,4 @@
-package com.collectanimals.app
+package com.captureanimals.app
 
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -106,7 +106,7 @@ fun App(vm: GameViewModel = viewModel()) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var dexSlug by rememberSaveable { mutableStateOf<String?>(null) }
     val info = state.info
-    val dex = state.pokedex
+    val dex = state.fieldGuide
     val entry = dexSlug?.let { slug -> info?.species?.indexOfFirst { it.slug == slug }?.takeIf { it >= 0 } }
     if (info != null && dex != null && entry != null) {
         Scaffold { padding ->
@@ -236,7 +236,7 @@ fun ResultCard(r: CaptureResult, onDismiss: () -> Unit, onPick: (String?) -> Uni
             if (!r.picked && r.choices.isNotEmpty()) PickPanel(r, onPick)
             Row(Modifier.align(Alignment.End)) {
                 if (r.matched && r.species != null) {
-                    TextButton(onClick = { onOpenDex(r.species.slug) }) { Text("Pokédex entry") }
+                    TextButton(onClick = { onOpenDex(r.species.slug) }) { Text("Field Guide entry") }
                 }
                 TextButton(onClick = onDismiss) { Text("Done") }
             }

@@ -1,4 +1,4 @@
-package com.collectanimals.app
+package com.captureanimals.app
 
 import android.app.Application
 import android.graphics.Bitmap
@@ -32,7 +32,7 @@ data class CaptureResult(
 
 data class UiState(
     val info: ModelInfo? = null,
-    val pokedex: Pokedex? = null,
+    val fieldGuide: FieldGuide? = null,
     val collection: Map<String, Badge> = emptyMap(),
     val busy: Boolean = false,
     val result: CaptureResult? = null,
@@ -53,11 +53,11 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             fun text(name: String) = assets.open(name).bufferedReader().use { it.readText() }
             val loaded = withContext(Dispatchers.IO) {
                 Triple(ModelInfo.parse(text("model.json")),
-                       Pokedex.parse(text("details.csv"), text("ranges.json"), text("california_outline.json"),
+                       FieldGuide.parse(text("details.csv"), text("ranges.json"), text("california_outline.json"),
                            runCatching { text("hotspots.json") }.getOrNull()),
                        store.load())
             }
-            _state.update { it.copy(info = loaded.first, pokedex = loaded.second, collection = loaded.third) }
+            _state.update { it.copy(info = loaded.first, fieldGuide = loaded.second, collection = loaded.third) }
         }
     }
 

@@ -1,4 +1,4 @@
-package com.collectanimals.app
+package com.captureanimals.app
 
 import org.json.JSONObject
 
@@ -31,7 +31,7 @@ class Outline(val rings: List<DoubleArray>) {
     val maxLat = rings.maxOf { r -> (1 until r.size step 2).maxOf { r[it] } }
 }
 
-class Pokedex(val details: Map<String, SpeciesDetails>, val ranges: RangeGrid, val outline: Outline,
+class FieldGuide(val details: Map<String, SpeciesDetails>, val ranges: RangeGrid, val outline: Outline,
               val parks: List<Park> = emptyList()) {
 
     /** Names of the parks with the most sightings of this species (as the web's hotspots_for). */
@@ -55,7 +55,7 @@ class Pokedex(val details: Map<String, SpeciesDetails>, val ranges: RangeGrid, v
             }
         }
 
-        fun parse(detailsCsv: String, rangesJson: String, outlineJson: String, hotspotsJson: String? = null): Pokedex {
+        fun parse(detailsCsv: String, rangesJson: String, outlineJson: String, hotspotsJson: String? = null): FieldGuide {
             val rows = parseCsv(detailsCsv)
             val header = rows.first()
             val idx = { name: String -> header.indexOf(name).also { require(it >= 0) { "details.csv lacks $name" } } }
@@ -84,7 +84,7 @@ class Pokedex(val details: Map<String, SpeciesDetails>, val ranges: RangeGrid, v
                 val ring = ringsJson.getJSONArray(i)
                 DoubleArray(ring.length() * 2) { j -> ring.getJSONArray(j / 2).getDouble(j % 2) }
             }
-            return Pokedex(details, ranges, Outline(rings), hotspotsJson?.let(::parseParks).orEmpty())
+            return FieldGuide(details, ranges, Outline(rings), hotspotsJson?.let(::parseParks).orEmpty())
         }
 
         /** Minimal RFC 4180 CSV: quoted fields, doubled quotes, commas/newlines inside quotes. */

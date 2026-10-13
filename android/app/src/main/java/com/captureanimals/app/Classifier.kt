@@ -1,4 +1,4 @@
-package com.collectanimals.app
+package com.captureanimals.app
 
 import ai.onnxruntime.OnnxTensor
 import ai.onnxruntime.OrtEnvironment

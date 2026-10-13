@@ -1,4 +1,4 @@
-package com.collectanimals.app
+package com.captureanimals.app
 
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
@@ -38,7 +38,7 @@ import java.text.DateFormat
 import java.util.Date
 
 /**
- * Your captures' photos, newest first. Tapping a photo opens its Pokédex page;
+ * Your captures' photos, newest first. Tapping a photo opens its Field Guide page;
  * "Delete photo" removes the photo and un-captures the animal, as on the website.
  */
 @Composable

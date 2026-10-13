@@ -1,4 +1,4 @@
-package com.collectanimals.app
+package com.captureanimals.app
 
 import android.graphics.BitmapFactory
 import androidx.activity.compose.BackHandler
@@ -45,9 +45,9 @@ import java.util.Date
 import kotlin.math.cos
 import kotlin.math.ln
 
-/** Full-page Pokédex entry for one species. */
+/** Full-page Field Guide entry for one species. */
 @Composable
-fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: Pokedex, onBack: () -> Unit) {
+fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: FieldGuide, onBack: () -> Unit) {
     BackHandler(onBack = onBack)
     val details = dex.details[s.slug]
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -159,7 +159,7 @@ class CaliforniaFrame(o: Outline) {
 
 /** California outline with the species' sighting cells shaded on top. */
 @Composable
-fun RangeMap(dex: Pokedex, slug: String, color: Color, modifier: Modifier = Modifier) {
+fun RangeMap(dex: FieldGuide, slug: String, color: Color, modifier: Modifier = Modifier) {
     val g = dex.ranges
     val frame = remember(dex) { CaliforniaFrame(dex.outline) }
     val land = MaterialTheme.colorScheme.surfaceVariant
