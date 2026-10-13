@@ -10,6 +10,7 @@
    "ranges": "ranges.json",
    "hotspots": "hotspots.json",
    "seasons": "seasons.json",
+   "utc_offset": -8,
    "inat_place_id": 14,
    "bounds": {"west": -124.6, "east": -113.9, "south": 32.3, "north": 42.2},
    "grid": {"lon0": -124.5, "lat0": 32.5, "step": 0.25, "cols": 42, "rows": 38}
@@ -22,6 +23,8 @@
    "outline": "north_carolina_outline.json",
    "ranges": "north_carolina_ranges.json",
    "hotspots": "north_carolina_hotspots.json",
+   "seasons": "north_carolina_seasons.json",
+   "utc_offset": -5,
    "inat_place_id": 30,
    "bounds": {"west": -84.5, "east": -75.3, "south": 33.7, "north": 36.8},
    "grid": {"lon0": -84.5, "lat0": 33.75, "step": 0.125, "cols": 73, "rows": 24}

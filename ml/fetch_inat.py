@@ -95,7 +95,7 @@ def load_states(path: Path = STATES_JSON, only: list[str] | None = None) -> list
     for s in data["states"]:
         if only and s["code"] not in {c.upper() for c in only}:
             continue
-        for k in ("species", "dex", "outline", "ranges", "hotspots"):
+        for k in ("species", "dex", "outline", "ranges", "hotspots", "seasons"):
             if s.get(k):
                 s[k] = Path(path).parent / s[k]
         out.append(s)
