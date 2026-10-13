@@ -325,9 +325,9 @@ fun CollectionScreen(info: ModelInfo, collection: Map<String, Badge>, onOpen: (S
     val shown = info.dexOrder.filter { category == "all" || it.category == category }
     val tiers = shown.groupBy { it.rarity }
 
-    LazyVerticalGrid(columns = GridCells.Adaptive(104.dp), modifier = Modifier.fillMaxSize(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    LazyVerticalGrid(columns = GridCells.Adaptive(72.dp), modifier = Modifier.fillMaxSize(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         item(span = { GridItemSpan(maxLineSpan) }) {
             Row(Modifier.horizontalScrollCompat(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 categories.forEach { c ->
@@ -363,21 +363,19 @@ fun SpeciesTile(number: Int, s: Species, badge: Badge?, onClick: () -> Unit) {
         colors = CardDefaults.cardColors(containerColor =
             if (caught) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface),
     ) {
-        Column(Modifier.padding(6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(Modifier.padding(4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Box(Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(8.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
                 PixelSprite(s.slug, caught, Modifier.fillMaxSize(0.85f))
             }
             Spacer(Modifier.height(4.dp))
-            Text("#%03d".format(number), style = MaterialTheme.typography.labelSmall,
+            Text("#%03d".format(number), style = MaterialTheme.typography.labelSmall, fontSize = 10.sp,
                 color = MaterialTheme.colorScheme.outline)
-            Text(s.commonName, style = MaterialTheme.typography.labelMedium, maxLines = 2,
+            Text(s.commonName, style = MaterialTheme.typography.labelSmall, maxLines = 1,
                 overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
                 color = if (caught) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline)
-            if (caught) {
-                Text("✓ Captured", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer)
-            } else {
+            // Small tiles, so many fit on a phone; the border and fill mark a captured one.
+            if (!caught) {
                 Box(Modifier.padding(top = 2.dp).size(8.dp).clip(RoundedCornerShape(50)).background(rarityColor(s.rarity)))
             }
         }
