@@ -24,6 +24,8 @@ class State:
     ranges: Path
     hotspots: Path
     bounds: dict
+    # Sightings by month and hour (ml/build_seasons.py); optional.
+    seasons: Path | None = None
 
 
 _states: dict[str, State] = {}
@@ -40,7 +42,7 @@ def load(states_json: Path) -> None:
             code=s["code"], name=s["name"], species_csv=root / s["species"],
             dex_csv=root / s["dex"] if s.get("dex") else None,
             outline=root / s["outline"], ranges=root / s["ranges"], hotspots=root / s["hotspots"],
-            bounds=s["bounds"])
+            bounds=s["bounds"], seasons=root / s["seasons"] if s.get("seasons") else None)
     default_code = data.get("default", next(iter(_states)))
 
 

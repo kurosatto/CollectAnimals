@@ -63,10 +63,21 @@ def upload(client, headers):
                        files={"photo": ("p.jpg", jpeg_bytes(), "image/jpeg")})
 
 
-def test_species_seeded(client):
+def test_species_seeded(client, fake):
     species = client.get("/species").json()
     assert len(species) == 100
-    assert client.get("/species/coyote").json()["scientific_name"] == "Canis latrans"
+    # Names stay hidden until caught.
+    assert all(s["common_name"] is None and s["slug"] is None for s in species)
+    hidden = client.get("/species/coyote").json()
+    assert hidden["revealed"] is False and hidden["scientific_name"] is None
+    assert hidden["rarity"] and hidden["category"]
+
+    h = signup(client)
+    fake.next = [Prediction("coyote", 0.93)]
+    upload(client, h)
+    r = client.get("/species/coyote", headers=h).json()
+    assert r["revealed"] and r["scientific_name"] == "Canis latrans"
+    assert client.get(f"/species/{r['number']}", headers=h).json()["slug"] == "coyote"
 
 
 def test_register_login_me(client):
@@ -106,7 +117,9 @@ def test_capture_awards_badge_once(client, fake):
     r = upload(client, h).json()
     assert r["matched"] and r["new_badge"]
     assert r["species"]["slug"] == "coyote"
-    assert r["top_predictions"][1]["common_name"] == "Gray Fox"
+    # Runner-up guesses don't reveal species the player hasn't unlocked.
+    assert r["top_predictions"][0]["common_name"] == "Coyote"
+    assert r["top_predictions"][1] == {"label": "hidden", "common_name": None, "probability": 0.0404}  # rescaled within the state
 
     r = upload(client, h).json()
     assert r["matched"] and not r["new_badge"]
@@ -124,12 +137,19 @@ def test_low_confidence_and_other_do_not_match(client, fake):
     h = signup(client)
     fake.next = [Prediction("bobcat", 0.41), Prediction("gray_fox", 0.3)]
     r = upload(client, h).json()
-    assert not r["matched"] and r["species"] is None and "Bobcat" in r["message"]
+    assert not r["matched"] and r["species"] is None
+    assert "Bobcat" not in r["message"] and "haven't discovered" in r["message"]
+
+    fake.next = [Prediction("bobcat", 0.95)]
+    upload(client, h)
+    fake.next = [Prediction("bobcat", 0.41), Prediction("gray_fox", 0.3)]
+    r = upload(client, h).json()
+    assert not r["matched"] and "Bobcat" in r["message"]
 
     fake.next = [Prediction("other", 0.97)]
     r = upload(client, h).json()
     assert not r["matched"] and r["top_predictions"][0]["common_name"] is None
-    assert client.get("/me/collection", headers=h).json()["caught"] == 0
+    assert client.get("/me/collection", headers=h).json()["caught"] == 1
 
 
 def test_rejects_non_image(client, fake):
@@ -138,7 +158,7 @@ def test_rejects_non_image(client, fake):
     assert r.status_code == 400
 
 
-def test_dex_entry(client):
+def test_dex_entry(client, fake):
     from app import dex
     from app.config import settings
 
@@ -149,14 +169,50 @@ def test_dex_entry(client):
                  ' "species": {"coyote": [[10, 20, 5]]}}')
     dex.load(settings.details_csv, with_files("CA", ranges=ranges))
 
+    # Before catching: size, weight and map are hints; name and fun fact are locked.
     r = client.get("/species/coyote/dex").json()
-    assert r["species"]["common_name"] == "Coyote"
-    assert r["size"] and r["weight"] and r["fun_fact"] and r["where_to_find"]
+    assert r["species"]["common_name"] is None and r["fun_fact"] is None
+    # Tips can name the animal, so they wait too; active time and parks are hints.
+    assert r["where_to_find"] is None and r["spotting_tip"] is None
+    assert r["size"] and r["weight"] and r["active_time"]
     assert r["range"]["cells"] == [[10, 20, 5]] and r["range"]["grid"]["step"] == 0.25
 
-    r = client.get("/species/bobcat/dex").json()
-    assert r["fun_fact"] and r["range"] is None
+    h = signup(client)
+    fake.next = [Prediction("coyote", 0.93)]
+    upload(client, h)
+    r = client.get("/species/coyote/dex", headers=h).json()
+    assert r["species"]["common_name"] == "Coyote" and r["fun_fact"] and r["where_to_find"]
+
+    r = client.get("/species/bobcat/dex", headers=h).json()
+    assert r["fun_fact"] is None and r["range"] is None and r["size"]
     assert client.get("/species/nope/dex").status_code == 404
+
+
+def test_dex_season_compares_night_sightings_with_the_average(client):
+    import json
+    from pathlib import Path
+
+    from app import dex
+    from app.config import settings
+
+    day = [0] * 6 + [10] * 14 + [0] * 4      # all daytime
+    night = [10] * 6 + [0] * 14 + [10] * 4   # all night
+    tmp = Path(tempfile.mkdtemp())
+    (tmp / "seasons.json").write_text(json.dumps({"species": {
+        "coyote": {"months": [1] * 12, "hours": day},
+        "barn_owl": {"months": [0, 0, 5, 9, 9, 5, 0, 0, 0, 0, 0, 0], "hours": night}}}))
+    from dataclasses import replace
+
+    from app import states as st
+
+    real = st.all_states()
+    dex.load(settings.details_csv, [replace(s, seasons=tmp / "seasons.json") if s.code == "CA" else s
+                                    for s in real])
+    owl = client.get("/species/barn_owl/dex").json()["season"]
+    assert owl["months"][3] == 9 and owl["night_ratio"] == 2.0
+    assert client.get("/species/coyote/dex").json()["season"]["night_ratio"] == 0.0
+    assert client.get("/species/bobcat/dex").json()["season"] is None
+    dex.load(settings.details_csv, real)
 
 
 def test_california_outline(client):
@@ -164,7 +220,7 @@ def test_california_outline(client):
     assert r.status_code == 200 and len(r.json()["rings"][0]) > 100
 
 
-def test_hotspots(client):
+def test_hotspots(client, fake):
     import json
     from pathlib import Path
 
@@ -183,12 +239,19 @@ def test_hotspots(client):
 
     parks = client.get("/hotspots").json()
     assert [p["name"] for p in parks] == ["Big Park", "Small Park"]
-    assert [s["slug"] for s in parks[0]["species"]] == ["california_condor", "coyote"]
+    # Names stay hidden until caught.
+    assert [s["common_name"] for s in parks[0]["species"]] == [None, None]
+
+    h = signup(client)
+    fake.next = [Prediction("california_condor", 0.95)]
+    upload(client, h)
+    parks = client.get("/hotspots", headers=h).json()
+    assert [s["slug"] for s in parks[0]["species"]] == ["california_condor", None]
     assert parks[0]["species"][0]["common_name"] == "California Condor"
 
     r = client.get("/species/coyote/dex").json()
     assert r["hotspots"] == ["Big Park", "Small Park"]
-    assert r["active_time"] and r["spotting_tip"]
+    assert r["active_time"] and r["spotting_tip"] is None
 
 
 def test_login_rate_limit(client):
@@ -212,16 +275,34 @@ def test_states_and_signup_state(client):
     assert r.status_code == 422
 
 
+def seen_everything(client):
+    """Headers for a player who has captured every species, so names show."""
+    from app.db import SessionLocal
+    from app.models import Badge, Capture, Species, User
+
+    h = signup(client, "seer")
+    with SessionLocal() as db:
+        uid = db.query(User).filter_by(username="seer").one().id
+        for s in db.query(Species).all():
+            c = Capture(user_id=uid, species_id=s.id, image_path="", predicted_label=s.slug, confidence=1.0)
+            db.add(c)
+            db.flush()
+            db.add(Badge(user_id=uid, species_id=s.id, first_capture_id=c.id))
+        db.commit()
+    return h
+
+
 def test_species_per_state(client):
-    nc = client.get("/species", params={"state": "NC"}).json()
+    h = seen_everything(client)
+    nc = client.get("/species", params={"state": "NC"}, headers=h).json()
     assert len(nc) == 100 and nc[0]["slug"] == "red_wolf"
     assert "northern_cardinal" in {s["slug"] for s in nc}
     assert "california_condor" not in {s["slug"] for s in nc}
-    assert client.get("/species").json()[0]["slug"] == "mountain_lion"  # California by default
+    assert client.get("/species", headers=h).json()[0]["slug"] == "mountain_lion"  # California by default
     # Shared species: one identity, rarity and name per state.
     assert client.get("/species/american_black_bear").json()["rarity"] == "rare"
     assert client.get("/species/american_black_bear", params={"state": "NC"}).json()["rarity"] == "uncommon"
-    assert client.get("/species/elk", params={"state": "NC"}).json()["common_name"] == "Elk"
+    assert client.get("/species/elk", params={"state": "NC"}, headers=h).json()["common_name"] == "Elk"
     assert client.get("/species", params={"state": "TX"}).status_code == 404
 
 
@@ -255,11 +336,12 @@ def test_capture_only_counts_the_players_state(client, fake):
 
 
 def test_dex_entry_per_state(client):
-    r = client.get("/species/american_alligator/dex", params={"state": "NC"}).json()
+    h = seen_everything(client)
+    r = client.get("/species/american_alligator/dex", params={"state": "NC"}, headers=h).json()
     assert "Greenfield Lake" in r["where_to_find"] and r["caution"] and r["size"]
     # Shared species: North Carolina text replaces California-only text.
-    ca = client.get("/species/elk/dex").json()
-    nc = client.get("/species/elk/dex", params={"state": "NC"}).json()
+    ca = client.get("/species/elk/dex", headers=h).json()
+    nc = client.get("/species/elk/dex", params={"state": "NC"}, headers=h).json()
     assert "Point Reyes" in ca["where_to_find"] and "Cataloochee" in nc["where_to_find"]
     assert "Tule" in ca["fun_fact"] and "Tule" not in nc["fun_fact"]
     assert nc["size"] == ca["size"] and ca["caution"] is None
@@ -270,7 +352,7 @@ def test_old_database_gets_state_column(client):
     from sqlalchemy import inspect, text
 
     from app.db import engine
-    from app.main import add_missing_columns
+    from app.main import add_state_column
 
     with engine.begin() as conn:
         conn.execute(text("DROP TABLE IF EXISTS users_old"))
@@ -281,7 +363,7 @@ def test_old_database_gets_state_column(client):
         conn.execute(text("ALTER TABLE users_old RENAME TO users"))
         conn.execute(text("INSERT INTO users (id, email) VALUES (1, 'a@example.com')"))
     try:
-        add_missing_columns()
+        add_state_column()
         assert "state" in {c["name"] for c in inspect(engine).get_columns("users")}
         with engine.begin() as conn:
             assert conn.execute(text("SELECT state FROM users")).scalar() == "CA"
@@ -298,3 +380,65 @@ def test_sprites(client):
     assert client.get("/sprites/red_wolf.png").status_code == 200  # North Carolina
     assert client.get("/sprites/nope.png").status_code == 404
     assert client.get("/sprites/..%2Fcalifornia_100.png").status_code == 404
+
+
+def test_player_picks_the_animal_when_model_is_unsure(client, fake):
+    h = signup(client)
+    fake.next = [Prediction("bobcat", 0.41), Prediction("gray_fox", 0.3), Prediction("other", 0.1),
+                 Prediction("coyote", 0.08), Prediction("raccoon", 0.05)]
+    r = upload(client, h).json()
+    assert not r["matched"]
+    # The pick list names every suggested species, but never "other".
+    assert [c["slug"] for c in r["choices"]] == ["bobcat", "gray_fox", "coyote", "raccoon"]
+    assert r["choices"][1]["common_name"] == "Gray Fox"
+    assert len(r["top_predictions"]) == 3
+
+    p = client.post(f"/captures/{r['capture_id']}/pick", json={"label": "gray_fox"}, headers=h).json()
+    assert p["matched"] and p["new_badge"] and p["species"]["slug"] == "gray_fox"
+    assert p["album_photo_id"]
+    col = client.get("/me/collection", headers=h).json()
+    assert col["caught"] == 1
+    assert next(e for e in col["entries"] if e["species"]["slug"] == "gray_fox")["caught"]
+
+    # Only the model's suggestions can be picked, and only by the photo's owner.
+    bad = client.post(f"/captures/{r['capture_id']}/pick", json={"label": "mountain_lion"}, headers=h)
+    assert bad.status_code == 400
+    other = client.post(f"/captures/{r['capture_id']}/pick", json={"label": "bobcat"},
+                        headers=signup(client, "bob"))
+    assert other.status_code == 404
+
+
+def test_player_corrects_a_wrong_match(client, fake):
+    h = signup(client)
+    fake.next = [Prediction("coyote", 0.9), Prediction("gray_fox", 0.05)]
+    r = upload(client, h).json()
+    assert r["matched"] and r["species"]["slug"] == "coyote"
+
+    # "Not this animal": the coyote badge and album photo move to the gray fox.
+    p = client.post(f"/captures/{r['capture_id']}/pick", json={"label": "gray_fox"}, headers=h).json()
+    assert p["species"]["slug"] == "gray_fox" and p["new_badge"]
+    caught = [e["species"]["slug"] for e in client.get("/me/collection", headers=h).json()["entries"] if e["caught"]]
+    assert caught == ["gray_fox"]  # the coyote is uncaught (and hidden) again
+    album = client.get("/me/album", headers=h).json()
+    assert [ph["species"]["slug"] for ph in album["photos"]] == ["gray_fox"]
+
+    # "None of these" takes the badge back.
+    n = client.post(f"/captures/{r['capture_id']}/pick", json={"label": "none"}, headers=h).json()
+    assert not n["matched"]
+    assert client.get("/me/collection", headers=h).json()["caught"] == 0
+
+
+def test_bots_befriend_new_players(client):
+    from app.db import SessionLocal
+    from app.models import User
+
+    signup(client, "birdnerd")
+    with SessionLocal() as db:
+        db.query(User).filter_by(username="birdnerd").update({"is_bot": True})
+        db.commit()
+    h = signup(client, "newbie")
+    friends = client.get("/friends", headers=h).json()["friends"]
+    assert [(f["username"], f["is_bot"]) for f in friends] == [("birdnerd", True)]
+    # Removing a bot works like removing anyone.
+    assert client.delete("/friends/birdnerd", headers=h).status_code == 204
+    assert client.get("/friends", headers=h).json()["friends"] == []

@@ -9,6 +9,7 @@
    "outline": "california_outline.json",
    "ranges": "ranges.json",
    "hotspots": "hotspots.json",
+   "seasons": "seasons.json",
    "inat_place_id": 14,
    "bounds": {"west": -124.6, "east": -113.9, "south": 32.3, "north": 42.2},
    "grid": {"lon0": -124.5, "lat0": 32.5, "step": 0.25, "cols": 42, "rows": 38}

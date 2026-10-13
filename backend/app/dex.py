@@ -18,6 +18,10 @@ _details: dict[str, dict] = {}
 _ranges: dict[str, dict] = {}
 _hotspots: dict[str, list[dict]] = {}
 _state_text: dict[str, dict[str, dict]] = {}
+_seasons: dict[str, dict[str, dict]] = {}
+_avg_night_share: dict[str, float] = {}
+# Hours counted as "night" for the day/night hint (local time of the sighting).
+NIGHT_HOURS = set(range(0, 6)) | {20, 21, 22, 23}
 # The state whose where_to_find text lives in details.csv (the original list).
 _base_state: str | None = None
 # hotspots.json lists every species with >= 3 sightings at a park; only show the
@@ -37,6 +41,8 @@ def load(details_csv: Path, states: list[State]) -> None:
     _ranges.clear()
     _hotspots.clear()
     _state_text.clear()
+    _seasons.clear()
+    _avg_night_share.clear()
     if details_csv.exists():
         _details.update(_read_csv(details_csv))
     _base_state = next((s.code for s in states if s.dex_csv is None), None)
@@ -52,10 +58,39 @@ def load(details_csv: Path, states: list[State]) -> None:
         _hotspots[st.code] = parks
         if st.dex_csv and st.dex_csv.exists():
             _state_text[st.code] = _read_csv(st.dex_csv)
+        if st.seasons and st.seasons.exists():
+            seasons = json.loads(st.seasons.read_text(encoding="utf-8"))["species"]
+            _seasons[st.code] = seasons
+            shares = [s for s in map(_night_share, seasons.values()) if s is not None]
+            if shares:
+                _avg_night_share[st.code] = sum(shares) / len(shares)
+
+
+def _night_share(entry: dict) -> float | None:
+    hours = entry.get("hours") or []
+    total = sum(hours)
+    return sum(hours[h] for h in NIGHT_HOURS if h < len(hours)) / total if total >= 30 else None
+
+
+def season_for(slug: str, state: str) -> dict | None:
+    """Sightings per month and hour in this state, plus night_ratio: how much more
+    often than the state's average listed species it's reported at night (people
+    mostly look by day, so raw counts would call everything a daytime animal)."""
+    entry = _seasons.get(state, {}).get(slug)
+    if not entry:
+        return None
+    share, avg = _night_share(entry), _avg_night_share.get(state)
+    ratio = round(share / avg, 2) if share is not None and avg else None
+    return {"months": entry["months"], "hours": entry["hours"], "night_ratio": ratio}
 
 
 def hotspots(state: str) -> list[dict]:
     return _hotspots.get(state, [])
+
+
+def all_hotspots() -> list[dict]:
+    """Every state's parks, for naming where a photo was taken."""
+    return [p for parks in _hotspots.values() for p in parks]
 
 
 def hotspots_for(slug: str, state: str, limit: int = 3) -> list[str]:
