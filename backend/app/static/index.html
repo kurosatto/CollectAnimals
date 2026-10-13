@@ -15,7 +15,7 @@
   header { display:flex; justify-content:space-between; align-items:center; gap:12px; }
   h1 { font-size:1.5rem; margin:.5rem 0; }
   .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin:16px 0; }
-  input, button { font:inherit; padding:10px 12px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--ink); }
+  input, button, select { font:inherit; padding:10px 12px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--ink); }
   button { background:var(--accent); color:#fff; border:none; cursor:pointer; }
   button.link { background:none; color:var(--accent); padding:0; }
   form { display:flex; flex-wrap:wrap; gap:8px; }
@@ -61,8 +61,10 @@
 <body>
 <main>
   <header>
-    <h1>CollectAnimals <span class="muted" style="font-size:1rem">California</span></h1>
-    <div id="who" class="hidden"><span id="username"></span> · <button class="link" id="logout">Log out</button></div>
+    <h1>CollectAnimals <span class="muted" style="font-size:1rem" id="state-name">California</span></h1>
+    <div id="who" class="hidden"><span id="username"></span> ·
+      <label title="Your state: the Dex, Hotspots and maps follow it">📍 <select id="my-state"></select></label> ·
+      <button class="link" id="logout">Log out</button></div>
   </header>
 
   <section id="auth" class="card">
@@ -71,6 +73,7 @@
       <input id="email" type="email" placeholder="Email" class="hidden">
       <input id="ident" placeholder="Email or username" required>
       <input id="password" type="password" placeholder="Password (8+ chars)" required>
+      <select id="signup-state" class="hidden" aria-label="Your state"></select>
       <button type="submit" id="auth-submit">Log in</button>
     </form>
     <p class="muted"><button class="link" id="toggle">Need an account? Sign up</button></p>
@@ -113,7 +116,7 @@
   </div>
   <div class="dex-body">
     <div class="dex-map"><div id="dex-map"></div><div class="muted" id="dex-map-note" style="font-size:.8rem"></div>
-      <p id="dex-where" style="margin:8px 0 0"></p></div>
+      <p id="dex-where" style="margin:8px 0 0; white-space:pre-line"></p></div>
     <dl>
       <dt>Most active</dt><dd id="dex-active"></dd>
       <dt>Spotting tip</dt><dd id="dex-tip"></dd>
@@ -154,6 +157,7 @@ $("toggle").onclick = () => {
   $("auth-title").textContent = $("auth-submit").textContent = signup ? "Sign up" : "Log in";
   $("toggle").textContent = signup ? "Have an account? Log in" : "Need an account? Sign up";
   $("email").classList.toggle("hidden", !signup);
+  $("signup-state").classList.toggle("hidden", !signup);
   $("email").required = signup;
   $("ident").placeholder = signup ? "Username" : "Email or username";
 };
@@ -165,7 +169,8 @@ $("auth-form").onsubmit = async (e) => {
     let r;
     if (signup) {
       r = await api("/auth/register", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: $("email").value, username: $("ident").value, password: $("password").value }) });
+        body: JSON.stringify({ email: $("email").value, username: $("ident").value, password: $("password").value,
+                               state: $("signup-state").value }) });
     } else {
       r = await api("/auth/login", { method: "POST",
         body: new URLSearchParams({ username: $("ident").value, password: $("password").value }) });
@@ -233,18 +238,47 @@ async function loadCollection() {
   });
 }
 
-// California outline rings as [lon, lat]; this rough fallback is replaced by
-// the Natural Earth outline from /map/california when it loads.
-let CALIFORNIA = [[[-124.21,42.0],[-120.0,42.0],[-120.0,39.0],[-114.63,35.0],[-114.72,32.72],
-  [-117.12,32.53],[-118.52,34.03],[-120.47,34.45],[-121.95,36.6],[-122.51,37.78],[-124.35,40.3]]];
-fetch("/map/california").then((r) => r.ok ? r.json() : null)
-  .then((o) => { if (o && o.rings) CALIFORNIA = o.rings; }).catch(() => {});
-const MAP = { lon0: -124.6, lat1: 42.2, kx: 40 * Math.cos(37 * Math.PI / 180), ky: 40 };
+// The player's state (from /me) picks the Dex, Hotspots and map. Outline rings
+// are [lon, lat] from /map/<state>; the map is scaled so every state is ~430 px wide.
+let states = [];
+let myState = { code: "CA", name: "California", bounds: { west: -124.6, east: -113.9, south: 32.3, north: 42.2 } };
+let OUTLINE = [];
+let MAP = {};
 const px = (lon, lat) => [(lon - MAP.lon0) * MAP.kx, (MAP.lat1 - lat) * MAP.ky];
 
+async function loadStates() {
+  try { states = await api("/states"); } catch { states = []; }
+  for (const id of ["signup-state", "my-state"]) {
+    $(id).innerHTML = "";
+    for (const st of states) $(id).append(new Option(st.name, st.code));
+  }
+}
+
+async function useState(code) {
+  myState = states.find((st) => st.code === code) || myState;
+  $("state-name").textContent = myState.name;
+  $("my-state").value = myState.code;
+  const b = myState.bounds;
+  const k = Math.cos((b.south + b.north) / 2 * Math.PI / 180);
+  const scale = 430 / ((b.east - b.west) * k);
+  MAP = { lon0: b.west, lat1: b.north, kx: scale * k, ky: scale };
+  OUTLINE = [];
+  try { OUTLINE = (await api(`/map/${myState.code}`)).rings || []; } catch {}
+}
+
+$("my-state").onchange = async () => {
+  try {
+    await api("/me", { method: "PATCH", headers: { "Content-Type": "application/json" },
+                       body: JSON.stringify({ state: $("my-state").value }) });
+    hotSelected = null;
+    await useState($("my-state").value);
+    loadCollection();
+  } catch (err) { alert(err.message); }
+};
+
 function rangeSvg(range) {
-  const w = px(-113.9, 0)[0], h = px(0, 32.3)[1];
-  const land = CALIFORNIA.map((ring) => "M" + ring.map(([lon, lat]) =>
+  const w = px(myState.bounds.east, 0)[0], h = px(0, myState.bounds.south)[1];
+  const land = OUTLINE.map((ring) => "M" + ring.map(([lon, lat]) =>
     px(lon, lat).map((v) => v.toFixed(1)).join(",")).join("L") + "Z").join("");
   let cells = "";
   if (range) {
@@ -257,12 +291,12 @@ function rangeSvg(range) {
         height="${(step * MAP.ky).toFixed(1)}" opacity="${op}"/>`;
     }
   }
-  return `<svg viewBox="0 0 ${w.toFixed(0)} ${h.toFixed(0)}" role="img" aria-label="Map of California sightings">
+  return `<svg viewBox="0 0 ${w.toFixed(0)} ${h.toFixed(0)}" role="img" aria-label="Map of ${myState.name} sightings">
     <path class="land" d="${land}"/>${cells}</svg>`;
 }
 
 async function openDex(slug, num, caught) {
-  const d = await api(`/species/${encodeURIComponent(slug)}/dex`);
+  const d = await api(`/species/${encodeURIComponent(slug)}/dex?state=${myState.code}`);
   const s = d.species;
   $("dex-num").textContent = `#${String(num).padStart(3, "0")}`;
   $("dex-name").textContent = s.common_name;
@@ -271,7 +305,8 @@ async function openDex(slug, num, caught) {
   $("dex-rarity").style.color = `var(--${s.rarity})`;
   $("dex-map").innerHTML = rangeSvg(d.range);
   $("dex-map-note").textContent = d.range ? "Where it's been seen (iNaturalist)" : "Sighting map coming soon";
-  $("dex-where").textContent = d.where_to_find ? "📍 " + d.where_to_find : "";
+  $("dex-where").textContent = (d.where_to_find ? "📍 " + d.where_to_find : "") +
+    (d.caution ? "\n⚠️ " + d.caution : "");
   $("dex-active").textContent = d.active_time || "Unknown";
   $("dex-tip").textContent = d.spotting_tip || "—";
   $("dex-hotspots").textContent = d.hotspots.length ? d.hotspots.join(", ") : "—";
@@ -284,7 +319,7 @@ let hotspots = [];
 let hotSelected = null;
 
 async function loadHotspots() {
-  try { hotspots = await api("/hotspots"); } catch { hotspots = []; }
+  try { hotspots = await api(`/hotspots?state=${myState.code}`); } catch { hotspots = []; }
   $("hotspots-card").classList.toggle("hidden", !hotspots.length);
   if (hotspots.length) drawHotspots();
 }
@@ -344,10 +379,15 @@ async function render() {
   $("game").classList.toggle("hidden", !authed);
   $("who").classList.toggle("hidden", !authed);
   if (authed) {
-    try { $("username").textContent = (await api("/me")).username; loadCollection(); } catch {}
+    try {
+      const me = await api("/me");
+      $("username").textContent = me.username;
+      await useState(me.state);
+      loadCollection();
+    } catch {}
   }
 }
-render();
+loadStates().then(render);
 </script>
 </body>
 </html>
