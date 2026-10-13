@@ -38,6 +38,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.LinearProgressIndicator
@@ -112,23 +114,26 @@ fun App(vm: GameViewModel = viewModel()) {
         Scaffold { padding ->
             Box(Modifier.padding(padding)) {
                 val s = info.species[entry]
-                DexEntryScreen(info.dexNumber(s.slug), s, state.collection[s.slug], dex) { dexSlug = null }
+                DexEntryScreen(info.dexNumber(s.slug), s, state.collection[s.slug], dex, info.stateName) { dexSlug = null }
             }
         }
         return
     }
     val total = info?.species?.size ?: 0
+    val captured = info?.species?.count { it.slug in state.collection } ?: 0
 
     Scaffold(topBar = {
         Column {
-            TopAppBar(title = { Text(if (tab == 0) "Capture Animals" else TABS[tab].title) })
+            TopAppBar(title = { Text(if (tab == 0) "Capture Animals" else TABS[tab].title) }, actions = {
+                if (info != null && state.states.size > 1) StatePicker(state.states, info.stateCode, vm::useState)
+            })
             if (info != null) {
                 Column(Modifier.padding(horizontal = 16.dp)) {
-                    Text("${state.collection.size} / $total California species captured",
+                    Text("$captured / $total ${info.stateName} species captured",
                         style = MaterialTheme.typography.bodyMedium)
                     Spacer(Modifier.height(4.dp))
                     LinearProgressIndicator(
-                        progress = { if (total == 0) 0f else state.collection.size / total.toFloat() },
+                        progress = { if (total == 0) 0f else captured / total.toFloat() },
                         modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(8.dp))
                 }
@@ -152,6 +157,22 @@ fun App(vm: GameViewModel = viewModel()) {
                 TABS[tab].key == "gallery" -> GalleryScreen(info, state.collection, onOpenDex = { dexSlug = it },
                     onDelete = vm::deleteCatch)
                 dex != null -> HotspotsScreen(info, dex, state.collection, onOpenDex = { dexSlug = it })
+            }
+        }
+    }
+}
+
+/** "📍 California ▾": the player's state; the Field Guide, Parks and maps follow it. */
+@Composable
+fun StatePicker(states: List<StateInfo>, current: String, onPick: (String) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        TextButton(onClick = { open = true }) {
+            Text("📍 ${states.firstOrNull { it.code == current }?.name ?: current} ▾")
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            states.forEach { st ->
+                DropdownMenuItem(text = { Text(st.name) }, onClick = { open = false; onPick(st.code) })
             }
         }
     }
@@ -192,7 +213,8 @@ fun CatchScreen(state: UiState, onPhoto: (Uri) -> Unit, onDismiss: () -> Unit, o
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("Photograph a wild animal. If it's one of the 100 California species, you earn its badge.",
+        Text("Photograph a wild animal. If it's one of the ${state.info?.species?.size ?: 100} " +
+            "${state.info?.stateName ?: "California"} species, you earn its badge.",
             style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Button(onClick = ::launchCamera, enabled = !state.busy) { Text("Take photo") }

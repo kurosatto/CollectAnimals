@@ -31,7 +31,9 @@ data class CaptureResult(
 )
 
 data class UiState(
+    // The model, with the player's state list as its species.
     val info: ModelInfo? = null,
+    val states: List<StateInfo> = emptyList(),
     val fieldGuide: FieldGuide? = null,
     val collection: Map<String, Badge> = emptyMap(),
     val busy: Boolean = false,
@@ -47,18 +49,41 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     private var classifier: Classifier? = null
     private val classifierLock = Mutex()
 
+    private val prefs = app.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE)
+    private var baseInfo: ModelInfo? = null
+
     init {
         viewModelScope.launch {
-            val assets = getApplication<Application>().assets
-            fun text(name: String) = assets.open(name).bufferedReader().use { it.readText() }
             val loaded = withContext(Dispatchers.IO) {
-                Triple(ModelInfo.parse(text("model.json")),
-                       FieldGuide.parse(text("details.csv"), text("ranges.json"), text("california_outline.json"),
-                           runCatching { text("hotspots.json") }.getOrNull(),
-                           runCatching { text("seasons.json") }.getOrNull()),
-                       store.load())
+                Triple(ModelInfo.parse(asset("model.json")), States.parse(asset("states.json")), store.load())
             }
-            _state.update { it.copy(info = loaded.first, fieldGuide = loaded.second, collection = loaded.third) }
+            baseInfo = loaded.first
+            _state.update { it.copy(states = loaded.second, collection = loaded.third) }
+            useState(prefs.getString("state", null))
+        }
+    }
+
+    private fun asset(name: String): String =
+        getApplication<Application>().assets.open(name).bufferedReader().use { it.readText() }
+
+    private fun assetOrNull(name: String?): String? = name?.let { runCatching { asset(it) }.getOrNull() }
+
+    /**
+     * Switch the Field Guide, Parks and maps to another state (remembered on the phone).
+     * Badges are per species, so a coyote captured in California counts in North Carolina too.
+     */
+    fun useState(code: String?) {
+        val base = baseInfo ?: return
+        val states = _state.value.states
+        val st = states.firstOrNull { it.code == code } ?: states.firstOrNull() ?: return
+        viewModelScope.launch {
+            val (info, guide) = withContext(Dispatchers.IO) {
+                base.forState(st, States.speciesList(asset(st.speciesCsv))) to
+                    FieldGuide.parse(asset("details.csv"), assetOrNull(st.ranges), asset(st.outline),
+                        assetOrNull(st.hotspots), assetOrNull(st.seasons), assetOrNull(st.dexCsv))
+            }
+            prefs.edit().putString("state", st.code).apply()
+            _state.update { it.copy(info = info, fieldGuide = guide, result = null) }
         }
     }
 
@@ -86,9 +111,12 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     private suspend fun classify(uri: Uri, info: ModelInfo): CaptureResult {
         val app = getApplication<Application>()
         val bitmap = ImageLoader.load(app, uri, minShortSide = info.resize)
-        // Five guesses: three are shown, all five are offered if the player corrects the model.
-        val preds = classifier(info).predict(ImageLoader.toRgb(bitmap), k = 5)
+        // Only the player's state counts: drop the other states' species and rescale, as the
+        // backend does. Five guesses: three are shown, all five are offered if the player
+        // corrects the model.
         val bySlug = info.species.associateBy { it.slug }
+        val preds = restrict(classifier(info).predict(ImageLoader.toRgb(bitmap), k = info.classes.size),
+            bySlug.keys + info.otherLabel, info.otherLabel).take(5)
         val top = preds.first()
         val species = bySlug[top.label]
         val matched = species != null && top.probability >= info.matchThreshold
@@ -106,7 +134,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             matched && newBadge -> "You captured a ${species!!.commonName}! New badge unlocked."
             matched -> "Another ${species!!.commonName} for your collection."
             species != null -> "Might be a ${species.commonName}, but we're not sure. Try a clearer photo!"
-            else -> "We couldn't match this to any animal in the California collection."
+            else -> "We couldn't match this to any animal in the ${info.stateName} collection."
         }
         return CaptureResult(
             photo = ImageLoader.thumbnail(bitmap, 1024),
@@ -169,3 +197,4 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         classifier?.close()
     }
 }
+

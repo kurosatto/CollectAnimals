@@ -9,6 +9,10 @@ data class SpeciesDetails(
     val whereToFind: String = "",
     val activeTime: String = "",
     val spottingTip: String = "",
+    /** "none", "caution" or "danger", with how far to stay back and why. */
+    val safety: String = "none",
+    val safeDistance: String = "",
+    val safetyNote: String = "",
 )
 
 data class ParkSpecies(val slug: String, val observations: Int)
@@ -53,7 +57,7 @@ class RangeGrid(val lon0: Double, val lat0: Double, val step: Double, val cols: 
     fun sightings(slug: String) = cells[slug].orEmpty().sumOf { it[2] }
 }
 
-/** California outline rings as [lon, lat] pairs (species/california_outline.json). */
+/** A state's outline rings as [lon, lat] pairs (e.g. species/california_outline.json). */
 class Outline(val rings: List<DoubleArray>) {
     val minLon = rings.minOf { r -> (r.indices step 2).minOf { r[it] } }
     val maxLon = rings.maxOf { r -> (r.indices step 2).maxOf { r[it] } }
@@ -61,7 +65,8 @@ class Outline(val rings: List<DoubleArray>) {
     val maxLat = rings.maxOf { r -> (1 until r.size step 2).maxOf { r[it] } }
 }
 
-class FieldGuide(val details: Map<String, SpeciesDetails>, val ranges: RangeGrid, val outline: Outline,
+/** One state's Field Guide data. [ranges] is null until that state's sighting map is built. */
+class FieldGuide(val details: Map<String, SpeciesDetails>, val ranges: RangeGrid?, val outline: Outline,
               val parks: List<Park> = emptyList(), val seasons: Map<String, Season> = emptyMap()) {
 
     // People mostly look by day, so compare each species with the average listed one.
@@ -111,30 +116,44 @@ class FieldGuide(val details: Map<String, SpeciesDetails>, val ranges: RangeGrid
             }
         }
 
-        fun parse(detailsCsv: String, rangesJson: String, outlineJson: String, hotspotsJson: String? = null,
-                  seasonsJson: String? = null): FieldGuide {
-            val rows = parseCsv(detailsCsv)
-            val header = rows.first()
-            val idx = { name: String -> header.indexOf(name).also { require(it >= 0) { "details.csv lacks $name" } } }
-            val (slug, size, weight, fact) = listOf(idx("slug"), idx("size"), idx("weight"), idx("fun_fact"))
-            // Optional columns, so an older details.csv still loads.
-            val where = header.indexOf("where_to_find")
-            val active = header.indexOf("active_time")
-            val tip = header.indexOf("spotting_tip")
-            val details = rows.drop(1).filter { it.size > fact }.associate {
-                it[slug] to SpeciesDetails(it[size], it[weight], it[fact], it.getOrElse(where) { "" },
-                    it.getOrElse(active) { "" }, it.getOrElse(tip) { "" })
+        /**
+         * [stateDexCsv] is a state's own text (where to find, fun fact, safety...) laid
+         * over details.csv, as the web's dex.details(); details.csv's where-to-find is
+         * about California, so it's dropped for a state with its own file.
+         */
+        fun parse(detailsCsv: String, rangesJson: String?, outlineJson: String, hotspotsJson: String? = null,
+                  seasonsJson: String? = null, stateDexCsv: String? = null): FieldGuide {
+            fun table(csv: String): Map<String, Map<String, String>> {
+                val rows = parseCsv(csv)
+                val header = rows.first()
+                return rows.drop(1).associate { r -> r[0] to header.indices.associate { header[it] to r.getOrElse(it) { "" } } }
+            }
+            val base = table(detailsCsv)
+            require(base.values.firstOrNull()?.keys?.containsAll(listOf("slug", "size", "weight", "fun_fact")) != false) {
+                "details.csv lacks a required column"
+            }
+            val overlay = stateDexCsv?.let(::table).orEmpty()
+            val details = base.mapValues { (slug, row) ->
+                val own = overlay[slug].orEmpty()
+                // Optional columns, so an older details.csv still loads.
+                fun f(key: String) = own[key]?.takeIf { it.isNotBlank() }
+                    ?: (if (key == "where_to_find" && stateDexCsv != null) "" else row[key].orEmpty())
+                SpeciesDetails(row["size"].orEmpty(), row["weight"].orEmpty(), f("fun_fact"), f("where_to_find"),
+                    f("active_time"), f("spotting_tip"), f("safety").ifBlank { "none" }, f("safe_distance"),
+                    f("safety_note"))
             }
 
-            val r = JSONObject(rangesJson)
-            val g = r.getJSONObject("grid")
-            val sp = r.getJSONObject("species")
-            val cells = sp.keys().asSequence().associateWith { key ->
-                val arr = sp.getJSONArray(key)
-                List(arr.length()) { i -> arr.getJSONArray(i).let { c -> intArrayOf(c.getInt(0), c.getInt(1), c.getInt(2)) } }
+            val ranges = rangesJson?.let { json ->
+                val r = JSONObject(json)
+                val g = r.getJSONObject("grid")
+                val sp = r.getJSONObject("species")
+                val cells = sp.keys().asSequence().associateWith { key ->
+                    val arr = sp.getJSONArray(key)
+                    List(arr.length()) { i -> arr.getJSONArray(i).let { c -> intArrayOf(c.getInt(0), c.getInt(1), c.getInt(2)) } }
+                }
+                RangeGrid(g.getDouble("lon0"), g.getDouble("lat0"), g.getDouble("step"),
+                    g.getInt("cols"), g.getInt("rows"), cells)
             }
-            val ranges = RangeGrid(g.getDouble("lon0"), g.getDouble("lat0"), g.getDouble("step"),
-                g.getInt("cols"), g.getInt("rows"), cells)
 
             val ringsJson = JSONObject(outlineJson).getJSONArray("rings")
             val rings = List(ringsJson.length()) { i ->

@@ -47,7 +47,7 @@ import kotlin.math.ln
 
 /** Full-page Field Guide entry for one species. */
 @Composable
-fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: FieldGuide, onBack: () -> Unit) {
+fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: FieldGuide, stateName: String, onBack: () -> Unit) {
     BackHandler(onBack = onBack)
     val details = dex.details[s.slug]
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -102,8 +102,22 @@ fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: FieldGuide, onBa
             WhenToLook(season, dex.dayNight(s.slug), rarityColor(s.rarity))
         }
 
+        details?.takeIf { it.safety != "none" }?.let { d ->
+            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor =
+                (if (d.safety == "danger") Color(0xFFD9534F) else Color(0xFFE0A100)).copy(alpha = 0.15f))) {
+                Column(Modifier.padding(16.dp)) {
+                    Text(if (d.safety == "danger") "⚠️ Dangerous" else "✋ Caution",
+                        style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                    if (d.safetyNote.isNotBlank()) Text(d.safetyNote, style = MaterialTheme.typography.bodyMedium)
+                    if (d.safeDistance.isNotBlank()) {
+                        Text("Stay at least ${d.safeDistance} away.", style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+            }
+        }
+
         Text("Where to find it", style = MaterialTheme.typography.titleMedium)
-        RangeMap(dex, s.slug, rarityColor(s.rarity), Modifier.fillMaxWidth())
+        dex.ranges?.let { RangeMap(dex, it, s.slug, rarityColor(s.rarity), Modifier.fillMaxWidth()) }
         details?.whereToFind?.takeIf { it.isNotBlank() }?.let {
             Text("📍 $it", style = MaterialTheme.typography.bodyMedium)
         }
@@ -112,9 +126,12 @@ fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: FieldGuide, onBa
         if (dex.parks.isNotEmpty()) {
             LabeledLine("Hotspots", dex.hotspotsFor(s.slug).joinToString(", ").ifEmpty { "—" })
         }
-        Text("Each square is about 25 km (15 mi) across; darker means more of the " +
-            "${dex.ranges.sightings(s.slug)} recent iNaturalist sightings in California.",
-            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+        dex.ranges?.let { g ->
+            val km = (g.step * 100).toInt()
+            Text("Each square is about $km km (${(km * 0.62).toInt()} mi) across; darker means more of the " +
+                "${g.sightings(s.slug)} recent iNaturalist sightings in $stateName.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+        }
     }
 }
 
@@ -184,10 +201,9 @@ class CaliforniaFrame(o: Outline) {
     }
 }
 
-/** California outline with the species' sighting cells shaded on top. */
+/** The state's outline with the species' sighting cells shaded on top. */
 @Composable
-fun RangeMap(dex: FieldGuide, slug: String, color: Color, modifier: Modifier = Modifier) {
-    val g = dex.ranges
+fun RangeMap(dex: FieldGuide, g: RangeGrid, slug: String, color: Color, modifier: Modifier = Modifier) {
     val frame = remember(dex) { CaliforniaFrame(dex.outline) }
     val land = MaterialTheme.colorScheme.surfaceVariant
     val sea = MaterialTheme.colorScheme.surface

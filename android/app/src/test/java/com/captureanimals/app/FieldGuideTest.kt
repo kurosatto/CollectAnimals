@@ -21,13 +21,14 @@ class FieldGuideTest {
             File(dir, "california_outline.json").readText())
         val slugs = FieldGuide.parseCsv(File(dir, "california_100.csv").readText()).drop(1).map { it[0] }
         assertEquals(100, slugs.size)
+        val ranges = dex.ranges!!
         for (slug in slugs) {
             val d = dex.details[slug]
             assertTrue("no details for $slug", d != null && d.size.isNotBlank() && d.weight.isNotBlank() &&
                 d.funFact.isNotBlank() && d.whereToFind.isNotBlank())
-            assertTrue("no range cells for $slug", dex.ranges.sightings(slug) > 0)
-            for (c in dex.ranges.cells.getValue(slug)) {
-                assertTrue("$slug cell off grid", c[0] in 0 until dex.ranges.cols && c[1] in 0 until dex.ranges.rows)
+            assertTrue("no range cells for $slug", ranges.sightings(slug) > 0)
+            for (c in ranges.cells.getValue(slug)) {
+                assertTrue("$slug cell off grid", c[0] in 0 until ranges.cols && c[1] in 0 until ranges.rows)
             }
         }
         // California spans roughly 124.4°W–114.1°W and 32.5°N–42°N.
@@ -75,5 +76,42 @@ class FieldGuideTest {
         val info = ModelInfo(emptyList(), 224, 256, FloatArray(3), FloatArray(3), 0.7f, "other", species)
         assertEquals(listOf("coyote", "quail", "skunk", "condor"), info.dexOrder.map { it.slug })
         assertEquals(4, info.dexNumber("condor"))
+    }
+
+    /** Every state in states.json has a full list with details and sprites, and its own text wins. */
+    @Test
+    fun everyStateListIsComplete() {
+        val dir = File("../../species")
+        val states = States.parse(File(dir, "states.json").readText())
+        assertEquals(listOf("CA", "NC"), states.map { it.code })
+        for (st in states) {
+            val list = States.speciesList(File(dir, st.speciesCsv).readText())
+            assertEquals(st.code, 100, list.size)
+            val guide = FieldGuide.parse(File(dir, "details.csv").readText(), null, File(dir, st.outline).readText(),
+                stateDexCsv = st.dexCsv?.let { File(dir, it).readText() })
+            for (s in list) {
+                val d = guide.details[s.slug]
+                assertTrue("${st.code}: no details for ${s.slug}", d != null && d.size.isNotBlank() && d.funFact.isNotBlank())
+                assertTrue("${st.code}: no sprite for ${s.slug}", File(dir, "sprites/${s.slug}.png").exists() &&
+                    File(dir, "sprites/${s.slug}_silhouette.png").exists())
+            }
+        }
+        val nc = states.single { it.code == "NC" }
+        val ncGuide = FieldGuide.parse(File(dir, "details.csv").readText(), null, File(dir, nc.outline).readText(),
+            stateDexCsv = File(dir, nc.dexCsv!!).readText())
+        assertTrue("Cataloochee" in ncGuide.details.getValue("elk").whereToFind)
+        assertEquals("danger", ncGuide.details.getValue("american_alligator").safety)
+        assertTrue(ncGuide.outline.minLon in -84.4..-84.2)
+    }
+
+    /** As the backend: a North Carolina photo can't be split with a California-only species. */
+    @Test
+    fun restrictKeepsOnlyTheStatesSpecies() {
+        val preds = listOf(Prediction("western_bluebird", 0.5f), Prediction("eastern_bluebird", 0.4f),
+            Prediction("other", 0.1f))
+        val r = restrict(preds, setOf("eastern_bluebird", "other"))
+        assertEquals(listOf("eastern_bluebird", "other"), r.map { it.label })
+        assertEquals(0.8f, r[0].probability, 1e-4f)
+        assertEquals(listOf(Prediction("other", 1f)), restrict(preds, setOf("coyote")))
     }
 }

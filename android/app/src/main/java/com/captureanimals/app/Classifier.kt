@@ -14,7 +14,10 @@ data class Species(
     val rarity: String,
 )
 
-/** Contents of assets/model.json, written by ml/export_onnx.py. */
+/**
+ * Contents of assets/model.json, written by ml/export_onnx.py. [species] is the
+ * player's state list (see [forState]); [classes] is everything the model knows.
+ */
 class ModelInfo(
     val classes: List<String>,
     val imgSize: Int,
@@ -24,7 +27,13 @@ class ModelInfo(
     val matchThreshold: Float,
     val otherLabel: String,
     val species: List<Species>,
+    val stateCode: String = "CA",
+    val stateName: String = "California",
 ) {
+    /** The same model, playing with another state's list. */
+    fun forState(state: StateInfo, list: List<Species>) =
+        ModelInfo(classes, imgSize, resize, mean, std, matchThreshold, otherLabel, list, state.code, state.name)
+
     /** Dex order, as on the website: common to legendary, then by kind, then list order. */
     val dexOrder: List<Species> by lazy {
         species.withIndex().sortedWith(compareBy(
@@ -66,6 +75,14 @@ class ModelInfo(
 }
 
 data class Prediction(val label: String, val probability: Float)
+
+/** Keep only the allowed labels, rescaled so their probabilities sum to 1 (backend's restrict()). */
+fun restrict(preds: List<Prediction>, allowed: Set<String>, otherLabel: String = "other"): List<Prediction> {
+    val kept = preds.filter { it.label in allowed }
+    val total = kept.sumOf { it.probability.toDouble() }
+    if (kept.isEmpty() || total <= 0) return listOf(Prediction(otherLabel, 1f))
+    return kept.map { Prediction(it.label, (it.probability / total).toFloat()) }
+}
 
 /** Runs the exported model with ONNX Runtime. The model already ends in softmax. */
 class Classifier(modelBytes: ByteArray, val info: ModelInfo) : AutoCloseable {
