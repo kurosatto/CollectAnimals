@@ -34,7 +34,10 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -103,32 +106,43 @@ fun rarityColor(rarity: String): Color = when (rarity) {
 @Composable
 fun App(vm: GameViewModel = viewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
-    var tab by rememberSaveable { mutableIntStateOf(0) }
+    var tabChoice by rememberSaveable { mutableIntStateOf(0) }
     var dexSlug by rememberSaveable { mutableStateOf<String?>(null) }
     val info = state.info
     val dex = state.fieldGuide
-    val entry = dexSlug?.let { slug -> info?.species?.indexOfFirst { it.slug == slug }?.takeIf { it >= 0 } }
+    // A state without park data yet has no Parks tab, so fall back to Capture.
+    val tab = if (TABS[tabChoice].key == "hotspots" && dex?.parks.isNullOrEmpty()) 0 else tabChoice
+    // The state's own entry, or another state's species from the Photos tab.
+    val entry = dexSlug?.let { slug ->
+        info?.species?.firstOrNull { it.slug == slug } ?: state.allSpecies.firstOrNull { it.slug == slug }
+    }
     if (info != null && dex != null && entry != null) {
         Scaffold { padding ->
             Box(Modifier.padding(padding)) {
-                val s = info.species[entry]
-                DexEntryScreen(info.dexNumber(s.slug), s, state.collection[s.slug], dex) { dexSlug = null }
+                DexEntryScreen(info.dexNumber(entry.slug), entry, state.collection[entry.slug], dex) { dexSlug = null }
             }
         }
         return
     }
+    if (state.needsStatePick && state.states.size > 1) {
+        StatePicker(state.states, onDismiss = { vm.chooseState(state.stateCode) }, onPick = vm::chooseState)
+    }
     val total = info?.species?.size ?: 0
+    // Badges are per species, so a coyote captured in one state counts in every state that lists it.
+    val captured = info?.species?.count { it.slug in state.collection } ?: 0
 
     Scaffold(topBar = {
         Column {
-            TopAppBar(title = { Text(if (tab == 0) "Capture Animals" else TABS[tab].title) })
+            TopAppBar(title = { Text(if (tab == 0) "Capture Animals" else TABS[tab].title) }, actions = {
+                if (state.states.size > 1) StateMenu(state.states, state.stateCode, vm::chooseState)
+            })
             if (info != null) {
                 Column(Modifier.padding(horizontal = 16.dp)) {
-                    Text("${state.collection.size} / $total California species captured",
+                    Text("$captured / $total ${dex?.region ?: ""} species captured",
                         style = MaterialTheme.typography.bodyMedium)
                     Spacer(Modifier.height(4.dp))
                     LinearProgressIndicator(
-                        progress = { if (total == 0) 0f else state.collection.size / total.toFloat() },
+                        progress = { if (total == 0) 0f else captured / total.toFloat() },
                         modifier = Modifier.fillMaxWidth())
                     Spacer(Modifier.height(8.dp))
                 }
@@ -139,7 +153,7 @@ fun App(vm: GameViewModel = viewModel()) {
         NavigationBar {
             TABS.forEachIndexed { i, t ->
                 if (t.key == "hotspots" && dex?.parks.isNullOrEmpty()) return@forEachIndexed
-                NavigationBarItem(selected = tab == i, onClick = { tab = i },
+                NavigationBarItem(selected = tab == i, onClick = { tabChoice = i },
                     icon = { TabIcon(t.icon, Modifier.size(28.dp)) }, label = { Text(t.title) })
             }
         }
@@ -149,12 +163,41 @@ fun App(vm: GameViewModel = viewModel()) {
                 info == null -> CircularProgressIndicator(Modifier.align(Alignment.Center))
                 TABS[tab].key == "catch" -> CatchScreen(state, vm::capture, vm::dismissResult, vm::pick) { dexSlug = it }
                 TABS[tab].key == "collection" -> CollectionScreen(info, state.collection) { dexSlug = it }
-                TABS[tab].key == "gallery" -> GalleryScreen(info, state.collection, onOpenDex = { dexSlug = it },
+                TABS[tab].key == "gallery" -> GalleryScreen(state.allSpecies, state.collection, onOpenDex = { dexSlug = it },
                     onDelete = vm::deleteCatch)
                 dex != null -> HotspotsScreen(info, dex, state.collection, onOpenDex = { dexSlug = it })
             }
         }
     }
+}
+
+/** "📍 NC" in the top bar; switching changes the Field Guide, parks and which animals count. */
+@Composable
+private fun StateMenu(states: List<StateInfo>, current: String, onPick: (String) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        TextButton(onClick = { open = true }) { Text("📍 $current") }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            states.forEach { s ->
+                DropdownMenuItem(text = { Text(s.name) }, onClick = { open = false; onPick(s.code) })
+            }
+        }
+    }
+}
+
+/** First launch: which state are you in? Same question as the website's sign-up. */
+@Composable
+private fun StatePicker(states: List<StateInfo>, onDismiss: () -> Unit, onPick: (String) -> Unit) {
+    AlertDialog(onDismissRequest = onDismiss, confirmButton = {},
+        title = { Text("Which state are you in?") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Your Field Guide and parks follow your state. You can change it any time with 📍 at the top.")
+                states.forEach { s ->
+                    OutlinedButton(onClick = { onPick(s.code) }, modifier = Modifier.fillMaxWidth()) { Text(s.name) }
+                }
+            }
+        })
 }
 
 // Icons are the website's 16x16 pixel-art tab icons (species/sprites/ui_tab_*.png).
@@ -192,7 +235,8 @@ fun CatchScreen(state: UiState, onPhoto: (Uri) -> Unit, onDismiss: () -> Unit, o
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("Photograph a wild animal. If it's one of the 100 California species, you earn its badge.",
+        Text("Photograph a wild animal. If it's one of the ${state.info?.species?.size ?: 100} " +
+            "${state.fieldGuide?.region ?: ""} species, you earn its badge.",
             style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Button(onClick = ::launchCamera, enabled = !state.busy) { Text("Take photo") }

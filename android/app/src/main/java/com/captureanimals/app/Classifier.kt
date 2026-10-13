@@ -38,6 +38,10 @@ class ModelInfo(
     /** The species' display number (#001…), following [dexOrder]. */
     fun dexNumber(slug: String): Int = dexNumbers[slug] ?: 0
 
+    /** The same model with one state's species list (its Field Guide order and numbers). */
+    fun withSpecies(list: List<Species>) =
+        ModelInfo(classes, imgSize, resize, mean, std, matchThreshold, otherLabel, list)
+
     companion object {
         val RARITY_ORDER = listOf("common", "uncommon", "rare", "legendary")
         val CATEGORY_ORDER = listOf("mammal", "bird", "reptile", "amphibian", "invertebrate", "marine")
@@ -65,14 +69,28 @@ class ModelInfo(
     }
 }
 
-data class Prediction(val label: String, val probability: Float)
+data class Prediction(val label: String, val probability: Float) {
+    companion object {
+        /**
+         * Keep only the allowed labels, rescaled so they sum to 1, like the backend's
+         * restrict(): a capture only counts for the player's state.
+         */
+        fun restrict(preds: List<Prediction>, allowed: Set<String>, otherLabel: String): List<Prediction> {
+            val kept = preds.filter { it.label in allowed }
+            val total = kept.sumOf { it.probability.toDouble() }
+            if (kept.isEmpty() || total <= 0) return listOf(Prediction(otherLabel, 1f))
+            return kept.map { Prediction(it.label, (it.probability / total).toFloat()) }
+        }
+    }
+}
 
 /** Runs the exported model with ONNX Runtime. The model already ends in softmax. */
 class Classifier(modelBytes: ByteArray, val info: ModelInfo) : AutoCloseable {
     private val env = OrtEnvironment.getEnvironment()
     private val session: OrtSession = env.createSession(modelBytes, OrtSession.SessionOptions())
 
-    fun predict(img: Preprocess.Rgb, k: Int = 3): List<Prediction> {
+    /** Top [k] guesses; with [allowed], only those labels, rescaled (see [Prediction.restrict]). */
+    fun predict(img: Preprocess.Rgb, k: Int = 3, allowed: Set<String>? = null): List<Prediction> {
         val input = Preprocess.toTensor(img, info)
         val shape = longArrayOf(1, 3, info.imgSize.toLong(), info.imgSize.toLong())
         val probs = OnnxTensor.createTensor(env, FloatBuffer.wrap(input), shape).use { tensor ->
@@ -81,8 +99,8 @@ class Classifier(modelBytes: ByteArray, val info: ModelInfo) : AutoCloseable {
                 (result[0].value as Array<FloatArray>)[0]
             }
         }
-        return probs.indices.sortedByDescending { probs[it] }.take(k)
-            .map { Prediction(info.classes[it], probs[it]) }
+        val all = probs.indices.sortedByDescending { probs[it] }.map { Prediction(info.classes[it], probs[it]) }
+        return (if (allowed == null) all else Prediction.restrict(all, allowed, info.otherLabel)).take(k)
     }
 
     override fun close() = session.close()

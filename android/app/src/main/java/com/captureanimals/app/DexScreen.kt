@@ -55,7 +55,9 @@ fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: FieldGuide, onBa
         TextButton(onClick = onBack, contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) {
             Text("‹ Field Guide")
         }
-        Text("#%03d · %s".format(number, s.category.replaceFirstChar { it.uppercase() }),
+        // Another state's species (opened from Photos) has no number in this state's guide.
+        val kind = s.category.replaceFirstChar { it.uppercase() }
+        Text(if (number > 0) "#%03d · %s".format(number, kind) else kind,
             style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.outline)
         Text(s.commonName, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -76,6 +78,7 @@ fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: FieldGuide, onBa
                 }
             }
         }
+        details?.takeIf { it.safety == "caution" || it.safety == "danger" }?.let { SafetyCard(it) }
         if (badge != null) {
             Text("Captured ${badge.count}× — first on " +
                 DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(badge.firstCaughtAt)),
@@ -113,8 +116,20 @@ fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: FieldGuide, onBa
             LabeledLine("Hotspots", dex.hotspotsFor(s.slug).joinToString(", ").ifEmpty { "—" })
         }
         Text("Each square is about 25 km (15 mi) across; darker means more of the " +
-            "${dex.ranges.sightings(s.slug)} recent iNaturalist sightings in California.",
+            "${dex.ranges.sightings(s.slug)} recent iNaturalist sightings in ${dex.region}.",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+    }
+}
+
+/** Same wording as the web page: watch from a distance, never approach. */
+@Composable
+private fun SafetyCard(d: SpeciesDetails) {
+    val danger = d.safety == "danger"
+    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(
+        containerColor = (if (danger) Color(0xFFD64545) else Color(0xFFE0A100)).copy(alpha = 0.15f))) {
+        Text((if (danger) "⚠️ Dangerous: " else "✋ ") + d.safetyNote +
+            (if (d.safeDistance.isNotBlank()) " Stay at least ${d.safeDistance} away." else ""),
+            Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
     }
 }
 
@@ -160,12 +175,12 @@ private fun StatCard(label: String, value: String, modifier: Modifier) {
 }
 
 /**
- * Equirectangular frame around the California outline, with longitudes squeezed by
- * cos(37.5°), which is close enough at state scale. Widened a little to the west so
- * offshore sightings (whales, seals) stay on the map.
+ * Equirectangular frame around a state outline, with longitudes squeezed by the cosine
+ * of its middle latitude, which is close enough at state scale. Widened a little to the
+ * west so offshore sightings (whales, seals) stay on the California map.
  */
-class CaliforniaFrame(o: Outline) {
-    private val kx = cos(Math.toRadians(37.5))
+class StateFrame(o: Outline) {
+    private val kx = cos(Math.toRadians((o.minLat + o.maxLat) / 2))
     val minLon = o.minLon - 0.6
     val maxLon = o.maxLon + 0.2
     val minLat = o.minLat - 0.2
@@ -184,11 +199,11 @@ class CaliforniaFrame(o: Outline) {
     }
 }
 
-/** California outline with the species' sighting cells shaded on top. */
+/** State outline with the species' sighting cells shaded on top. */
 @Composable
 fun RangeMap(dex: FieldGuide, slug: String, color: Color, modifier: Modifier = Modifier) {
     val g = dex.ranges
-    val frame = remember(dex) { CaliforniaFrame(dex.outline) }
+    val frame = remember(dex) { StateFrame(dex.outline) }
     val land = MaterialTheme.colorScheme.surfaceVariant
     val sea = MaterialTheme.colorScheme.surface
     val border = MaterialTheme.colorScheme.outline

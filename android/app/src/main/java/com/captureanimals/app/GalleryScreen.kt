@@ -42,9 +42,10 @@ import java.util.Date
  * "Delete photo" removes the photo and un-captures the animal, as on the website.
  */
 @Composable
-fun GalleryScreen(info: ModelInfo, collection: Map<String, Badge>, onOpenDex: (String) -> Unit,
+fun GalleryScreen(species: List<Species>, collection: Map<String, Badge>, onOpenDex: (String) -> Unit,
                   onDelete: (String) -> Unit) {
-    val bySlug = remember(info) { info.species.associateBy { it.slug } }
+    // Every state's species: photos stay when the player switches state.
+    val bySlug = remember(species) { species.associateBy { it.slug } }
     val entries = collection.entries.filter { it.key in bySlug }.sortedByDescending { it.value.firstCaughtAt }
     var confirm by remember { mutableStateOf<Species?>(null) }
 
