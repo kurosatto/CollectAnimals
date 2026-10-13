@@ -33,13 +33,10 @@ PLAYERS = {  # name: {state: species to try in order}
                    "NC": ["atlantic_ghost_crab", "brown_pelican", "royal_tern"]},
     "birdnerd": {"CA": ["annas_hummingbird", "acorn_woodpecker", "california_quail"],
                  "NC": ["northern_cardinal", "carolina_wren", "eastern_bluebird"]},
-    "blueridger": {"CA": ["american_black_bear", "yellow_bellied_marmot", "stellers_jay"],
-                   "NC": ["eastern_box_turtle", "pileated_woodpecker", "groundhog"]},
-    "outerbanker": {"CA": ["brown_pelican", "western_gull", "california_sea_lion"],
-                    "NC": ["osprey", "great_egret", "royal_tern"]},
-    "cardinalfan": {"CA": ["western_bluebird", "california_scrub_jay", "house_finch"],
-                    "NC": ["northern_mockingbird", "eastern_bluebird", "red_tailed_hawk"]},
 }
+# Former North Carolina bots: re-running clears their photos and friends and
+# stops listing them as bots.
+RETIRED = ["blueridger", "outerbanker", "cardinalfan"]
 # Fallback spots for species without a hotspot park.
 SPOTS = [(36.49, -121.18), (38.07, -122.88), (36.82, -121.76), (34.09, -118.83), (37.74, -119.59)]
 NC_SPOTS = [(35.63, -83.09), (35.85, -78.75), (35.91, -75.60), (34.21, -77.89)]
@@ -98,6 +95,19 @@ def main():
         r.raise_for_status()
         tokens[name] = {"Authorization": f"Bearer {r.json()['access_token']}"}
 
+    for name in RETIRED:
+        r = requests.post(f"{args.url}/auth/login", data={"username": name, "password": password})
+        if not r.ok:
+            continue  # never created, or a different password
+        h = {"Authorization": f"Bearer {r.json()['access_token']}"}
+        for p in requests.get(f"{args.url}/me/album", headers=h).json()["photos"]:
+            requests.delete(f"{args.url}/photos/{p['id']}", headers=h)
+        friends = requests.get(f"{args.url}/friends", headers=h).json()
+        for f in friends["friends"] + friends["incoming"] + friends["outgoing"]:
+            requests.delete(f"{args.url}/friends/{f['username']}", headers=h)
+        requests.patch(f"{args.url}/me/settings", json={"is_private": True, "show_in_feed": False}, headers=h)
+        print(f"{name}: retired")
+
     names = list(PLAYERS)
     for i, a in enumerate(names):
         for b in names[i + 1:]:
@@ -135,6 +145,8 @@ def main():
             if "is_bot" in cols:
                 con.execute(f"UPDATE users SET is_bot = 1 WHERE username IN ({','.join('?' * len(names))})", names)
                 print("marked as bots")
+                con.execute(f"UPDATE users SET is_bot = 0 WHERE username IN ({','.join('?' * len(RETIRED))})",
+                            RETIRED)
                 # Every player is friends with every bot, whatever their state.
                 bots = [r[0] for r in con.execute(
                     f"SELECT id FROM users WHERE username IN ({','.join('?' * len(names))})", names)]
