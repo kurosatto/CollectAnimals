@@ -434,16 +434,16 @@ fun SpeciesTile(number: Int, s: Species, badge: Badge?, onClick: () -> Unit) {
     }
 }
 
-private val LOCATION_PERMISSIONS = arrayOf(
+internal val LOCATION_PERMISSIONS = arrayOf(
     android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION)
 
-private fun hasLocationPermission(context: android.content.Context) = LOCATION_PERMISSIONS.any {
+internal fun hasLocationPermission(context: android.content.Context) = LOCATION_PERMISSIONS.any {
     androidx.core.content.ContextCompat.checkSelfPermission(context, it) == android.content.pm.PackageManager.PERMISSION_GRANTED
 }
 
 /** The phone's last known position; the server blurs it before anyone else sees it. */
 @android.annotation.SuppressLint("MissingPermission")
-private fun lastLocation(context: android.content.Context): Pair<Double, Double>? {
+internal fun lastLocation(context: android.content.Context): Pair<Double, Double>? {
     if (!hasLocationPermission(context)) return null
     val lm = context.getSystemService(android.content.Context.LOCATION_SERVICE) as android.location.LocationManager
     return lm.getProviders(true).mapNotNull { runCatching { lm.getLastKnownLocation(it) }.getOrNull() }

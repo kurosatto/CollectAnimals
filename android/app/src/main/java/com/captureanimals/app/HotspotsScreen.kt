@@ -1,6 +1,8 @@
 package com.captureanimals.app
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -33,6 +35,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
@@ -55,6 +59,12 @@ fun HotspotsScreen(info: ModelInfo, dex: FieldGuide, collection: Map<String, Bad
     val selected = parks.firstOrNull { it.id == selectedId }
     val bySlug = remember(info) { info.species.associateBy { it.slug } }
     val scroll = rememberScrollState()
+    // "You are here": the phone's last known spot, once location is allowed.
+    val context = LocalContext.current
+    var me by remember { mutableStateOf(lastLocation(context)) }
+    val askLocation = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        me = lastLocation(context)
+    }
 
     Column(Modifier.fillMaxSize().verticalScroll(scroll).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         if (onBack != null) {
@@ -66,7 +76,12 @@ fun HotspotsScreen(info: ModelInfo, dex: FieldGuide, collection: Map<String, Bad
         Text("Parks where you can spot lots of the 100. Tap a park to see which ones.",
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
 
-        HotspotsMap(dex, parks, selectedId, Modifier.fillMaxWidth()) { selectedId = it }
+        HotspotsMap(dex, parks, selectedId, me, Modifier.fillMaxWidth()) { selectedId = it }
+        if (me == null) {
+            TextButton(onClick = {
+                if (hasLocationPermission(context)) me = lastLocation(context) else askLocation.launch(LOCATION_PERMISSIONS)
+            }) { Text("📍 Show where I am") }
+        }
 
         selected?.let { park ->
             val caught = park.species.count { it.slug in collection }
@@ -112,7 +127,8 @@ fun HotspotsScreen(info: ModelInfo, dex: FieldGuide, collection: Map<String, Bad
 
 /** State outline with a pin per park; bigger pins have more species. Tap a pin to select it. */
 @Composable
-private fun HotspotsMap(dex: FieldGuide, parks: List<Park>, selectedId: String?, modifier: Modifier,
+private fun HotspotsMap(dex: FieldGuide, parks: List<Park>, selectedId: String?, me: Pair<Double, Double>?,
+                       modifier: Modifier,
                        onSelect: (String) -> Unit) {
     val frame = remember(dex) { StateFrame(dex.outline) }
     val land = MaterialTheme.colorScheme.surfaceVariant
@@ -151,6 +167,11 @@ private fun HotspotsMap(dex: FieldGuide, parks: List<Park>, selectedId: String?,
             val on = p.id == selectedId
             drawCircle((if (on) pinOn else pin).copy(alpha = if (on) 1f else 0.75f), r, c)
             drawCircle(sea, r, c, style = Stroke(width = 1.5.dp.toPx()))
+        }
+        if (me != null) {
+            val c = Offset(frame.x(me.second, size.width), frame.y(me.first, size.height))
+            drawCircle(Color.White, 8.dp.toPx(), c)
+            drawCircle(Color(0xFF2A7DE1), 5.5.dp.toPx(), c)
         }
     }
 }
