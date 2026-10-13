@@ -29,7 +29,8 @@ STATIC_DIR = Path(__file__).parent / "static"
 
 def seed_species(db: Session, state_list: list[st.State]) -> None:
     """Upsert species and each state's list from the CSVs, so editing a list doesn't
-    need a migration. A species on several lists is one row; its shared fields
+    need a migration. Species dropped from a list leave that state's Dex, Hotspots
+    and matching; their rows stay because old captures point at them. A species on several lists is one row; its shared fields
     come from the first state that lists it, rarity and name are kept per state."""
     existing = {s.slug: s for s in db.scalars(select(Species))}
     members = {(m.state, m.species_id): m for m in db.scalars(select(StateSpecies))}
@@ -194,11 +195,12 @@ def list_species(state: str | None = Query(None), db: Session = Depends(get_db))
 
 def _species_in(slug: str, code: str, db: Session) -> tuple[Species, StateSpecies | None]:
     s = db.scalar(select(Species).where(Species.slug == slug))
-    if not s:
+    lists = {m.state: m for m in db.scalars(select(StateSpecies).where(StateSpecies.species_id == s.id))} if s else {}
+    # A species dropped from every list is retired: old captures keep pointing at it,
+    # but it's gone from the game.
+    if not lists:
         raise HTTPException(404, "Unknown species")
-    m = db.scalar(select(StateSpecies).where(StateSpecies.state == code,
-                                             StateSpecies.species_id == s.id))
-    return s, m
+    return s, lists.get(code)
 
 
 @app.get("/species/{slug}", response_model=SpeciesOut)
@@ -229,7 +231,8 @@ def get_dex_entry(slug: str, state: str | None = Query(None), db: Session = Depe
     return DexOut(species=species_out(s, m), size=d.get("size"), weight=d.get("weight"),
                   fun_fact=d.get("fun_fact"), where_to_find=d.get("where_to_find"),
                   active_time=d.get("active_time"), spotting_tip=d.get("spotting_tip"),
-                  caution=d.get("caution") or None,
+                  safety=d.get("safety") or "none", safe_distance=d.get("safe_distance") or None,
+                  safety_note=d.get("safety_note") or None,
                   hotspots=dex.hotspots_for(slug, code), range=dex.range_for(slug, code))
 
 

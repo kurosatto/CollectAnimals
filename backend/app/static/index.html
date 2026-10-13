@@ -116,7 +116,8 @@
   </div>
   <div class="dex-body">
     <div class="dex-map"><div id="dex-map"></div><div class="muted" id="dex-map-note" style="font-size:.8rem"></div>
-      <p id="dex-where" style="margin:8px 0 0; white-space:pre-line"></p></div>
+      <p id="dex-where" style="margin:8px 0 0"></p>
+      <p id="dex-safety" style="margin:8px 0 0"></p></div>
     <dl>
       <dt>Most active</dt><dd id="dex-active"></dd>
       <dt>Spotting tip</dt><dd id="dex-tip"></dd>
@@ -305,8 +306,10 @@ async function openDex(slug, num, caught) {
   $("dex-rarity").style.color = `var(--${s.rarity})`;
   $("dex-map").innerHTML = rangeSvg(d.range);
   $("dex-map-note").textContent = d.range ? "Where it's been seen (iNaturalist)" : "Sighting map coming soon";
-  $("dex-where").textContent = (d.where_to_find ? "📍 " + d.where_to_find : "") +
-    (d.caution ? "\n⚠️ " + d.caution : "");
+  $("dex-where").textContent = d.where_to_find ? "📍 " + d.where_to_find : "";
+  const dist = d.safe_distance ? ` Stay at least ${d.safe_distance} away.` : "";
+  $("dex-safety").textContent = d.safety === "none" ? "" :
+    (d.safety === "danger" ? "⚠️ Dangerous: " : "✋ ") + (d.safety_note || "") + dist;
   $("dex-active").textContent = d.active_time || "Unknown";
   $("dex-tip").textContent = d.spotting_tip || "—";
   $("dex-hotspots").textContent = d.hotspots.length ? d.hotspots.join(", ") : "—";

@@ -111,7 +111,9 @@ def check_place(place_id: int, name: str) -> None:
 
 def resolve_taxon(scientific_name: str) -> dict:
     """Map a scientific name to an iNat taxon (handles synonyms/renames)."""
-    data = api_get("/taxa", q=scientific_name, rank="species", is_active="true", per_page=10)
+    # A one-word name ("Ariolimax") is a genus: all its species count as one class.
+    rank = "genus" if len(scientific_name.split()) == 1 else "species"
+    data = api_get("/taxa", q=scientific_name, rank=rank, is_active="true", per_page=10)
     results = data["results"]
     if not results:
         raise LookupError(f"no iNaturalist taxon for {scientific_name!r}")
@@ -211,10 +213,12 @@ def prune_other(out_dir: Path, listed_names: set[str]) -> None:
     moved = 0
     with open(attr_path, newline="", encoding="utf-8") as fh:
         for row in csv.DictReader(fh):
-            # Subspecies ("Meleagris gallopavo silvestris") count as the species.
-            species = " ".join(row["taxon"].split()[:2]).lower()
+            # Subspecies ("Meleagris gallopavo silvestris") count as the species, and
+            # a listed genus ("Ariolimax") covers all its species.
+            words = row["taxon"].lower().split()
+            listed = " ".join(words[:2]) in listed_names or words[:1] and words[0] in listed_names
             src = other / f"{row['photo_id']}.jpg"
-            if row["class"] == OTHER_CLASS and species in listed_names and src.exists():
+            if row["class"] == OTHER_CLASS and listed and src.exists():
                 pruned.mkdir(parents=True, exist_ok=True)
                 src.replace(pruned / src.name)
                 moved += 1
