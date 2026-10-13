@@ -431,3 +431,23 @@ def test_private_player(client, fake):
 
     client.patch("/me/settings", headers=admin, json={"is_private": False})
     assert "admin" in users("/species/coyote/photos", ana)
+
+
+def test_feed_by_state_and_global(client, fake):
+    ana, nina = signup(client, "ana"), signup(client, "nina")
+    client.patch("/me", headers=nina, json={"state": "NC"})
+    catch(client, fake, ana, "coyote", latitude=36.97, longitude=-122.03)    # Santa Cruz, CA
+    catch(client, fake, ana, "raccoon", latitude=35.78, longitude=-78.64)    # Raleigh, NC (on a trip)
+    catch(client, fake, nina, "coyote")                                      # no location, NC player
+
+    def slugs(h, **params):
+        return sorted(p["username"] + ":" + str(p["species"]["number"])
+                      for p in client.get("/feed", headers=h, params=params).json()["photos"])
+
+    everyone = slugs(ana, scope="all")
+    assert len(everyone) == 3                                   # global: every capture
+    assert len(slugs(ana, scope="state")) == 1                  # ana's state (CA): Santa Cruz only
+    nc = slugs(ana, scope="state", state="NC")
+    assert len(nc) == 2 and any(s.startswith("nina:") for s in nc)
+    assert slugs(nina, scope="state") == nc                     # defaults to the viewer's state
+    assert client.get("/feed", headers=ana, params={"scope": "state", "state": "ZZ"}).status_code == 404

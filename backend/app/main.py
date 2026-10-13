@@ -9,6 +9,7 @@ from pathlib import Path
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, UploadFile, status
 from fastapi.responses import FileResponse
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.staticfiles import StaticFiles
 from PIL import Image, ImageOps, UnidentifiedImageError
 from sqlalchemy import func, inspect, or_, select, text
 from sqlalchemy.exc import IntegrityError
@@ -116,6 +117,8 @@ app = FastAPI(title="Capture Animals", lifespan=lifespan,
 LOGIN_WINDOW, LOGIN_MAX_FAILURES = 300, 10
 _failed_logins: dict[str, list[float]] = {}
 app.include_router(social.router)
+# Third-party browser libraries, served from here so the app works without a CDN.
+app.mount("/vendor", StaticFiles(directory=STATIC_DIR / "vendor"), name="vendor")
 
 
 @app.get("/", include_in_schema=False)
@@ -168,9 +171,11 @@ def register(body: RegisterIn, db: Session = Depends(get_db)):
         db.commit()
     except IntegrityError:
         raise HTTPException(status.HTTP_409_CONFLICT, "Email or username already registered")
-    # The example bot players add every new player as a friend (clearly labelled
-    # as bots in the app); players can remove them from the Friends tab.
-    for bot in db.scalars(select(User).where(User.is_bot.is_(True), User.id != user.id)):
+    # The example bot players from the player's state add them as a friend
+    # (clearly labelled as bots in the app); players can remove them from the
+    # Friends tab, and add other states' bots from the suggestions.
+    for bot in db.scalars(select(User).where(User.is_bot.is_(True), User.id != user.id,
+                                             User.state == user.state)):
         db.add(Friendship(requester_id=bot.id, addressee_id=user.id, accepted=True))
     db.commit()
     return TokenOut(access_token=create_token(user.id))
