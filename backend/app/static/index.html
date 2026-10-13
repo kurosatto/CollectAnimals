@@ -143,7 +143,10 @@
   #grid .tile .name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   #grid .tile .sci, #grid .tile .rarity { display:none; }
   #grid .tile .status { margin-top:1px; font-size:.65rem; min-height:1em; }
-  #grid .tier { grid-column:1 / -1; }
+  #grid .tier { grid-column:1 / -1; margin:6px 0 0; font-size:.68rem; }
+  #grid .section { grid-column:1 / -1; margin:16px 0 0; font-weight:700; font-size:.95rem;
+                   border-bottom:1px solid var(--line); padding-bottom:3px; }
+  #grid .section:first-child { margin-top:0; }
   .status.mine { color:var(--accent); }
   .status.friend { color:var(--muted); }
   .sprite.shadow { opacity:.55; }
@@ -474,38 +477,52 @@ async function loadCollection() {
   $("progress").textContent = `${c.caught} / ${c.total}`;
   const grid = $("grid");
   grid.innerHTML = "";
-  let tier = null;
-  entries.forEach((e, i) => {
-    const s = e.species;
-    if (s.rarity !== tier) {
-      tier = s.rarity;
-      const all = entries.filter((x) => x.species.rarity === tier);
-      const h = el("div", "tier", `${tier} · ${all.filter((x) => x.caught).length}/${all.length}`);
-      h.style.color = `var(--${tier})`;
-      grid.append(h);
-    }
-    const t = document.createElement("div");
-    // Three looks: yours (captured), seen by a friend (colour sprite, not yours), unknown (silhouette).
-    const state = e.caught ? "mine" : s.revealed ? "friend" : "unknown";
-    t.className = "tile " + state + (state === "mine" ? "" : " locked") + (state === "friend" ? " hinted" : "");
-    const sprite = s.slug ? spriteUrl(s.slug, true) : silhouetteUrl(s.number);
-    t.innerHTML = `<div class="num">#${String(i + 1).padStart(3, "0")}</div>
-      <img class="sprite${state === "unknown" ? " shadow" : ""}" alt="" src="${sprite}"><div class="name"></div>
-      <div class="muted sci"></div><div class="rarity" style="color:var(--${s.rarity})">${s.rarity}</div>
-      <div class="status"></div>`;
-    t.querySelector(".name").textContent = s.revealed
-      ? s.common_name + (e.capture_count > 1 ? ` ×${e.capture_count}` : "") : "???";
-    t.querySelector(".sci").textContent = s.revealed ? s.scientific_name : `Unknown ${s.category}`;
-    const st = t.querySelector(".status");
-    if (state === "mine") { st.textContent = "✓"; st.classList.add("mine"); t.title = "Captured"; }
-    else if (state === "friend") {
-      st.textContent = `👥 ${e.friends_caught}`;
-      st.classList.add("friend");
-      t.title = `Not yours yet: ${e.friends_caught} friend${e.friends_caught > 1 ? "s" : ""} captured it`;
-    }
-    t.onclick = () => openDex(s.number, i + 1, e.caught);
-    grid.append(t);
-  });
+  // Three sections: captured, could be out now (seen this month), not this time of year.
+  // Inside each, common to legendary; the numbers keep the full Field Guide order.
+  const SECTIONS = [
+    ["Captured", (e) => e.caught],
+    ["Maybe out now", (e) => !e.caught && e.in_season !== false],
+    ["Not out this time of year", (e) => !e.caught && e.in_season === false],
+  ];
+  const numbered = entries.map((e, i) => [e, i]);
+  for (const [title, keep] of SECTIONS) {
+    const list = numbered.filter(([e]) => keep(e));
+    if (!list.length) continue;
+    grid.append(el("div", "section", `${title} · ${list.length}`));
+    let tier = null;
+    list.forEach(([e, i]) => addTile(e, i, tier !== e.species.rarity && (tier = e.species.rarity)));
+  }
+}
+
+function addTile(e, i, tier) {
+  const grid = $("grid");
+  const s = e.species;
+  if (tier) {
+    const h = el("div", "tier", tier);
+    h.style.color = `var(--${tier})`;
+    grid.append(h);
+  }
+  const t = document.createElement("div");
+  // Three looks: yours (captured), seen by a friend (colour sprite, not yours), unknown (silhouette).
+  const state = e.caught ? "mine" : s.revealed ? "friend" : "unknown";
+  t.className = "tile " + state + (state === "mine" ? "" : " locked") + (state === "friend" ? " hinted" : "");
+  const sprite = s.slug ? spriteUrl(s.slug, true) : silhouetteUrl(s.number);
+  t.innerHTML = `<div class="num">#${String(i + 1).padStart(3, "0")}</div>
+    <img class="sprite${state === "unknown" ? " shadow" : ""}" alt="" src="${sprite}"><div class="name"></div>
+    <div class="muted sci"></div><div class="rarity" style="color:var(--${s.rarity})">${s.rarity}</div>
+    <div class="status"></div>`;
+  t.querySelector(".name").textContent = s.revealed
+    ? s.common_name + (e.capture_count > 1 ? ` ×${e.capture_count}` : "") : "???";
+  t.querySelector(".sci").textContent = s.revealed ? s.scientific_name : `Unknown ${s.category}`;
+  const st = t.querySelector(".status");
+  if (state === "mine") { st.textContent = "✓"; st.classList.add("mine"); t.title = "Captured"; }
+  else if (state === "friend") {
+    st.textContent = `👥 ${e.friends_caught}`;
+    st.classList.add("friend");
+    t.title = `Not yours yet: ${e.friends_caught} friend${e.friends_caught > 1 ? "s" : ""} captured it`;
+  }
+  t.onclick = () => openDex(s.number, i + 1, e.caught);
+  grid.append(t);
 }
 
 // Colour pixel art once caught, a silhouette until then.
