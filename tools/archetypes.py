@@ -9,6 +9,17 @@ import numpy as np
 from pixel import _XS, _YS, Sprite, mix
 
 PINK = "#f2a7b4"
+
+# slug -> drawing function; filled by @sprite in make_sprites.py and species_nc.py
+S: dict = {}
+
+
+def sprite(slug):
+    def deco(fn):
+        S[slug] = fn
+        return fn
+    return deco
+
 NOSE = "#3a2a33"
 WHITE = "#fbf7ef"
 BLACK = "#2b2630"
@@ -235,7 +246,7 @@ def owl(s: Sprite, body, face, *, tufts=False, eye_col="#f6c33c", belly=None, be
 
 
 def wader(s: Sprite, body, *, neck=None, head=None, beak="#e8b830", legs="#3d3532", plume=None,
-          cap=None, wing=None):
+          cap=None, wing=None, curved=False, face=None):
     neck = neck or body
     head = head or neck
     s.line(18, 19, 17, 30, legs)
@@ -250,7 +261,12 @@ def wader(s: Sprite, body, *, neck=None, head=None, beak="#e8b830", legs="#3d353
     s.ellipse(10.5, 5, 4, 3.4, head, edge=True)
     if cap:
         s.paint(s.m_ellipse(11, 2.6, 3.5, 1.4), cap, within=s.last)
-    s.poly([(7, 4.5), (-1, 6.5), (7, 7)], beak)
+    if face:
+        s.paint(s.m_ellipse(8, 5, 2, 2), face, within=s.last)
+    if curved:
+        s.path([(7, 6), (3, 7), (1, 10), (0.5, 12)], (1.1, 0.6), beak, shade=False)
+    else:
+        s.poly([(7, 4.5), (-1, 6.5), (7, 7)], beak)
     s.eye(8, 4)
 
 
@@ -285,14 +301,16 @@ def goose(s: Sprite):
     s.px([(8, 5)], "#9a9aa8")
 
 
-def hummingbird(s: Sprite):
+def hummingbird(s: Sprite, *, head="#d93a8a", crown="#6aa56e", throat=None):
     s.ellipse(22, 9, 7, 3, "#cfe8f7", rot=-35, shade=False)
     s.poly([(18, 20), (24, 28), (20, 29)], "#4d7a52")
     s.ellipse(16, 18, 5.5, 6.5, "#6aa56e", rot=20)
     s.ellipse(14, 20, 3.5, 4, "#c9d6c0")
     s.ellipse(19, 12, 6, 2.6, "#e6f4fc", rot=-55, shade=False)
-    s.ellipse(12, 11, 5.2, 5, "#d93a8a", edge=True)
-    s.paint(s.m_ellipse(13.5, 8.3, 4, 2.3), "#6aa56e", within=s.last)
+    s.ellipse(12, 11, 5.2, 5, head, edge=True)
+    s.paint(s.m_ellipse(13.5, 8.3, 4, 2.3), crown, within=s.last)
+    if throat:
+        s.paint(s.m_ellipse(11, 14.5, 3.5, 2), throat, within=s.last)
     _beak(s, "needle", "#2b2630")
     s.line(7, 11, 1, 13, "#2b2630")
     s.eye(10, 9)
@@ -534,3 +552,221 @@ def star(s: Sprite, color, *, arms=0.45, dots=WHITE, rot=-90):
     s.px([(15, 18), (16, 18)], mix(color, "#000000", 0.55))
     s.blush(10, 17)
     s.blush(20, 17)
+
+
+# --------------------------------------------------------------------------- added for North Carolina
+def fish(s: Sprite, body, belly, *, fin=None, pattern=None, slim=False):
+    """Side view facing left."""
+    fin = fin or mix(body, "#000000", 0.15)
+    ry = 6 if slim else 7.5
+    s.poly([(24, 16.5), (31, 10), (29.5, 16.5), (31, 23)], fin)
+    s.poly([(10, 11 if slim else 9.5), (17, 7 if slim else 6), (22, 11)], fin)
+    s.poly([(12, 22), (16, 26), (19, 22)], fin)
+    m = s.ellipse(15, 16.5, 11, ry, body, edge=True)
+    s.paint(s.m_ellipse(13, 16.5 + ry * 0.6, 9, ry * 0.45), belly, within=m)
+    if pattern:
+        pattern(s, m)
+    s.ellipse(15, 18, 2.6, 1.6, mix(fin, "#ffffff", 0.2), rot=25)
+    s.paint(s.m_line(9, 13, 9, 20), mix(body, "#000000", 0.3), within=m)
+    s.eye(6, 14, size=2)
+    s.px([(3, 18), (4, 18)], mix(body, "#000000", 0.45))
+    s.blush(6, 17)
+
+
+def dolphin(s: Sprite, body, belly):
+    s.px([(4, 30), (8, 29), (24, 30), (28, 29)], "#8fd3ff")
+    s.poly([(24, 16), (31, 9), (29, 16), (31, 21)], body)
+    s.poly([(14, 11), (20, 4), (21, 12)], body)
+    m = s.ellipse(15, 17, 11.5, 6, body, edge=True)
+    s.paint(s.m_ellipse(12, 20.5, 9, 2.8), belly, within=m)
+    s.ellipse(1.8, 18.5, 3, 1.6, body)
+    s.paint(s.m_ellipse(1.8, 19.5, 2.5, 0.8), belly, within=s.last)
+    s.ellipse(14, 23, 4, 1.6, mix(body, "#000000", 0.15), rot=30)
+    s.px([(4, 19), (5, 20), (6, 20)], mix(body, "#000000", 0.5))
+    s.eye(7, 15)
+    s.blush(8, 18)
+
+
+def sea_turtle(s: Sprite, shell, skin, *, scutes=None):
+    s.ellipse(9, 24, 6, 2.5, skin, rot=25)
+    s.ellipse(24, 25, 3.5, 2, skin, rot=-20)
+    m = s.ellipse(18, 17, 11, 7.5, shell, edge=True)
+    for cx, cy in ((13, 15), (18, 13), (23, 15), (15, 19), (21, 19)):
+        s.paint(s.m_ellipse(cx, cy, 2.2, 1.8), scutes or mix(shell, "#ffffff", 0.2), within=m)
+    s.ellipse(18, 23.5, 10, 1.5, mix(skin, "#ffffff", 0.3))
+    s.ellipse(9, 9.5, 6, 2.6, skin, rot=-30)
+    s.ellipse(5.5, 16.5, 5, 4.2, skin, edge=True)
+    s.paint(s.m_px([(4, 14), (7, 14), (6, 16), (3, 17)]), mix(skin, "#000000", 0.25))
+    s.eye(3, 15)
+    s.blush(4, 18)
+
+
+def alligator(s: Sprite, body="#4a5a3a", belly="#e8e0b8"):
+    s.path([(20, 22), (26, 24), (30, 22), (31, 17)], (2.8, 0.8), body)
+    s.path([(20, 23), (22, 27), (24, 27)], 1.2, mix(body, "#000000", 0.2))
+    s.path([(10, 23), (9, 27), (7, 27)], 1.2, mix(body, "#000000", 0.2))
+    m = s.ellipse(15, 21.5, 8, 4, body)
+    s.paint(s.m_ellipse(15, 24.6, 7, 1.6), belly, within=m)
+    for x in (10, 13, 16, 19, 22, 25, 28):
+        s.px([(x, 18 if x < 22 else 19 + (x - 22) // 3)], mix(body, "#000000", 0.4))
+    s.path([(17, 24), (17, 28), (15, 28)], 1.2, body)
+    s.path([(12, 24), (12, 28), (10, 28)], 1.2, body)
+    s.ellipse(8, 18.5, 4.5, 3.6, body, edge=True)
+    s.poly([(5, 18), (-1, 19.5), (-1, 22.5), (6, 22)], body)
+    s.paint(s.m_line(0, 21, 6, 21), mix(body, "#000000", 0.5))
+    s.px([(1, 22), (3, 22), (5, 22), (2, 20)], WHITE)
+    s.ellipse(8.5, 15.5, 2, 1.6, body)
+    s.eye(8, 15)
+    s.blush(9, 19)
+
+
+def turkey(s: Sprite):
+    for i, c in enumerate(("#c8a06a", "#5a3e2a", "#8a6440", "#3e2a1e")):
+        s.ellipse(20, 15, 11 - i * 1.7, 12 - i * 1.7, c, shade=False)
+    s.line(14, 25, 13, 30, "#c86a5a")
+    s.line(18, 25, 19, 30, "#c86a5a")
+    s.ellipse(16, 21, 7, 6.5, "#4e3a30")
+    s.paint(s.m_px([(12, 19), (15, 18), (18, 20), (14, 22), (17, 23), (20, 22)]), "#8a6a3a")
+    s.ellipse(19, 21, 4.5, 3.5, "#3a2a24", rot=-20, edge=True)
+    s.path([(12, 18), (10, 13), (10, 9)], 1.6, "#7ab0d8")
+    s.ellipse(9.5, 8, 3.5, 3.2, "#7ab0d8", edge=True)
+    s.poly([(6.5, 7.5), (4, 9), (6.5, 9.5)], "#e8c890")
+    s.path([(7, 10), (6.5, 13), (8, 15)], 0.8, "#d83a3a", shade=False)
+    s.path([(11, 18), (11, 22)], 0.6, "#2a1e1a", shade=False)
+    s.eye(8, 7)
+
+
+def spider_top(s: Sprite, abdomen, legs, *, pattern=None, ceph=None, leg_bands=None, web=False):
+    if web:
+        for a in range(0, 360, 45):
+            import math as _m
+            s.line(16, 16, 16 + 16 * _m.cos(_m.radians(a)), 16 + 16 * _m.sin(_m.radians(a)), "#e6eef4")
+        s.path([(16, 1), (14, 4), (18, 7)], 0.6, "#f4f4f0", shade=False)
+        s.path([(16, 31), (18, 28), (14, 25)], 0.6, "#f4f4f0", shade=False)
+    for (a, b, c) in [((14, 11), (8, 5), (5, 1)), ((13, 13), (6, 10), (2, 9)), ((13, 15), (6, 17), (2, 20)),
+                      ((14, 16), (9, 22), (6, 27))]:
+        m = s.path([a, b, c], 0.7, legs, shade=False, mirror=True)
+        if leg_bands:
+            s.paint(s.m_ellipse(b[0], b[1], 1.2, 1.2) | s.m_ellipse(c[0], c[1], 1.4, 1.4), leg_bands,
+                    mirror=True, within=m)
+    s.ellipse(16, 13, 4, 3.6, ceph or "#d8d4cc", edge=True)
+    am = s.ellipse(16, 22, 6, 8, abdomen, edge=True)
+    if pattern:
+        pattern(s, am)
+    s.eye(13, 12, size=1)
+    s.eye(18, 12, size=1)
+    s.px([(14, 11), (17, 11)], EYE)
+    s.blush(12, 15)
+    s.blush(18, 15)
+
+
+def grasshopper(s: Sprite, body, stripe, *, legs=None):
+    legs = legs or body
+    s.line(14, 22, 12, 28, legs)
+    s.line(17, 22, 18, 28, legs)
+    s.ellipse(20, 20, 9, 4, body)
+    for x in (16, 20, 24):
+        s.paint(s.m_line(x, 17, x, 23), stripe, within=s.last)
+    s.ellipse(21, 17, 6, 2, mix(body, stripe, 0.3), rot=-8, edge=True)
+    s.path([(19, 20), (26, 13), (29, 15), (27, 26)], 1.3, legs)
+    s.paint(s.m_line(21, 18, 26, 14), stripe)
+    s.ellipse(9, 17, 5, 5, body, edge=True)
+    s.paint(s.m_ellipse(10, 14, 3.5, 1.4), stripe, within=s.last)
+    s.line(7, 12, 3, 3, legs)
+    s.line(9, 12, 9, 3, legs)
+    s.eye(6, 15)
+    s.blush(6, 18)
+
+
+def crab(s: Sprite, shell, claw, *, legs=None, stalks=2, big_claw=False, pattern=None, eye_big=False):
+    legs = legs or mix(shell, "#000000", 0.2)
+    for y in (19, 22, 25):
+        s.path([(8, y), (3, y + 3), (2, y + 6)], 0.7, legs, shade=False, mirror=True)
+    if big_claw:
+        s.path([(23, 18), (26, 13)], 1.4, claw)
+        s.ellipse(25, 8.5, 6, 4.5, claw, rot=-20, edge=True)
+        s.paint(s.m_poly([(26, 8), (32, 7), (32, 10)]), mix(claw, "#000000", 0.4))
+        s.path([(9, 17), (6, 14)], 1, claw)
+        s.ellipse(5.5, 12, 2, 1.6, claw)
+    else:
+        s.path([(9, 17), (6, 13)], 1.2, claw, mirror=True)
+        s.ellipse(5.5, 10, 3.6, 3, claw, rot=-30, mirror=True, edge=True)
+    top = 13 - stalks * 2
+    s.line(12, 15, 12, top, legs, mirror=True)
+    m = s.ellipse(16, 20, 10, 6.5, shell, edge=True)
+    if pattern:
+        pattern(s, m)
+    if eye_big:
+        s.ellipse(12, top - 1, 2, 2.2, EYE, mirror=True, shade=False)
+        s.px([(11, top - 2)], WHITE, mirror=True)
+    else:
+        s.px([(11, top), (12, top)], EYE, mirror=True)
+        s.px([(11, top)], WHITE, mirror=True)
+    s.blush(10, 21, mirror=True)
+    s.px([(15, 22), (16, 22)], "#1d1a20")
+
+
+def horseshoe_crab(s: Sprite):
+    s.path([(16, 22), (16, 31)], (1.2, 0.5), "#6a4a30")
+    s.fill(s.m_ellipse(16, 15, 12.5, 11) & s.m_poly([(0, 0), (32, 0), (32, 19), (0, 19)]), "#8a6440", edge=True)
+    s.poly([(8, 18), (24, 18), (21, 25), (11, 25)], "#7a5636", edge=True)
+    s.paint(s.m_line(16, 6, 16, 18), "#6a4a30")
+    s.paint(s.m_poly([(5, 17), (16, 12), (27, 17)]) & ~s.m_poly([(6, 18), (16, 13.5), (26, 18)]), "#6a4a30")
+    for x in (12, 15, 18, 21):
+        s.px([(x, 21)], "#5a3e26")
+    s.eye(9, 11)
+    s.eye(21, 11)
+    s.blush(8, 14)
+    s.blush(22, 14)
+
+
+def snail_shell(s: Sprite, shell, spots):
+    s.ellipse(15, 27, 12, 2.6, "#e8d8c0")
+    m = s.ellipse(16, 17, 10, 10, shell, edge=True)
+    s.poly([(20, 8), (25, 2), (24, 10)], shell, edge=True)
+    for y in (11, 15, 19, 23):
+        for x in range(8 + (y // 2) % 3, 26, 3):
+            s.paint(s.m_px([(x, y), (x + 1, y)]), spots, within=m)
+    s.paint(s.m_path([(16, 17), (19, 14), (22, 17), (19, 21), (14, 20), (12, 15)], 0.4), mix(shell, "#000000", 0.3), within=m)
+    s.ellipse(6, 23, 5, 3.5, "#f0e0c8", edge=True)
+    s.line(4, 20, 3, 16, "#f0e0c8")
+    s.line(7, 20, 8, 16, "#f0e0c8")
+    s.eye(4, 22)
+    s.blush(6, 24)
+
+
+def jelly(s: Sprite, bell, *, rim=None, arms="#e8dcc8", tentacles=None, stripes=None):
+    if tentacles:
+        for x0 in (8, 13, 18, 23):
+            s.path([(x0, 13), (x0 - 1, 19), (x0 + 1, 24), (x0, 30)], 0.6, tentacles, shade=False)
+    s.path([(14, 13), (13, 20), (15, 25)], 1.6, arms)
+    s.path([(18, 13), (19, 20), (17, 24)], 1.6, arms)
+    m = s.fill(s.m_ellipse(16, 14, 11, 11) & s.m_poly([(0, 0), (32, 0), (32, 15), (0, 15)]), bell, edge=True)
+    if rim:
+        s.paint(s.m_ellipse(16, 14, 11, 11) & ~s.m_ellipse(16, 14, 11, 8.5), rim, within=m)
+    if stripes:
+        for x in (8, 12, 16, 20, 24):
+            s.paint(s.m_line(16, 4, x, 14), stripes, within=m)
+    s.eye(12, 9)
+    s.eye(18, 9)
+    s.blush(10, 12)
+    s.blush(20, 12)
+
+
+def mantis(s: Sprite, c, wing, eyes):
+    d = mix(c, "#000000", 0.2)
+    s.line(18, 22, 14, 30, d)
+    s.line(21, 22, 24, 30, d)
+    s.line(23, 21, 29, 28, d)
+    s.ellipse(23, 21, 8, 3.2, c, rot=-15)
+    s.ellipse(24, 19, 6, 2.2, wing, rot=-15, edge=True)
+    s.path([(17, 22), (13, 14)], 1.4, c)
+    s.path([(12, 16), (8, 19), (7, 14)], 1.1, d)
+    s.path([(14, 17), (11, 21), (10, 16)], 1.1, c)
+    s.poly([(7, 6), (17, 6), (12, 14)], c, edge=True)
+    s.ellipse(8, 6.5, 2.2, 2.2, eyes, shade=False)
+    s.ellipse(16, 6.5, 2.2, 2.2, eyes, shade=False)
+    s.px([(8, 6), (16, 6)], EYE)
+    s.line(10, 5, 6, 0, d)
+    s.line(14, 5, 18, 0, d)
+    s.blush(10, 9)
