@@ -1,0 +1,536 @@
+"""Body plans for the sprites. Each function draws one kind of animal onto a Sprite,
+with colours and features passed in so one plan covers many species."""
+from __future__ import annotations
+
+import math
+
+import numpy as np
+
+from pixel import _XS, _YS, Sprite, mix
+
+PINK = "#f2a7b4"
+NOSE = "#3a2a33"
+WHITE = "#fbf7ef"
+BLACK = "#2b2630"
+EYE = "#1d1428"
+
+
+# --------------------------------------------------------------------------- mammals
+def mammal(s: Sprite, fur, light=WHITE, *, ears="point", ear_in=PINK, tail="long",
+           tail_col=None, tail_tip=None, nose=NOSE, muzzle=None, belly=True, feet=None,
+           head=None, head_r=(9, 7.5), blush=True, behind=None, markings=None, eye_col=EYE):
+    """Front-facing chibi: big head, small body, tail peeking out on the right."""
+    tail_col = tail_col or fur
+    head = head or fur
+    muzzle = muzzle or light
+    if behind:
+        behind(s)
+
+    # tail
+    if tail == "long":
+        s.path([(21, 27), (26, 24), (28, 18), (27, 14)], (1.8, 1.4), tail_col)
+        if tail_tip:
+            s.paint(s.m_ellipse(27, 14.5, 2, 2.5), tail_tip, within=s.last)
+    elif tail == "bushy":
+        s.ellipse(25, 19, 4.2, 7.5, tail_col, rot=15)
+        if tail_tip:
+            s.paint(s.m_ellipse(27, 13, 3.5, 3.5), tail_tip, within=s.last)
+    elif tail == "ringed":
+        m = s.ellipse(25, 19, 3.6, 7.5, tail_col, rot=12)
+        for y in (13, 17, 21, 25):
+            s.paint(s.m_poly([(18, y), (32, y - 2), (32, y - 0.5), (18, y + 1.5)]), tail_tip or BLACK, within=m)
+    elif tail == "squirrel":
+        m = s.path([(20, 27), (26, 25), (28, 18), (26, 9), (21, 6)], (3.2, 4.2), tail_col)
+        if tail_tip:
+            s.paint(m & ~s.m_path([(20, 27), (26, 25), (28, 18), (26, 9), (21, 6)], (2.2, 3.0)), tail_tip, within=m)
+    elif tail == "short":
+        s.ellipse(22.5, 24, 2.2, 2, tail_col)
+        if tail_tip:
+            s.paint(s.m_ellipse(23.5, 23, 1.2, 1.2), tail_tip, within=s.last)
+    elif tail == "cotton":
+        s.ellipse(23, 27, 2.5, 2.2, tail_col)
+    elif tail == "rat":
+        s.path([(21, 27), (26, 28), (29, 25), (29, 21)], (1.3, 0.6), tail_col)
+    elif tail == "skunk":
+        m = s.ellipse(24.5, 16, 5.5, 9.5, tail_col, rot=10)
+        s.paint(s.m_ellipse(24.5, 15, 1.8, 8.5, rot=10), tail_tip or WHITE, within=m)
+
+    # body
+    s.ellipse(16, 24, 7, 5.5, fur)
+    if belly:
+        s.ellipse(16, 25.5, 4, 3.5, light)
+    s.ellipse(12, 29, 2.4, 1.6, feet or mix(fur, "#000000", 0.15), mirror=True)
+
+    # ears
+    _ears(s, ears, fur if head == fur else head, ear_in)
+
+    # head
+    rx, ry = head_r
+    s.ellipse(16, 13, rx, ry, head, edge=True)
+    if markings:
+        markings(s)
+    s.ellipse(16, 17, 4.2, 2.8, muzzle)
+    s.px([(15, 15), (16, 15)], nose)
+    s.px([(15, 16), (16, 16)], mix(muzzle, nose, 0.35))
+    s.eye(11, 12, color=eye_col, mirror=True)
+    if blush:
+        s.blush(9, 15, mirror=True)
+
+
+def _ears(s: Sprite, kind, fur, inner):
+    if kind == "point":
+        s.poly([(7.5, 10), (8, 1.5), (14, 6)], fur, mirror=True)
+        s.poly([(9, 8), (9.3, 4), (12, 6.5)], inner, mirror=True, shade=False)
+    elif kind == "big":
+        s.poly([(6.5, 10), (6, 0.5), (14, 5.5)], fur, mirror=True)
+        s.poly([(8, 8), (7.6, 3), (12, 6)], inner, mirror=True, shade=False)
+    elif kind == "tuft":
+        s.poly([(7.5, 10), (8, 2.5), (14, 6)], fur, mirror=True)
+        s.poly([(9, 8), (9.2, 4.5), (12, 6.5)], inner, mirror=True, shade=False)
+        s.px([(8, 1), (8, 2), (7, 0)], BLACK, mirror=True)
+    elif kind == "round":
+        s.ellipse(8.5, 6, 3.4, 3.4, fur, mirror=True)
+        s.ellipse(8.5, 6, 1.8, 1.8, inner, mirror=True, shade=False)
+    elif kind == "small":
+        s.ellipse(9, 6.5, 2.3, 2.3, fur, mirror=True)
+        s.ellipse(9, 6.5, 1.0, 1.0, inner, mirror=True, shade=False)
+    elif kind == "long":
+        s.ellipse(11.5, 4.5, 2.4, 6, fur, rot=-8, mirror=True)
+        s.ellipse(11.5, 4.8, 1.0, 4.5, inner, rot=-8, mirror=True, shade=False)
+    elif kind == "xlong":
+        s.ellipse(11, 3.8, 2.4, 7, fur, rot=-12, mirror=True)
+        s.ellipse(11, 4.2, 1.0, 5.2, inner, rot=-12, mirror=True, shade=False)
+        s.paint(s.m_ellipse(10.2, -1.5, 3, 2.6, rot=-12), BLACK, mirror=True)
+    elif kind == "mule":
+        s.ellipse(5.5, 8, 4.6, 2.6, fur, rot=-20, mirror=True)
+        s.ellipse(5.8, 8, 2.8, 1.2, inner, rot=-20, mirror=True, shade=False)
+    elif kind == "side":
+        s.ellipse(6.5, 9, 3, 2, fur, rot=-25, mirror=True)
+        s.ellipse(6.7, 9, 1.5, 0.8, inner, rot=-25, mirror=True, shade=False)
+
+
+def pinniped(s: Sprite, fur, light, *, spots=None, ears=False, proboscis=None, whisker=None,
+             flipper=None, belly=True):
+    """Seal / sea lion sitting up, front view."""
+    flipper = flipper or mix(fur, "#000000", 0.2)
+    s.ellipse(10, 29, 4, 1.8, flipper, rot=20, mirror=True)
+    s.ellipse(16, 21, 9, 8.5, fur)
+    if belly:
+        s.ellipse(16, 23, 5.5, 6, light)
+    s.ellipse(6.5, 22, 2, 4.5, flipper, rot=25, mirror=True)
+    s.ellipse(16, 11, 8.5, 7.5, fur, edge=True)
+    if spots:
+        s.paint(s.m_px(spots), mix(fur, "#000000", 0.4))
+    if ears:
+        s.px([(8, 9), (8, 10)], flipper, mirror=True)
+    s.ellipse(16, 15, 4.5, 2.8, light)
+    s.eye(10, 10, size=3, mirror=True)
+    s.px([(10, 10)], WHITE, mirror=True)
+    if proboscis:
+        s.ellipse(16, 15.5, 2.6, 4, proboscis)
+    s.px([(15, 14), (16, 14)], NOSE)
+    s.px([(13, 15), (13, 17)], whisker or mix(light, "#000000", 0.35), mirror=True)
+    s.blush(9, 14, mirror=True)
+
+
+def whale(s: Sprite, body, belly, *, flipper=WHITE):
+    s.px([(6, 2), (8, 1), (10, 2), (7, 4), (9, 4), (8, 6)], "#8fd3ff")
+    s.poly([(25, 15), (31, 9), (30, 15), (31, 21)], body)
+    s.ellipse(14, 17, 12, 7.5, body, edge=True)
+    m = s.ellipse(13, 21, 9.5, 3.5, belly)
+    for x in range(6, 21, 3):
+        s.paint(s.m_line(x, 19, x + 1, 24), mix(belly, body, 0.4), within=m)
+    s.ellipse(15, 24, 7, 1.8, flipper, rot=20)
+    s.px([(3, 14), (5, 13), (4, 15), (9, 12), (10, 11)], mix(body, WHITE, 0.4))
+    s.eye(6, 16)
+    s.blush(6, 19)
+
+
+# --------------------------------------------------------------------------- birds
+def bird(s: Sprite, body, belly, *, head=None, wing=None, tail_col=None, beak="cone",
+         beak_col="#4a3d3a", legs="#c99060", tail="mid", crest=None, eye_col=EYE,
+         face=None, wing_mark=None, belly_mark=None, big=False):
+    """Side view, facing left, round and chubby."""
+    head = head or body
+    wing = wing or mix(body, "#000000", 0.15)
+    tail_col = tail_col or wing
+    cy = 19 if not big else 18
+    if tail == "mid":
+        s.poly([(20, cy), (29, cy - 6), (31, cy - 3), (23, cy + 4)], tail_col)
+    elif tail == "long":
+        s.poly([(20, cy), (30, cy - 12), (32, cy - 9), (23, cy + 4)], tail_col)
+    elif tail == "short":
+        s.poly([(20, cy), (27, cy - 3), (28, cy + 1), (22, cy + 4)], tail_col)
+    elif tail == "fan":
+        s.poly([(20, cy), (29, cy - 9), (31, cy - 1), (23, cy + 4)], tail_col)
+    s.line(13, 25, 13, 29, legs)
+    s.line(17, 25, 17, 29, legs)
+    s.px([(12, 29), (16, 29)], legs)
+    rb = 8.5 if big else 8
+    s.ellipse(16.5, cy + 1, rb, 7, body)
+    s.ellipse(13.5, cy + 3, 5.5, 4.5, belly)
+    if belly_mark:
+        belly_mark(s, s.last)
+    s.ellipse(20, cy, 5.8, 4.2, wing, rot=-15, edge=True)
+    if wing_mark:
+        wing_mark(s, s.last)
+    if crest == "jay":
+        s.poly([(12, 6), (17, -1), (17, 7)], head)
+    elif crest == "quail":
+        s.path([(11, 6), (10, 2), (8, 1)], (0.9, 1.2), BLACK, shade=False)
+    elif crest == "roadrunner":
+        s.poly([(12, 6), (19, 1), (17, 7)], head)
+    elif crest == "sparrow":
+        pass
+    s.ellipse(11, 11, 6.5, 6, head, edge=True)
+    if face:
+        face(s)
+    _beak(s, beak, beak_col)
+    s.eye(8, 10, color=eye_col)
+    s.blush(7, 13)
+
+
+def _beak(s: Sprite, kind, c):
+    if kind == "cone":
+        s.poly([(5.5, 10), (2, 11.8), (5.5, 13.5)], c)
+    elif kind == "thin":
+        s.poly([(5.5, 10.5), (1, 11.8), (5.5, 13)], c)
+    elif kind == "hook":
+        s.poly([(6, 9.5), (2.2, 10.5), (2.2, 14), (5.5, 13.5)], c)
+        s.px([(2, 13)], mix(c, "#000000", 0.4))
+    elif kind == "crow":
+        s.poly([(6, 9.5), (0.5, 11.5), (6, 13.8)], c)
+    elif kind == "long":
+        s.poly([(6, 10.5), (-1, 12.5), (6, 13.5)], c)
+    elif kind == "needle":
+        s.line(4, 12, 0, 13, c)
+        s.px([(5, 12)], c)
+    elif kind == "duck":
+        s.ellipse(3, 12.5, 3.2, 1.8, c)
+
+
+def owl(s: Sprite, body, face, *, tufts=False, eye_col="#f6c33c", belly=None, beak="#e8c070",
+        disk_edge=None, bars=None):
+    belly = belly or mix(body, WHITE, 0.4)
+    if tufts:
+        s.poly([(6, 9), (5, 0.5), (12, 5)], body, mirror=True)
+    s.px([(12, 30), (14, 30)], "#b88a4a", mirror=True)
+    s.ellipse(16, 20, 10.5, 10.5, body)
+    s.ellipse(16, 23, 6.5, 6.5, belly)
+    if bars:
+        for y in range(19, 30, 2):
+            s.paint(s.m_line(11, y, 21, y), bars, within=s.last)
+    s.ellipse(5.5, 20, 3, 6.5, mix(body, "#000000", 0.18), rot=-10, mirror=True)
+    s.ellipse(16, 10, 10, 8, body, edge=True)
+    s.ellipse(11.5, 10.5, 4.5, 4.8, face, mirror=True, edge=disk_edge is not None)
+    if eye_col:
+        s.ellipse(11.5, 10.5, 2.4, 2.4, eye_col, mirror=True, shade=False)
+        s.px([(11, 10), (12, 10), (11, 11), (12, 11)], EYE, mirror=True)
+        s.px([(11, 10)], WHITE, mirror=True)
+    else:
+        s.ellipse(11.5, 10.5, 1.9, 2.2, EYE, mirror=True, shade=False)
+        s.px([(11, 9)], WHITE, mirror=True)
+    s.poly([(14.5, 13), (17.5, 13), (16, 16.5)], beak, shade=False)
+    s.blush(7, 14, mirror=True)
+
+
+def wader(s: Sprite, body, *, neck=None, head=None, beak="#e8b830", legs="#3d3532", plume=None,
+          cap=None, wing=None):
+    neck = neck or body
+    head = head or neck
+    s.line(18, 19, 17, 30, legs)
+    s.line(21, 19, 22, 30, legs)
+    s.px([(16, 30), (23, 30)], legs)
+    s.ellipse(20, 15, 7, 5, body)
+    s.ellipse(22, 14, 5, 3.3, wing or mix(body, "#000000", 0.12), rot=-10, edge=True)
+    s.poly([(26, 14), (31, 17), (25, 18)], wing or mix(body, "#000000", 0.12))
+    s.path([(15, 14), (13, 11), (14, 8), (11, 5)], 1.8, neck)
+    if plume:
+        s.path([(12, 3), (17, 2), (20, 3)], (1, 0.5), plume, shade=False)
+    s.ellipse(10.5, 5, 4, 3.4, head, edge=True)
+    if cap:
+        s.paint(s.m_ellipse(11, 2.6, 3.5, 1.4), cap, within=s.last)
+    s.poly([(7, 4.5), (-1, 6.5), (7, 7)], beak)
+    s.eye(8, 4)
+
+
+def duck(s: Sprite, body, chest, head, *, bill="#f0c22a", ring=WHITE, speculum="#4a5fd0",
+         tail_col=None):
+    s.px([(2, 29), (4, 30), (27, 30), (29, 29), (8, 30), (22, 30)], "#8fd3ff")
+    s.poly([(24, 20), (30, 16), (29, 22)], tail_col or body)
+    s.ellipse(17, 23, 11, 6.5, body)
+    s.ellipse(10, 22, 5, 5, chest)
+    m = s.ellipse(20, 21, 7, 3.5, mix(body, "#000000", 0.12), rot=-8, edge=True)
+    s.paint(s.m_poly([(17, 22), (24, 21), (24, 23), (17, 24)]), speculum, within=m)
+    s.ellipse(10, 11, 6, 5.5, head, edge=True)
+    if ring:
+        s.paint(s.m_ellipse(10, 16.8, 4, 1), ring)
+    s.ellipse(3.5, 13, 3.4, 1.8, bill)
+    s.eye(7, 10)
+    s.blush(7, 13)
+
+
+def goose(s: Sprite):
+    s.px([(2, 30), (6, 29), (25, 30), (29, 29)], "#8fd3ff")
+    s.poly([(25, 20), (31, 17), (30, 23)], BLACK)
+    s.ellipse(19, 23, 10.5, 6.5, "#9a8670")
+    s.ellipse(14, 25, 5, 4, "#e2d8c8")
+    s.ellipse(22, 21, 7, 3.5, "#6e5c4c", rot=-8, edge=True)
+    s.path([(12, 19), (10, 13), (10, 8)], 2.3, BLACK)
+    s.ellipse(9.5, 7, 5, 4.2, BLACK, edge=True)
+    s.paint(s.m_ellipse(10.5, 9.5, 2.6, 1.6, rot=-20), WHITE)
+    s.ellipse(4, 8.2, 2.6, 1.5, BLACK)
+    s.paint(s.m_ellipse(13, 19.5, 2.6, 1.2), "#e2d8c8")
+    s.eye(8, 5, shine="#ffffff", color="#000000")
+    s.px([(8, 5)], "#9a9aa8")
+
+
+def hummingbird(s: Sprite):
+    s.ellipse(22, 9, 7, 3, "#cfe8f7", rot=-35, shade=False)
+    s.poly([(18, 20), (24, 28), (20, 29)], "#4d7a52")
+    s.ellipse(16, 18, 5.5, 6.5, "#6aa56e", rot=20)
+    s.ellipse(14, 20, 3.5, 4, "#c9d6c0")
+    s.ellipse(19, 12, 6, 2.6, "#e6f4fc", rot=-55, shade=False)
+    s.ellipse(12, 11, 5.2, 5, "#d93a8a", edge=True)
+    s.paint(s.m_ellipse(13.5, 8.3, 4, 2.3), "#6aa56e", within=s.last)
+    _beak(s, "needle", "#2b2630")
+    s.line(7, 11, 1, 13, "#2b2630")
+    s.eye(10, 9)
+    s.px([(10, 9)], WHITE)
+
+
+def pelican(s: Sprite):
+    s.px([(2, 30), (6, 29), (25, 30), (29, 29)], "#8fd3ff")
+    s.poly([(24, 21), (31, 18), (30, 24)], "#4d4a4c")
+    s.ellipse(19, 23, 10, 6.5, "#7d7a7c")
+    s.ellipse(21, 21, 7, 3.6, "#5c595b", rot=-8, edge=True)
+    s.path([(13, 21), (11, 15), (13, 9)], 2.5, "#5a3a2e")
+    s.ellipse(13, 7, 4.6, 4, "#f2e6a8", edge=True)
+    s.poly([(10, 6), (-1, 9), (0, 11), (10, 9)], "#d9a050")
+    s.poly([(10, 9), (0, 11), (3, 15), (10, 13)], "#c25a4a")
+    s.eye(12, 6)
+    s.blush(11, 9)
+
+
+def vulture(s: Sprite, *, head_col, body="#2f2a2e", ruff=None, wing_patch=None, beak="#e8dccb"):
+    bird(s, body, mix(body, "#ffffff", 0.08), head=head_col, wing=mix(body, "#ffffff", 0.06),
+         beak="hook", beak_col=beak, legs="#b8a8a0", tail="mid",
+         wing_mark=(lambda s2, m: s2.paint(s2.m_ellipse(21, 21.5, 5, 1.4, rot=-15), wing_patch, within=m))
+         if wing_patch else None)
+    if ruff:
+        s.path([(12, 17), (16, 17.5), (19, 15.5)], 1.6, ruff)
+
+
+# --------------------------------------------------------------------------- reptiles & amphibians
+def lizard(s: Sprite, body, belly, *, head=None, pattern=None, tail_col=None, throat=None,
+           horns=False, wide=False, smooth=False, eye_big=False, legs=None, tail_pts=None):
+    """Side view facing left, big head, tail curling up on the right."""
+    head = head or body
+    tail_col = tail_col or body
+    legs = legs or mix(body, "#000000", 0.15)
+    tp = tail_pts or [(20, 22), (26, 25), (30, 22), (30, 16)]
+    s.path(tp, (2.4, 0.7), tail_col)
+    s.path([(20, 23), (22, 27), (24, 27)], 1.1, mix(legs, "#000000", 0.15))
+    s.path([(10, 23), (9, 27), (7, 27)], 1.1, mix(legs, "#000000", 0.15))
+    ry = 4.3 if wide else 3.6
+    body_m = s.ellipse(15, 22, 7.5, ry, body)
+    s.paint(s.m_ellipse(15, 24.8, 6.5, 1.6), belly, within=body_m)
+    if pattern:
+        pattern(s, body_m)
+    s.path([(17, 24), (17, 28), (15, 28)], 1.1, legs)
+    s.path([(12, 24), (12, 28), (10, 28)], 1.1, legs)
+    hm = s.ellipse(7.5, 18.5, 5.5 if smooth else 5.2, 4.3 if smooth else 3.8, head, edge=True)
+    s.paint(s.m_ellipse(6, 21.5, 4.5, 1.3), throat or belly, within=hm)
+    if horns:
+        s.px([(9, 14), (11, 14), (12, 15), (13, 16), (7, 14)], mix(body, "#ffffff", 0.3))
+        s.px([(9, 13), (11, 13), (13, 15), (14, 16)], mix(body, "#ffffff", 0.45))
+    if eye_big:
+        s.eye(5, 16, size=3)
+        s.px([(5, 16)], WHITE)
+    else:
+        s.eye(5, 17)
+    s.px([(2, 20), (3, 20)], mix(head, "#000000", 0.45))
+    s.blush(7, 20)
+
+
+def snake(s: Sprite, body, *, belly=None, bands=None, band_period=4.0, band_len=2.0,
+          stripe=None, blotch=None, rattle=False, head=None, head_w=5.4):
+    """Coiled snake looking left, with a big round head and a tongue."""
+    pts = [(25, 28.5), (14, 28.8), (7, 27), (5.5, 23.5), (9, 20.5), (17, 20), (24, 21.5), (25.5, 24.5),
+           (21, 26), (16, 25), (14, 21), (15, 17), (13.5, 13)]
+    r = 2.6
+    if rattle:
+        for i, (x, y) in enumerate([(27, 28), (29, 27), (30.3, 25.3)]):
+            s.ellipse(x, y, 1.4, 1.2, "#d9c08a" if i % 2 == 0 else "#b89b62")
+    # Stamp discs along the path; each pixel remembers the arc length and centre
+    # distance of the last disc covering it, so the front of the coil wins.
+    tmap = np.full((32, 32), -1.0)
+    dmap = np.full((32, 32), 99.0)
+    t = 0.0
+    for a, b in zip(pts, pts[1:]):
+        L = math.dist(a, b)
+        steps = max(2, int(L * 3))
+        for k in range(steps):
+            u = k / steps
+            x, y = a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u
+            d = np.hypot(_XS - x, _YS - y)
+            tt = t + L * u
+            # a later loop always covers; within one loop keep the nearest centre
+            m = (d <= r) & ((tmap < 0) | (tt - tmap > 2 * r) | (d < dmap))
+            tmap[m] = tt
+            dmap[m] = d[m]
+        t += L
+    body_m = tmap >= 0
+    s.fill(body_m, body)
+    phase = tmap % band_period
+    if bands:
+        s.paint(body_m & (phase < band_len), bands)
+    if blotch:
+        s.paint(body_m & (phase < band_len) & (dmap < 1.7), blotch)
+    if stripe:
+        s.paint(body_m & (dmap < 0.75), stripe)
+    # dark seam where one loop of the coil lies on another
+    seam = np.zeros_like(body_m)
+    for dx, dy in ((0, 1), (0, -1), (1, 0), (-1, 0)):
+        nb = np.roll(np.roll(tmap, -dy, axis=0), -dx, axis=1)
+        seam |= body_m & (nb >= 0) & (nb > tmap + 6)
+    s.paint(seam, mix(body, "#1d1428", 0.6))
+    hm = s.ellipse(12.5, 10.5, head_w, 4.2, head or body, edge=True)
+    if belly:
+        s.paint(s.m_ellipse(11, 13.6, 4, 1.3), belly, within=hm)
+    s.px([(6, 13), (5, 13), (4, 14), (4, 12)], "#e04a5a")
+    s.eye(9, 9)
+    s.blush(9, 12)
+
+
+def turtle(s: Sprite, shell, skin, *, dome=False, scutes=None, speckle=None, rim=None):
+    s.ellipse(8, 22, 4.5, 3.5, skin)
+    s.ellipse(5, 18.5, 4.5, 4, skin, edge=True)
+    if speckle:
+        s.px([(3, 17), (6, 16), (5, 20), (7, 19)], speckle)
+    s.ellipse(11, 27, 2.4, 3.2, skin, mirror=False)
+    s.ellipse(22, 27, 2.4, 3.2, skin)
+    s.poly([(26, 23), (30, 25), (26, 26)], skin)
+    ry = 10 if dome else 7.5
+    m = s.fill(s.m_ellipse(17, 25, 11, ry) & (s.m_poly([(0, 0), (32, 0), (32, 25.5), (0, 25.5)])), shell, edge=True)
+    s.ellipse(17, 25.5, 11.5, 1.6, rim or mix(shell, "#000000", 0.25))
+    if scutes:
+        cy = 18 if dome else 20
+        for cx in (11, 17, 23):
+            s.paint(s.m_ellipse(cx, cy + (1 if cx != 17 else -1), 2.4, 2.2), scutes, within=m)
+    s.eye(3, 17)
+    s.blush(4, 20)
+
+
+def frog(s: Sprite, skin, belly, *, stripe=None, pads=False, tympanum=None, spots=None):
+    s.ellipse(6, 27, 5, 3, skin, rot=-15, mirror=True)
+    s.ellipse(16, 22, 9.5, 7, skin)
+    s.ellipse(16, 25, 6, 4.5, belly)
+    s.ellipse(16, 15, 11, 6.5, skin, edge=True)
+    s.ellipse(10, 10.5, 4, 4, skin, mirror=True)
+    s.ellipse(10, 10.5, 2.6, 2.6, "#f3d26a" if not stripe else "#d8b84a", mirror=True, shade=False)
+    s.px([(9, 10), (10, 10), (11, 10), (9, 11), (10, 11), (11, 11)], EYE, mirror=True)
+    s.px([(9, 10)], WHITE, mirror=True)
+    if stripe:
+        s.paint(s.m_poly([(1, 14), (6, 12), (7, 14), (2, 17)]), stripe, mirror=True)
+    if tympanum:
+        s.paint(s.m_ellipse(5, 15, 1.8, 1.8), tympanum, mirror=True)
+    if spots:
+        s.paint(s.m_px(spots), mix(skin, "#000000", 0.35))
+    s.paint(s.m_poly([(10, 17.5), (16, 19), (22, 17.5), (22, 18.5), (16, 20), (10, 18.5)]), mix(skin, "#000000", 0.5))
+    s.blush(6, 16, mirror=True)
+    s.ellipse(11, 29.5, 2.3, 1.4, skin, mirror=True)
+    if pads:
+        s.px([(9, 30), (11, 30), (13, 30)], mix(skin, "#ffffff", 0.35), mirror=True)
+
+
+# --------------------------------------------------------------------------- invertebrates
+def butterfly(s: Sprite, fore, hind, *, body="#2b2630", pattern=None, tails=False):
+    """Top view, wings spread."""
+    if tails:
+        s.path([(11, 23), (10, 28)], (1.2, 0.8), hind, mirror=True)
+    fm = s.poly([(15, 11), (5, 3), (1.5, 6), (2, 14), (14, 17)], fore, mirror=True, edge=True)
+    hm = s.poly([(15, 16), (5, 16), (4, 22), (9, 27), (15, 22)], hind, mirror=True, edge=True)
+    if pattern:
+        pattern(s, fm, hm)
+    s.line(15, 8, 11, 2, body)
+    s.line(16, 8, 20, 2, body)
+    s.px([(11, 1), (20, 1)], body)
+    s.ellipse(16, 17, 1.6, 8, body)
+    s.ellipse(16, 9.5, 2.5, 2.2, body)
+    s.px([(14, 9), (17, 9)], WHITE)
+
+
+def bee(s: Sprite):
+    s.ellipse(20, 8, 4.5, 6.5, "#e6f4fc", rot=25, shade=False, edge=True)
+    s.ellipse(25, 11, 3.5, 5, "#d6ecfa", rot=40, shade=False, edge=True)
+    s.poly([(26, 21), (31, 23), (26, 24)], "#3a2a22")
+    m = s.ellipse(18, 19, 8.5, 7, "#f0b429")
+    for x in (16, 21, 25):
+        s.paint(s.m_poly([(x, 10), (x + 2.2, 10), (x + 1.2, 28), (x - 1, 28)]), "#3a2a22", within=m)
+    s.line(9, 25, 8, 29, "#3a2a22")
+    s.line(13, 25, 13, 29, "#3a2a22")
+    s.ellipse(8.5, 17, 5.5, 5.5, "#3a2a22", edge=True)
+    s.line(6, 12, 4, 6, "#3a2a22")
+    s.line(9, 12, 10, 6, "#3a2a22")
+    s.eye(5, 16, color="#11080f", shine="#ffffff")
+    s.blush(5, 19, color="#ff8fa8")
+
+
+def beetle_top(s: Sprite, shell, *, head=BLACK, spots=(), stripes=False, fan=False, pron=None):
+    for y in (17, 21, 25):
+        s.line(6, y - 2, 4, y + 1, BLACK)
+        s.line(25, y - 2, 27, y + 1, BLACK)
+    if fan:
+        s.path([(13, 5), (10, 1)], 0.6, "#7a5a3a", shade=False)
+        s.path([(18, 5), (21, 1)], 0.6, "#7a5a3a", shade=False)
+        s.px([(8, 0), (9, 0), (9, 1), (22, 0), (23, 0), (22, 1)], "#9a7a5a")
+    else:
+        s.line(13, 6, 11, 2, BLACK)
+        s.line(18, 6, 20, 2, BLACK)
+    s.ellipse(16, 7.5, 4.5, 3, head, edge=True)
+    s.px([(13, 7), (18, 7)], WHITE)
+    if pron:
+        s.ellipse(16, 11, 7, 3, pron, edge=True)
+    m = s.ellipse(16, 20, 10, 10 if not stripes else 10.5, shell, edge=True)
+    s.paint(s.m_line(16, 11, 16, 30) | s.m_line(15, 11, 15, 30), mix(shell, "#000000", 0.5) if not stripes else "#4a3020", within=m)
+    for x, y in spots:
+        s.paint(s.m_ellipse(x, y, 1.7, 1.7), BLACK, within=m)
+    if stripes:
+        for x in (9, 12, 19, 22):
+            s.paint(s.m_line(x, 12, x, 29), "#f4efe6", within=m)
+        s.paint(s.m_line(6, 16, 6, 25) | s.m_line(25, 16, 25, 25), "#f4efe6", within=m)
+
+
+def dragonfly(s: Sprite, thorax, abdomen, *, wing="#e6f4fc", wing_tint=None):
+    for cy in (10, 14):
+        rot = -8 if cy == 10 else 10
+        m = s.ellipse(8, cy, 7.5, 2.1, wing, rot=rot, shade=False, edge=True, mirror=True)
+        if wing_tint:
+            s.paint(s.m_ellipse(13, cy, 3.5, 2.3, rot=rot), wing_tint, within=m, mirror=True)
+    s.path([(16, 14), (16, 30)], (1.6, 1.1), abdomen)
+    s.ellipse(16, 11, 2.6, 3.5, thorax, edge=True)
+    s.ellipse(16, 5.5, 4, 3, thorax, edge=True)
+    s.ellipse(13.8, 5, 1.9, 2.1, mix(thorax, "#000000", 0.35), mirror=True, shade=False)
+    s.px([(13, 4), (18, 4)], WHITE)
+
+
+# --------------------------------------------------------------------------- marine
+def star(s: Sprite, color, *, arms=0.45, dots=WHITE, rot=-90):
+    x, y = _XS - 16, _YS - 16.5
+    ang = np.arctan2(y, x) - math.radians(rot)
+    r = np.hypot(x, y)
+    rr = 14.5 * ((1 - arms) + arms * (0.5 + 0.5 * np.cos(5 * ang)) ** 1.6)
+    m = s.fill(r <= rr, color, edge=True)
+    if dots:
+        pts = []
+        for k in range(5):
+            a = math.radians(rot) + k * 2 * math.pi / 5
+            for d in (4, 7, 10):
+                pts.append((round(16 + d * math.cos(a) - 0.5), round(16.5 + d * math.sin(a) - 0.5)))
+        s.paint(s.m_px(pts), dots, within=m)
+    s.eye(12, 14)
+    s.eye(18, 14)
+    s.px([(15, 18), (16, 18)], mix(color, "#000000", 0.55))
+    s.blush(10, 17)
+    s.blush(20, 17)

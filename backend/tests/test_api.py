@@ -186,3 +186,11 @@ def test_login_rate_limit(client):
         assert client.post("/auth/login", data={"username": "carol", "password": "wrong-pass"}).status_code == 401
     r = client.post("/auth/login", data={"username": "carol", "password": "hunter2hunter2"})
     assert r.status_code == 429
+
+
+def test_sprites(client):
+    r = client.get("/sprites/coyote.png")
+    assert r.status_code == 200 and r.headers["content-type"] == "image/png"
+    assert client.get("/sprites/coyote_silhouette.png").status_code == 200
+    assert client.get("/sprites/nope.png").status_code == 404
+    assert client.get("/sprites/..%2Fcalifornia_100.png").status_code == 404

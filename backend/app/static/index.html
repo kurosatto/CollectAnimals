@@ -22,7 +22,9 @@
   .muted { color:var(--muted); }
   .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; }
   .tile { border:1px solid var(--line); border-radius:10px; padding:10px; background:var(--card); font-size:.9rem; }
-  .tile.locked { opacity:.45; filter:grayscale(1); }
+  .tile.locked { color:var(--muted); }
+  .sprite { display:block; width:96px; height:96px; margin:4px auto; image-rendering:pixelated; }
+  .dex-sprite { width:64px; height:64px; margin:0; }
   .tile .num { color:var(--muted); font-size:.75rem; }
   .rarity { font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; font-weight:600; }
   #result.win { border-color:var(--accent); }
@@ -107,7 +109,8 @@
 </main>
 <dialog id="dex"><div class="dex">
   <div class="dex-head">
-    <div><div class="num muted" id="dex-num"></div><h2 id="dex-name"></h2>
+    <img class="sprite dex-sprite" id="dex-sprite" alt="">
+    <div style="flex:1"><div class="num muted" id="dex-num"></div><h2 id="dex-name"></h2>
       <div class="muted" id="dex-sci"></div><div class="rarity" id="dex-rarity"></div></div>
     <button class="close" id="dex-close" aria-label="Close">×</button>
   </div>
@@ -224,7 +227,8 @@ async function loadCollection() {
     const t = document.createElement("div");
     t.className = "tile" + (e.caught ? "" : " locked");
     const s = e.species;
-    t.innerHTML = `<div class="num">#${String(i + 1).padStart(3, "0")}</div><div class="name"></div>
+    t.innerHTML = `<div class="num">#${String(i + 1).padStart(3, "0")}</div>
+      <img class="sprite" alt="" src="${spriteUrl(s.slug, e.caught)}"><div class="name"></div>
       <div class="muted sci"></div><div class="rarity" style="color:var(--${s.rarity})">${s.rarity}</div>`;
     t.querySelector(".name").textContent = s.common_name + (e.capture_count > 1 ? ` ×${e.capture_count}` : "");
     t.querySelector(".sci").textContent = s.scientific_name;
@@ -232,6 +236,9 @@ async function loadCollection() {
     grid.append(t);
   });
 }
+
+// Colour pixel art once caught, a silhouette until then.
+const spriteUrl = (slug, caught) => `/sprites/${encodeURIComponent(slug)}${caught ? "" : "_silhouette"}.png`;
 
 // California outline rings as [lon, lat]; this rough fallback is replaced by
 // the Natural Earth outline from /map/california when it loads.
@@ -264,6 +271,7 @@ function rangeSvg(range) {
 async function openDex(slug, num, caught) {
   const d = await api(`/species/${encodeURIComponent(slug)}/dex`);
   const s = d.species;
+  $("dex-sprite").src = spriteUrl(slug, caught);
   $("dex-num").textContent = `#${String(num).padStart(3, "0")}`;
   $("dex-name").textContent = s.common_name;
   $("dex-sci").textContent = s.scientific_name;

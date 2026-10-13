@@ -64,6 +64,16 @@ def index():
     return FileResponse(STATIC_DIR / "index.html")
 
 
+@app.get("/sprites/{name}.png", include_in_schema=False)
+def sprite(name: str):
+    """Pixel-art sprites: `{slug}.png` in colour, `{slug}_silhouette.png` until caught."""
+    slug = name.removesuffix("_silhouette")
+    path = settings.sprites_dir / f"{name}.png"
+    if not slug.replace("_", "").isalnum() or not path.is_file():
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No such sprite")
+    return FileResponse(path, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
+
+
 @app.get("/health")
 def health():
     return {"ok": True, "model_loaded": clf.get_classifier() is not None,

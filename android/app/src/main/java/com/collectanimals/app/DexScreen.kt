@@ -71,7 +71,7 @@ fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: Pokedex, onBack:
                     modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
             } else {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("?", fontSize = 64.sp, color = MaterialTheme.colorScheme.outline)
+                    PixelSprite(s.slug, caught = false, Modifier.size(128.dp))
                     Text("Not caught yet", color = MaterialTheme.colorScheme.outline)
                 }
             }
