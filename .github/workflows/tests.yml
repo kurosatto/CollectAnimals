@@ -34,8 +34,9 @@ jobs:
           distribution: temurin
           java-version: "17"
       - uses: android-actions/setup-android@v3
-      - name: Install Android 16 SDK
-        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+        with:
+          # The default list includes the retired "tools" package, which no longer installs.
+          packages: "platform-tools platforms;android-36 build-tools;36.0.0"
       - name: Unit tests and builds
         # No model.onnx in the repo, so the app builds without it and ClassifierTest skips.
         run: ./gradlew --no-daemon testDebugUnitTest assembleDebug bundleRelease
