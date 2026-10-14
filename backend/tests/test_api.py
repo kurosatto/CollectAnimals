@@ -120,6 +120,29 @@ def test_register_login_me(client):
     assert client.get("/me", headers={"Authorization": "Bearer garbage"}).status_code == 401
 
 
+def test_usernames_ignore_case(client):
+    from app.db import SessionLocal
+    from app.models import User
+
+    h = signup(client, "Kuro")
+    # Sign-up treats "kuro" as taken; login and lookups work in any case.
+    assert client.post("/auth/register", json={"email": "k2@example.com", "username": "KURO",
+                                               "password": "hunter22!"}).status_code == 409
+    r = client.post("/auth/login", data={"username": "kURo", "password": "hunter22!"})
+    assert r.status_code == 200
+    assert client.get("/me", headers={"Authorization": f"Bearer {r.json()['access_token']}"}).json()["username"] == "Kuro"
+    ana = signup(client, "ana")
+    assert client.post("/friends/requests", json={"username": "KURO"}, headers=ana).status_code == 201
+    assert client.post("/friends/requests/ANA/accept", headers=h).status_code == 200
+    assert client.get("/users/kuro", headers=ana).json()["username"] == "Kuro"
+    # Older accounts whose names differ only in case: an exact match wins.
+    with SessionLocal() as db:
+        db.add(User(email="old@example.com", username="kuro", password_hash="x", state="CA"))
+        db.commit()
+    assert client.get("/users/kuro", headers=ana).json()["username"] == "kuro"
+    assert client.get("/users/Kuro", headers=ana).json()["username"] == "Kuro"
+
+
 def with_files(code, **paths):
     """The real states, with one state's map files swapped for test files."""
     import dataclasses
