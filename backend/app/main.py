@@ -26,7 +26,7 @@ from .db import Base, SessionLocal, add_missing_columns, engine, get_db
 from .models import AlbumPhoto, Badge, Capture, Friendship, PhotoLike, Species, StateSpecies, User
 from .schemas import (CaptureOut, ChoiceOut, CollectionEntry, CollectionOut, DexOut, HotspotOut, HotspotSpecies,
                       PickIn, PredictionOut, RegisterIn, SpeciesOut, StateOut, TokenOut, UserOut, UserUpdate)
-from .social import find_species, friend_ids, revealed_species_ids, species_out
+from .social import find_species, friend_ids, revealed_species_ids, species_out, user_named
 from .storage import get_storage
 
 STATIC_DIR = Path(__file__).parent / "static"
@@ -158,7 +158,7 @@ def health():
 @app.post("/auth/register", response_model=TokenOut, status_code=201)
 def register(body: RegisterIn, db: Session = Depends(get_db)):
     taken = db.scalar(select(User).where(or_(User.email == body.email.lower(),
-                                             User.username == body.username)))
+                                             func.lower(User.username) == body.username.lower())))
     if taken:
         raise HTTPException(status.HTTP_409_CONFLICT, "Email or username already registered")
     state = st.get(body.state)
@@ -189,7 +189,7 @@ def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get
     if len(recent) >= LOGIN_MAX_FAILURES:
         raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS,
                             "Too many failed logins. Try again in a few minutes.")
-    user = db.scalar(select(User).where(or_(User.email == ident.lower(), User.username == ident)))
+    user = db.scalar(select(User).where(User.email == ident.lower())) or user_named(db, ident)
     if not user or not verify_password(form.password, user.password_hash):
         _failed_logins[ident.lower()] = recent + [now]
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Wrong email/username or password")

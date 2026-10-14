@@ -135,7 +135,7 @@ def my_album(user: User = Depends(current_user), db: Session = Depends(get_db)):
 
 @router.get("/users/{username}/album", response_model=AlbumOut)
 def user_album(username: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
-    owner = db.scalar(select(User).where(User.username == username))
+    owner = user_named(db, username)
     if not owner:
         raise HTTPException(404, "No such user")
     if owner.id != user.id and owner.id not in friend_ids(db, user.id):
@@ -455,8 +455,16 @@ def _between(a: int, b: int):
                and_(Friendship.requester_id == b, Friendship.addressee_id == a))
 
 
+def user_named(db: Session, username: str) -> User | None:
+    """Usernames ignore case ("Kuro" finds "kuro"). An exact match wins, for
+    accounts made before that rule whose names differ only in case."""
+    name = username.strip()
+    return db.scalar(select(User).where(User.username == name)) or db.scalar(
+        select(User).where(func.lower(User.username) == name.lower()).order_by(User.id))
+
+
 def _user_by_name(db: Session, username: str) -> User:
-    other = db.scalar(select(User).where(User.username == username.strip()))
+    other = user_named(db, username)
     if not other:
         raise HTTPException(404, "No user with that username")
     return other
