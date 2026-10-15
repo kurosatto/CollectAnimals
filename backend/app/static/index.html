@@ -160,6 +160,14 @@
   .welcome { border-color:var(--accent); }
   .welcome p { margin:6px 0 0; }
   label.inline { display:flex; align-items:center; gap:6px; font-size:.9rem; color:var(--muted); }
+  .habitat { position:relative; margin-top:4px; }
+  #hab-canvas { display:block; width:100%; height:auto; image-rendering:pixelated; border-radius:10px;
+                border:1px solid var(--line); cursor:pointer; touch-action:manipulation; }
+  .hab-bubble { position:absolute; transform:translate(-50%,-100%); background:var(--card); color:var(--ink);
+                border:1px solid var(--line); border-radius:8px; padding:3px 8px; font-size:.8rem; font-weight:600;
+                white-space:nowrap; pointer-events:none; box-shadow:0 2px 6px rgba(0,0,0,.15); }
+  .hab-bar { display:flex; justify-content:space-between; align-items:center; gap:8px; margin:8px 0 12px; font-size:.85rem; }
+  .hab-bar button { padding:4px 10px; font-size:.8rem; white-space:nowrap; }
 </style>
 </head>
 <body>
@@ -228,6 +236,11 @@
     </div>
     <div class="card off" data-tab="dex">
       <h2>Field Guide <span id="progress" class="muted"></span></h2>
+      <div id="habitat" class="habitat">
+        <canvas id="hab-canvas" width="480" height="270" aria-label="Your habitat: the animals you've captured"></canvas>
+        <div id="hab-bubble" class="hab-bubble hidden"></div>
+      </div>
+      <div class="hab-bar"><span id="hab-note" class="muted"></span><button class="ghost" id="hab-peek"></button></div>
       <div id="grid" class="grid"></div>
     </div>
     <div class="card off" data-tab="photos">
@@ -474,6 +487,7 @@ async function loadCollection() {
   const c = await api("/me/collection");
   const entries = [...c.entries].sort((a, b) => dexSort(a.species, b.species));
   caughtNums = new Set(entries.filter((e) => e.caught).map((e) => e.species.number));
+  habitatSet(entries);
   entries.forEach((e, i) => { dexNumbers[e.species.number] = i + 1; });
   loadHotspots();
   $("progress").textContent = `${c.caught} / ${c.total}`;
@@ -533,6 +547,404 @@ function addTile(e, i, tier) {
 
 // Colour pixel art once caught, a silhouette until then.
 const spriteUrl = (slug, caught) => `/sprites/${encodeURIComponent(slug)}${caught ? "" : "_silhouette"}.png`;
+
+// Habitat: the animals you've captured, living in one small pixel scene at the top
+// of the Field Guide. Each one gets a way of moving from what it is (walkers,
+// hoppers, fliers, swimmers, tide pool animals...) and is awake by day, by night
+// or both (`activity` from /me/collection). The scene follows the phone's clock,
+// and a button peeks at the other half of the day. Tap an animal for its name,
+// tap again for its Field Guide page.
+const HAB_H = 270;
+const hab = { w: 0, L: null, animals: [], peek: false, picked: null, pickedUntil: 0, last: 0, bg: null, bgKey: "", t: 0 };
+const habImgs = {};
+const habStill = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const HAB_ROLES = [
+  [/sea_otter|by_the_wind/, "float"],
+  [/jellyfish/, "jelly"],
+  [/dolphin|whale|garibaldi|red_drum|sculpin|sea_hare|loggerhead/, "swim"],
+  [/seal|sea_lion|crab/, "beach"],
+  [/star|anemone|mussel|barnacle|limpet|urchin|turban_snail|hopkins|scotch_bonnet/, "reef"],
+  [/mallard|wood_duck|goose|swan|trout|hellbender|beaver|river_otter|alligator/, "paddle"],
+  [/pond_slider|pond_turtle|snapping|terrapin|newt|salamander|ensatina/, "shore"],
+  [/heron|egret|ibis|oystercatcher/, "wade"],
+  [/hawk|eagle|vulture|condor|osprey|kestrel/, "soar"],
+  [/hummingbird/, "hover"],
+  [/quail|turkey|roadrunner/, "walk"],
+  [/firefly|swallowtail|monarch|painted_lady|mourning_cloak|fritillary|luna_moth|flame_skimmer|honey_bee/, "flutter"],
+  [/spider|widow/, "dangle"],
+  [/frog|toad|peeper|grasshopper/, "hop"],
+];
+const HAB_DEFAULT_ROLE = { bird: "fly", amphibian: "shore", marine: "swim", fish: "paddle" };
+const HAB_FLIERS = new Set(["fly", "soar", "hover", "flutter"]);
+const HAB_SEA = new Set(["swim", "jelly", "reef"]);
+
+function habRole(s) {
+  const hit = HAB_ROLES.find(([re]) => re.test(s.slug));
+  return hit ? hit[1] : HAB_DEFAULT_ROLE[s.category] || "walk";
+}
+
+function habSpeed(a) {
+  const slug = a.s.slug;
+  if (/roadrunner/.test(slug)) return 45;
+  if (/squirrel|chipmunk|lizard|skink|anole/.test(slug)) return 28;
+  if (/tortoise|box_turtle|slug|snail/.test(slug)) return 3;
+  return { fly: 34, hover: 70, flutter: 16, hop: 22, beach: 10, swim: 12, jelly: 4, float: 4, paddle: 6,
+           wade: 5, shore: 5 }[a.role] || { mammal: 16, reptile: 8, invertebrate: 5, bird: 12 }[a.s.category] || 10;
+}
+
+// Where the scene's parts sit for a canvas this wide (320 on phones, 480 wider).
+function habLayout(w) {
+  return { w, land: Math.round(w * .64), sea: Math.round(w * .73), water: 168, tree: Math.round(w * .1),
+           pond: { x: Math.round(w * .36), y: 229, rx: Math.round(w * .11), ry: 12 } };
+}
+
+const rnd = (lo, hi) => lo + Math.random() * (hi - lo);
+const pick = (...xs) => xs[Math.floor(Math.random() * xs.length)];
+
+// A fresh spot inside the animal's part of the scene: [x, feet y].
+function habSpot(a) {
+  const L = hab.L, p = L.pond;
+  switch (a.role) {
+    case "walk": return [rnd(14, L.land - 10), pick(rnd(182, 200), rnd(250, 266))];
+    case "hop": case "shore": return [rnd(p.x - p.rx - 34, p.x + p.rx + 34), pick(rnd(204, 212), rnd(248, 258))];
+    case "wade": return [rnd(p.x - p.rx + 8, p.x + p.rx - 8), p.y + 3];
+    case "paddle": return [rnd(p.x - p.rx + 14, p.x + p.rx - 14), p.y + 7];
+    case "beach": return [rnd(L.land + 6, L.sea + 4), rnd(196, 264)];
+    case "swim": case "jelly": return [rnd(L.sea + 20, L.w - 18), rnd(L.water + 44, HAB_H - 14)];
+    case "float": return [rnd(L.sea + 18, L.w - 16), L.water + 9];
+    case "reef": return [rnd(L.sea + 14, L.w - 14), HAB_H - 2 - rnd(0, 8)];
+    case "hover": return [rnd(20, L.land - 20), rnd(146, 196)];
+    case "flutter": return [rnd(10, L.land), rnd(122, 200)];
+    case "dangle": return [L.tree + rnd(14, 26), rnd(146, 170)];
+    case "soar": return [rnd(70, L.w - 70), rnd(60, 90)];
+    default: return [rnd(-20, L.w + 20), rnd(42, 128)];  // fly
+  }
+}
+
+function habSpawn(a) {
+  [a.x, a.y] = habSpot(a);
+  [a.tx, a.ty] = habSpot(a);
+  a.pause = rnd(0, 3);
+  a.dir = Math.random() < .5 ? -1 : 1;
+  a.odo = 0;
+  a.phase = rnd(0, 6.3);
+  if (a.role === "fly") a.vx = pick(-1, 1) * rnd(.8, 1.2);
+  if (a.role === "soar") { a.cx = a.x; a.cy = a.y; a.r = rnd(26, 46); }
+}
+
+// Called with the captured entries whenever the collection loads. Animals already
+// in the scene stay where they are.
+function habitatSet(entries) {
+  const box = $("habitat");
+  const w = box.clientWidth && box.clientWidth < 520 ? 320 : 480;
+  const relayout = w !== hab.w;
+  if (relayout) { hab.w = w; hab.L = habLayout(w); hab.bgKey = ""; }
+  const old = new Map(hab.animals.map((a) => [a.s.slug, a]));
+  hab.animals = entries.filter((e) => e.caught && e.species.slug).map((e) => {
+    const prev = old.get(e.species.slug);
+    if (prev && !relayout) { prev.s = e.species; prev.activity = e.activity || "day"; return prev; }
+    const a = { s: e.species, activity: e.activity || "day", role: habRole(e.species) };
+    a.speed = habSpeed(a);
+    habSpawn(a);
+    if (!habImgs[a.s.slug]) { habImgs[a.s.slug] = new Image(); habImgs[a.s.slug].src = spriteUrl(a.s.slug, true); }
+    return a;
+  });
+  habNote();
+  if (habStill) setTimeout(habDraw, 300);
+}
+
+function habRealPhase() {
+  const h = new Date().getHours();
+  return h >= 21 || h < 5 ? "night" : h < 7 ? "dawn" : h < 19 ? "day" : "dusk";
+}
+function habPhase() {
+  const real = habRealPhase();
+  if (!hab.peek) return real;
+  return real === "day" ? "night" : "day";
+}
+const habAwake = (a, phase) => phase === "dawn" || phase === "dusk" || a.activity === "any"
+  || a.activity === (phase === "night" ? "night" : "day");
+
+function habNote() {
+  const phase = habPhase(), n = hab.animals.length;
+  const asleep = hab.animals.filter((a) => !habAwake(a, phase)).length;
+  $("hab-note").textContent = !n ? "Capture animals and they'll move in here."
+    : `${n} animal${n > 1 ? "s" : ""} live${n > 1 ? "" : "s"} here` + (asleep ? `, ${asleep} asleep` : "")
+      + ". Tap one to say hi.";
+  const night = phase === "night";
+  $("hab-peek").textContent = hab.peek ? "Back to now" : night || phase === "dusk" ? "☀️ Peek at daytime" : "🌙 Peek at night";
+}
+
+// Sleeping fliers roost in the tree, then on the grass under it.
+function habRoost(i) {
+  const t = hab.L.tree;
+  const spots = [[t - 16, 116], [t + 4, 106], [t + 20, 118], [t - 4, 128], [t + 12, 132]];
+  return spots[i] || [t + 30 + (i - spots.length) * 18 % (hab.L.land - t - 40), 192 + (i % 2) * 8];
+}
+
+function habStep(a, dt, awake) {
+  a.phase += dt;
+  if (!awake) return;
+  if (a.role === "fly") {
+    a.x += a.vx * a.speed * dt;
+    a.dir = Math.sign(a.vx);
+    if (a.x < -30 || a.x > hab.L.w + 30) { a.vx = -a.vx; a.y = rnd(42, 128); }
+    return;
+  }
+  if (a.role === "soar") {
+    a.x = a.cx + Math.cos(a.phase * .35) * a.r * 1.6;
+    a.y = a.cy + Math.sin(a.phase * .35) * a.r * .5;
+    a.dir = Math.sin(a.phase * .35) > 0 ? -1 : 1;
+    return;
+  }
+  if (a.role === "reef") return;
+  if (a.pause > 0) { a.pause -= dt; return; }
+  const dx = a.tx - a.x, dy = a.ty - a.y, d = Math.hypot(dx, dy);
+  const step = a.speed * dt;
+  if (d <= step) {
+    a.x = a.tx; a.y = a.ty;
+    a.pause = a.role === "hover" ? rnd(.4, 1.4) : rnd(1, 5);
+    [a.tx, a.ty] = habSpot(a);
+    return;
+  }
+  a.x += dx / d * step; a.y += dy / d * step; a.odo += step;
+  if (Math.abs(dx) > .5 && a.role !== "beach") a.dir = Math.sign(dx);
+}
+
+// Drawn position: [x, feet y] plus the bounce or bob that goes with how it moves.
+function habPose(a, awake, roost) {
+  if (roost) return roost;
+  let { x, y } = a;
+  if (!awake) return [x, y];
+  const moving = a.pause <= 0;
+  switch (a.role) {
+    case "hop": if (moving) y -= Math.abs(Math.sin(a.odo / 18 * Math.PI)) * 9; break;
+    case "walk": case "shore": case "wade": case "beach": if (moving) y -= Math.floor(a.odo / 3) % 2; break;
+    case "fly": case "soar": y += Math.sin(a.phase * 3) * 2; break;
+    case "flutter": y += Math.sin(a.phase * 9) * 3; x += Math.sin(a.phase * 2.3) * 2; break;
+    case "swim": case "float": case "paddle": y += Math.sin(a.phase * 1.5) * 1.5; break;
+    case "jelly": y += Math.sin(a.phase * .8) * 6; break;
+  }
+  return [x, y];
+}
+
+function habDraw() {
+  const cv = $("hab-canvas");
+  if (!hab.L || !cv) return;
+  const L = hab.L, phase = habPhase(), key = `${L.w}/${phase}`;
+  if (cv.width !== L.w) { cv.width = L.w; cv.height = HAB_H; }
+  if (hab.bgKey !== key) { hab.bg = habBackground(L, phase); hab.bgKey = key; }
+  const c = cv.getContext("2d");
+  c.imageSmoothingEnabled = false;
+  c.drawImage(hab.bg, 0, 0);
+  let roosting = 0;
+  const poses = hab.animals.map((a) => {
+    const awake = habAwake(a, phase);
+    const roost = !awake && HAB_FLIERS.has(a.role) ? habRoost(roosting++) : null;
+    const [x, y] = habPose(a, awake, roost);
+    return { a, awake, x: Math.round(x), y: Math.round(y), sky: awake && HAB_FLIERS.has(a.role) };
+  });
+  const sea = poses.filter((p) => HAB_SEA.has(p.a.role) && !p.sky).sort((p, q) => p.y - q.y);
+  const land = poses.filter((p) => !HAB_SEA.has(p.a.role) && !p.sky).sort((p, q) => p.y - q.y);
+  const sky = poses.filter((p) => p.sky);
+  sea.forEach((p) => habSprite(c, p));
+  // Seawater over everything in the sea.
+  c.fillStyle = phase === "night" ? "rgba(20,40,90,.35)" : "rgba(40,120,200,.28)";
+  c.fillRect(L.sea, L.water + 3, L.w - L.sea, HAB_H);
+  land.forEach((p) => habSprite(c, p));
+  sky.forEach((p) => habSprite(c, p));
+  if (phase === "night") { c.fillStyle = "rgba(8,12,40,.42)"; c.fillRect(0, 0, L.w, HAB_H); }
+  else if (phase !== "day") { c.fillStyle = "rgba(90,40,80,.12)"; c.fillRect(0, 0, L.w, HAB_H); }
+  for (const p of poses) {
+    if (/firefly/.test(p.a.s.slug) && p.awake && phase !== "day") {
+      const on = Math.sin(p.a.phase * 4) > -.2;
+      if (on) { c.fillStyle = "rgba(255,240,120,.35)"; c.fillRect(p.x - 6, p.y - 14, 12, 10);
+                c.fillStyle = "#fff6a0"; c.fillRect(p.x - 2, p.y - 11, 4, 4); }
+    }
+    if (p.a.s.rarity === "legendary" && Math.sin(p.a.phase * 3) > .3) {
+      c.fillStyle = "#ffe27a";
+      const sx = p.x + (p.a.phase * 7 % 24) - 12, sy = p.y - 34;
+      c.fillRect(sx, sy - 1, 1, 3); c.fillRect(sx - 1, sy, 3, 1);
+    }
+    if (!p.awake) {
+      c.fillStyle = phase === "night" ? "#dfe8ff" : "#33405a";
+      c.font = "bold 8px monospace";
+      const k = (p.a.phase * .7) % 1;
+      c.globalAlpha = 1 - k;
+      c.fillText("z", p.x + 8 + k * 4, p.y - 28 - k * 10);
+      c.globalAlpha = 1;
+    }
+  }
+  habBubble(poses);
+}
+
+function habSprite(c, p) {
+  const img = habImgs[p.a.s.slug];
+  if (!img || !img.complete || !img.naturalWidth) return;
+  const { a, x, y } = p;
+  c.save();
+  if (a.role === "paddle") { c.beginPath(); c.rect(0, 0, hab.L.w, y - 8); c.clip(); }
+  if (a.role === "dangle") {
+    c.fillStyle = "rgba(255,255,255,.7)";
+    c.fillRect(x, 104, 1, y - 104 - 26);
+  }
+  if (!p.awake) c.globalAlpha = .85;
+  // Sprites face left; mirror the ones heading right.
+  if (a.dir > 0 && a.role !== "reef") { c.translate(x + 16, y - 32); c.scale(-1, 1); c.drawImage(img, 0, 0); }
+  else c.drawImage(img, x - 16, y - 32);
+  c.restore();
+  if (a.role === "paddle") {
+    c.fillStyle = "rgba(255,255,255,.55)";
+    c.fillRect(x - 12, y - 8, 4, 1); c.fillRect(x + 6, y - 8, 5, 1);
+  }
+  p.box = [x - 16, y - 32, x + 16, y];
+}
+
+function habBubble(poses) {
+  const b = $("hab-bubble");
+  const p = hab.picked && performance.now() < hab.pickedUntil && poses.find((q) => q.a === hab.picked);
+  if (!p) { b.classList.add("hidden"); if (hab.picked && !p) hab.picked = null; return; }
+  const scale = $("hab-canvas").clientWidth / hab.L.w;
+  b.classList.remove("hidden");
+  b.style.left = `${Math.min(Math.max(p.x * scale, 60), $("hab-canvas").clientWidth - 60)}px`;
+  b.style.top = `${(p.y - 34) * scale}px`;
+}
+
+function habTap(ev) {
+  if (!hab.L) return;
+  const cv = $("hab-canvas"), r = cv.getBoundingClientRect();
+  const x = (ev.clientX - r.left) / r.width * hab.L.w, y = (ev.clientY - r.top) / r.height * HAB_H;
+  const phase = habPhase();
+  // Front-most first: fliers, then the land and sea animals nearest the bottom.
+  let roosting = 0;
+  const hits = hab.animals.map((a) => {
+    const awake = habAwake(a, phase);
+    const roost = !awake && HAB_FLIERS.has(a.role) ? habRoost(roosting++) : null;
+    const [px, py] = habPose(a, awake, roost);
+    return { a, awake, px, py, z: (awake && HAB_FLIERS.has(a.role) ? 1000 : 0) + py };
+  }).filter((h) => Math.abs(x - h.px) <= 18 && y >= h.py - 34 && y <= h.py + 4).sort((p, q) => q.z - p.z);
+  if (!hits.length) { hab.picked = null; habDraw(); return; }
+  const h = hits[0];
+  if (hab.picked === h.a && performance.now() < hab.pickedUntil) {
+    openDex(h.a.s.number, dexNumbers[h.a.s.number], true);
+    return;
+  }
+  hab.picked = h.a;
+  hab.pickedUntil = performance.now() + 4000;
+  const b = $("hab-bubble");
+  b.textContent = h.a.s.common_name + (h.awake ? "" : " 💤");
+  b.title = "Tap again to open its page";
+  if (habStill) habDraw();
+}
+
+function habLoop(now) {
+  requestAnimationFrame(habLoop);
+  const box = $("habitat");
+  if (document.hidden || !box || box.closest(".off") || box.closest(".hidden")) { hab.last = 0; return; }
+  const w = box.clientWidth < 520 ? 320 : 480;
+  if (!hab.L || w !== hab.w) habitatSet(hab.animals.map((a) => ({ caught: true, species: a.s, activity: a.activity })));
+  const dt = hab.last ? Math.min((now - hab.last) / 1000, .1) : 0;
+  hab.last = now;
+  const phase = habPhase();
+  hab.animals.forEach((a) => habStep(a, dt, habAwake(a, phase)));
+  habDraw();
+}
+
+// ---- Scenery, drawn once per size and time of day. ----
+function mulberry(seed) {
+  return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+const hexRgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+const mix = (a, b, k) => `rgb(${hexRgb(a).map((v, i) => Math.round(v + (hexRgb(b)[i] - v) * k)).join(",")})`;
+
+function pxEllipse(c, cx, cy, rx, ry, color) {
+  c.fillStyle = color;
+  for (let dy = -ry; dy <= ry; dy++) {
+    const hw = Math.round(rx * Math.sqrt(1 - (dy / ry) ** 2));
+    c.fillRect(cx - hw, cy + dy, hw * 2, 1);
+  }
+}
+
+const HAB_SKY = { day: ["#6fbdf0", "#c4ebfc"], dawn: ["#8b86cc", "#ffd3a1"], dusk: ["#4f3f86", "#f59a6c"],
+                  night: ["#0b1330", "#24346a"] };
+
+function habBackground(L, phase) {
+  const cv = document.createElement("canvas");
+  cv.width = L.w; cv.height = HAB_H;
+  const c = cv.getContext("2d"), r = mulberry(7), night = phase === "night";
+  // Sky in flat bands, like old pixel games.
+  const [top, bottom] = HAB_SKY[phase];
+  for (let i = 0; i < 10; i++) { c.fillStyle = mix(top, bottom, i / 9); c.fillRect(0, i * 17, L.w, 17); }
+  if (night) {
+    c.fillStyle = "#fff";
+    for (let i = 0; i < 60; i++) c.fillRect(Math.floor(r() * L.w), Math.floor(r() * 140), 1, 1);
+    pxEllipse(c, L.w - 60, 34, 10, 10, "#f4f1d0");
+    pxEllipse(c, L.w - 55, 31, 9, 9, top);
+  } else {
+    const low = phase !== "day";
+    pxEllipse(c, low ? 60 : L.w - 70, low ? 130 : 36, 11, 11, low ? "#ffb35c" : "#ffe680");
+    c.fillStyle = "rgba(255,255,255,.85)";
+    for (const [x, y, w] of [[40, 40, 34], [L.w * .45, 26, 44], [L.w * .7, 58, 30]]) {
+      pxEllipse(c, Math.round(x), y, Math.round(w / 2), 5, "rgba(255,255,255,.8)");
+      pxEllipse(c, Math.round(x + w * .2), y - 4, Math.round(w / 4), 4, "rgba(255,255,255,.8)");
+    }
+  }
+  const dim = (col) => (night ? mix(col, "#0b1330", .55) : phase === "day" ? col : mix(col, "#5b3f6e", .2));
+  // Sea behind the beach, with a light line along the top.
+  c.fillStyle = dim("#2f86c9"); c.fillRect(L.sea - 30, L.water, L.w, HAB_H);
+  c.fillStyle = dim("#8fd0f5");
+  for (let x = L.sea - 30; x < L.w; x += 6) c.fillRect(x + (x % 12 ? 0 : 2), L.water, 3, 1);
+  for (let i = 0; i < 18; i++) c.fillRect(L.sea + Math.floor(r() * (L.w - L.sea)), L.water + 8 + Math.floor(r() * 90), 4, 1);
+  // Hills, far then near.
+  for (const [base, amp, col, k] of [[132, 12, "#a4cf8e", .021], [150, 9, "#79b562", .034]]) {
+    c.fillStyle = dim(col);
+    for (let x = 0; x < L.sea - 10; x++) {
+      const h = Math.round(base + Math.sin(x * k + base) * amp + Math.sin(x * k * 2.7) * 3);
+      c.fillRect(x, h, 1, L.water + 10 - h);
+    }
+  }
+  // Meadow, then the sandy shore curving down to the sea.
+  c.fillStyle = dim("#86c25b"); c.fillRect(0, L.water + 4, L.land + 6, HAB_H);
+  for (let y = L.water + 2; y < HAB_H; y++) {
+    const x0 = Math.round(L.land - 6 + (y - L.water) * .12), x1 = Math.round(L.sea + (y - L.water) * .08);
+    c.fillStyle = dim("#e9d79f"); c.fillRect(x0, y, x1 - x0, 1);
+    c.fillStyle = dim("#d6bf7f"); c.fillRect(x1 - 2, y, 2, 1);
+  }
+  // Tide pool rocks on the sea floor.
+  for (let i = 0; i < 6; i++) {
+    pxEllipse(c, Math.round(L.sea + 10 + i * (L.w - L.sea) / 6), HAB_H - 2, 10 + i % 3 * 3, 5, dim(i % 2 ? "#6f7480" : "#5c616c"));
+  }
+  // Grass tufts and flowers.
+  for (let i = 0; i < 90; i++) {
+    const x = Math.floor(r() * (L.land - 4)), y = L.water + 8 + Math.floor(r() * (HAB_H - L.water - 10));
+    c.fillStyle = dim(r() < .5 ? "#6aa646" : "#9bd66e");
+    c.fillRect(x, y, 1, 2); c.fillRect(x + 2, y - 1, 1, 3);
+    if (r() < .25) { c.fillStyle = dim(["#ffffff", "#ffd84d", "#f27aa8", "#b48cff"][Math.floor(r() * 4)]); c.fillRect(x + 1, y - 3, 2, 2); }
+  }
+  // Pond with reeds.
+  const p = L.pond;
+  pxEllipse(c, p.x, p.y, p.rx + 3, p.ry + 2, dim("#5d8f45"));
+  pxEllipse(c, p.x, p.y, p.rx, p.ry, dim("#3d93cf"));
+  c.fillStyle = dim("#8fd0f5");
+  c.fillRect(p.x - 18, p.y - 4, 8, 1); c.fillRect(p.x + 6, p.y + 3, 10, 1);
+  for (const dx of [-p.rx - 2, -p.rx + 2, p.rx - 1, p.rx + 3]) {
+    c.fillStyle = dim("#3e7a33"); c.fillRect(p.x + dx, p.y - 14, 1, 12);
+    c.fillStyle = dim("#7a5235"); c.fillRect(p.x + dx, p.y - 16, 1, 3);
+  }
+  // A tree for roosting birds and a spider's thread.
+  c.fillStyle = dim("#7a5235"); c.fillRect(L.tree - 3, 112, 7, 82);
+  c.fillRect(L.tree + 3, 102, 18, 3);
+  for (const [dx, dy, rx, ry, col] of [[-12, 108, 18, 14, "#3d7f41"], [10, 100, 20, 16, "#3d7f41"],
+                                       [0, 88, 20, 16, "#4f9a50"], [-4, 98, 14, 10, "#5fae5c"]]) {
+    pxEllipse(c, L.tree + dx, dy, rx, ry, dim(col));
+  }
+  return cv;
+}
+
+$("hab-canvas").addEventListener("click", habTap);
+$("hab-peek").onclick = () => { hab.peek = !hab.peek; habNote(); if (habStill) habDraw(); };
+if (!habStill) requestAnimationFrame(habLoop);
 
 // The player's state (from /me) picks the Dex, Hotspots and map. Outline rings
 // are [lon, lat] from /map/<state>; the map is scaled so every state is ~430 px wide.
