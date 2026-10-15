@@ -178,6 +178,42 @@ class AlbumOut(BaseModel):
     photos: list[PhotoOut]
 
 
+class SetSpecies(BaseModel):
+    species: SpeciesOut
+    caught: bool
+
+
+class SetOut(BaseModel):
+    id: str
+    title: str
+    description: str
+    caught: int
+    total: int
+    complete: bool
+    species: list[SetSpecies]
+
+
+class SetsOut(BaseModel):
+    state: str
+    sets: list[SetOut]
+
+
+class ChallengeOut(BaseModel):
+    id: str
+    title: str
+    progress: int
+    goal: int
+    done: bool
+
+
+class ChallengesOut(BaseModel):
+    state: str
+    week_start: datetime
+    week_end: datetime
+    challenges: list[ChallengeOut]
+    done: int
+
+
 class Tally(BaseModel):
     caught: int
     total: int

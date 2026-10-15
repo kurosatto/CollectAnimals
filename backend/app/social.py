@@ -20,7 +20,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import and_, delete, func, or_, select
 from sqlalchemy.orm import Session
 
-from . import places
+from . import goals, places
 from . import states
 from .auth import current_user
 from .db import get_db
@@ -223,7 +223,7 @@ def _achievements(caught: int, total: int, by_rarity: dict[str, Tally],
     add("first_catch", "First capture", "Capture your first animal", caught, 1)
     for n in (10, 25, 50):
         add(f"collector_{n}", f"{n} animals", f"Capture {n} different animals", caught, n)
-    add("complete", "Gotta capture 'em all", f"Capture all {total} animals", caught, total)
+    add("complete", "Field Guide complete", f"Capture all {total} animals", caught, total)
     rare = by_rarity.get("rare", Tally(caught=0, total=0))
     legendary = by_rarity.get("legendary", Tally(caught=0, total=0))
     add("first_rare", "Rare find", "Capture a rare animal", rare.caught, 1)
@@ -233,6 +233,17 @@ def _achievements(caught: int, total: int, by_rarity: dict[str, Tally],
         name = CATEGORY_TITLES.get(cat, cat.title())
         add(f"all_{cat}", f"{name} master", f"Capture every {cat} on the list", t.caught, t.total)
     add("liked_10", "Crowd favorite", "Get 10 likes on your photos", likes, 10)
+    return out
+
+
+def _set_achievements(state: str, members: list[StateSpecies], caught_ids: set[int]) -> list[AchievementOut]:
+    """One achievement per collection set: capture everything in it."""
+    ids = {m.species.slug: m.species_id for m in members}
+    out = []
+    for s in goals.sets_for(state, set(ids)):
+        n = sum(ids[x] in caught_ids for x in s.slugs)
+        out.append(AchievementOut(id=f"set_{s.id}", title=s.title, description=f"Complete the {s.title} set",
+                                  earned=n == len(s.slugs), progress=n, goal=len(s.slugs)))
     return out
 
 
@@ -281,7 +292,8 @@ def user_profile(username: str, user: User = Depends(current_user), db: Session 
         is_bot=bool(owner.is_bot), is_private=bool(owner.is_private),
         caught=len(caught_ids), total=len(members), by_rarity=by_rarity, by_category=by_category,
         likes_received=likes_received,
-        achievements=_achievements(len(caught_ids), len(members), by_rarity, by_category, likes_received),
+        achievements=_achievements(len(caught_ids), len(members), by_rarity, by_category, likes_received)
+        + _set_achievements(owner.state, members, caught_ids),
         legendaries=[species_out(m.species, m.species_id in revealed, m) for m in members
                      if m.rarity == "legendary" and m.species_id in caught_ids],
         photos=[photo_out(p, user, friends, counts.get(p.id, 0), p.id in liked, p.species_id in revealed)
