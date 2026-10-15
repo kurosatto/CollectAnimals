@@ -119,6 +119,17 @@ class PickIn(BaseModel):
     label: str
 
 
+class ScorePart(BaseModel):
+    label: str
+    points: int
+
+
+class ScoreOut(BaseModel):
+    total: int
+    stars: int
+    parts: list[ScorePart]
+
+
 class CaptureOut(BaseModel):
     capture_id: int
     matched: bool
@@ -131,6 +142,8 @@ class CaptureOut(BaseModel):
     album_photo_id: int | None = None
     # The model's top 5 species guesses with names, for the player to correct it.
     choices: list[ChoiceOut] = []
+    # Points and stars for this photo (None when it didn't count for any animal).
+    score: ScoreOut | None = None
 
 
 class CollectionEntry(BaseModel):
@@ -169,6 +182,8 @@ class PhotoOut(BaseModel):
     is_mine: bool = False
     by_friend: bool = False
     rank: int | None = None
+    score: int | None = None
+    stars: int | None = None
 
 
 class AlbumOut(BaseModel):

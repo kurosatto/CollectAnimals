@@ -78,6 +78,11 @@ class Capture(Base):
     top_labels: Mapped[str | None] = mapped_column(String(400), nullable=True)
     # True when the species was picked by the player rather than the model.
     user_picked: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    # Photo score (app/scoring.py) for the species it counts as: total points,
+    # 1-3 stars and the breakdown as JSON [[label, points], ...].
+    score: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    score_stars: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    score_parts: Mapped[str | None] = mapped_column(String(400), nullable=True)
 
     species: Mapped["Species | None"] = relationship()
 

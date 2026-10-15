@@ -86,7 +86,7 @@ def photo_out(p: AlbumPhoto, viewer: User, friends: set[int], likes: int, liked:
         taken_on=(c.taken_at or c.created_at).date(), caught_at=c.created_at,
         latitude=loc.latitude, longitude=loc.longitude, location_precise=loc.precise,
         place=loc.place, like_count=likes, liked_by_me=liked, is_mine=mine,
-        by_friend=p.user_id in friends, rank=rank)
+        by_friend=p.user_id in friends, rank=rank, score=c.score, stars=c.score_stars)
 
 
 def _like_info(db: Session, photo_ids: list[int], viewer_id: int) -> tuple[dict[int, int], set[int]]:
