@@ -87,6 +87,30 @@ class Capture(Base):
     species: Mapped["Species | None"] = relationship()
 
 
+class IdFeedback(Base):
+    """The player said the model named the wrong animal: what it guessed, and what
+    the player says it is (None = "none of these", not captured). One row per
+    capture, updated if they change their mind. Kept as labels for retraining the
+    model; the photo itself is used for training only under the photo terms the
+    player agreed to."""
+
+    __tablename__ = "id_feedback"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    capture_id: Mapped[int] = mapped_column(ForeignKey("captures.id"), unique=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    state: Mapped[str] = mapped_column(String(2))
+    # The model's best guess and every guess the player was shown (comma-separated slugs).
+    predicted_label: Mapped[str] = mapped_column(String(64))
+    rejected_labels: Mapped[str] = mapped_column(String(400))
+    # The player's answer, and where it came from: "guesses" (one of the model's
+    # other guesses), "list" (searched the state's list) or "none" (skipped).
+    chosen_label: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    source: Mapped[str] = mapped_column(String(16))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
 class Badge(Base):
     """One per (user, species): the user has 'caught' this animal."""
 

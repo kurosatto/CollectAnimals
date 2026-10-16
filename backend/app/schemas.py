@@ -115,8 +115,16 @@ class ChoiceOut(BaseModel):
 
 
 class PickIn(BaseModel):
-    # A slug from the capture's choices, or "none" for "none of these".
+    # A species slug (one of the capture's choices, or any animal on the player's
+    # state list found with "None of these" > search), or "none" to skip.
     label: str
+
+
+class SpeciesMatch(BaseModel):
+    slug: str
+    common_name: str
+    scientific_name: str
+    number: int
 
 
 class ScorePart(BaseModel):
