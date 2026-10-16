@@ -1,11 +1,11 @@
 """Fill a running server with the demo "bot friends" and their catches.
 
-Each bot captures one animal in each state by uploading real photos from the
+Each bot captures a few animals in each state (birdnerd a handful of birds) by uploading real photos from the
 training set (data/images/<slug>/) through the normal API, so the model really
 identifies each one (or, like a player, picks the right one from the model's
 top guesses). One set of bots serves every state: every new player starts as
 friends with all of them, and being friends reveals the bots' animals, so each
-bot only has a couple. A bot's lists have spares, tried in order, for animals
+bot only has a few (CATCHES). A bot's lists have spares, tried in order, for animals
 the model can't name yet.
 
 Re-running trims any other catches the bots have (deleting a photo un-catches
@@ -25,14 +25,18 @@ from pathlib import Path
 
 import requests
 
-CATCHES = 1  # per state
-PLAYERS = {  # name: {state: species to try in order}
-    "trailblazer": {"CA": ["mule_deer", "elk", "bighorn_sheep"],
-                    "NC": ["white_tailed_deer", "elk", "wild_turkey"]},
-    "tidepooler": {"CA": ["ochre_sea_star", "harbor_seal", "sea_otter"],
-                   "NC": ["atlantic_ghost_crab", "brown_pelican", "royal_tern"]},
-    "birdnerd": {"CA": ["annas_hummingbird", "acorn_woodpecker", "california_quail"],
-                 "NC": ["northern_cardinal", "carolina_wren", "eastern_bluebird"]},
+CATCHES = {"trailblazer": 3, "tidepooler": 3, "birdnerd": 6}  # per state
+PLAYERS = {  # name: {state: species to try in order; later ones are spares}
+    "trailblazer": {"CA": ["mule_deer", "elk", "california_ground_squirrel", "bighorn_sheep", "black_tailed_jackrabbit"],
+                    "NC": ["white_tailed_deer", "elk", "eastern_gray_squirrel", "eastern_cottontail", "groundhog"]},
+    "tidepooler": {"CA": ["ochre_sea_star", "harbor_seal", "sea_otter", "california_sea_lion", "giant_green_anemone"],
+                   "NC": ["atlantic_ghost_crab", "royal_tern", "black_skimmer", "atlantic_sand_fiddler_crab", "atlantic_horseshoe_crab"]},
+    "birdnerd": {"CA": ["annas_hummingbird", "acorn_woodpecker", "california_quail", "western_bluebird",
+                        "california_scrub_jay", "black_phoebe", "stellers_jay", "red_tailed_hawk",
+                        "great_egret", "white_crowned_sparrow", "house_finch", "northern_flicker"],
+                 "NC": ["northern_cardinal", "carolina_wren", "eastern_bluebird", "carolina_chickadee",
+                        "blue_jay", "ruby_throated_hummingbird", "red_bellied_woodpecker", "tufted_titmouse",
+                        "american_goldfinch", "great_blue_heron", "osprey", "barred_owl"]},
 }
 # Former North Carolina bots: re-running clears their photos and friends and
 # stops listing them as bots.
@@ -121,7 +125,7 @@ def main():
         have = {state: [] for state in lists}
         for p in album["photos"]:
             slug = p["species"]["slug"]
-            keep = next((st for st, slugs in lists.items() if slug in slugs and len(have[st]) < CATCHES), None)
+            keep = next((st for st, slugs in lists.items() if slug in slugs and len(have[st]) < CATCHES[name]), None)
             if keep:
                 have[keep].append(slug)
             else:
@@ -131,7 +135,7 @@ def main():
             # Captures are matched against the bot's current state's list.
             requests.patch(f"{args.url}/me", json={"state": state}, headers=h)
             for slug in slugs:
-                if len(have[state]) >= CATCHES:
+                if len(have[state]) >= CATCHES[name]:
                     break
                 if capture(args, h, rng, state, slug, nc_parks if state == "NC" else parks):
                     have[state].append(slug)
