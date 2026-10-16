@@ -100,6 +100,22 @@ def in_season(slug: str, state: str, month: int) -> bool:
     return months[month - 1] >= IN_SEASON_SHARE * max(months)
 
 
+def activity(slug: str, state: str) -> str:
+    """When the animal is up and about: "day", "night" or "any" (dawn/dusk
+    animals and ones out day and night). From the entry's active_time text,
+    else from how often it's reported at night. Used by the Habitat scene."""
+    text = details(slug, state).get("active_time", "").lower().split(";")[0]
+    if text:
+        if text.startswith(("night", "dusk")):
+            return "night"
+        if any(w in text for w in ("night", "dawn", "dusk", "all day", "any time")):
+            return "any"
+        return "day"
+    season = season_for(slug, state)
+    ratio = season and season["night_ratio"]
+    return "night" if ratio and ratio >= 3 else "day"
+
+
 def hotspots(state: str) -> list[dict]:
     return _hotspots.get(state, [])
 
