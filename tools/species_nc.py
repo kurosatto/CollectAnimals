@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from archetypes import (BLACK, EYE, PINK, WHITE, alligator, beetle_top, bird, butterfly, crab, dolphin,
                         duck, fish, frog, goose, grasshopper, horseshoe_crab, hummingbird, jelly, lizard,
-                        mammal, mantis, owl, sea_turtle, snail_shell, snake, spider_top, sprite, turkey,
+                        mammal, mantis, owl, quad, sea_turtle, snail_shell, snake, spider_top, sprite, turkey,
                         turtle, vulture, wader)
 from pixel import mix
 
@@ -11,29 +11,33 @@ from pixel import mix
 # --------------------------------------------------------------------------- mammals
 @sprite("red_wolf")
 def _(s):
-    def m(s):
-        s.paint(s.m_ellipse(16, 8, 4.5, 2.6), "#7a6a5e", within=s.last)
-    mammal(s, "#b07a50", "#efdcc4", ears="big", ear_in="#e0a880", tail="bushy", tail_col="#8a6a52",
-           tail_tip=BLACK, head_r=(9, 7.5), markings=m)
+    def m(s, b):
+        s.paint(s.m_ellipse(20, 16.5, 6.5, 2), "#7a6a5e", within=s.m_ellipse(*b["body"]))
+    quad(s, "#b07a50", "#efdcc4", build="dog", ears="big", ear_in="#e0a880", tail="bushy",
+         tail_col="#8a6a52", tail_tip=BLACK, markings=m)
 
 
 @sprite("white_tailed_deer")
 def _(s):
-    def antlers(s):
+    def antlers(s, b):
+        hx, hy = b["head"][:2]
         c = "#e0cca4"
-        s.path([(12, 7), (8, 4), (8, 1), (11, 0)], 0.8, c, shade=False, mirror=True)
-        s.px([(9, 2), (22, 2)], c)
-    mammal(s, "#a8764c", "#f4ece0", ears="side", ear_in="#e8c0a8", tail="cotton", tail_col=WHITE,
-           nose="#2b2226", head_r=(7.5, 7.5), behind=antlers,
-           markings=lambda s: s.paint(s.m_ellipse(11, 12.5, 2.4, 2) | s.m_ellipse(20, 12.5, 2.4, 2),
-                                      "#f4ece0", within=s.last))
-    s.eye(11, 12, mirror=True)
+        for dx, col in ((1.5, mix(c, "#1a1420", 0.25)), (0, c)):
+            x, y = hx + 1 + dx, hy - 2.5
+            s.path([(x, y), (x + 2.5, y - 3.5), (x + 1, y - 6.5), (x - 2, y - 7.5)], 0.7, col, shade=False)
+            s.path([(x + 1.8, y - 4.6), (x + 0.6, y - 7.6)], 0.55, col, shade=False)
+
+    def throat(s, b):
+        hx, hy = b["head"][:2]
+        s.paint(s.m_ellipse(hx - 1.6, hy - 1, 1.6, 1.2), "#f4ece0", within=s.m_ellipse(*b["head"]))
+    quad(s, "#a8764c", "#f4ece0", build="deer", ears="side", ear_in="#e8c0a8", tail="cotton",
+         tail_col=WHITE, nose="#2b2226", feet="#4a3a30", behind=antlers, markings=throat)
 
 
 @sprite("red_fox")
 def _(s):
-    mammal(s, "#dc6a2a", "#fbf3e8", ears="big", ear_in="#3a2a2a", tail="bushy", tail_col="#d8642a",
-           tail_tip=WHITE, feet=BLACK, head_r=(8.5, 7))
+    quad(s, "#dc6a2a", "#fbf3e8", build="dog", ears="big", ear_in="#3a2a2a", tail="bushy",
+         tail_col="#d8642a", tail_tip=WHITE, feet=BLACK)
 
 
 @sprite("eastern_gray_squirrel")

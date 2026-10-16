@@ -25,7 +25,7 @@ import species_ca_tidepool  # noqa: E402,F401  (registers the drawings in these 
 import species_nc  # noqa: E402,F401
 from archetypes import (BLACK, NOSE, PINK, WHITE, beetle_top, bee, bird, butterfly,  # noqa: E402
                         dragonfly, duck, frog, goose, hummingbird, lizard, mammal, owl, pelican,
-                        mantis, pinniped, S, snake, sprite, star, turtle, vulture, wader, whale)
+                        mantis, pinniped, quad, S, snake, sprite, star, turtle, vulture, wader, whale)
 from pixel import Sprite, mix, silhouette  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -35,109 +35,116 @@ OUT = ROOT / "species" / "sprites"
 # --------------------------------------------------------------------------- mammals
 @sprite("mountain_lion")
 def _(s):
-    mammal(s, "#c99a62", "#f3e6d0", ears="round", ear_in="#8a6040", tail="long", tail_tip="#4a3426",
-           nose="#c46a6a", head_r=(9, 7.5),
-           markings=lambda s: s.px([(13, 15), (18, 15)], "#5a4030"))
+    def m(s, b):
+        hx, hy = b["head"][:2]
+        s.px([(round(hx - 3), round(hy + 2)), (round(hx - 2), round(hy + 3))], "#5a4030")
+    quad(s, "#c99a62", "#f3e6d0", build="cat", ears="round", ear_in="#8a6040", tail="long",
+         tail_tip="#4a3426", nose="#c46a6a", markings=m)
 
 
 @sprite("bobcat")
 def _(s):
-    def spots(s):
-        s.px([(9, 9), (22, 9), (12, 7), (19, 7), (8, 13), (23, 13), (15, 8), (16, 6)], "#6a4a30")
-        s.px([(11, 25), (20, 24), (13, 22), (18, 27), (21, 21)], "#6a4a30")
-    mammal(s, "#c49a6c", "#f2e8da", ears="tuft", ear_in="#e8c8a8", tail="short", tail_tip=BLACK,
-           nose="#c46a6a", head_r=(9.5, 7.5), markings=spots)
+    def spots(s, b):
+        s.paint(s.m_px([(14, 19), (17, 18), (20, 19), (23, 18), (16, 21), (21, 21), (25, 20), (12, 21),
+                        (19, 23), (24, 23), (14, 24)]), "#6a4a30")
+        s.paint(s.m_px([(9, 13), (11, 12)]), "#6a4a30")
+    quad(s, "#c49a6c", "#f2e8da", build="cat", ears="tuft", ear_in="#e8c8a8", tail="short",
+         tail_tip=BLACK, nose="#c46a6a", markings=spots)
 
 
 @sprite("coyote")
 def _(s):
-    mammal(s, "#b59673", "#efe3cf", ears="big", ear_in="#d8a882", tail="bushy", tail_tip=BLACK,
-           tail_col="#9c8064", head_r=(8.5, 7),
-           markings=lambda s: s.paint(s.m_ellipse(16, 8, 4, 2.5), "#9c8064", within=s.last))
+    def m(s, b):
+        s.paint(s.m_ellipse(20, 16.5, 6, 1.8), "#9c8064", within=s.m_ellipse(*b["body"]))
+    quad(s, "#b59673", "#efe3cf", build="dog", ears="big", ear_in="#d8a882", tail="bushy",
+         tail_tip=BLACK, tail_col="#9c8064", markings=m)
 
 
 @sprite("gray_fox")
 def _(s):
-    def m(s):
-        s.paint(s.m_ellipse(16, 8, 4, 2.5), "#7d7d84", within=s.last)
-        s.paint(s.m_ellipse(9, 15, 1.5, 1.5), BLACK, mirror=True, within=s.last)
-    mammal(s, "#9a9aa2", "#f4efe6", ears="big", ear_in="#d08a60", tail="bushy", tail_col="#8a8a92",
-           tail_tip=BLACK, head_r=(8.5, 7), feet="#c27848", markings=m)
-    s.paint(s.m_ellipse(10, 24, 2, 3) | s.m_ellipse(22, 24, 2, 3), "#c27848")
+    def m(s, b):
+        s.paint(s.m_ellipse(20, 16.5, 6.5, 1.8), "#7d7d84", within=s.m_ellipse(*b["body"]))
+        s.paint(s.m_ellipse(19, 22.5, 6, 1.4), "#c27848", within=s.m_ellipse(*b["body"]))
+    quad(s, "#9a9aa2", "#f4efe6", build="dog", ears="big", ear_in="#d08a60", tail="bushy",
+         tail_col="#8a8a92", tail_tip=BLACK, legs="#c27848", markings=m)
 
 
 @sprite("american_black_bear")
 def _(s):
-    mammal(s, "#3a3036", "#c9a27a", ears="round", ear_in="#5a4a50", tail="none", head_r=(9.5, 8),
-           muzzle="#c9a27a", nose="#1d1418", belly=False)
+    quad(s, "#3a3036", "#c9a27a", build="bear", ears="round", ear_in="#5a4a50", tail="none",
+         muzzle="#c9a27a", nose="#1d1418", belly=False, eye_col="#120c10")
 
 
 @sprite("mule_deer")
 def _(s):
-    def antlers(s):
+    def antlers(s, b):
+        hx, hy = b["head"][:2]
         c = "#d8c49a"
-        for m in (False, True):
-            p = [(13, 6), (10, 2), (8, 0)]
-            if m:
-                p = [(31 - x, y) for x, y in p]
-            s.path(p, 0.8, c, shade=False)
-        s.px([(11, 1), (12, 0), (20, 1), (19, 0), (7, 3), (24, 3)], c)
-    mammal(s, "#a98c6c", "#f2e9dc", ears="mule", ear_in="#e5b8a4", tail="cotton", tail_col=WHITE,
-           nose="#2b2226", head_r=(7.5, 7.5), behind=antlers,
-           markings=lambda s: s.paint(s.m_ellipse(16, 9, 3, 1.5), "#e8dccb", within=s.last))
+        for dx, col in ((1.5, mix(c, "#1a1420", 0.25)), (0, c)):
+            x, y = hx + 1 + dx, hy - 2.5
+            s.path([(x, y), (x + 1.5, y - 4), (x + 0.5, y - 7.5)], 0.7, col, shade=False)
+            s.path([(x + 1.5, y - 4), (x + 4, y - 6.5)], 0.6, col, shade=False)
+    quad(s, "#a98c6c", "#f2e9dc", build="deer", ears="mule", ear_in="#e5b8a4", tail="cotton",
+         tail_col=WHITE, tail_tip=BLACK, nose="#2b2226", feet="#4a3a30", behind=antlers)
 
 
 @sprite("elk")
 def _(s):
-    def antlers(s):
+    def antlers(s, b):
+        hx, hy = b["head"][:2]
         c = "#e0d0aa"
-        for m in (False, True):
-            p = [(12, 7), (8, 3), (4, 1), (1, 2)]
-            if m:
-                p = [(31 - x, y) for x, y in p]
-            s.path(p, 0.9, c, shade=False)
-        s.px([(7, 0), (9, 0), (5, 4), (24, 0), (22, 0), (26, 4), (3, 0), (28, 0)], c)
-    mammal(s, "#b08454", "#5e3e28", ears="side", ear_in="#e2b694", tail="cotton", tail_col="#f0dcb0",
-           head="#6e4a30", muzzle="#8a6448", nose="#2b2226", head_r=(7.5, 7.5), behind=antlers)
-    s.paint(s.m_ellipse(16, 24, 7.2, 5.6) & s.m_poly([(0, 18), (32, 18), (32, 21.5), (0, 21.5)]), "#6e4a30")
+        for dx, col in ((1.5, mix(c, "#1a1420", 0.25)), (0, c)):
+            x, y = hx + 1 + dx, hy - 2.5
+            s.path([(x, y), (x + 3, y - 4), (x + 6, y - 7), (x + 9, y - 8)], 0.75, col, shade=False)
+            for k, (tx, ty) in enumerate(((x + 1.5, y - 2), (x + 3, y - 4), (x + 6, y - 7))):
+                s.path([(tx, ty), (tx - 1.5, ty - 3 - k * 0.5)], 0.55, col, shade=False)
+
+    def mane(s, b):
+        (nx0, ny0), (nx1, ny1), nr = b["neck"]
+        s.paint(s.m_path([(nx0, ny0), (nx1, ny1)], nr + 0.2), "#6e4a30")
+    quad(s, "#b08454", "#5e3e28", build="deer", ears="side", ear_in="#e2b694", tail="cotton",
+         tail_col="#f0dcb0", head="#6e4a30", muzzle="#8a6448", legs="#6e4a30", nose="#2b2226",
+         belly=False, behind=antlers, markings=mane)
 
 
 @sprite("bighorn_sheep")
 def _(s):
-    mammal(s, "#9c7c5c", "#f2eadb", ears="small", ear_in="#d8b090", tail="cotton", tail_col=WHITE,
-           head_r=(7.5, 7.5), muzzle="#f2eadb")
-    # curled horns: from the crown, out and round, ending beside the cheek
-    horn = [(13, 6), (9, 3.5), (5, 4.5), (3, 8.5), (4.5, 12.5), (8, 13), (9, 10.5)]
-    s.path(horn, (2.3, 1.1), "#d2bc92", mirror=True, edge=True)
-    s.paint(s.m_path([(9, 4.8), (5.5, 6), (4.5, 9)], 0.5), "#a99068", mirror=True)
-    s.eye(11, 12, mirror=True)
+    def horns(s, b):
+        hx, hy = b["head"][:2]
+        x, y = hx + 1.5, hy - 2.5
+        s.path([(x - 1, y), (x + 2.5, y - 1.5), (x + 5, y + 0.5), (x + 5, y + 4), (x + 2.5, y + 5.5), (x + 0.5, y + 4)],
+               (2.0, 0.9), "#d2bc92", edge=True)
+        s.paint(s.m_path([(x + 2.5, y - 0.6), (x + 4.2, y + 1), (x + 4, y + 3.5)], 0.5), "#a99068")
+    quad(s, "#9c7c5c", "#f2eadb", build="sheep", ears="small", ear_in="#d8b090", tail="cotton",
+         tail_col=WHITE, muzzle="#f2eadb", feet="#3a3036", front=horns)
 
 
 @sprite("raccoon")
 def _(s):
-    def mask(s):
-        s.paint(s.m_poly([(5, 11), (14, 10), (16, 12), (18, 10), (27, 11), (25, 15), (17, 14),
-                          (15, 14), (7, 15)]), "#3a3238", within=s.last)
-        s.paint(s.m_ellipse(16, 8, 1, 2.5), "#3a3238", within=s.last)
-    mammal(s, "#8e8a8e", "#efeaea", ears="round", ear_in=WHITE, tail="ringed", tail_col="#a8a2a6",
-           tail_tip="#3a3238", head_r=(9.5, 7.5), markings=mask)
+    def mask(s, b):
+        hx, hy, hrx, hry = b["head"]
+        s.paint(s.m_poly([(hx - 5, hy - 1.5), (hx + 3, hy - 1.5), (hx + 2, hy + 1.5), (hx - 4, hy + 1)]), "#3a3238",
+                within=s.m_ellipse(hx, hy, hrx, hry) | s.m_path([(6, 21.8), (1.8, 23)], (1.8, 0.8)))
+    quad(s, "#8e8a8e", "#efeaea", build="low", ears="round", ear_in=WHITE, tail="ringed",
+         tail_col="#a8a2a6", tail_tip="#3a3238", legs="#4a4448", markings=mask)
 
 
 @sprite("striped_skunk")
 def _(s):
-    mammal(s, "#2b2630", "#2b2630", ears="small", ear_in="#4a424e", tail="skunk", tail_col="#2b2630",
-           tail_tip=WHITE, muzzle="#3a3440", nose="#e88a9a", belly=False,
-           markings=lambda s: s.paint(s.m_ellipse(16, 9, 1.2, 4), WHITE, within=s.last))
+    def stripe(s, b):
+        s.paint(s.m_path([(8, 16.8), (13, 17.5), (19, 17), (26, 18.5)], (0.8, 1.6)), WHITE)
+    quad(s, "#2b2630", "#2b2630", build="low", ears="small", ear_in="#4a424e", tail="skunk",
+         tail_col="#2b2630", tail_tip=WHITE, muzzle="#3a3440", nose="#e88a9a", belly=False,
+         markings=stripe)
 
 
 @sprite("virginia_opossum")
 def _(s):
-    def face(s):
-        s.paint(s.m_ellipse(11, 12.5, 2.4, 2.2) | s.m_ellipse(20, 12.5, 2.4, 2.2), "#55505a", within=s.last)
-    mammal(s, "#a7a3aa", "#f3f0f2", ears="round", ear_in=PINK, tail="rat", tail_col="#efb6bf",
-           head="#f3f0f2", muzzle="#f3f0f2", nose="#e88a9a", head_r=(8.5, 7.5), markings=face)
-    s.paint(s.m_ellipse(8.5, 6, 3.4, 3.4) | s.m_ellipse(23.5, 6, 3.4, 3.4), BLACK)
-    s.paint(s.m_ellipse(8.5, 6, 1.8, 1.8) | s.m_ellipse(23.5, 6, 1.8, 1.8), "#4a424e")
+    def face(s, b):
+        hx, hy, hrx, hry = b["head"]
+        s.paint(s.m_ellipse(hx - 1.6, hy - 1, 1.8, 1.5), "#55505a", within=s.m_ellipse(hx, hy, hrx, hry))
+    quad(s, "#a7a3aa", "#f3f0f2", build="low", ears="round", ear_in=PINK, tail="rat", tail_col="#efb6bf",
+         head="#f3f0f2", muzzle="#f3f0f2", nose="#e88a9a", legs="#3a3438", feet="#f3c6cc", markings=face)
 
 
 @sprite("western_gray_squirrel")

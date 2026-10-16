@@ -1,8 +1,10 @@
 """A tiny 32x32 pixel-art canvas: filled shapes, automatic shading and outline.
 
 Shapes are painted in order (later ones on top). Each shape is a "region"; after
-drawing, every shaded region gets a darker underside and a lighter top edge, and
-the whole sprite gets a 1-pixel outline tinted from the colour it borders.
+drawing, every shaded region is lit as a rounded form from the upper left: a warm
+highlight on the lit side, cool hue-shifted shadows on the far side, and a contact
+shadow where a later shape sits on top of it. The whole sprite gets a 1-pixel
+outline tinted from the colour it borders, darker along the bottom and right.
 """
 from __future__ import annotations
 
@@ -16,6 +18,10 @@ _YS, _XS = np.mgrid[0:N, 0:N].astype(np.float32) + 0.5
 
 OUTLINE_INK = (38, 26, 46)
 SILHOUETTE = (74, 76, 102)
+LIGHT = np.array([-0.45, -0.62, 0.64], np.float32)  # from the upper left, toward the viewer
+LIGHT /= np.linalg.norm(LIGHT)
+WARM = np.array([255, 244, 214], np.float32)        # highlights lean warm
+COOL = np.array([62, 44, 112], np.float32)          # shadows lean cool purple
 
 
 def rgb(c) -> tuple[int, int, int]:
@@ -39,6 +45,39 @@ def _shift(m: np.ndarray, dx: int, dy: int) -> np.ndarray:
     xd = slice(max(0, dx), N - max(0, -dx))
     out[ys, xs] = m[yd, xd]
     return out
+
+
+def _blur(m: np.ndarray, r: int) -> np.ndarray:
+    """Two box blurs of radius r (close to a gaussian), zero outside the canvas."""
+    a = m.astype(np.float32)
+    k = 2 * r + 1
+    for _ in range(2):
+        c = np.cumsum(np.pad(a, ((0, 0), (r + 1, r))), axis=1)
+        a = (c[:, k:] - c[:, :-k]) / k
+        c = np.cumsum(np.pad(a, ((r + 1, r), (0, 0))), axis=0)
+        a = (c[k:, :] - c[:-k, :]) / k
+    return a
+
+
+def _lum(R: np.ndarray) -> np.ndarray:
+    """How directly each pixel of region R faces the light, treating R as a rounded form."""
+    ys, xs = np.where(R)
+    size = min(ys.max() - ys.min(), xs.max() - xs.min()) + 1
+    h = _blur(R, 2 if size >= 8 else 1)
+    gy, gx = np.gradient(h)
+    z = 0.22 if size >= 8 else 0.35
+    n = np.stack([-gx, -gy, np.full_like(gx, z)], axis=-1)
+    n /= np.linalg.norm(n, axis=-1, keepdims=True)
+    flat = LIGHT[2]
+    return (n @ LIGHT) - flat  # 0 where the surface faces the viewer
+
+
+def _tone(col: np.ndarray, k: float) -> np.ndarray:
+    """k > 0 lightens toward a warm highlight, k < 0 darkens toward a cool shadow."""
+    if k > 0:
+        return col * (1 - k) + WARM * k
+    k = -k
+    return col * (1 - 0.3 * k) * (1 - 0.18 * k) + COOL * 0.18 * k
 
 
 def _seg_dist(x0, y0, x1, y1):
@@ -206,22 +245,29 @@ class Sprite:
                 col[border] = col[border] * 0.72 + np.array(OUTLINE_INK) * 0.28
             if not self.shaded.get(r):
                 continue
-            h = np.where(R.any(axis=1))[0]
-            k = 2 if (h.max() - h.min()) >= 6 else 1
-            shadow = R & (~_shift(R, 0, k) | ~_shift(R, 1, 1))
-            light = R & ~_shift(R, 0, -1) & ~shadow & _shift(R, 0, 1)
-            col[shadow] = col[shadow] * np.array([0.78, 0.76, 0.86])
-            col[light] = col[light] * 0.75 + 255 * 0.25
+            lum = _lum(R)
+            # A later shape resting on this one casts a small shadow just below it.
+            above = (self.reg > r) & np.isin(self.reg, [q for q, v in self.shaded.items() if v and q > r])
+            contact = R & (_shift(above, 0, -1) | _shift(above, 0, -2))
+            hi = R & (lum > 0.2)
+            sh = R & (lum < -0.18)
+            deep = R & (lum < -0.42)
+            col[hi] = _tone(col[hi], 0.28)
+            col[sh & ~deep] = _tone(col[sh & ~deep], -0.75)
+            col[deep] = _tone(col[deep], -1.25)
+            col[contact & ~sh] = _tone(col[contact & ~sh], -0.7)
+            col[contact & sh] = _tone(col[contact & sh], -0.45)
         col = np.clip(col, 0, 255)
 
         img = np.zeros((N, N, 4), np.uint8)
         img[filled, :3] = col[filled].astype(np.uint8)
         img[filled, 3] = 255
-        # Outline: empty pixels touching the sprite take a dark tint of their neighbour.
-        for dx, dy in ((0, 1), (0, -1), (1, 0), (-1, 0)):
+        # Outline: empty pixels touching the sprite take a dark tint of their neighbour,
+        # darkest on the shadowed bottom and right.
+        for dx, dy, k in ((0, -1, .82), (-1, 0, .76), (0, 1, .6), (1, 0, .64)):
             nb = _shift(filled, dx, dy) & ~filled & (img[..., 3] == 0)
             src = np.roll(np.roll(col, -dy, axis=0), -dx, axis=1)
-            tint = src * 0.35 + np.array(OUTLINE_INK) * 0.65
+            tint = src * (1 - k) + np.array(OUTLINE_INK) * k
             img[nb, :3] = tint[nb].astype(np.uint8)
             img[nb, 3] = 255
         return Image.fromarray(img, "RGBA")
@@ -240,9 +286,16 @@ def _fill_holes(on: np.ndarray) -> np.ndarray:
 
 
 def silhouette(img: Image.Image) -> Image.Image:
+    """The shape alone, softly lit so it reads as a form rather than a flat blob."""
     a = np.array(img)
     out = np.zeros_like(a)
     on = _fill_holes(a[..., 3] > 0)
-    out[on, :3] = SILHOUETTE
+    lum = _lum(on)
+    col = np.zeros((N, N, 3), np.float32) + SILHOUETTE
+    col[on & (lum > 0.2)] += 16
+    col[on & (lum < -0.18)] *= 0.84
+    rim = on & ~(_shift(on, 0, 1) & _shift(on, 1, 0) & _shift(on, 0, -1) & _shift(on, -1, 0))
+    col[rim] = col[rim] * 0.72 + np.array(OUTLINE_INK) * 0.28
+    out[on, :3] = np.clip(col[on], 0, 255).astype(np.uint8)
     out[on, 3] = 255
     return Image.fromarray(out, "RGBA")
