@@ -2197,18 +2197,8 @@ async function openProfile(username) {
   if (act.childNodes.length) box.append(act);
 
   const sec = (title) => { const h = el("h3", "", title); box.append(h); return h; };
-  sec("Rarity");
-  for (const r of ["common", "uncommon", "rare", "legendary"])
-    if (u.by_rarity[r]) box.append(bar(r[0].toUpperCase() + r.slice(1), u.by_rarity[r], `var(--${r})`));
-  if (u.legendaries.length) {
-    const shelf = el("div", "chips");
-    u.legendaries.forEach((s) => shelf.append(el("span", "chip legend", "⭐ " + (s.common_name || "???"))));
-    box.append(shelf);
-  }
-  sec("Groups");
-  for (const [cat, t] of Object.entries(u.by_category)) box.append(bar(CATEGORY_NAMES[cat] || cat, t));
-
-  // Friends see each other's whole Field Guide, in the owner's own state.
+  // Friends see each other's whole Field Guide, in the owner's own state; it comes
+  // first so it's what you see when you open a friend.
   if (u.friendship === "friends" || u.friendship === "self") {
     try {
       const g = await api(`/users/${name}/collection`);
@@ -2220,6 +2210,17 @@ async function openProfile(username) {
       box.append(guide);
     } catch (err) { box.append(el("p", "muted", err.message)); }
   }
+
+  sec("Rarity");
+  for (const r of ["common", "uncommon", "rare", "legendary"])
+    if (u.by_rarity[r]) box.append(bar(r[0].toUpperCase() + r.slice(1), u.by_rarity[r], `var(--${r})`));
+  if (u.legendaries.length) {
+    const shelf = el("div", "chips");
+    u.legendaries.forEach((s) => shelf.append(el("span", "chip legend", "⭐ " + (s.common_name || "???"))));
+    box.append(shelf);
+  }
+  sec("Groups");
+  for (const [cat, t] of Object.entries(u.by_category)) box.append(bar(CATEGORY_NAMES[cat] || cat, t));
 
   sec("Photos");
   const grid = el("div", "photos");
@@ -2379,7 +2380,7 @@ async function loadFriends() {
   section("Friend requests", f.incoming, [
     ["Accept", "", (u) => api(`/friends/requests/${encodeURIComponent(u)}/accept`, { method: "POST" })],
     ["Decline", "ghost", del]]);
-  section("Your friends", f.friends, [["Duel", "", startDuel], ["Profile", "ghost", openProfile], ["Remove", "ghost", del]]);
+  section("Your friends", f.friends, [["Duel", "", startDuel], ["Field Guide", "ghost", openProfile], ["Remove", "ghost", del]]);
   loadDuels();
   section("Waiting for them to accept", f.outgoing, [["Cancel", "ghost", del]]);
   if (!f.friends.length && !f.incoming.length && !f.outgoing.length)
