@@ -245,6 +245,30 @@
   .notes li.done { color:var(--muted); }
   .notes .tick { color:#d6455d; }
   .notes .hint { display:block; font-size:.78rem; color:var(--muted); }
+  /* Outing days, seasons and the photo timeline (app/outings.py). */
+  .outings { display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; margin:0 0 12px; font-size:.9rem; }
+  .outings .dots { display:flex; gap:6px; }
+  .outings .dot { width:26px; height:26px; border-radius:50%; border:2px dashed var(--line); display:grid;
+                  place-items:center; font-size:.7rem; font-weight:700; color:var(--muted); }
+  .outings .dot.on { border:2px solid var(--accent); background:var(--accent); color:#fff; }
+  .outings .weeks { display:flex; gap:3px; align-items:flex-end; height:20px; margin-left:auto; }
+  .outings .weeks span { width:8px; background:var(--accent); opacity:.45; border-radius:2px; min-height:2px; }
+  .outings .weeks span:last-child { opacity:1; }
+  .event { border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-top:10px; display:grid; gap:6px; }
+  .event.done { border-color:var(--legendary); }
+  .event-head { display:flex; justify-content:space-between; gap:8px; font-weight:600; }
+  .event .desc { font-size:.85rem; color:var(--muted); }
+  .season-row { display:flex; flex-wrap:wrap; gap:2px; }
+  .season-row img { width:32px; height:32px; image-rendering:pixelated; cursor:pointer; }
+  .season-row img.missing { opacity:.55; }
+  .timeline { margin-top:12px; border-top:1px solid var(--line); padding-top:10px; }
+  .timeline-strip { display:flex; gap:8px; overflow-x:auto; padding-bottom:6px; margin-top:8px; }
+  .timeline-strip figure { margin:0; flex:none; width:118px; display:grid; align-content:start; gap:3px; font-size:.75rem; }
+  .timeline-strip img { width:118px; height:88px; object-fit:cover; border-radius:6px; border:2px solid var(--line);
+                        background:var(--bg); }
+  .timeline-strip figure.album img { border-color:var(--accent); }
+  .timeline-strip .stars { color:var(--legendary); }
+  .timeline-strip .ticked { color:#d6455d; }
 </style>
 </head>
 <body>
@@ -295,8 +319,13 @@
     </div>
     <div class="card" data-tab="catch" id="week-card">
       <h2>This week's challenges <span class="muted" id="week-done"></span></h2>
+      <div id="outings" class="outings"></div>
       <p class="muted" id="week-note" style="margin-top:0"></p>
       <div id="week-list" class="week"></div>
+    </div>
+    <div class="card" data-tab="catch" id="season-card">
+      <h2>This season</h2>
+      <div id="season"></div>
     </div>
     <div class="card off" data-tab="feed">
       <h2>Latest captures</h2>
@@ -371,6 +400,7 @@
     <button class="close" id="dex-close" aria-label="Close">×</button>
   </div>
   <div id="dex-bond" class="bond hidden"></div>
+  <div id="dex-timeline" class="timeline hidden"></div>
   <div class="dex-body">
     <div class="dex-map"><div id="dex-map"></div><div class="muted" id="dex-map-note" style="font-size:.8rem"></div>
       <p id="dex-where" style="margin:8px 0 0; white-space:pre-line"></p>
@@ -628,6 +658,7 @@ const silhouetteUrl = (number) => `/sprites/silhouette/${number}.png`;
 
 // Weekly challenges (same for everyone in the state, Monday to Sunday) and sets.
 async function loadChallenges() {
+  loadOutings(); loadSeason();
   try {
     const w = await api("/me/challenges");
     const ends = new Date(w.week_end);
@@ -822,6 +853,93 @@ async function showBond(number) {
     list.append(li);
   }
   box.append(head, list);
+  box.classList.remove("hidden");
+}
+
+// Outing days: days this week with a capture. A few a week, never a daily streak.
+async function loadOutings() {
+  const box = $("outings");
+  let o;
+  try { o = await api("/me/outings"); } catch { box.textContent = ""; return; }
+  box.innerHTML = "";
+  const dots = el("div", "dots");
+  const names = o.days.map((d) => new Date(d + "T12:00:00").toLocaleDateString(undefined, { weekday: "narrow" }));
+  for (let i = 0; i < Math.max(o.goal, o.days.length); i++)
+    dots.append(el("span", "dot" + (i < o.days.length ? " on" : ""), i < o.days.length ? names[i] : ""));
+  const n = o.days.length;
+  const text = o.done ? `${n} outing days this week. Great week!`
+    : `${n} of ${o.goal} outing days this week. Any day you capture something counts.`;
+  const weeks = el("div", "weeks");
+  weeks.title = "Outing days, last 4 weeks";
+  const top = Math.max(o.goal, ...o.recent_weeks);
+  o.recent_weeks.forEach((w) => { const b = el("span"); b.style.height = `${100 * w / top}%`; weeks.append(b); });
+  box.append(dots, el("span", "", text), weeks);
+}
+
+// Seasonal events and animals arriving this month (app/outings.py).
+function seasonSprites(rows) {
+  const row = el("div", "season-row");
+  for (const r of rows) {
+    const s = r.species;
+    const img = el("img", r.caught ? "" : "missing");
+    img.src = s.slug ? spriteUrl(s.slug, true) : silhouetteUrl(s.number);
+    img.alt = img.title = (s.common_name || `A mystery ${s.category}`) + (r.caught ? " (captured)" : "");
+    img.onclick = () => openDex(s.number, dexNumbers[s.number], r.caught);
+    row.append(img);
+  }
+  return row;
+}
+
+async function loadSeason() {
+  const box = $("season");
+  let r;
+  try { r = await api("/me/season"); } catch (err) { box.textContent = err.message; return; }
+  box.innerHTML = "";
+  const day = (d) => new Date(d + "T12:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  for (const ev of r.events) {
+    const card = el("div", "event" + (ev.done ? " done" : ""));
+    const head = el("div", "event-head");
+    head.append(el("span", "", (ev.done ? "🏅 " : "") + ev.title), el("span", "muted", `${ev.progress} / ${ev.goal}`));
+    const bar = el("div", "bar");
+    const fill = el("div"); fill.style.width = `${100 * ev.progress / ev.goal}%`;
+    bar.append(fill);
+    card.append(head, el("div", "desc", `${day(ev.start)} to ${day(ev.end)}. ${ev.description} ` +
+      `Capture ${ev.goal} different animals from the event to earn its ribbon.`), bar, seasonSprites(ev.species));
+    box.append(card);
+  }
+  if (r.arrivals.length) {
+    box.append(el("h3", "", "Arriving this month"),
+               el("p", "muted", "Seen more often now than last month. Tap one to see where to look."),
+               seasonSprites(r.arrivals));
+  }
+  if (!r.events.length && !r.arrivals.length) box.append(el("p", "muted", "No events right now. Check back next month!"));
+}
+
+// Your photos of one animal, newest first: only you see these, and the one in your
+// album is outlined. Each says which field notes it ticked.
+async function showTimeline(number) {
+  const box = $("dex-timeline");
+  box.classList.add("hidden");
+  if (number == null) return;
+  let t;
+  try { t = await api(`/me/captures?species=${number}`); } catch { return; }
+  box.innerHTML = "";
+  box.append(el("strong", "", `Your photos (${t.photos.length})`),
+             el("div", "muted", "Only you can see these. The outlined one is in your album."));
+  const strip = el("div", "timeline-strip");
+  for (const p of t.photos) {
+    const fig = el("figure", p.in_album ? "album" : "");
+    const img = el("img");
+    img.alt = "";
+    fetch(`/me/captures/${p.capture_id}/photo`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => (r.ok ? r.blob() : null)).then((b) => { if (b) img.src = URL.createObjectURL(b); }).catch(() => {});
+    const when = new Date(p.taken).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+    fig.append(img, el("span", "", when));
+    if (p.stars) fig.append(el("span", "stars", "★".repeat(p.stars) + "☆".repeat(3 - p.stars)));
+    if (p.notes.length) fig.append(el("span", "ticked", "♥ " + p.notes.join(", ")));
+    strip.append(fig);
+  }
+  box.append(strip);
   box.classList.remove("hidden");
 }
 
@@ -2061,6 +2179,7 @@ async function openDex(key, num, caught, stateCode = myState.code) {
   $("dex-fact").textContent = d.fun_fact || "🔒 Capture one, or have a friend capture one, to unlock its fun fact.";
   drawSeason(d.season);
   showBond(d.captured && stateCode === myState.code ? s.number : null);
+  showTimeline(d.captured && stateCode === myState.code ? s.number : null);
   gallery = { species: s, scope: "all", sort: "top" };
   loadGallery();
   $("dex").showModal();
@@ -2265,7 +2384,7 @@ function bar(label, t, color) {
   return row;
 }
 
-async function openProfile(username) {
+async function openProfile(username, toGuide = false) {
   const box = $("album-photos");
   box.innerHTML = "";
   $("album-title").textContent = username;
@@ -2298,6 +2417,21 @@ async function openProfile(username) {
   if (act.childNodes.length) box.append(act);
 
   const sec = (title) => { const h = el("h3", "", title); box.append(h); return h; };
+  // Friends see each other's whole Field Guide, in the owner's own state. It comes
+  // first, since it's what people open a friend's profile for.
+  if (u.friendship === "friends" || u.friendship === "self") {
+    try {
+      const g = await api(`/users/${name}/collection`);
+      const stName = (states.find((x) => x.code === g.state) || {}).name || g.state;
+      const head = sec(`Field Guide · ${stName} · ${g.caught}/${g.total}`);
+      const guide = el("div", "grid guide");
+      fillGuide(guide, [...g.entries].sort((a, b) => dexSort(a.species, b.species)),
+                { username: u.username, state: g.state });
+      box.append(guide);
+      if (toGuide) head.scrollIntoView({ block: "start" });
+    } catch (err) { box.append(el("p", "muted", err.message)); }
+  }
+
   sec("Rarity");
   for (const r of ["common", "uncommon", "rare", "legendary"])
     if (u.by_rarity[r]) box.append(bar(r[0].toUpperCase() + r.slice(1), u.by_rarity[r], `var(--${r})`));
@@ -2308,19 +2442,6 @@ async function openProfile(username) {
   }
   sec("Groups");
   for (const [cat, t] of Object.entries(u.by_category)) box.append(bar(CATEGORY_NAMES[cat] || cat, t));
-
-  // Friends see each other's whole Field Guide, in the owner's own state.
-  if (u.friendship === "friends" || u.friendship === "self") {
-    try {
-      const g = await api(`/users/${name}/collection`);
-      const stName = (states.find((x) => x.code === g.state) || {}).name || g.state;
-      sec(`Field Guide · ${stName} · ${g.caught}/${g.total}`);
-      const guide = el("div", "grid guide");
-      fillGuide(guide, [...g.entries].sort((a, b) => dexSort(a.species, b.species)),
-                { username: u.username, state: g.state });
-      box.append(guide);
-    } catch (err) { box.append(el("p", "muted", err.message)); }
-  }
 
   sec("Photos");
   const grid = el("div", "photos");
@@ -2480,7 +2601,8 @@ async function loadFriends() {
   section("Friend requests", f.incoming, [
     ["Accept", "", (u) => api(`/friends/requests/${encodeURIComponent(u)}/accept`, { method: "POST" })],
     ["Decline", "ghost", del]]);
-  section("Your friends", f.friends, [["Duel", "", startDuel], ["Profile", "ghost", openProfile], ["Remove", "ghost", del]]);
+  section("Your friends", f.friends, [["Field Guide", "", (u) => openProfile(u, true)], ["Duel", "ghost", startDuel],
+                                     ["Profile", "ghost", openProfile], ["Remove", "ghost", del]]);
   loadDuels();
   section("Waiting for them to accept", f.outgoing, [["Cancel", "ghost", del]]);
   if (!f.friends.length && !f.incoming.length && !f.outgoing.length)

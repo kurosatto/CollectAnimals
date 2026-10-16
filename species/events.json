@@ -1,0 +1,23 @@
+{
+  "_comment": "Seasonal events (app/outings.py). Dates are MM-DD in the state's time and may wrap the new year. An animal is in an event if its category is listed or its slug matches `match`; animals rated danger are always left out. Optional `states` limits an event to some states.",
+  "events": [
+    {"id": "winter_waterbirds", "title": "Winter Waterbirds", "start": "12-01", "end": "02-28",
+     "description": "Ducks, geese and wading birds gather on lakes, marshes and bays for the winter.",
+     "match": "mallard|wood_duck|goose|swan|heron|egret|ibis|pelican|gull|oystercatcher|kingfisher"},
+    {"id": "low_tide", "title": "Low Tide Days", "start": "12-01", "end": "01-31", "states": ["CA"],
+     "description": "Winter brings the lowest tides of the year. Check a tide table and look in the pools, without lifting rocks or animals.",
+     "categories": ["marine"]},
+    {"id": "frog_chorus", "title": "Frog Chorus", "start": "02-01", "end": "04-15",
+     "description": "Rainy nights wake up frogs, toads, newts and salamanders. Listen near ponds and wet woods.",
+     "categories": ["amphibian"]},
+    {"id": "spring_migration", "title": "Spring Migration", "start": "04-01", "end": "05-31",
+     "description": "Birds are on the move and singing. Early mornings are best.",
+     "categories": ["bird"]},
+    {"id": "butterfly_summer", "title": "Butterfly Summer", "start": "06-01", "end": "08-31",
+     "description": "Butterflies, moths, fireflies and other insects are out in gardens and meadows.",
+     "match": "swallowtail|monarch|painted_lady|mourning_cloak|fritillary|luna_moth|firefly|lady_beetle|honey_bee|flame_skimmer|mantis"},
+    {"id": "hawk_watch", "title": "Fall Hawk Watch", "start": "09-15", "end": "10-31",
+     "description": "Hawks, eagles and vultures ride the autumn winds. Scan ridges and open sky on clear afternoons.",
+     "match": "hawk|eagle|kestrel|osprey|vulture|condor|owl"}
+  ]
+}

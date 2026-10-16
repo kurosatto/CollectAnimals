@@ -36,6 +36,8 @@ class Settings:
         "DETAILS_CSV", ROOT / "species" / "details.csv")))
     sets_json: Path = field(default_factory=lambda: Path(os.getenv(
         "SETS_JSON", ROOT / "species" / "sets.json")))
+    events_json: Path = field(default_factory=lambda: Path(os.getenv(
+        "EVENTS_JSON", ROOT / "species" / "events.json")))
     places_json: Path = field(default_factory=lambda: Path(os.getenv(
         "PLACES_JSON", ROOT / "species" / "ca_places.json")))
     sprites_dir: Path = field(default_factory=lambda: Path(os.getenv(

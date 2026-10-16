@@ -375,3 +375,54 @@ class BuddyOut(BaseModel):
 
 class BuddyIn(BaseModel):
     species: str
+
+
+class OutingsOut(BaseModel):
+    week_start: datetime
+    week_end: datetime
+    # Local dates this week with at least one capture.
+    days: list[str]
+    goal: int
+    done: bool
+    # Outing days in each of the last weeks, oldest first, this week last.
+    recent_weeks: list[int]
+
+
+class SeasonSpecies(BaseModel):
+    species: SpeciesOut
+    caught: bool
+
+
+class EventOut(BaseModel):
+    id: str
+    title: str
+    description: str
+    start: str
+    end: str
+    progress: int
+    goal: int
+    done: bool
+    species: list[SeasonSpecies]
+
+
+class SeasonOut(BaseModel):
+    state: str
+    month: int
+    arrivals: list[SeasonSpecies]
+    events: list[EventOut]
+
+
+class TimelineItem(BaseModel):
+    capture_id: int
+    taken: datetime
+    stars: int | None = None
+    score: int | None = None
+    has_place: bool = False
+    in_album: bool = False
+    # Field notes this photo ticked.
+    notes: list[str] = []
+
+
+class TimelineOut(BaseModel):
+    species: SpeciesOut
+    photos: list[TimelineItem]
