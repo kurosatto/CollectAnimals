@@ -655,7 +655,7 @@ const spriteUrl = (slug, caught) => `/sprites/${encodeURIComponent(slug)}${caugh
 // and a button peeks at the other half of the day. Tap an animal for its name,
 // tap again for its Field Guide page.
 const HAB_H = 270;
-const hab = { w: 0, L: null, animals: [], peek: false, picked: null, pickedUntil: 0, last: 0, bg: null, bgKey: "", t: 0 };
+const hab = { w: 0, L: null, animals: [], peek: false, picked: null, pickedUntil: 0, last: 0, scene: null, bgKey: "", t: 0 };
 const habImgs = {};
 const habStill = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const HAB_ROLES = [
@@ -694,8 +694,15 @@ function habSpeed(a) {
 
 // Where the scene's parts sit for a canvas this wide (320 on phones, 480 wider).
 function habLayout(w) {
-  return { w, land: Math.round(w * .64), sea: Math.round(w * .73), water: 168, tree: Math.round(w * .1),
-           pond: { x: Math.round(w * .36), y: 229, rx: Math.round(w * .11), ry: 12 } };
+  const L = { w, land: Math.round(w * .64), sea: Math.round(w * .73), water: 168, tree: Math.round(w * .1),
+              pond: { x: Math.round(w * .36), y: 229, rx: Math.round(w * .11), ry: 12 }, shore: [], surf: [] };
+  // On each row: where the meadow gives way to sand, and the sand to the sea.
+  for (let y = 0; y < HAB_H; y++) {
+    const k = Math.max(0, y - L.water);
+    L.shore[y] = Math.round(L.land + 2 + k * .1 + Math.sin(y * .13) * 3 + Math.sin(y * .41) * 1.2);
+    L.surf[y] = Math.round(L.sea + k * .08 + Math.sin(y * .09 + 1) * 3);
+  }
+  return L;
 }
 
 const rnd = (lo, hi) => lo + Math.random() * (hi - lo);
@@ -833,28 +840,26 @@ function habDraw() {
   if (!hab.L || !cv) return;
   const L = hab.L, phase = habPhase(), key = `${L.w}/${phase}`;
   if (cv.width !== L.w) { cv.width = L.w; cv.height = HAB_H; }
-  if (hab.bgKey !== key) { hab.bg = habBackground(L, phase); hab.bgKey = key; }
+  if (hab.bgKey !== key) { hab.scene = habBackground(L, phase); hab.bgKey = key; }
   const c = cv.getContext("2d");
   c.imageSmoothingEnabled = false;
-  c.drawImage(hab.bg, 0, 0);
+  c.drawImage(hab.scene.bg, 0, 0);
+  habFx(c, L, phase, performance.now() / 1000);
   let roosting = 0;
   const poses = hab.animals.map((a) => {
     const awake = habAwake(a, phase);
     const roost = !awake && HAB_FLIERS.has(a.role) ? habRoost(roosting++) : null;
     const [x, y] = habPose(a, awake, roost);
-    return { a, awake, x: Math.round(x), y: Math.round(y), sky: awake && HAB_FLIERS.has(a.role) };
+    return { a, awake, phase, roost: !!roost, x: Math.round(x), y: Math.round(y), sky: awake && HAB_FLIERS.has(a.role) };
   });
   const sea = poses.filter((p) => HAB_SEA.has(p.a.role) && !p.sky).sort((p, q) => p.y - q.y);
   const land = poses.filter((p) => !HAB_SEA.has(p.a.role) && !p.sky).sort((p, q) => p.y - q.y);
   const sky = poses.filter((p) => p.sky);
   sea.forEach((p) => habSprite(c, p));
   // Seawater over everything in the sea.
-  c.fillStyle = phase === "night" ? "rgba(20,40,90,.35)" : "rgba(40,120,200,.28)";
-  c.fillRect(L.sea, L.water + 3, L.w - L.sea, HAB_H);
+  c.drawImage(hab.scene.water, 0, 0);
   land.forEach((p) => habSprite(c, p));
   sky.forEach((p) => habSprite(c, p));
-  if (phase === "night") { c.fillStyle = "rgba(8,12,40,.42)"; c.fillRect(0, 0, L.w, HAB_H); }
-  else if (phase !== "day") { c.fillStyle = "rgba(90,40,80,.12)"; c.fillRect(0, 0, L.w, HAB_H); }
   for (const p of poses) {
     if (/firefly/.test(p.a.s.slug) && p.awake && phase !== "day") {
       const on = Math.sin(p.a.phase * 4) > -.2;
@@ -878,10 +883,22 @@ function habDraw() {
   habBubble(poses);
 }
 
+// Animals standing on the ground get a soft shadow under their feet.
+const HAB_NO_SHADOW = new Set(["swim", "jelly", "reef", "float", "paddle", "wade", "dangle"]);
+
 function habSprite(c, p) {
-  const img = habImgs[p.a.s.slug];
-  if (!img || !img.complete || !img.naturalWidth) return;
-  const { a, x, y } = p;
+  const raw = habImgs[p.a.s.slug];
+  if (!raw || !raw.complete || !raw.naturalWidth) return;
+  const { a, x, y } = p, img = habTinted(raw, a.s.slug, p.phase);
+  if (!p.sky && !p.roost && !HAB_NO_SHADOW.has(a.role)) {
+    const gy = a.role === "hop" && p.awake ? Math.round(a.y) : y;
+    c.fillStyle = "rgba(20,32,10,.25)";
+    c.fillRect(x - 7, gy - 1, 14, 1); c.fillRect(x - 9, gy, 18, 1); c.fillRect(x - 6, gy + 1, 12, 1);
+  }
+  if (a.role === "wade" && p.awake) {
+    c.fillStyle = "rgba(225,245,255,.6)";
+    c.fillRect(x - 10, y - 1, 5, 1); c.fillRect(x + 5, y - 1, 5, 1);
+  }
   c.save();
   if (a.role === "paddle") { c.beginPath(); c.rect(0, 0, hab.L.w, y - 8); c.clip(); }
   if (a.role === "dangle") {
@@ -950,96 +967,408 @@ function habLoop(now) {
   habDraw();
 }
 
-// ---- Scenery, drawn once per size and time of day. ----
+// ---- Scenery: painted pixel by pixel once per size and time of day. ----
 function mulberry(seed) {
   return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
     t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 }
 const hexRgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
-const mix = (a, b, k) => `rgb(${hexRgb(a).map((v, i) => Math.round(v + (hexRgb(b)[i] - v) * k)).join(",")})`;
+const blend = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k];
+const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+// Ordered dithering: true on an evenly spread k (0..1) share of the pixels.
+const dith = (x, y, k) => k * 16 > BAYER4[(y & 3) * 4 + (x & 3)] + .5;
+function hash2(x, y, s = 0) {
+  let h = Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(s, 982451653) | 0;
+  h = Math.imul(h ^ h >>> 13, 1274126177);
+  return ((h ^ h >>> 16) >>> 0) / 4294967296;
+}
+// Smooth value noise in 0..1, one cell per unit.
+function vnoise(x, y, s = 0) {
+  const ix = Math.floor(x), iy = Math.floor(y), fx = x - ix, fy = y - iy;
+  const u = fx * fx * (3 - 2 * fx), v = fy * fy * (3 - 2 * fy);
+  const a = hash2(ix, iy, s), b = hash2(ix + 1, iy, s), c = hash2(ix, iy + 1, s), d = hash2(ix + 1, iy + 1, s);
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+}
+const ridge = (x, s) => vnoise(x, 0, s) * .62 + vnoise(x * 2.3, 0, s + 1) * .26 + vnoise(x * 5.3, 0, s + 2) * .12;
 
-function pxEllipse(c, cx, cy, rx, ry, color) {
-  c.fillStyle = color;
-  for (let dy = -ry; dy <= ry; dy++) {
-    const hw = Math.round(rx * Math.sqrt(1 - (dy / ry) ** 2));
-    c.fillRect(cx - hw, cy + dy, hw * 2, 1);
+const HAB_SKY = { day: ["#3f8fd8", "#7cc1f0", "#cdeefb"], dawn: ["#4b4f9e", "#b884b8", "#ffd1a0"],
+                  dusk: ["#272463", "#93487a", "#ff9a5a"], night: ["#040820", "#0c1840", "#25386e"] };
+const HAB_CLOUD = { day: ["#ffffff", "#e6f2fb", "#b9d3e9"], dawn: ["#fff1e4", "#f2c4c9", "#a98bb8"],
+                    dusk: ["#ffd6a6", "#e08f8a", "#7c5487"], night: ["#2c3866", "#222d56", "#1a2348"] };
+// How each time of day lights the land and the animals: per channel, value * mul + add.
+const HAB_GRADE = { dawn: [[.9, 12], [.84, 10], [.88, 22]], dusk: [[.92, 16], [.78, 6], [.78, 18]],
+                    night: [[.34, 8], [.42, 14], [.6, 42]] };
+// Animals get a little less of it so they stay easy to see.
+const HAB_SPRITE_GRADE = Object.fromEntries(Object.entries(HAB_GRADE).map(([k, g]) =>
+  [k, g.map(([m, a]) => [m + (1 - m) * .3, a * .7])]));
+const HAB_WATER = { day: [40, 140, 210, 80], dawn: [80, 100, 180, 80], dusk: [80, 80, 160, 80], night: [20, 40, 100, 90] };
+
+function gradeData(d, g, skip) {
+  for (let i = 0, p = 0; i < d.length; i += 4, p++) {
+    if (skip && skip[p]) continue;
+    d[i] = d[i] * g[0][0] + g[0][1]; d[i + 1] = d[i + 1] * g[1][0] + g[1][1]; d[i + 2] = d[i + 2] * g[2][0] + g[2][1];
   }
 }
 
-const HAB_SKY = { day: ["#6fbdf0", "#c4ebfc"], dawn: ["#8b86cc", "#ffd3a1"], dusk: ["#4f3f86", "#f59a6c"],
-                  night: ["#0b1330", "#24346a"] };
+const habTints = {};
+function habTinted(img, slug, phase) {
+  const g = HAB_SPRITE_GRADE[phase];
+  if (!g) return img;
+  const key = `${slug}/${phase}`;
+  if (!habTints[key]) {
+    const cv = document.createElement("canvas");
+    cv.width = img.naturalWidth; cv.height = img.naturalHeight;
+    const c = cv.getContext("2d");
+    c.drawImage(img, 0, 0);
+    const id = c.getImageData(0, 0, cv.width, cv.height);
+    gradeData(id.data, g);
+    c.putImageData(id, 0, 0);
+    habTints[key] = cv;
+  }
+  return habTints[key];
+}
 
 function habBackground(L, phase) {
-  const cv = document.createElement("canvas");
-  cv.width = L.w; cv.height = HAB_H;
-  const c = cv.getContext("2d"), r = mulberry(7), night = phase === "night";
-  // Sky in flat bands, like old pixel games.
-  const [top, bottom] = HAB_SKY[phase];
-  for (let i = 0; i < 10; i++) { c.fillStyle = mix(top, bottom, i / 9); c.fillRect(0, i * 17, L.w, 17); }
+  const W = L.w, H = HAB_H, HZ = L.water, night = phase === "night", C = hexRgb;
+  const img = new ImageData(W, H), d = img.data;
+  const own = new Uint8Array(W * H);  // sky, sun, moon and clouds: already coloured for the hour
+  const sea = new Uint8Array(W * H);  // under the water, for the tint drawn over swimmers
+  const put = (x, y, c, keep = 0) => {
+    x = Math.round(x); y = Math.round(y);
+    if (x < 0 || y < 0 || x >= W || y >= H) return;
+    const p = y * W + x, i = p * 4;
+    d[i] = c[0]; d[i + 1] = c[1]; d[i + 2] = c[2]; d[i + 3] = 255; own[p] = keep;
+  };
+  const get = (x, y) => {
+    const i = (Math.min(Math.max(y, 0), H - 1) * W + Math.min(Math.max(x, 0), W - 1)) * 4;
+    return [d[i], d[i + 1], d[i + 2]];
+  };
+  const disc = (cx, cy, rr, fn) => {
+    for (let y = -rr; y <= rr; y++) for (let x = -rr; x <= rr; x++)
+      if (x * x + y * y <= rr * rr + rr * .8) fn(cx + x, cy + y, x / rr, y / rr);
+  };
+  // A shaded ellipse lit from the upper right; cols run dark, mid, light, highlight.
+  const blob = (cx, cy, rx, ry, cols, seed = 12, rough = .25) => {
+    for (let y = Math.floor(cy - ry); y <= cy + ry; y++) for (let x = Math.floor(cx - rx); x <= cx + rx; x++) {
+      const u = (x - cx) / rx, v = (y - cy) / ry, r2 = u * u + v * v;
+      if (r2 > 1) continue;
+      const l = u * .45 - v * .75 + (hash2(x, y, seed) - .5) * rough;
+      put(x, y, r2 > .78 && l < .2 ? cols[0] : l > .6 ? cols[3] : l > .15 ? cols[2] : l > -.4 ? cols[1] : cols[0]);
+    }
+  };
+
+  // Sky: a dithered gradient through three colours down to the horizon.
+  const [s0, s1, s2] = HAB_SKY[phase].map(C);
+  const skyAt = (k) => k < .55 ? blend(s0, s1, k / .55) : blend(s1, s2, (k - .55) / .45);
+  const STEPS = 14, steps = Array.from({ length: STEPS }, (_, i) => skyAt(i / (STEPS - 1)));
+  for (let y = 0; y < H; y++) {
+    const v = Math.min(y / HZ, 1) * (STEPS - 1), b = Math.floor(v);
+    for (let x = 0; x < W; x++) put(x, y, steps[Math.min(b + (dith(x, y, v - b) ? 1 : 0), STEPS - 1)], 1);
+  }
+  // Rings of soft light around the sun or moon, solid inside and dithered at the edge.
+  const halo = (cx, cy, r0, r1, col, amt) => {
+    for (let y = cy - r1; y <= cy + r1; y++) for (let x = cx - r1; x <= cx + r1; x++) {
+      const dd = Math.hypot(x - cx, y - cy);
+      if (dd <= r0 || dd > r1 || y < 0 || y >= HZ) continue;
+      const k = 1 - (dd - r0) / (r1 - r0);
+      const ring = k > .66 ? .3 : k > .33 ? .17 : dith(x, y, k * 3) ? .17 : 0;
+      if (ring) put(x, y, blend(get(x, y), col, ring * amt), 1);
+    }
+  };
+  const stars = [];
+  let glowX;
   if (night) {
-    c.fillStyle = "#fff";
-    for (let i = 0; i < 60; i++) c.fillRect(Math.floor(r() * L.w), Math.floor(r() * 140), 1, 1);
-    pxEllipse(c, L.w - 60, 34, 10, 10, "#f4f1d0");
-    pxEllipse(c, L.w - 55, 31, 9, 9, top);
+    // A faint band of the Milky Way, then stars, a few of them bright.
+    for (let y = 0; y < HZ - 20; y++) for (let x = 0; x < W; x++) {
+      const band = 1 - Math.abs(x * .5 - y - W * .1) / 24;
+      if (band > 0 && dith(x, y, band * vnoise(x / 7, y / 7, 5) * .6)) put(x, y, blend(get(x, y), C("#7584c4"), .28), 1);
+    }
+    const r = mulberry(11);
+    for (let i = 0; i < 120; i++) {
+      const x = Math.floor(r() * W), y = Math.floor(r() * (HZ - 26)), b = r();
+      put(x, y, blend(get(x, y), C("#ffffff"), .3 + b * .7), 1);
+      if (b > .9) {
+        stars.push([x, y]);
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) put(x + dx, y + dy, blend(get(x + dx, y + dy), C("#cfe0ff"), .4), 1);
+      }
+    }
+    const mx = W - 72, my = 38;
+    glowX = mx;
+    halo(mx, my, 10, 32, C("#8fa2e0"), .6);
+    disc(mx, my, 10, (x, y, u, v) => {
+      const l = u * .5 - v * .6;
+      put(x, y, C(l > .4 ? "#fffbe6" : l > -.3 ? "#f1ebc8" : "#d8cfa6"), 1);
+    });
+    for (const [dx, dy, rr] of [[-3, -2, 2], [3, 3, 1], [2, -5, 1], [-5, 4, 1]]) disc(mx + dx, my + dy, rr, (x, y) => put(x, y, C("#cfc499"), 1));
   } else {
     const low = phase !== "day";
-    pxEllipse(c, low ? 60 : L.w - 70, low ? 130 : 36, 11, 11, low ? "#ffb35c" : "#ffe680");
-    c.fillStyle = "rgba(255,255,255,.85)";
-    for (const [x, y, w] of [[40, 40, 34], [L.w * .45, 26, 44], [L.w * .7, 58, 30]]) {
-      pxEllipse(c, Math.round(x), y, Math.round(w / 2), 5, "rgba(255,255,255,.8)");
-      pxEllipse(c, Math.round(x + w * .2), y - 4, Math.round(w / 4), 4, "rgba(255,255,255,.8)");
+    const sx = low ? Math.round(W * .52) : W - 78, sy = low ? HZ - 30 : 36, sr = low ? 15 : 11;
+    glowX = sx;
+    halo(sx, sy, sr, sr + (low ? 40 : 26), C(low ? "#ffd08a" : "#fff6cc"), .75);
+    disc(sx, sy, sr, (x, y, u, v) => put(x, y, C(Math.hypot(u - .3, v + .3) < .5 ? "#fffbe8" : low ? "#ffc867" : "#ffe98a"), 1));
+  }
+  // Puffy clouds: bright tops, shaded flat bottoms.
+  const [c0, c1, c2] = HAB_CLOUD[phase].map(C);
+  const cloud = (cx, cy, s) => {
+    const blobs = [[0, 0, 9], [11, 2, 7], [-11, 3, 6], [5, -5, 7], [-5, -3, 6], [17, 4, 4], [-17, 5, 4]]
+      .map(([x, y, rr]) => [cx + x * s, cy + y * s, rr * s]);
+    const top = cy - 12 * s, bot = cy + 6 * s;
+    for (let y = Math.floor(top); y <= bot; y++) for (let x = Math.floor(cx - 24 * s); x <= cx + 24 * s; x++) {
+      if (!blobs.some(([bx, by, br]) => (x - bx) ** 2 + (y - by) ** 2 <= br * br)) continue;
+      const k = (y - top) / (bot - top);
+      put(x, y, k < .5 ? (dith(x, y, k / .5 * .5) ? c1 : c0) : dith(x, y, (k - .5) / .5) ? c2 : c1, 1);
+    }
+  };
+  for (const [fx, fy, s] of [[.13, 34, 1], [.5, 22, 1.2], [.8, 66, .8], [.33, 80, .6]]) cloud(Math.round(W * fx), fy, s);
+
+  // Far mountains, hazy toward their feet, snow on the tallest.
+  const peak = (x) => Math.round(HZ - 24 - ridge(x / W * 6, 21) * 50);
+  const bulk = (x) => vnoise(x / W * 6, 0, 21) * .62 + vnoise(x / W * 13.8, 0, 22) * .26;
+  const hazeC = steps[STEPS - 2];
+  const mLit = C("#b4c8e1"), mMid = C("#97aed0"), mShade = C("#7d94bb");
+  for (let x = 0; x < W; x++) {
+    const t = peak(x);
+    // Faces turned toward the light (rising to the left of a summit) are bright.
+    const slope = (bulk(x - 4) - bulk(x + 4)) * W / 8;
+    for (let y = t; y < HZ + 2; y++) {
+      const k = slope + (y - t) * .02;
+      let col = k > .5 ? mLit : k > -.3 ? (dith(x, y, (k + .3) / .8) ? mLit : mMid) : dith(x, y, (k + 1) / .7) ? mMid : mShade;
+      if (y === t) col = blend(col, C("#ffffff"), .25);
+      if (t < HZ - 54 && y < t + 3 + vnoise(x / 3, 0, 9) * 5) col = C(k > -.1 ? "#f3f7ff" : "#c6d4ea");
+      if (dith(x, y, (y - t) / Math.max(HZ - t, 1) * .8)) col = blend(col, hazeC, .45);
+      put(x, y, col);
     }
   }
-  const dim = (col) => (night ? mix(col, "#0b1330", .55) : phase === "day" ? col : mix(col, "#5b3f6e", .2));
-  // Sea behind the beach, with a light line along the top.
-  c.fillStyle = dim("#2f86c9"); c.fillRect(L.sea - 30, L.water, L.w, HAB_H);
-  c.fillStyle = dim("#8fd0f5");
-  for (let x = L.sea - 30; x < L.w; x += 6) c.fillRect(x + (x % 12 ? 0 : 2), L.water, 3, 1);
-  for (let i = 0; i < 18; i++) c.fillRect(L.sea + Math.floor(r() * (L.w - L.sea)), L.water + 8 + Math.floor(r() * 90), 4, 1);
-  // Hills, far then near.
-  for (const [base, amp, col, k] of [[132, 12, "#a4cf8e", .021], [150, 9, "#79b562", .034]]) {
-    c.fillStyle = dim(col);
-    for (let x = 0; x < L.sea - 10; x++) {
-      const h = Math.round(base + Math.sin(x * k + base) * amp + Math.sin(x * k * 2.7) * 3);
-      c.fillRect(x, h, 1, L.water + 10 - h);
+  // Rolling hills with firs on the ridges, sinking toward the coast.
+  const fir = (x, base, h, lit, dark) => {
+    for (let j = 0; j <= h; j++) {
+      const hw = Math.round((h - j) * .36 + (j % 3 === 1 ? .7 : 0));
+      for (let dx = -hw; dx <= hw; dx++) put(x + dx, base - j, dx > 0 || (dx === 0 && j === h) ? lit : dark);
+    }
+  };
+  const layers = [
+    { base: HZ - 20, amp: 24, s: 31, k: .55, lit: "#a2cb8a", shade: "#8fbb79", fir: ["#73a46e", "#5f8f62"], fh: [4, 7], gap: 3 },
+    { base: HZ - 7, amp: 16, s: 41, k: .85, lit: "#86bf68", shade: "#71ad58", fir: ["#4f9150", "#3a7340"], fh: [7, 12], gap: 5 },
+  ];
+  for (const Ly of layers) {
+    const top = (x) => Math.round(Ly.base + (ridge(x / W * 5, Ly.s) - .5) * Ly.amp + (x > L.land - 30 ? (x - L.land + 30) * Ly.k : 0));
+    const lit = C(Ly.lit), shade = C(Ly.shade), rim = blend(lit, C("#ffffff"), .2);
+    for (let x = 0; x < W; x++) {
+      const t = top(x);
+      for (let y = t; y < HZ + 4; y++) put(x, y, y === t ? rim : dith(x, y, Math.min((y - t) / 16, 1)) ? shade : lit);
+    }
+    const fr = mulberry(Ly.s);
+    for (let x = 2; x < W; x += Ly.gap + Math.floor(fr() * Ly.gap)) {
+      const t = top(x) + 2;
+      if (t < HZ) fir(x, t, Ly.fh[0] + Math.floor(fr() * (Ly.fh[1] - Ly.fh[0])), C(Ly.fir[0]), C(Ly.fir[1]));
     }
   }
-  // Meadow, then the sandy shore curving down to the sea.
-  c.fillStyle = dim("#86c25b"); c.fillRect(0, L.water + 4, L.land + 6, HAB_H);
-  for (let y = L.water + 2; y < HAB_H; y++) {
-    const x0 = Math.round(L.land - 6 + (y - L.water) * .12), x1 = Math.round(L.sea + (y - L.water) * .08);
-    c.fillStyle = dim("#e9d79f"); c.fillRect(x0, y, x1 - x0, 1);
-    c.fillStyle = dim("#d6bf7f"); c.fillRect(x1 - 2, y, 2, 1);
+
+  // The meadow: lighter far away, deeper green up close, with soft patches.
+  const g = ["#a6d26e", "#8fc65d", "#79b650", "#67a645", "#58973c"].map(C);
+  const darkG = C("#3f7f30"), paleG = C("#dcf28c");
+  for (let y = HZ; y < H; y++) {
+    const v = (y - HZ) / (H - HZ) * (g.length - 1), b = Math.floor(v);
+    for (let x = 0; x < L.shore[y]; x++) {
+      let col = g[Math.min(b + (dith(x, y, v - b) ? 1 : 0), g.length - 1)];
+      const n = vnoise(x / 16, y / 6, 2);
+      if (n > .62 && dith(x, y, (n - .62) * 3)) col = blend(col, darkG, .22);
+      else if (n < .3 && dith(x, y, (.3 - n) * 3)) col = blend(col, paleG, .18);
+      put(x, y, col);
+    }
   }
-  // Tide pool rocks on the sea floor.
-  for (let i = 0; i < 6; i++) {
-    pxEllipse(c, Math.round(L.sea + 10 + i * (L.w - L.sea) / 6), HAB_H - 2, 10 + i % 3 * 3, 5, dim(i % 2 ? "#6f7480" : "#5c616c"));
+  // Sand down to the surf, then the sea: shallow and bright by the beach, deep further out.
+  const sand = C("#ecd8a0"), sandLo = C("#dcc286"), sandHi = C("#f7eac4"), wet = C("#c8ab76");
+  const deep = C("#2a73b8"), mid = C("#3b98d0"), shal = C("#66c6d6"), hz = C("#a4d8ee"), crest = C("#d2f0fa");
+  for (let y = HZ; y < H; y++) {
+    const e = L.surf[y];
+    for (let x = L.shore[y]; x < W; x++) {
+      if (x < e - 5) {
+        const ripple = Math.sin(x * .55 + y * 1.3 + vnoise(x / 8, y / 4, 6) * 4);
+        let col = ripple > .82 ? sandHi : ripple < -.86 ? sandLo : sand;
+        if (hash2(x, y, 7) > .988) col = C(hash2(x, y, 8) > .5 ? "#fff6ea" : "#e9b4a4");
+        if (x < L.shore[y] + 3 && dith(x, y, .5)) col = blend(col, C("#9db56a"), .45);
+        put(x, y, col);
+      } else if (x < e) put(x, y, dith(x, y, (x - e + 5) / 5) ? wet : sand);
+      else {
+        const k = Math.min((x - e) / Math.max(W - e, 1), 1);
+        let col = k < .12 ? (dith(x, y, k / .12) ? mid : shal) : dith(x, y, (k - .12) / .88) ? deep : mid;
+        if (dith(x, y, Math.max(0, 1 - (y - HZ) / 28))) col = blend(col, hz, .5);
+        const row = y - HZ, step = 3 + Math.floor(row / 12);
+        if (row % step === 0 && (x + row * 7) % 6 < 3 && hash2(Math.floor((x + row * 7) / 6), row, 3) > .55) col = blend(col, crest, .55);
+        put(x, y, col);
+        if (y > HZ + 2) sea[y * W + x] = 1;
+      }
+    }
   }
-  // Grass tufts and flowers.
-  for (let i = 0; i < 90; i++) {
-    const x = Math.floor(r() * (L.land - 4)), y = L.water + 8 + Math.floor(r() * (HAB_H - L.water - 10));
-    c.fillStyle = dim(r() < .5 ? "#6aa646" : "#9bd66e");
-    c.fillRect(x, y, 1, 2); c.fillRect(x + 2, y - 1, 1, 3);
-    if (r() < .25) { c.fillStyle = dim(["#ffffff", "#ffd84d", "#f27aa8", "#b48cff"][Math.floor(r() * 4)]); c.fillRect(x + 1, y - 3, 2, 2); }
+  for (let x = L.surf[HZ]; x < W; x++) put(x, HZ, C("#dcf3fb"));
+  // Rocks and kelp on the sea floor.
+  const greyRock = ["#4b535e", "#67707c", "#87909b", "#adb5be"].map(C);
+  const e0 = L.surf[H - 1];
+  for (let i = 0; i < 5; i++) {
+    const cx = Math.round(e0 + 16 + i * (W - e0 - 10) / 5);
+    for (let j = 0; j < 2; j++) {
+      const kx = cx - 6 + j * 9, len = 8 + Math.floor(hash2(i, j, 15) * 10);
+      for (let s = 0; s < len; s++) put(kx + Math.round(Math.sin(s * .45 + i) * 1.5), H - 4 - s, C(s % 3 ? "#2f7a4a" : "#46a05e"));
+    }
+    blob(cx, H - 2, 8 + i % 3 * 3, 6, greyRock);
   }
-  // Pond with reeds.
+
+  // The pond, with a muddy bank, lily pads and cattails.
   const p = L.pond;
-  pxEllipse(c, p.x, p.y, p.rx + 3, p.ry + 2, dim("#5d8f45"));
-  pxEllipse(c, p.x, p.y, p.rx, p.ry, dim("#3d93cf"));
-  c.fillStyle = dim("#8fd0f5");
-  c.fillRect(p.x - 18, p.y - 4, 8, 1); c.fillRect(p.x + 6, p.y + 3, 10, 1);
-  for (const dx of [-p.rx - 2, -p.rx + 2, p.rx - 1, p.rx + 3]) {
-    c.fillStyle = dim("#3e7a33"); c.fillRect(p.x + dx, p.y - 14, 1, 12);
-    c.fillStyle = dim("#7a5235"); c.fillRect(p.x + dx, p.y - 16, 1, 3);
+  for (let y = p.y - p.ry - 5; y <= p.y + p.ry + 5; y++) for (let x = p.x - p.rx - 7; x <= p.x + p.rx + 7; x++) {
+    const o = ((x - p.x) / (p.rx + 6)) ** 2 + ((y - p.y) / (p.ry + 4)) ** 2;
+    if (o > 1) continue;
+    const bank = ((x - p.x) / (p.rx + 2)) ** 2 + ((y - p.y) / (p.ry + 2)) ** 2;
+    const water = ((x - p.x) / p.rx) ** 2 + ((y - p.y) / p.ry) ** 2;
+    if (bank > 1) { if (dith(x, y, .5)) put(x, y, blend(get(x, y), darkG, .3)); continue; }
+    if (water > 1) { put(x, y, C(y > p.y ? (dith(x, y, .3) ? "#a88b58" : "#957a4b") : "#6b5434")); continue; }
+    const k = (y - p.y + p.ry) / (2 * p.ry);
+    put(x, y, C(k < .3 ? (dith(x, y, k / .3) ? "#3a8dc8" : "#2a659c") : k < .75 ? "#3a8dc8" : dith(x, y, (k - .75) * 4) ? "#5db1e2" : "#3a8dc8"));
   }
-  // A tree for roosting birds and a spider's thread.
-  c.fillStyle = dim("#7a5235"); c.fillRect(L.tree - 3, 112, 7, 82);
-  c.fillRect(L.tree + 3, 102, 18, 3);
-  for (const [dx, dy, rx, ry, col] of [[-12, 108, 18, 14, "#3d7f41"], [10, 100, 20, 16, "#3d7f41"],
-                                       [0, 88, 20, 16, "#4f9a50"], [-4, 98, 14, 10, "#5fae5c"]]) {
-    pxEllipse(c, L.tree + dx, dy, rx, ry, dim(col));
+  const pad = ["#2d6a2a", "#3f8f3a", "#5cb04c", "#86cf68"].map(C);
+  for (const [fx, dy, flower] of [[-.45, 3, false], [.5, -3, true], [.08, 6, false]]) {
+    const cx = Math.round(p.x + p.rx * fx), cy = p.y + dy;
+    blob(cx, cy, 4, 2, pad, 16, .1);
+    put(cx + 3, cy, C("#3a8dc8")); put(cx + 2, cy, C("#3a8dc8"));
+    if (flower) { put(cx - 1, cy - 1, C("#f7a8c8")); put(cx + 1, cy - 1, C("#f7a8c8")); put(cx, cy - 2, C("#fbd0e2")); put(cx, cy - 1, C("#ffe680")); }
   }
-  return cv;
+  for (const [dx, len, lean] of [[-p.rx - 3, 14, -1], [-p.rx + 2, 11, 0], [p.rx - 2, 12, 0], [p.rx + 3, 16, 1]]) {
+    const bx = p.x + dx, by = p.y - 1;
+    for (let j = 0; j < len; j++) {
+      const x = bx + Math.round(lean * j / len * 2);
+      put(x, by - j, C("#4a8a34"));
+      if (j > len - 6 && j < len - 1) { put(x, by - j, C("#6e4326")); put(x + 1, by - j, C("#94603a")); }
+    }
+    for (let j = 0; j < 5; j++) { put(bx - 1 - (j >> 1), by - j, C("#5c9e3e")); put(bx + 1 + (j >> 1), by - j, C("#3f7f30")); }
+  }
+  const stone = ["#5f5f5a", "#828079", "#a6a49b", "#cfcdc3"].map(C);
+  for (const [fx, dy, rx] of [[-.62, p.ry + 1, 3], [.74, p.ry - 1, 3], [-1.04, 2, 2], [.18, p.ry + 2, 2]]) blob(Math.round(p.x + p.rx * fx), p.y + dy, rx, 2, stone);
+
+  // A big shady tree for roosting birds and a spider's thread.
+  const t = L.tree, ground = 194;
+  for (let y = ground - 5; y <= ground + 6; y++) for (let x = t - 30; x <= t + 40; x++)
+    if (((x - t - 6) / 34) ** 2 + ((y - ground) / 6) ** 2 <= 1 && dith(x, y, .5)) put(x, y, blend(get(x, y), darkG, .45));
+  const bark = ["#4a3020", "#6e4a2e", "#8f6840", "#a98050"].map(C);
+  const limb = (x0, y0, x1, y1, w0, w1) => {
+    const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+    for (let s = 0; s <= n; s++) {
+      const k = s / n, x = x0 + (x1 - x0) * k, y = y0 + (y1 - y0) * k, w = Math.round(w0 + (w1 - w0) * k);
+      for (let j = 0; j < w; j++) put(x, y + j, bark[j === 0 ? 2 : j === w - 1 ? 0 : 1]);
+    }
+  };
+  for (let y = 92; y <= ground; y++) {
+    const hw = 4 + (y > ground - 8 ? Math.round((y - ground + 8) * .9) : 0);
+    for (let x = t - hw; x < t + hw; x++) {
+      const u = (x - t + .5) / hw;
+      let col = u > .45 ? bark[2] : u > -.35 ? bark[1] : bark[0];
+      if (hash2(x, Math.floor(y / 3), 13) > .78) col = bark[0];
+      else if (u > .45 && hash2(x, y, 14) > .85) col = bark[3];
+      put(x, y, col);
+    }
+  }
+  limb(t + 2, 104, t + 28, 100, 3, 2);
+  limb(t - 2, 110, t - 22, 101, 3, 2);
+  limb(t + 2, 133, t + 18, 130, 2, 1);
+  const leaf = ["#22492a", "#2f6633", "#41863d", "#5aa548", "#84c55c"].map(C);
+  const crown = [[-20, 88, 12], [22, 86, 13], [-8, 74, 14], [12, 70, 13], [2, 58, 11], [0, 92, 18],
+                 [-18, 104, 13], [17, 101, 14], [-4, 112, 9], [27, 106, 8]];
+  for (const [dx, cy, rr] of crown) {
+    const cx = t + dx;
+    for (let y = cy - rr - 2; y <= cy + rr + 2; y++) for (let x = cx - rr - 2; x <= cx + rr + 2; x++) {
+      const a = Math.atan2(y - cy, x - cx), dd = Math.hypot(x - cx, y - cy);
+      const edge = rr * (.88 + vnoise(a * 2.4 + 10, dx, 17) * .24);
+      if (dd > edge) continue;
+      const l = (x - cx) / rr * .45 - (y - cy) / rr * .75 + (hash2(x, y, 18) - .5) * .5;
+      let i = dd > edge - 1.2 && l < .25 ? 0 : l > .62 ? 4 : l > .2 ? 3 : l > -.3 ? 2 : 1;
+      if (hash2(x >> 1, y, 19) > .86) i = Math.max(0, Math.min(4, i + (l > 0 ? 1 : -1)));
+      put(x, y, leaf[i]);
+    }
+  }
+
+  // Bushes, rocks, grass and wildflowers.
+  const bush = ["#2a5a2c", "#3b7a38", "#549a45", "#7bbb58"].map(C);
+  for (const [cx, cy, rr] of [[L.shore[182] - 16, 180, 8], [L.shore[182] - 6, 182, 6], [Math.round(W * .2), 174, 6]]) blob(cx, cy, rr, rr * .7, bush, 20, .5);
+  blob(Math.round(L.land * .62), 192, 5, 3, stone);
+  blob(14, 262, 8, 5, stone);
+  for (let x = 8; x < 20; x++) if (hash2(x, 1, 21) > .4) put(x, 257 + Math.round(hash2(x, 2, 21)), C("#6aa646"));
+  const fr = mulberry(19);
+  const inPond = (x, y) => ((x - p.x) / (p.rx + 8)) ** 2 + ((y - p.y) / (p.ry + 6)) ** 2 < 1;
+  for (let i = 0; i < 300; i++) {
+    const y = HZ + 3 + Math.floor(fr() ** .7 * (H - HZ - 3)), x = Math.floor(fr() * W);
+    if (x > L.shore[y] - 3 || inPond(x, y)) continue;
+    const base = get(x, y), dk = blend(base, C("#2f6a28"), .45), lt = blend(base, C("#e8f8a8"), .4);
+    const h = 1 + Math.round((y - HZ) / (H - HZ) * 3 + fr());
+    for (let j = 0; j < h; j++) put(x, y - j, j === h - 1 ? lt : dk);
+    put(x - 1, y - 1, dk); put(x + 1, y - 1, dk);
+    if (h > 2) { put(x - 2, y - 2, dk); put(x + 2, y - 2, lt); }
+  }
+  const petals = ["#fbfbf2", "#ffd84a", "#f48fb8", "#a98bff", "#ff9a3c"].map(C);
+  for (let i = 0; i < 46; i++) {
+    const y0 = HZ + 6 + Math.floor(fr() * (H - HZ - 8)), x0 = Math.floor(fr() * W), col = petals[Math.floor(fr() * petals.length)];
+    for (let j = 0; j < 4; j++) {
+      const x = x0 + Math.round((fr() - .5) * 10), y = y0 + Math.round((fr() - .5) * 5);
+      if (y >= H || x > L.shore[y] - 4 || inPond(x, y)) continue;
+      put(x, y, blend(get(x, y), darkG, .4));
+      if (y > HZ + 40) { put(x, y - 2, col); put(x - 1, y - 1, col); put(x + 1, y - 1, col); put(x, y - 1, C("#ffe680")); }
+      else put(x, y - 1, col);
+    }
+  }
+  for (let y = HZ + 2; y < H; y += 2) {
+    const x = L.shore[y] - 1, base = get(x, y);
+    put(x + 1, y - 1, blend(base, C("#2f6a28"), .35)); put(x + 2, y - 2, blend(base, C("#e8f8a8"), .3));
+  }
+
+  const g8 = HAB_GRADE[phase];
+  if (g8) gradeData(d, g8, own);
+  const cv = document.createElement("canvas");
+  cv.width = W; cv.height = H;
+  cv.getContext("2d").putImageData(img, 0, 0);
+  // The tint drawn over swimmers so they look underwater.
+  const wimg = new ImageData(W, H), [wr, wg, wb, wa] = HAB_WATER[phase];
+  for (let i = 0; i < sea.length; i++) if (sea[i]) { wimg.data.set([wr, wg, wb, wa], i * 4); }
+  const wcv = document.createElement("canvas");
+  wcv.width = W; wcv.height = H;
+  wcv.getContext("2d").putImageData(wimg, 0, 0);
+  return { bg: cv, water: wcv, stars, glowX };
+}
+
+// Things that move in the scenery: glitter on the sea, foam, the pond and the stars.
+function habFx(c, L, phase, t) {
+  const W = L.w, HZ = L.water, night = phase === "night", sc = hab.scene;
+  if (sc.glowX > L.surf[HZ] + 8) {
+    c.fillStyle = night ? "rgba(225,232,255,.5)" : phase === "day" ? "rgba(255,250,215,.7)" : "rgba(255,210,150,.6)";
+    for (let y = HZ + 2; y < HZ + 44; y += 2) {
+      const k = (y - HZ) / 44, w = Math.round((3 + k * 12) * (.6 + .4 * Math.sin(t * 2.1 + y * 1.7)));
+      if (Math.sin(t * 3 + y * 2.3) > -.3) c.fillRect(sc.glowX - (w >> 1) + Math.round(Math.sin(t + y) * 2), y, w, 1);
+    }
+  }
+  const roll = (t * .3) % 1;
+  for (let y = HZ + 1; y < HAB_H; y++) {
+    const e = L.surf[y], sway = Math.round(Math.sin(t * 1.4 + y * .21) * 1.5);
+    c.fillStyle = night ? "rgba(200,215,255,.55)" : "rgba(255,255,255,.85)";
+    c.fillRect(e - 1 + sway, y, 2, 1);
+    c.fillStyle = night ? `rgba(200,215,255,${.5 * roll})` : `rgba(255,255,255,${.7 * roll})`;
+    if ((y + Math.floor(t * 6)) % 3) c.fillRect(e + 2 + Math.round((1 - roll) * 16) + sway, y, 1, 1);
+  }
+  c.fillStyle = "rgba(255,255,255,.75)";
+  for (let i = 0; i < 18; i++) {
+    if (Math.sin(t * 1.7 + i * 2.39) < .75) continue;
+    const y = HZ + 4 + Math.floor(hash2(i, 1, 33) * (HAB_H - HZ - 8)), x0 = L.surf[y] + 8;
+    c.fillRect(x0 + Math.floor(hash2(i, 2, 33) * (W - x0 - 4)), y, 2, 1);
+  }
+  const p = L.pond;
+  c.fillStyle = night ? "rgba(200,215,255,.45)" : "rgba(225,245,255,.65)";
+  for (let i = 0; i < 3; i++) {
+    const k = (t * .06 + i / 3) % 1;
+    c.fillRect(Math.round(p.x - p.rx * .7 + k * p.rx * 1.4), p.y - 4 + i * 4, 4 - i, 1);
+  }
+  if (night) sc.stars.forEach(([x, y], i) => {
+    const s = Math.sin(t * 2.3 + i * 1.9);
+    if (s <= .4) return;
+    c.fillStyle = `rgba(255,255,255,${((s - .4) * 1.5).toFixed(2)})`;
+    c.fillRect(x - 1, y, 3, 1); c.fillRect(x, y - 1, 1, 3);
+  });
 }
 
 $("hab-canvas").addEventListener("click", habTap);
