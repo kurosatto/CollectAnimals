@@ -2384,7 +2384,7 @@ function bar(label, t, color) {
   return row;
 }
 
-async function openProfile(username, toGuide = false) {
+async function openProfile(username) {
   const box = $("album-photos");
   box.innerHTML = "";
   $("album-title").textContent = username;
@@ -2417,21 +2417,6 @@ async function openProfile(username, toGuide = false) {
   if (act.childNodes.length) box.append(act);
 
   const sec = (title) => { const h = el("h3", "", title); box.append(h); return h; };
-  // Friends see each other's whole Field Guide, in the owner's own state. It comes
-  // first, since it's what people open a friend's profile for.
-  if (u.friendship === "friends" || u.friendship === "self") {
-    try {
-      const g = await api(`/users/${name}/collection`);
-      const stName = (states.find((x) => x.code === g.state) || {}).name || g.state;
-      const head = sec(`Field Guide · ${stName} · ${g.caught}/${g.total}`);
-      const guide = el("div", "grid guide");
-      fillGuide(guide, [...g.entries].sort((a, b) => dexSort(a.species, b.species)),
-                { username: u.username, state: g.state });
-      box.append(guide);
-      if (toGuide) head.scrollIntoView({ block: "start" });
-    } catch (err) { box.append(el("p", "muted", err.message)); }
-  }
-
   sec("Rarity");
   for (const r of ["common", "uncommon", "rare", "legendary"])
     if (u.by_rarity[r]) box.append(bar(r[0].toUpperCase() + r.slice(1), u.by_rarity[r], `var(--${r})`));
@@ -2442,6 +2427,19 @@ async function openProfile(username, toGuide = false) {
   }
   sec("Groups");
   for (const [cat, t] of Object.entries(u.by_category)) box.append(bar(CATEGORY_NAMES[cat] || cat, t));
+
+  // Friends see each other's whole Field Guide, in the owner's own state.
+  if (u.friendship === "friends" || u.friendship === "self") {
+    try {
+      const g = await api(`/users/${name}/collection`);
+      const stName = (states.find((x) => x.code === g.state) || {}).name || g.state;
+      sec(`Field Guide · ${stName} · ${g.caught}/${g.total}`);
+      const guide = el("div", "grid guide");
+      fillGuide(guide, [...g.entries].sort((a, b) => dexSort(a.species, b.species)),
+                { username: u.username, state: g.state });
+      box.append(guide);
+    } catch (err) { box.append(el("p", "muted", err.message)); }
+  }
 
   sec("Photos");
   const grid = el("div", "photos");
@@ -2601,8 +2599,7 @@ async function loadFriends() {
   section("Friend requests", f.incoming, [
     ["Accept", "", (u) => api(`/friends/requests/${encodeURIComponent(u)}/accept`, { method: "POST" })],
     ["Decline", "ghost", del]]);
-  section("Your friends", f.friends, [["Field Guide", "", (u) => openProfile(u, true)], ["Duel", "ghost", startDuel],
-                                     ["Profile", "ghost", openProfile], ["Remove", "ghost", del]]);
+  section("Your friends", f.friends, [["Duel", "", startDuel], ["Profile", "ghost", openProfile], ["Remove", "ghost", del]]);
   loadDuels();
   section("Waiting for them to accept", f.outgoing, [["Cancel", "ghost", del]]);
   if (!f.friends.length && !f.incoming.length && !f.outgoing.length)
