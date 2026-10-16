@@ -473,9 +473,32 @@ def _score_capture(model, capture: Capture, slug: str, rarity: str, image: Image
     """Score the photo for the species it counts as and keep the result on the capture."""
     safety = dex.details(slug, state_code).get("safety") or "none"
     sc = scoring.score_photo(model, image, slug, allowed, confidence=confidence, rarity=rarity,
-                             safety=safety, new_species=new_badge)
+                             safety=safety, new_species=new_badge,
+                             activity=dex.activity(slug, state_code),
+                             sun=_sun_at_capture(capture, state_code))
     capture.score, capture.score_stars, capture.score_parts = sc.total, sc.stars, sc.to_json()
     return score_out(capture)
+
+
+def _sun_at_capture(capture: Capture, state_code: str) -> float | None:
+    """The sun's elevation when and where the photo was taken: the photo's EXIF
+    time (the phone's local time), else the upload time (UTC), at the photo's
+    location, else the middle of the state."""
+    state = st.get(state_code)
+    if state is None:
+        return None
+    if capture.taken_at is not None:
+        when = scoring.to_utc(capture.taken_at, state.utc_offset)
+    else:
+        when = capture.created_at or datetime.now(timezone.utc)
+        if when.tzinfo is None:
+            when = when.replace(tzinfo=timezone.utc)
+    if capture.latitude is not None and capture.longitude is not None:
+        lat, lon = capture.latitude, capture.longitude
+    else:
+        b = state.bounds
+        lat, lon = (b["south"] + b["north"]) / 2, (b["west"] + b["east"]) / 2
+    return scoring.sun_elevation(when, lat, lon)
 
 
 def score_out(capture: Capture) -> ScoreOut | None:
