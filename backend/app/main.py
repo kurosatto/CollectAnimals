@@ -507,8 +507,7 @@ def _unassign_capture(db: Session, capture: Capture) -> None:
                 badge.first_capture_id = others[0].id
     photo = db.scalar(select(AlbumPhoto).where(AlbumPhoto.capture_id == capture.id))
     if photo:
-        for like in db.scalars(select(PhotoLike).where(PhotoLike.photo_id == photo.id)):
-            db.delete(like)
+        social.clear_reactions(db, photo.id)
         db.delete(photo)
         db.flush()
         # Re-point the album at the newest other catch that still has its photo.

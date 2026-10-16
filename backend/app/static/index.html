@@ -86,6 +86,15 @@
   .photo .who { font-weight:600; display:flex; justify-content:space-between; gap:6px; }
   .photo .rank { color:var(--legendary); }
   .like { background:none; color:var(--ink); border:1px solid var(--line); padding:2px 8px; font-size:.8rem; justify-self:start; }
+  .reacts { display:flex; gap:6px; flex-wrap:wrap; }
+  .comments { display:grid; gap:6px; font-size:.85rem; padding:6px 0; min-width:0; }
+  .comments .c { line-height:1.35; overflow-wrap:anywhere; }
+  .comments .c .when { color:var(--muted); font-size:.75rem; margin-left:4px; }
+  .comments .c .x { background:none; border:none; color:var(--muted); padding:0 4px; font-size:.8rem; }
+  .comments form { display:flex; flex-wrap:wrap; gap:6px; }
+  .comments form input { flex:1 1 120px; width:0; min-width:0; padding:6px 8px; }
+  .comments form button { padding:6px 10px; }
+  .feed-entry .comments { padding:0 6px 8px 82px; }
   .like.on { border-color:#c0392b; color:#c0392b; }
   .seg { display:flex; gap:6px; flex-wrap:wrap; margin-top:12px; }
   .seg button { background:none; color:var(--ink); border:1px solid var(--line); padding:4px 10px; font-size:.85rem; }
@@ -1973,21 +1982,7 @@ function photoCard(p, { showSpecies = false, onChange } = {}) {
     a.target = "_blank"; a.rel = "noopener"; a.style.color = "var(--accent)";
     meta.append(a);
   } else if (p.place) meta.append(el("span", "muted", p.place));
-  const like = el("button", "like" + (p.liked_by_me ? " on" : ""), `♥ ${p.like_count}`);
-  if (p.is_mine) { like.disabled = true; like.title = "Your photo"; }
-  else like.onclick = async () => {
-    like.disabled = true;
-    try {
-      await api(`/photos/${p.id}/like`, { method: p.liked_by_me ? "DELETE" : "POST" });
-      p.like_count += p.liked_by_me ? -1 : 1;
-      p.liked_by_me = !p.liked_by_me;
-      like.textContent = `♥ ${p.like_count}`;
-      like.classList.toggle("on", p.liked_by_me);
-      if (onChange) onChange();
-    } catch {}
-    like.disabled = false;
-  };
-  meta.append(like);
+  meta.append(reactions(p, meta, onChange));
   if (p.is_mine) {
     const del = el("button", "like ghost", "Delete photo");
     del.onclick = async () => {
@@ -1999,6 +1994,84 @@ function photoCard(p, { showSpecies = false, onChange } = {}) {
   }
   card.append(img, meta);
   return card;
+}
+
+// Like and comment buttons for any photo you can see, friend's or stranger's.
+// The comment list opens inside host.
+function reactions(p, host, onChange) {
+  const row = el("div", "reacts");
+  const like = el("button", "like" + (p.liked_by_me ? " on" : ""), `♥ ${p.like_count}`);
+  like.type = "button";
+  if (p.is_mine) { like.disabled = true; like.title = "Your photo"; }
+  else like.onclick = async (e) => {
+    e.stopPropagation();
+    like.disabled = true;
+    try {
+      await api(`/photos/${p.id}/like`, { method: p.liked_by_me ? "DELETE" : "POST" });
+      p.like_count += p.liked_by_me ? -1 : 1;
+      p.liked_by_me = !p.liked_by_me;
+      like.textContent = `♥ ${p.like_count}`;
+      like.classList.toggle("on", p.liked_by_me);
+      if (onChange) onChange();
+    } catch {}
+    like.disabled = false;
+  };
+  const talk = el("button", "like", `💬 ${p.comment_count || 0}`);
+  talk.type = "button"; talk.title = "Comments";
+  let panel = null;
+  talk.onclick = (e) => {
+    e.stopPropagation();
+    if (panel) { panel.remove(); panel = null; return; }
+    panel = commentsPanel(p, () => { talk.textContent = `💬 ${p.comment_count}`; });
+    host.append(panel);
+  };
+  row.append(like, talk);
+  return row;
+}
+
+function commentsPanel(p, onCount) {
+  const box = el("div", "comments");
+  box.onclick = (e) => e.stopPropagation();
+  const list = el("div", "comments");
+  list.style.padding = "0";
+  const line = (c) => {
+    const d = el("div", "c");
+    d.append(userLink(c.username, c.is_mine ? "You" : c.username), " ", c.body, el("span", "when", ago(c.created_at)));
+    if (c.can_delete) {
+      const x = el("button", "x", "✕"); x.type = "button"; x.title = "Delete comment";
+      x.onclick = async () => {
+        if (!confirm("Delete this comment?")) return;
+        try { await api(`/comments/${c.id}`, { method: "DELETE" }); d.remove(); p.comment_count--; onCount(); }
+        catch (err) { alert(err.message); }
+      };
+      d.append(x);
+    }
+    return d;
+  };
+  const form = el("form");
+  const input = el("input"); input.maxLength = 300; input.placeholder = "Add a comment"; input.required = true;
+  const send = el("button", "", "Post");
+  form.append(input, send);
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    if (!input.value.trim()) return;
+    send.disabled = true;
+    try {
+      const c = await api(`/photos/${p.id}/comments`, { method: "POST", body: JSON.stringify({ body: input.value }),
+                                                       headers: { "Content-Type": "application/json" } });
+      list.querySelector(".muted")?.remove();
+      list.append(line(c)); input.value = "";
+      p.comment_count = (p.comment_count || 0) + 1; onCount();
+    } catch (err) { alert(err.message); }
+    send.disabled = false;
+  };
+  box.append(list, form);
+  api(`/photos/${p.id}/comments`).then((cs) => {
+    if (!cs.length) list.append(el("div", "muted", "No comments yet. Say something nice!"));
+    cs.forEach((c) => list.append(line(c)));
+    p.comment_count = cs.length; onCount();
+  }).catch((err) => { list.textContent = err.message; });
+  return box;
 }
 
 async function deletePhoto(id) {
@@ -2184,10 +2257,13 @@ function feedItem(p) {
   line.append(name);
   const when = el("div", "when", [p.place, ago(p.caught_at)].filter(Boolean).join(" · "));
   what.append(line, when);
-  if (s.revealed && p.like_count) what.append(el("div", "when", `♥ ${p.like_count}`));
   row.append(what);
   row.onclick = () => openDex(s.number, dexNumbers[s.number] || s.number, caughtNums.has(s.number));
-  return row;
+  const entry = el("div", "feed-entry");
+  entry.append(row);
+  // Anyone can like or comment, friends or not. Mystery animals stay hidden.
+  if (p.url) what.append(reactions(p, entry));
+  return entry;
 }
 
 async function loadFeed(more = false) {

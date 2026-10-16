@@ -76,6 +76,10 @@ data class SocialState(
     val friends: Friends? = null,
     val suggestions: List<FriendEntry> = emptyList(),
     val album: List<OnlinePhoto>? = null,
+    // The photo whose comments are open, and its comments once loaded.
+    val commentsFor: OnlinePhoto? = null,
+    val comments: List<PhotoComment>? = null,
+    val commentError: String? = null,
     val loading: Boolean = false,
     val message: String? = null,
 )
@@ -115,6 +119,49 @@ class SocialViewModel(app: Application) : AndroidViewModel(app) {
         _state.update { it.copy(feed = swap(it.feed), album = it.album?.let(::swap)) }
         viewModelScope.launch {
             runCatching { Online.like(p.id, on) }.onFailure { e -> _state.update { it.copy(message = e.message) } }
+        }
+    }
+
+    private fun setCommentCount(photoId: Int, n: Int) {
+        fun swap(list: List<OnlinePhoto>) = list.map { if (it.id == photoId) it.copy(commentCount = n) else it }
+        _state.update { it.copy(feed = swap(it.feed), album = it.album?.let(::swap)) }
+    }
+
+    fun openComments(p: OnlinePhoto) {
+        _state.update { it.copy(commentsFor = p, comments = null, commentError = null) }
+        viewModelScope.launch {
+            runCatching { Online.comments(p.id) }
+                .onSuccess { cs -> _state.update { it.copy(comments = cs) }; setCommentCount(p.id, cs.size) }
+                .onFailure { e -> _state.update { it.copy(comments = emptyList(), commentError = e.message) } }
+        }
+    }
+
+    fun closeComments() = _state.update { it.copy(commentsFor = null, comments = null, commentError = null) }
+
+    fun postComment(text: String, done: () -> Unit) {
+        val p = _state.value.commentsFor ?: return
+        viewModelScope.launch {
+            runCatching { Online.addComment(p.id, text) }
+                .onSuccess { c ->
+                    val list = (_state.value.comments ?: emptyList()) + c
+                    _state.update { it.copy(comments = list, commentError = null) }
+                    setCommentCount(p.id, list.size)
+                    done()
+                }
+                .onFailure { e -> _state.update { it.copy(commentError = e.message) } }
+        }
+    }
+
+    fun deleteComment(c: PhotoComment) {
+        val p = _state.value.commentsFor ?: return
+        viewModelScope.launch {
+            runCatching { Online.deleteComment(c.id) }
+                .onSuccess {
+                    val list = _state.value.comments.orEmpty().filter { it.id != c.id }
+                    _state.update { it.copy(comments = list) }
+                    setCommentCount(p.id, list.size)
+                }
+                .onFailure { e -> _state.update { it.copy(commentError = e.message) } }
         }
     }
 
@@ -245,7 +292,7 @@ fun SocialScreen(state: UiState, social: SocialViewModel, onSignIn: () -> Unit, 
     if (state.account == null) {
         Column(Modifier.fillMaxSize().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically)) {
-            Text("Log in to see what other players are catching, add friends and like photos.",
+            Text("Log in to see what other players are capturing, add friends, and like and comment on photos.",
                 textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge)
             Button(onClick = onSignIn) { Text("Log in or sign up") }
         }
@@ -262,6 +309,49 @@ fun SocialScreen(state: UiState, social: SocialViewModel, onSignIn: () -> Unit, 
             style = MaterialTheme.typography.bodySmall) }
         if (section == "feed") FeedSection(s, social, state, onOpenDex) else FriendsSection(s, social)
     }
+    CommentsDialog(s, social)
+}
+
+/** Comments on one photo. Anyone who can see the photo can join in, friends or not. */
+@Composable
+fun CommentsDialog(s: SocialState, social: SocialViewModel) {
+    val p = s.commentsFor ?: return
+    var text by rememberSaveable(p.id) { mutableStateOf("") }
+    AlertDialog(onDismissRequest = social::closeComments,
+        confirmButton = { TextButton(onClick = social::closeComments) { Text("Close") } },
+        title = { Text("Comments · ${p.commonName ?: "photo"} by ${if (p.isMine) "you" else p.username}",
+            maxLines = 2, overflow = TextOverflow.Ellipsis) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                val cs = s.comments
+                Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    when {
+                        cs == null -> CircularProgressIndicator(Modifier.size(24.dp))
+                        cs.isEmpty() -> Text("No comments yet. Say something nice!", color = MaterialTheme.colorScheme.outline)
+                        else -> cs.forEach { c ->
+                            Row(verticalAlignment = Alignment.Top) {
+                                Column(Modifier.weight(1f)) {
+                                    Text(if (c.isMine) "You" else c.username, fontWeight = FontWeight.Bold,
+                                        style = MaterialTheme.typography.bodySmall)
+                                    Text(c.body, style = MaterialTheme.typography.bodyMedium)
+                                }
+                                if (c.canDelete) TextButton(onClick = { social.deleteComment(c) },
+                                    contentPadding = PaddingValues(0.dp)) { Text("Delete") }
+                            }
+                        }
+                    }
+                }
+                s.commentError?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(text, { if (it.length <= 300) text = it }, Modifier.weight(1f),
+                        placeholder = { Text("Add a comment") }, maxLines = 3)
+                    Button(enabled = text.isNotBlank(), onClick = { social.postComment(text.trim()) { text = "" } }) {
+                        Text("Post")
+                    }
+                }
+            }
+        })
 }
 
 @Composable
@@ -279,7 +369,7 @@ private fun FeedSection(s: SocialState, social: SocialViewModel, game: UiState, 
             }
         }
         if (s.feed.isEmpty() && !s.loading) item {
-            Text("No catches here yet.", color = MaterialTheme.colorScheme.outline)
+            Text("No captures here yet.", color = MaterialTheme.colorScheme.outline)
         }
         items(s.feed, key = { it.id }) { p -> FeedCard(p, social, onOpenDex) }
         if (s.loading) item { Box(Modifier.fillMaxWidth(), Alignment.Center) { CircularProgressIndicator() } }
@@ -301,7 +391,7 @@ private fun FeedCard(p: OnlinePhoto, social: SocialViewModel, onOpenDex: (String
                 // Animals you haven't unlocked stay hidden, as on the website.
                 Box(Modifier.fillMaxWidth().height(120.dp).background(MaterialTheme.colorScheme.surfaceVariant),
                     contentAlignment = Alignment.Center) {
-                    Text("❓ Catch or befriend someone who has caught it to see this one",
+                    Text("❓ Capture this animal, or befriend someone who has, to see this one",
                         Modifier.padding(16.dp), textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.outline)
                 }
             }
@@ -313,8 +403,12 @@ private fun FeedCard(p: OnlinePhoto, social: SocialViewModel, onOpenDex: (String
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline,
                         maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
-                TextButton(onClick = { social.toggleLike(p) }, enabled = !p.isMine) {
-                    Text((if (p.likedByMe) "♥ " else "♡ ") + p.likeCount)
+                // Anyone can like or comment, friends or not; animals you haven't unlocked stay hidden.
+                if (p.url != null) {
+                    TextButton(onClick = { social.toggleLike(p) }, enabled = !p.isMine) {
+                        Text((if (p.likedByMe) "♥ " else "♡ ") + p.likeCount)
+                    }
+                    TextButton(onClick = { social.openComments(p) }) { Text("💬 ${p.commentCount}") }
                 }
             }
         }
@@ -417,12 +511,19 @@ fun OnlinePhotosScreen(social: SocialViewModel, onOpenDex: (String) -> Unit, onD
                             overflow = TextOverflow.Ellipsis, color = rarityColor(p.rarity))
                         Text(dateOf(p.caughtAt) + if (p.likeCount > 0) " · ♥ ${p.likeCount}" else "",
                             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
-                        TextButton(onClick = { confirm = p }, contentPadding = PaddingValues(0.dp)) { Text("Delete photo") }
+                        Row {
+                            TextButton(onClick = { social.openComments(p) }, contentPadding = PaddingValues(0.dp)) {
+                                Text("💬 ${p.commentCount}")
+                            }
+                            Spacer(Modifier.size(8.dp))
+                            TextButton(onClick = { confirm = p }, contentPadding = PaddingValues(0.dp)) { Text("Delete photo") }
+                        }
                     }
                 }
             }
         }
     }
+    CommentsDialog(s, social)
     confirm?.let { p ->
         AlertDialog(
             onDismissRequest = { confirm = null },

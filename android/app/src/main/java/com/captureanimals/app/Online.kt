@@ -181,6 +181,15 @@ object Online {
     }
 
     suspend fun like(photoId: Int, on: Boolean) { call(if (on) "POST" else "DELETE", "/photos/$photoId/like") }
+
+    /** Anyone who can see a photo can read and write its comments, friends or not. */
+    suspend fun comments(photoId: Int): List<PhotoComment> {
+        val a = JSONArray(call("GET", "/photos/$photoId/comments"))
+        return List(a.length()) { PhotoComment.parse(a.getJSONObject(it)) }
+    }
+    suspend fun addComment(photoId: Int, body: String): PhotoComment =
+        PhotoComment.parse(JSONObject(call("POST", "/photos/$photoId/comments", JSONObject().put("body", body))))
+    suspend fun deleteComment(commentId: Int) { call("DELETE", "/comments/$commentId") }
     suspend fun deletePhoto(photoId: Int) { call("DELETE", "/photos/$photoId") }
 
     // --- Friends ----------------------------------------------------------------------
@@ -248,6 +257,7 @@ data class OnlinePhoto(
     val place: String?,
     val likeCount: Int,
     val likedByMe: Boolean,
+    val commentCount: Int,
     val isMine: Boolean,
     val byFriend: Boolean,
 ) {
@@ -257,10 +267,19 @@ data class OnlinePhoto(
             return OnlinePhoto(o.getInt("id"), o.optStringOrNull("url"), o.getString("username"),
                 s.optStringOrNull("slug"), s.optStringOrNull("common_name"), s.getString("rarity"),
                 s.getString("category"), Online.parseTime(o.optStringOrNull("caught_at")), o.optStringOrNull("place"),
-                o.optInt("like_count"), o.optBoolean("liked_by_me"), o.optBoolean("is_mine"), o.optBoolean("by_friend"))
+                o.optInt("like_count"), o.optBoolean("liked_by_me"), o.optInt("comment_count"),
+                o.optBoolean("is_mine"), o.optBoolean("by_friend"))
         }
 
         fun list(a: JSONArray) = List(a.length()) { parse(a.getJSONObject(it)) }
+    }
+}
+
+data class PhotoComment(val id: Int, val username: String, val body: String, val at: Long,
+                        val isMine: Boolean, val canDelete: Boolean) {
+    companion object {
+        fun parse(o: JSONObject) = PhotoComment(o.getInt("id"), o.getString("username"), o.getString("body"),
+            Online.parseTime(o.optStringOrNull("created_at")), o.optBoolean("is_mine"), o.optBoolean("can_delete"))
     }
 }
 

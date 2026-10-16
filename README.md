@@ -45,10 +45,16 @@ Without a trained model the API still runs; captures report that no model is loa
   lists everyone's album photos for a species, ranked by likes. You need the
   species unlocked to see it. Photos that never made it into an album are
   never served.
+- **Likes and comments.** Anyone who can see a photo can like it and comment
+  on it, friends or not (`POST /photos/{id}/like`, `GET|POST
+  /photos/{id}/comments`). Comments are up to 300 characters, at most 5 a
+  minute and 100 a day per player. The commenter and the photo's owner can
+  delete a comment (`DELETE /comments/{id}`). Swapping or deleting a photo
+  drops its likes and comments.
 - **Private players.** `PATCH /me/settings {"is_private": true}` hides your
   photos from everyone but you and your friends: they leave the species
   galleries, the feed and your profile for strangers (strangers can't like
-  them either).
+  or comment on them either).
 - **Player pages.** `GET /users/{username}` returns a player's achievements
   (milestones, rare and legendary finds, completing a group, likes), catches
   by rarity and group, and their photos, plus whether you're friends. Friends

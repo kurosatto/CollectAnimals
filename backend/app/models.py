@@ -155,6 +155,21 @@ class PhotoLike(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class PhotoComment(Base):
+    """A comment on an album photo. Anyone who can see the photo can comment,
+    friends or not; the commenter and the photo's owner can delete it."""
+
+    __tablename__ = "photo_comments"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    photo_id: Mapped[int] = mapped_column(ForeignKey("album_photos.id", ondelete="CASCADE"), index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    body: Mapped[str] = mapped_column(String(300))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    user: Mapped[User] = relationship()
+
+
 class Friendship(Base):
     """A friend request from requester to addressee; friends once accepted."""
 
