@@ -1,4 +1,10 @@
-"""A tiny 32x32 pixel-art canvas: filled shapes, automatic shading and outline.
+"""A tiny pixel-art canvas: filled shapes, automatic shading and outline.
+
+Drawings use a 32x32 grid (W, ground at y = 31), but the canvas has PAD_X spare
+pixels left and right and PAD_TOP above, so wide wings, long tails, antlers and tall
+ears can reach past the grid instead of being cut off. Nothing goes below the ground
+line. Coordinates run from -PAD_X to W + PAD_X across and -PAD_TOP to W - 1 down;
+the image is N x N pixels.
 
 Shapes are painted in order (later ones on top). Each shape is a "region"; after
 drawing, every shaded region is lit as a rounded form from the upper left: a warm
@@ -13,8 +19,14 @@ import math
 import numpy as np
 from PIL import Image
 
-N = 32
+W = 32
+PAD_X = 4
+PAD_TOP = 8
+N = W + 2 * PAD_X
+assert N == W + PAD_TOP  # square
 _YS, _XS = np.mgrid[0:N, 0:N].astype(np.float32) + 0.5
+_YS -= PAD_TOP
+_XS -= PAD_X
 
 OUTLINE_INK = (38, 26, 46)
 SILHOUETTE = (74, 76, 102)
@@ -133,6 +145,7 @@ class Sprite:
 
     def eye_box(self, x0, y0, x1, y1, mirror=False):
         """Mark a big eye (x0..x1, y0..y1 inclusive) to be closed when asleep."""
+        x0, y0, x1, y1 = x0 + PAD_X, y0 + PAD_TOP, x1 + PAD_X, y1 + PAD_TOP  # stored as canvas pixels
         self.eye_boxes.append((x0, y0, x1, y1))
         if mirror:
             self.eye_boxes.append((N - 1 - x1, y0, N - 1 - x0, y1))
@@ -223,8 +236,8 @@ class Sprite:
         sx, sy = (1 if x0 < x1 else -1), (1 if y0 < y1 else -1)
         err = dx + dy
         while True:
-            if 0 <= x0 < N and 0 <= y0 < N:
-                m[y0, x0] = True
+            if 0 <= x0 + PAD_X < N and 0 <= y0 + PAD_TOP < N:
+                m[y0 + PAD_TOP, x0 + PAD_X] = True
             if x0 == x1 and y0 == y1:
                 break
             e2 = 2 * err
@@ -240,8 +253,8 @@ class Sprite:
     def m_px(pts):
         m = np.zeros((N, N), bool)
         for x, y in pts:
-            if 0 <= x < N and 0 <= y < N:
-                m[int(y), int(x)] = True
+            if 0 <= x + PAD_X < N and 0 <= y + PAD_TOP < N:
+                m[int(y) + PAD_TOP, int(x) + PAD_X] = True
         return m
 
     # -- painting --------------------------------------------------------------

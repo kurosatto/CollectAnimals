@@ -1,4 +1,4 @@
-"""Draw the 32x32 pixel-art sprite and silhouette for every species.
+"""Draw the pixel-art sprite (a 32x32 drawing grid on a 40x40 canvas) and silhouette for every species.
 
     python tools/make_sprites.py            # writes species/sprites/*.png
     python tools/make_sprites.py --sheet docs/sprites.png   # plus a preview sheet
@@ -6,7 +6,7 @@
     python tools/make_sprites.py --anim-sheet anim.png     # preview of every animation
 
 Each species also gets an animation sheet, species/sprites/anim/<slug>.png: one row
-per pose (idle, walk, fly, swim, sleep) of four 32x32 frames. anim/index.json lists
+per pose (idle, walk, fly, swim, sleep) of four 40x40 frames. anim/index.json lists
 the poses each species really draws; the others repeat its idle row.
 
 Species come from every list in species/states.json; one sprite per slug is shared
@@ -31,7 +31,7 @@ import species_nc  # noqa: E402,F401
 from archetypes import (BLACK, NOSE, PINK, WHITE, beetle_top, bee, bird, butterfly,  # noqa: E402
                         dragonfly, duck, frog, goose, hummingbird, lizard, mammal, owl, pelican,
                         mantis, pinniped, quad, S, snake, sprite, star, turtle, vulture, wader, whale)
-from pixel import ACTS, FRAMES, Sprite, mix, silhouette  # noqa: E402
+from pixel import ACTS, FRAMES, N, Sprite, mix, silhouette  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 STATES_JSON = ROOT / "species" / "states.json"
@@ -953,7 +953,7 @@ def draw(slug) -> Image.Image:
 
 def animate(slug) -> tuple[Image.Image, list[str]]:
     """The animation sheet (a row of frames per pose) and the poses really drawn."""
-    out = Image.new("RGBA", (32 * FRAMES, 32 * len(ACTS)), (0, 0, 0, 0))
+    out = Image.new("RGBA", (N * FRAMES, N * len(ACTS)), (0, 0, 0, 0))
     probe = Sprite()
     S[slug](probe)
     acts = [a for a in ACTS if a in probe.acts]
@@ -961,12 +961,12 @@ def animate(slug) -> tuple[Image.Image, list[str]]:
         for f in range(FRAMES):
             s = Sprite(act if act in acts else "idle", f if act in acts else 0)
             S[slug](s)
-            out.alpha_composite(s.render(), (32 * f, 32 * row))
+            out.alpha_composite(s.render(), (N * f, N * row))
     return out, acts
 
 
 def sheet(rows, scale=4, cols=10, silhouettes=False):
-    cell = 32 * scale + 8
+    cell = N * scale + 8
     n = len(rows)
     lines = (n + cols - 1) // cols
     out = Image.new("RGBA", (cols * cell, lines * (cell + 12)), (246, 244, 238, 255))
@@ -975,10 +975,10 @@ def sheet(rows, scale=4, cols=10, silhouettes=False):
         img = draw(r["slug"])
         if silhouettes:
             img = silhouette(img)
-        big = img.resize((32 * scale, 32 * scale), Image.NEAREST)
+        big = img.resize((N * scale, N * scale), Image.NEAREST)
         x, y = (i % cols) * cell + 4, (i // cols) * (cell + 12) + 4
         out.alpha_composite(big, (x, y))
-        d.text((x, y + 32 * scale + 1), r["common_name"][:22], fill=(60, 60, 60, 255))
+        d.text((x, y + N * scale + 1), r["common_name"][:22], fill=(60, 60, 60, 255))
     return out
 
 
@@ -1013,7 +1013,7 @@ def main():
                                      indent=1) + "\n", encoding="utf-8")
     if args.anim_sheet:
         scale, cols = 3, 2
-        cell_w, cell_h = 32 * FRAMES * scale + 10, 32 * len(ACTS) * scale + 18
+        cell_w, cell_h = N * FRAMES * scale + 10, N * len(ACTS) * scale + 18
         lines = (len(slugs) + cols - 1) // cols
         prev = Image.new("RGBA", (cols * cell_w, lines * cell_h), (246, 244, 238, 255))
         d = ImageDraw.Draw(prev)
