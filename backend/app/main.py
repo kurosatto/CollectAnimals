@@ -18,14 +18,14 @@ from sqlalchemy.orm import Session
 
 from . import classifier as clf
 from . import dex
-from . import places, scoring, social
+from . import goals, places, scoring, social
 from . import states as st
 from .auth import create_token, current_user, hash_password, optional_user, verify_password
 from .classifier import OTHER_LABEL, Prediction
 from .config import settings
 from .db import Base, SessionLocal, add_missing_columns, engine, get_db
 from .models import AlbumPhoto, Badge, Capture, Friendship, PhotoLike, Species, StateSpecies, User
-from .schemas import (CaptureOut, ChoiceOut, ScoreOut, ScorePart, CollectionEntry, CollectionOut, DexOut, HotspotOut, HotspotSpecies,
+from .schemas import (CaptureOut, ChallengeOut, ChallengesOut, ChoiceOut, ScoreOut, ScorePart, SetOut, SetSpecies, SetsOut, CollectionEntry, CollectionOut, DexOut, HotspotOut, HotspotSpecies,
                       PickIn, PredictionOut, RegisterIn, SpeciesOut, StateOut, TokenOut, UserOut, UserUpdate)
 from .social import find_species, friend_ids, revealed_species_ids, species_out, user_named
 from .storage import get_storage
@@ -106,6 +106,7 @@ async def lifespan(app: FastAPI):
         seed_species(db, st.all_states())
     dex.load(settings.details_csv, st.all_states())
     places.load(settings.places_json)
+    goals.load(settings.sets_json)
     if clf.get_classifier() is None:
         clf.load_classifier(settings.model_path)
     yield
@@ -602,3 +603,55 @@ def my_collection(state: str | None = Query(None), user: User = Depends(current_
             activity=dex.activity(m.species.slug, code) if b else None))
     return CollectionOut(state=code, caught=sum(e.caught for e in entries), total=len(entries),
                          entries=entries)
+
+
+def _aware(d: datetime) -> datetime:
+    return d if d.tzinfo else d.replace(tzinfo=timezone.utc)
+
+
+@app.get("/me/sets", response_model=SetsOut)
+def my_sets(state: str | None = Query(None), user: User = Depends(current_user), db: Session = Depends(get_db)):
+    """Themed sets from the state's list (tide pools, state symbols, ...) and
+    how many of each the player has captured. Hidden names stay hidden."""
+    code = state_or_404(state or user.state).code
+    members = {m.species.slug: m for m in state_species(db, code)}
+    caught = set(db.scalars(select(Badge.species_id).where(Badge.user_id == user.id)))
+    revealed = revealed_species_ids(db, user)
+    out = []
+    for s in goals.sets_for(code, set(members)):
+        rows = [SetSpecies(species=species_out(members[x].species, members[x].species_id in revealed, members[x]),
+                           caught=members[x].species_id in caught) for x in s.slugs]
+        n = sum(r.caught for r in rows)
+        out.append(SetOut(id=s.id, title=s.title, description=s.description, caught=n, total=len(rows),
+                          complete=n == len(rows), species=rows))
+    return SetsOut(state=code, sets=out)
+
+
+@app.get("/me/challenges", response_model=ChallengesOut)
+def my_challenges(user: User = Depends(current_user), db: Session = Depends(get_db)):
+    """This week's three challenges for the player's state and their progress."""
+    state = state_or_404(user.state)
+    start, end = goals.week_bounds(state.utc_offset)
+    members = {m.species_id: m for m in state_species(db, state.code)}
+    categories: dict[str, int] = {}
+    for m in members.values():
+        categories[m.species.category] = categories.get(m.species.category, 0) + 1
+    sets = goals.sets_for(state.code, {m.species.slug for m in members.values()})
+    challenges = goals.challenges_for(state.code, start, categories, sets)
+
+    new_ids = {b.species_id for b in db.scalars(select(Badge).where(Badge.user_id == user.id))
+               if start <= _aware(b.earned_at) < end}
+    week = []
+    for c in db.scalars(select(Capture).where(Capture.user_id == user.id, Capture.species_id.is_not(None))):
+        m = members.get(c.species_id)
+        if m and start <= _aware(c.created_at) < end:
+            week.append(goals.WeekCapture(m.species.slug, m.species.category, m.rarity,
+                                          c.species_id in new_ids))
+    likes = sum(start <= _aware(t) < end for t in db.scalars(
+        select(PhotoLike.created_at).where(PhotoLike.user_id == user.id)))
+    out = []
+    for ch in challenges:
+        p = goals.progress(ch, week, likes)
+        out.append(ChallengeOut(id=ch.id, title=ch.title, progress=min(p, ch.goal), goal=ch.goal, done=p >= ch.goal))
+    return ChallengesOut(state=state.code, week_start=start, week_end=end, challenges=out,
+                         done=sum(c.done for c in out))

@@ -160,6 +160,21 @@
   .welcome { border-color:var(--accent); }
   .welcome p { margin:6px 0 0; }
   label.inline { display:flex; align-items:center; gap:6px; font-size:.9rem; color:var(--muted); }
+  .week { display:grid; gap:10px; }
+  .week-row { display:grid; grid-template-columns:22px 1fr auto; gap:8px; align-items:center; font-size:.9rem; }
+  .week-row .tick { width:22px; height:22px; border-radius:50%; border:2px solid var(--line); display:grid;
+                    place-items:center; font-size:.8rem; color:#fff; }
+  .week-row.done .tick { background:var(--accent); border-color:var(--accent); }
+  .week-row.done .what { color:var(--muted); text-decoration:line-through; }
+  .week-row .bar { grid-column:2 / 4; }
+  .sets { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:10px; }
+  .set { border:1px solid var(--line); border-radius:10px; padding:10px; display:grid; gap:6px; }
+  .set.complete { border-color:var(--legendary); }
+  .set-head { display:flex; justify-content:space-between; gap:8px; font-weight:600; }
+  .set .desc { font-size:.8rem; color:var(--muted); }
+  .set-sprites { display:flex; flex-wrap:wrap; gap:2px; }
+  .set-sprites img { width:32px; height:32px; image-rendering:pixelated; cursor:pointer; }
+  .set-sprites img.missing { opacity:.4; }
   .score { margin-top:12px; border:1px solid var(--line); border-radius:10px; padding:10px 12px; max-width:320px; }
   .score-head { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
   .score-stars { color:var(--legendary); font-size:1.4rem; letter-spacing:2px; }
@@ -223,6 +238,11 @@
       </form>
       <div id="result" class="card hidden"></div>
     </div>
+    <div class="card" data-tab="catch" id="week-card">
+      <h2>This week's challenges <span class="muted" id="week-done"></span></h2>
+      <p class="muted" id="week-note" style="margin-top:0"></p>
+      <div id="week-list" class="week"></div>
+    </div>
     <div class="card off" data-tab="feed">
       <h2>Latest captures</h2>
       <div class="seg" id="feed-seg"></div>
@@ -249,6 +269,11 @@
       </div>
       <div class="hab-bar"><span id="hab-note" class="muted"></span><button class="ghost" id="hab-peek"></button></div>
       <div id="grid" class="grid"></div>
+    </div>
+    <div class="card off" data-tab="dex">
+      <h2>Sets</h2>
+      <p class="muted" style="margin-top:0">Themed groups to complete. Each finished set is a badge on your profile.</p>
+      <div id="sets" class="sets"></div>
     </div>
     <div class="card off" data-tab="photos">
       <h2>My photos</h2>
@@ -507,8 +532,59 @@ const dexSort = (a, b) => RARITY_ORDER.indexOf(a.rarity) - RARITY_ORDER.indexOf(
   || CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category) || a.number - b.number;
 const silhouetteUrl = (number) => `/sprites/silhouette/${number}.png`;
 
+// Weekly challenges (same for everyone in the state, Monday to Sunday) and sets.
+async function loadChallenges() {
+  try {
+    const w = await api("/me/challenges");
+    const ends = new Date(w.week_end);
+    const days = Math.max(1, Math.ceil((ends - Date.now()) / 86400000));
+    $("week-done").textContent = `${w.done} / ${w.challenges.length}`;
+    $("week-note").textContent = w.done === w.challenges.length ? "All done this week. New challenges on Monday!"
+      : `New challenges in ${days} day${days > 1 ? "s" : ""}.`;
+    const list = $("week-list");
+    list.innerHTML = "";
+    for (const c of w.challenges) {
+      const row = el("div", "week-row" + (c.done ? " done" : ""));
+      const bar = el("div", "bar");
+      const fill = el("div"); fill.style.width = `${100 * c.progress / c.goal}%`;
+      bar.append(fill);
+      row.append(el("span", "tick", c.done ? "✓" : ""), el("span", "what", c.title),
+                 el("span", "muted", `${c.progress} / ${c.goal}`), bar);
+      list.append(row);
+    }
+  } catch (err) { $("week-list").textContent = err.message; }
+}
+
+async function loadSets() {
+  const box = $("sets");
+  try {
+    const r = await api("/me/sets");
+    box.innerHTML = "";
+    for (const st of r.sets) {
+      const card = el("div", "set" + (st.complete ? " complete" : ""));
+      const head = el("div", "set-head");
+      head.append(el("span", "", (st.complete ? "🏅 " : "") + st.title), el("span", "muted", `${st.caught} / ${st.total}`));
+      const bar = el("div", "bar");
+      const fill = el("div"); fill.style.width = `${100 * st.caught / st.total}%`;
+      bar.append(fill);
+      const sprites = el("div", "set-sprites");
+      for (const row of st.species) {
+        const s = row.species;
+        const img = el("img", row.caught ? "" : "missing");
+        img.src = s.slug ? spriteUrl(s.slug, row.caught) : silhouetteUrl(s.number);
+        img.alt = img.title = s.common_name || "???";
+        img.onclick = () => openDex(s.number, dexNumbers[s.number], row.caught);
+        sprites.append(img);
+      }
+      card.append(head, bar, sprites, el("div", "desc", st.description));
+      box.append(card);
+    }
+  } catch (err) { box.textContent = err.message; }
+}
+
 async function loadCollection() {
   const c = await api("/me/collection");
+  loadSets(); loadChallenges();
   const entries = [...c.entries].sort((a, b) => dexSort(a.species, b.species));
   caughtNums = new Set(entries.filter((e) => e.caught).map((e) => e.species.number));
   habitatSet(entries);
