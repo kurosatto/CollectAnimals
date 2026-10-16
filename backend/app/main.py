@@ -1,5 +1,6 @@
 import csv
 import io
+import json
 import time
 import uuid
 from contextlib import asynccontextmanager
@@ -17,14 +18,14 @@ from sqlalchemy.orm import Session
 
 from . import classifier as clf
 from . import dex
-from . import places, social
+from . import places, scoring, social
 from . import states as st
 from .auth import create_token, current_user, hash_password, optional_user, verify_password
 from .classifier import OTHER_LABEL, Prediction
 from .config import settings
 from .db import Base, SessionLocal, add_missing_columns, engine, get_db
 from .models import AlbumPhoto, Badge, Capture, Friendship, PhotoLike, Species, StateSpecies, User
-from .schemas import (CaptureOut, ChoiceOut, CollectionEntry, CollectionOut, DexOut, HotspotOut, HotspotSpecies,
+from .schemas import (CaptureOut, ChoiceOut, ScoreOut, ScorePart, CollectionEntry, CollectionOut, DexOut, HotspotOut, HotspotSpecies,
                       PickIn, PredictionOut, RegisterIn, SpeciesOut, StateOut, TokenOut, UserOut, UserUpdate)
 from .social import find_species, friend_ids, revealed_species_ids, species_out, user_named
 from .storage import get_storage
@@ -406,6 +407,8 @@ async def create_capture(photo: UploadFile = File(...),
             db.add(Badge(user_id=user.id, species_id=species.id, first_capture_id=capture.id))
             new_badge = True
     album_photo = social.ensure_album_photo(db, capture) if matched else None
+    score = (_score_capture(model, capture, top.label, members[top.label].rarity, image, state.code,
+                            set(members), new_badge, confidence=top.probability) if matched else None)
     db.commit()
 
     # Don't give away names the player hasn't unlocked yet.
@@ -441,7 +444,26 @@ async def create_capture(photo: UploadFile = File(...),
         choices=[ChoiceOut(slug=p.label, common_name=names[p.label],
                            probability=round(p.probability, 4))
                  for p in preds if p.label in species_by_slug],
+        score=score,
     )
+
+
+def _score_capture(model, capture: Capture, slug: str, rarity: str, image: Image.Image, state_code: str,
+                   allowed: set[str], new_badge: bool, confidence: float | None = None) -> ScoreOut:
+    """Score the photo for the species it counts as and keep the result on the capture."""
+    safety = dex.details(slug, state_code).get("safety") or "none"
+    sc = scoring.score_photo(model, image, slug, allowed, confidence=confidence, rarity=rarity,
+                             safety=safety, new_species=new_badge)
+    capture.score, capture.score_stars, capture.score_parts = sc.total, sc.stars, sc.to_json()
+    return score_out(capture)
+
+
+def score_out(capture: Capture) -> ScoreOut | None:
+    if capture.score is None:
+        return None
+    parts = json.loads(capture.score_parts or "[]")
+    return ScoreOut(total=capture.score, stars=capture.score_stars or 1,
+                    parts=[ScorePart(label=label, points=pts) for label, pts in parts])
 
 
 def _unassign_capture(db: Session, capture: Capture) -> None:
@@ -451,6 +473,7 @@ def _unassign_capture(db: Session, capture: Capture) -> None:
     if old is None:
         return
     capture.species_id = None
+    capture.score = capture.score_stars = capture.score_parts = None
     db.flush()
     others = db.scalars(select(Capture).where(Capture.user_id == capture.user_id,
                                               Capture.species_id == old).order_by(Capture.id)).all()
@@ -513,6 +536,7 @@ def pick_capture_species(capture_id: int, body: PickIn, user: User = Depends(cur
             db.add(Badge(user_id=user.id, species_id=species.id, first_capture_id=capture.id))
             new_badge = True
         album_photo = social.ensure_album_photo(db, capture)
+        _rescore_picked(db, capture, species, m, user, new_badge)
     db.commit()
 
     message = (f"Got it: a {name}! New badge unlocked." if new_badge
@@ -521,7 +545,23 @@ def pick_capture_species(capture_id: int, body: PickIn, user: User = Depends(cur
         message += " It's now in your album."
     return CaptureOut(capture_id=capture.id, matched=True, species=species_out(species, True, m),
                       confidence=capture.confidence, new_badge=new_badge, message=message,
-                      top_predictions=[], album_photo_id=album_photo.id if album_photo else None)
+                      top_predictions=[], album_photo_id=album_photo.id if album_photo else None,
+                      score=score_out(capture))
+
+
+def _rescore_picked(db: Session, capture: Capture, species: Species, m: StateSpecies | None,
+                    user: User, new_badge: bool) -> None:
+    """Score a photo again for the animal the player picked (the saved copy)."""
+    model = clf.get_classifier()
+    data = get_storage().get(capture.image_path) if capture.image_path else None
+    capture.score = capture.score_stars = capture.score_parts = None
+    if model is None or data is None:
+        return
+    state = st.get(user.state) or st.get(None)
+    allowed = {mm.species.slug for mm in state_species(db, state.code)}
+    image = Image.open(io.BytesIO(data)).convert("RGB")
+    _score_capture(model, capture, species.slug, m.rarity if m else species.rarity, image, state.code,
+                   allowed, new_badge)
 
 
 def restrict(preds: list[Prediction], allowed: set[str]) -> list[Prediction]:

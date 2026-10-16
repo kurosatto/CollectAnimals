@@ -167,6 +167,11 @@ def test_capture_awards_badge_once(client, fake):
     r = upload(client, h).json()
     assert r["matched"] and r["new_badge"]
     assert r["species"]["slug"] == "coyote"
+    # Scored, with the new-species bonus the first time.
+    assert r["score"]["stars"] in (1, 2, 3)
+    assert {p["label"] for p in r["score"]["parts"]} >= {"Clarity", "Sharpness", "Framing", "New species"}
+    album = client.get("/me/album", headers=h).json()["photos"]
+    assert album[0]["score"] == r["score"]["total"]
     # Runner-up guesses don't reveal species the player hasn't unlocked.
     assert r["top_predictions"][0]["common_name"] == "Coyote"
     assert r["top_predictions"][1] == {"label": "hidden", "common_name": None, "probability": 0.0404}  # rescaled within the state

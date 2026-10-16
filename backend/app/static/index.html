@@ -160,6 +160,13 @@
   .welcome { border-color:var(--accent); }
   .welcome p { margin:6px 0 0; }
   label.inline { display:flex; align-items:center; gap:6px; font-size:.9rem; color:var(--muted); }
+  .score { margin-top:12px; border:1px solid var(--line); border-radius:10px; padding:10px 12px; max-width:320px; }
+  .score-head { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+  .score-stars { color:var(--legendary); font-size:1.4rem; letter-spacing:2px; }
+  .score-total { font-weight:700; font-size:1.1rem; }
+  .score-parts { display:grid; grid-template-columns:1fr auto; gap:2px 12px; margin-top:6px; font-size:.85rem; color:var(--muted); }
+  .score-parts span:nth-child(even) { text-align:right; font-variant-numeric:tabular-nums; }
+  .photo .pts { color:var(--legendary); font-size:.75rem; font-weight:600; }
   .habitat { position:relative; margin-top:4px; }
   #hab-canvas { display:block; width:100%; height:auto; image-rendering:pixelated; border-radius:10px;
                 border:1px solid var(--line); cursor:pointer; touch-action:manipulation; }
@@ -388,15 +395,28 @@ $("upload-form").onsubmit = async (e) => {
     p.textContent = "Top guesses: " + r.top_predictions
       .map((x) => `${x.common_name || (x.label === "other" ? "not on the list" : "???")} ${(x.probability * 100).toFixed(0)}%`).join(", ");
     box.append(h, p);
+    if (r.score) box.append(scoreCard(r.score));
     if (r.choices && r.choices.length) box.append(pickPanel(r, box));
-    if (r.matched && !r.album_photo_id) keepWhich(r.species, r.capture_id, file, box);
+    if (r.matched && !r.album_photo_id) keepWhich(r.species, r.capture_id, file, box, r.score && r.score.total);
     loadCollection(); loadFeed();
   } catch (err) { box.textContent = err.message; }
 };
 
+// Photo score: stars for the photo itself, points with the bonuses added.
+const stars = (n) => "★".repeat(n) + "☆".repeat(3 - n);
+function scoreCard(sc) {
+  const box = el("div", "score");
+  const head = el("div", "score-head");
+  head.append(el("span", "score-stars", stars(sc.stars)), el("span", "score-total", `${sc.total.toLocaleString()} pts`));
+  const rows = el("div", "score-parts");
+  for (const part of sc.parts) rows.append(el("span", "", part.label), el("span", "", `+${part.points}`));
+  box.append(head, rows);
+  return box;
+}
+
 // Caught an animal you already have: show your album photo next to the new one
 // and let the player choose which to keep.
-async function keepWhich(species, captureId, file, box) {
+async function keepWhich(species, captureId, file, box, newScore) {
   const wrap = el("div", "keep");
   box.append(wrap);
   let old = null;
@@ -420,8 +440,10 @@ async function keepWhich(species, captureId, file, box) {
     f.append(img, el("figcaption", "", caption), b);
     pair.append(f);
   };
-  side(old.url, old.taken_on ? `Album photo · ${fmtDate(old.taken_on)}` : "Album photo", "Keep this one", async () => {});
-  side(URL.createObjectURL(file), "New photo", "Keep the new one", async () => {
+  const pts = (n) => (n != null ? ` · ${n.toLocaleString()} pts` : "");
+  side(old.url, (old.taken_on ? `Album photo · ${fmtDate(old.taken_on)}` : "Album photo") + pts(old.score),
+       "Keep this one", async () => {});
+  side(URL.createObjectURL(file), "New photo" + pts(newScore), "Keep the new one", async () => {
     await api(`/me/album/${species.number}`, { method: "PUT",
       headers: { "Content-Type": "application/json" }, body: JSON.stringify({ capture_id: captureId }) });
     loadCollection(); loadFeed(); loadMyPhotos();
@@ -448,7 +470,9 @@ function pickPanel(r, box) {
       h.textContent = (res.new_badge ? "🏅 " : "") + res.message;
       wrap.remove();
       box.querySelector(".keep")?.remove();
-      if (res.matched && !res.album_photo_id) keepWhich(res.species, r.capture_id, r.file, box);
+      box.querySelector(".score")?.remove();
+      if (res.score) h.after(scoreCard(res.score));
+      if (res.matched && !res.album_photo_id) keepWhich(res.species, r.capture_id, r.file, box, res.score && res.score.total);
       loadCollection(); loadFeed();
     } catch (err) {
       b.textContent = err.message;
@@ -1095,6 +1119,7 @@ function photoCard(p, { showSpecies = false, onChange } = {}) {
                          : userLink(p.username, p.username + (p.is_mine ? " (you)" : "")));
   if (p.rank) who.append(el("span", "rank", p.rank <= 3 ? ["🥇", "🥈", "🥉"][p.rank - 1] : `#${p.rank}`));
   meta.append(who, el("span", "muted", fmtDate(p.taken_on)));
+  if (p.score != null) meta.append(el("span", "pts", `${stars(p.stars)} ${p.score.toLocaleString()} pts`));
   if (p.latitude != null) {
     const a = el("a", "", p.place || `${p.latitude}, ${p.longitude}`);
     a.href = `https://www.openstreetmap.org/?mlat=${p.latitude}&mlon=${p.longitude}#map=${p.location_precise ? 14 : 10}/${p.latitude}/${p.longitude}`;
