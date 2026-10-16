@@ -1,8 +1,11 @@
 """A tiny 32x32 pixel-art canvas: filled shapes, automatic shading and outline.
 
 Shapes are painted in order (later ones on top). Each shape is a "region"; after
-drawing, every shaded region gets a darker underside and a lighter top edge, and
-the whole sprite gets a 1-pixel outline tinted from the colour it borders.
+drawing, every shaded region is lit like a rounded form: the light comes from the
+upper left, so it gets a warm highlight there and cool, hue-shifted shadow
+tones toward the lower right. Shapes painted on top cast a soft shadow on what's
+below them, and the sprite gets a 1-pixel outline tinted from the colour it
+borders, lighter on the lit side and darker on the shadow side.
 """
 from __future__ import annotations
 
@@ -15,6 +18,11 @@ N = 32
 _YS, _XS = np.mgrid[0:N, 0:N].astype(np.float32) + 0.5
 
 OUTLINE_INK = (38, 26, 46)
+# Light from the upper left and a little in front.
+_LIGHT = np.array([-0.55, -0.75, 0.6]) / np.linalg.norm([-0.55, -0.75, 0.6])
+_WARM = np.array([255, 244, 214], np.float32)
+_SHADOW = np.array([0.8, 0.78, 0.9], np.float32)
+_DEEP = np.array([0.63, 0.6, 0.78], np.float32)
 SILHOUETTE = (74, 76, 102)
 
 
@@ -41,6 +49,37 @@ def _shift(m: np.ndarray, dx: int, dy: int) -> np.ndarray:
     return out
 
 
+def _depth(mask: np.ndarray, cap: int = 8) -> np.ndarray:
+    """How many pixels in from the shape's edge each pixel is (octagonal steps)."""
+    d = np.zeros((N, N), np.float32)
+    cur = mask.copy()
+    for i in range(cap):
+        if not cur.any():
+            break
+        d[cur] += 1
+        nb = _shift(cur, 1, 0) & _shift(cur, -1, 0) & _shift(cur, 0, 1) & _shift(cur, 0, -1)
+        if i % 2:
+            nb &= _shift(cur, 1, 1) & _shift(cur, -1, -1) & _shift(cur, 1, -1) & _shift(cur, -1, 1)
+        cur &= nb
+    return d
+
+
+def _lighting(mask: np.ndarray) -> np.ndarray:
+    """Brightness of each pixel if the shape were a rounded, puffy form."""
+    d = _depth(mask)
+    cap = float(np.clip(d.max() * 0.8, 2, 6))
+    h = np.clip(d / cap, 0, 1)
+    z = np.sqrt(1 - (1 - h) ** 2)
+    zp = np.pad(z, 1)
+    zb = sum(zp[1 + dy:N + 1 + dy, 1 + dx:N + 1 + dx] for dy in (-1, 0, 1) for dx in (-1, 0, 1)) / 9
+    zbp = np.pad(zb, 1)
+    gx = (zbp[1:-1, 2:] - zbp[1:-1, :-2]) / 2
+    gy = (zbp[2:, 1:-1] - zbp[:-2, 1:-1]) / 2
+    nx, ny, nz = -gx * 2.4, -gy * 2.4, np.ones_like(gx)
+    norm = np.sqrt(nx * nx + ny * ny + nz * nz)
+    return (nx * _LIGHT[0] + ny * _LIGHT[1] + nz * _LIGHT[2]) / norm
+
+
 def _seg_dist(x0, y0, x1, y1):
     dx, dy = x1 - x0, y1 - y0
     L = dx * dx + dy * dy or 1e-9
@@ -53,6 +92,7 @@ class Sprite:
         self.col = np.zeros((N, N, 3), np.int32)
         self.reg = np.zeros((N, N), np.int32)
         self.shaded: dict[int, bool] = {}
+        self.masks: dict[int, np.ndarray] = {}
         self.edged: set[int] = set()
         self.n = 0
         self.last = np.zeros((N, N), bool)
@@ -140,6 +180,7 @@ class Sprite:
         self.col[mask] = rgb(color)
         self.reg[mask] = self.n
         self.shaded[self.n] = shade
+        self.masks[self.n] = mask.copy()
         if edge:
             self.edged.add(self.n)
         self.last = mask
@@ -204,24 +245,35 @@ class Sprite:
                 border = R & (_shift(below, 1, 0) | _shift(below, -1, 0)
                               | _shift(below, 0, 1) | _shift(below, 0, -1))
                 col[border] = col[border] * 0.72 + np.array(OUTLINE_INK) * 0.28
-            if not self.shaded.get(r):
+            if not self.shaded.get(r) or R.sum() < 5:
                 continue
-            h = np.where(R.any(axis=1))[0]
-            k = 2 if (h.max() - h.min()) >= 6 else 1
-            shadow = R & (~_shift(R, 0, k) | ~_shift(R, 1, 1))
-            light = R & ~_shift(R, 0, -1) & ~shadow & _shift(R, 0, 1)
-            col[shadow] = col[shadow] * np.array([0.78, 0.76, 0.86])
-            col[light] = col[light] * 0.75 + 255 * 0.25
+            # Light the whole shape as painted, so a patch drawn on top (a belly,
+            # a spot) doesn't make the shape underneath look dented.
+            b = _lighting(self.masks[r])
+            flat = _LIGHT[2]
+            spec = R & (b > flat + 0.3)
+            hi = R & (b > flat + 0.11) & ~spec
+            deep = R & (b < flat - 0.3)
+            shadow = R & (b < flat - 0.07) & ~deep
+            col[hi] = col[hi] * 0.74 + _WARM * 0.26
+            col[spec] = col[spec] * 0.55 + _WARM * 0.45
+            col[shadow] = col[shadow] * _SHADOW
+            col[deep] = col[deep] * _DEEP
+            # Shapes painted on top cast a little shadow onto this one.
+            later = filled & (self.reg > r) & ~R
+            cast = R & _shift(later, 0, -1) & ~shadow & ~deep
+            col[cast] = col[cast] * _SHADOW
         col = np.clip(col, 0, 255)
 
         img = np.zeros((N, N, 4), np.uint8)
         img[filled, :3] = col[filled].astype(np.uint8)
         img[filled, 3] = 255
-        # Outline: empty pixels touching the sprite take a dark tint of their neighbour.
-        for dx, dy in ((0, 1), (0, -1), (1, 0), (-1, 0)):
+        # Outline: empty pixels touching the sprite take a dark tint of their
+        # neighbour, a little lighter along the lit top and left side.
+        for dx, dy, k in ((0, 1, 0.45), (1, 0, 0.45), (0, -1, 0.2), (-1, 0, 0.2)):
             nb = _shift(filled, dx, dy) & ~filled & (img[..., 3] == 0)
             src = np.roll(np.roll(col, -dy, axis=0), -dx, axis=1)
-            tint = src * 0.35 + np.array(OUTLINE_INK) * 0.65
+            tint = src * k + np.array(OUTLINE_INK) * (1 - k)
             img[nb, :3] = tint[nb].astype(np.uint8)
             img[nb, 3] = 255
         return Image.fromarray(img, "RGBA")

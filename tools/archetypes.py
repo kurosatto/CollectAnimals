@@ -318,15 +318,25 @@ def hummingbird(s: Sprite, *, head="#d93a8a", crown="#6aa56e", throat=None):
 
 
 def pelican(s: Sprite):
-    s.px([(2, 30), (6, 29), (25, 30), (29, 29)], "#8fd3ff")
-    s.poly([(24, 21), (31, 18), (30, 24)], "#4d4a4c")
-    s.ellipse(19, 23, 10, 6.5, "#7d7a7c")
-    s.ellipse(21, 21, 7, 3.6, "#5c595b", rot=-8, edge=True)
-    s.path([(13, 21), (11, 15), (13, 9)], 2.5, "#5a3a2e")
-    s.ellipse(13, 7, 4.6, 4, "#f2e6a8", edge=True)
-    s.poly([(10, 6), (-1, 9), (0, 11), (10, 9)], "#d9a050")
-    s.poly([(10, 9), (0, 11), (3, 15), (10, 13)], "#c25a4a")
-    s.eye(12, 6)
+    """Standing, so it reads as a bird whether it's perched or flying."""
+    s.poly([(25, 17), (31, 15), (30, 21)], "#3f3b3d")
+    s.line(15, 24, 15, 28, "#3d3a3c")
+    s.line(19, 24, 19, 28, "#3d3a3c")
+    s.px([(13, 29), (14, 29), (15, 29), (17, 29), (18, 29), (19, 29)], "#3d3a3c")
+    s.ellipse(18.5, 20, 9.5, 6, "#6f6a6c")
+    s.ellipse(16, 22.5, 5.5, 3.4, "#8a8486")
+    m = s.ellipse(20.5, 18, 7.5, 3.8, "#b9b4ac", rot=-10, edge=True)
+    s.paint(s.m_poly([(24, 16), (29, 15), (28, 21), (24, 21)]), "#3f3b3d", within=m)
+    for x in range(16, 24, 3):
+        s.paint(s.m_line(x, 17, x + 2, 20), "#8f8a84", within=m)
+    s.path([(12, 20), (10, 15), (12, 10)], 2.4, "#5a3a2e")
+    s.paint(s.m_path([(13, 19), (11.5, 15), (13, 11)], 0.6), "#f4efe2")
+    s.ellipse(12.5, 7.5, 4.4, 3.8, "#f4efe2", edge=True)
+    s.paint(s.m_ellipse(13, 5.2, 3, 1.4), "#f2d878", within=s.last)
+    s.poly([(10, 6.5), (-1, 9), (0, 10.5), (10, 9)], "#d9a050")
+    s.poly([(10, 9), (0, 10.5), (3, 14), (10, 12.5)], "#6a4a3e")
+    s.px([(0, 10)], "#c25a4a")
+    s.eye(11, 6)
     s.blush(11, 9)
 
 
@@ -574,7 +584,6 @@ def fish(s: Sprite, body, belly, *, fin=None, pattern=None, slim=False):
 
 
 def dolphin(s: Sprite, body, belly):
-    s.px([(4, 30), (8, 29), (24, 30), (28, 29)], "#8fd3ff")
     s.poly([(24, 16), (31, 9), (29, 16), (31, 21)], body)
     s.poly([(14, 11), (20, 4), (21, 12)], body)
     m = s.ellipse(15, 17, 11.5, 6, body, edge=True)
