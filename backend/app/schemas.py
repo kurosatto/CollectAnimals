@@ -181,11 +181,26 @@ class PhotoOut(BaseModel):
     place: str | None = None
     like_count: int = 0
     liked_by_me: bool = False
+    comment_count: int = 0
     is_mine: bool = False
     by_friend: bool = False
     rank: int | None = None
     score: int | None = None
     stars: int | None = None
+
+
+class CommentIn(BaseModel):
+    body: str = Field(min_length=1, max_length=300)
+
+
+class CommentOut(BaseModel):
+    id: int
+    username: str
+    body: str
+    created_at: datetime
+    is_mine: bool = False
+    # The commenter and the photo's owner can delete a comment.
+    can_delete: bool = False
 
 
 class AlbumOut(BaseModel):

@@ -451,3 +451,56 @@ def test_feed_by_state_and_global(client, fake):
     assert len(nc) == 2 and any(s.startswith("nina:") for s in nc)
     assert slugs(nina, scope="state") == nc                     # defaults to the viewer's state
     assert client.get("/feed", headers=ana, params={"scope": "state", "state": "ZZ"}).status_code == 404
+
+
+def test_comments_from_strangers(client, fake):
+    ana, bob, cyd, dee = (signup(client, n) for n in ("ana", "bob", "cyd", "dee"))
+    catch(client, fake, ana, "coyote")
+    catch(client, fake, bob, "coyote")  # bob isn't ana's friend but has the coyote revealed
+    photo = client.get("/me/album", headers=ana).json()["photos"][0]["id"]
+
+    # Strangers can like and comment; whitespace is tidied.
+    assert client.post(f"/photos/{photo}/like", headers=bob).status_code == 204
+    r = client.post(f"/photos/{photo}/comments", headers=bob, json={"body": "  Great   shot! "})
+    assert r.status_code == 201 and r.json()["body"] == "Great shot!" and r.json()["is_mine"]
+    assert client.post(f"/photos/{photo}/comments", headers=ana, json={"body": "Thanks"}).status_code == 201
+    assert client.post(f"/photos/{photo}/comments", headers=bob, json={"body": "   "}).status_code == 422
+    assert client.post(f"/photos/{photo}/comments", headers=bob, json={"body": "x" * 301}).status_code == 422
+    # Players who can't see the photo can't read or write comments.
+    assert client.get(f"/photos/{photo}/comments", headers=dee).status_code == 404
+    assert client.post(f"/photos/{photo}/comments", headers=dee, json={"body": "hi"}).status_code == 404
+
+    comments = client.get(f"/photos/{photo}/comments", headers=ana).json()
+    assert [(c["username"], c["body"], c["can_delete"]) for c in comments] == \
+        [("bob", "Great shot!", True), ("ana", "Thanks", True)]
+    p = client.get("/species/coyote/photos", headers=bob).json()["photos"]
+    assert {x["username"]: x["comment_count"] for x in p} == {"ana": 2, "bob": 0}
+    feed = client.get("/feed?scope=all", headers=bob).json()["photos"]
+    assert next(x for x in feed if x["id"] == photo)["comment_count"] == 2
+
+    # Only the commenter or the photo's owner can delete a comment.
+    bobs, anas = comments[0]["id"], comments[1]["id"]
+    assert client.get(f"/photos/{photo}/comments", headers=bob).json()[1]["can_delete"] is False
+    assert client.delete(f"/comments/{anas}", headers=bob).status_code == 404
+    catch(client, fake, cyd, "coyote")
+    assert client.delete(f"/comments/{bobs}", headers=cyd).status_code == 404
+    assert client.delete(f"/comments/{bobs}", headers=ana).status_code == 204
+    assert [c["id"] for c in client.get(f"/photos/{photo}/comments", headers=cyd).json()] == [anas]
+
+    # A private player's photos only take comments from friends.
+    assert client.patch("/me/settings", headers=ana, json={"is_private": True}).status_code == 200
+    assert client.post(f"/photos/{photo}/comments", headers=cyd, json={"body": "hi"}).status_code == 404
+    client.patch("/me/settings", headers=ana, json={"is_private": False})
+
+    # Spam guard.
+    for i in range(4):
+        assert client.post(f"/photos/{photo}/comments", headers=cyd, json={"body": f"{i}"}).status_code == 201
+    assert client.post(f"/photos/{photo}/comments", headers=cyd, json={"body": "5"}).status_code == 201
+    assert client.post(f"/photos/{photo}/comments", headers=cyd, json={"body": "6"}).status_code == 429
+
+    # Deleting the photo takes its comments with it.
+    assert client.delete(f"/photos/{photo}", headers=ana).status_code == 204
+    from app.db import SessionLocal
+    from app.models import PhotoComment
+    with SessionLocal() as db:
+        assert not db.query(PhotoComment).filter_by(photo_id=photo).count()

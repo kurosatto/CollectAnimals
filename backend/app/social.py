@@ -1,4 +1,4 @@
-"""Friends, photo albums, the per-species gallery and likes.
+"""Friends, photo albums, the per-species gallery, likes and comments.
 
 Rules:
 - A species' name is hidden until you or one of your friends has caught it.
@@ -7,6 +7,8 @@ Rules:
 - Album photos are visible to every logged-in user who has that species
   revealed, ranked by likes in the species gallery. How precisely others see
   where it was taken depends on the animal's rarity (see app/places.py).
+- Anyone who can see a photo can like it and comment on it; you don't need
+  to be friends. Commenters and the photo's owner can delete comments.
 - The news feed lists everyone's newest album photos, unless they opted out.
   Animals the viewer hasn't unlocked show as a mystery with no photo.
 """
@@ -14,6 +16,7 @@ Rules:
 from __future__ import annotations
 
 import math
+from datetime import datetime, timedelta, timezone
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
@@ -24,8 +27,8 @@ from . import goals, places
 from . import states
 from .auth import current_user
 from .db import get_db
-from .models import AlbumPhoto, Badge, Capture, Friendship, PhotoLike, Species, StateSpecies, User
-from .schemas import (AchievementOut, AlbumOut, AlbumPick, FeedOut, ProfileOut, SuggestionOut, Tally, FriendOut, FriendRequestIn, FriendsOut,
+from .models import AlbumPhoto, Badge, Capture, Friendship, PhotoComment, PhotoLike, Species, StateSpecies, User
+from .schemas import (AchievementOut, AlbumOut, AlbumPick, CommentIn, CommentOut, FeedOut, ProfileOut, SuggestionOut, Tally, FriendOut, FriendRequestIn, FriendsOut,
                       GalleryOut, PhotoOut, SettingsIn, SpeciesOut)
 from .storage import get_storage
 
@@ -76,7 +79,8 @@ def find_species(db: Session, key: str) -> Species:
 
 
 def photo_out(p: AlbumPhoto, viewer: User, friends: set[int], likes: int, liked: bool,
-              revealed: bool = True, rank: int | None = None, show_image: bool = True) -> PhotoOut:
+              revealed: bool = True, rank: int | None = None, show_image: bool = True,
+              comments: int = 0) -> PhotoOut:
     mine = p.user_id == viewer.id
     c = p.capture
     loc = places.for_viewer(c.latitude, c.longitude, p.species.rarity, mine, p.user_id in friends)
@@ -85,7 +89,7 @@ def photo_out(p: AlbumPhoto, viewer: User, friends: set[int], likes: int, liked:
         username=p.user.username, species=species_out(p.species, revealed),
         taken_on=(c.taken_at or c.created_at).date(), caught_at=c.created_at,
         latitude=loc.latitude, longitude=loc.longitude, location_precise=loc.precise,
-        place=loc.place, like_count=likes, liked_by_me=liked, is_mine=mine,
+        place=loc.place, like_count=likes, liked_by_me=liked, comment_count=comments, is_mine=mine,
         by_friend=p.user_id in friends, rank=rank, score=c.score, stars=c.score_stars)
 
 
@@ -97,6 +101,19 @@ def _like_info(db: Session, photo_ids: list[int], viewer_id: int) -> tuple[dict[
     mine = set(db.scalars(select(PhotoLike.photo_id).where(
         PhotoLike.photo_id.in_(photo_ids), PhotoLike.user_id == viewer_id)))
     return counts, mine
+
+
+def _comment_counts(db: Session, photo_ids: list[int]) -> dict[int, int]:
+    if not photo_ids:
+        return {}
+    return dict(db.execute(select(PhotoComment.photo_id, func.count()).where(
+        PhotoComment.photo_id.in_(photo_ids)).group_by(PhotoComment.photo_id)).all())
+
+
+def clear_reactions(db: Session, photo_id: int) -> None:
+    """Likes and comments belong to one picture: drop them when it changes or goes."""
+    db.execute(delete(PhotoLike).where(PhotoLike.photo_id == photo_id))
+    db.execute(delete(PhotoComment).where(PhotoComment.photo_id == photo_id))
 
 
 def ensure_album_photo(db: Session, capture: Capture) -> AlbumPhoto | None:
@@ -121,10 +138,12 @@ def _album(db: Session, owner: User, viewer: User) -> AlbumOut:
     photos = db.scalars(select(AlbumPhoto).where(AlbumPhoto.user_id == owner.id)
                         .order_by(AlbumPhoto.species_id)).all()
     counts, liked = _like_info(db, [p.id for p in photos], viewer.id)
+    comments = _comment_counts(db, [p.id for p in photos])
     caught = db.scalar(select(func.count()).select_from(Badge).where(Badge.user_id == owner.id))
     total = db.scalar(select(func.count()).select_from(Species))
     return AlbumOut(username=owner.username, caught=caught, total=total, photos=[
-        photo_out(p, viewer, friends, counts.get(p.id, 0), p.id in liked, p.species_id in revealed)
+        photo_out(p, viewer, friends, counts.get(p.id, 0), p.id in liked, p.species_id in revealed,
+                  comments=comments.get(p.id, 0))
         for p in photos])
 
 
@@ -147,7 +166,7 @@ def user_album(username: str, user: User = Depends(current_user), db: Session = 
 def set_album_photo(species_key: str, body: AlbumPick, user: User = Depends(current_user),
                     db: Session = Depends(get_db)):
     """Swap your album photo for a species to another of your captures of it.
-    Likes belong to the old picture, so they are cleared."""
+    Likes and comments belong to the old picture, so they are cleared."""
     s = find_species(db, species_key)
     capture = db.get(Capture, body.capture_id)
     if not capture or capture.user_id != user.id or capture.species_id != s.id:
@@ -158,7 +177,7 @@ def set_album_photo(species_key: str, body: AlbumPick, user: User = Depends(curr
         photo = AlbumPhoto(user_id=user.id, species_id=s.id, capture_id=capture.id)
         db.add(photo)
     elif photo.capture_id != capture.id:
-        db.execute(delete(PhotoLike).where(PhotoLike.photo_id == photo.id))
+        clear_reactions(db, photo.id)
         photo.capture_id = capture.id
     db.commit()
     db.refresh(photo)
@@ -166,12 +185,12 @@ def set_album_photo(species_key: str, body: AlbumPick, user: User = Depends(curr
 
 
 def _delete_album_photo(db: Session, photo: AlbumPhoto) -> None:
-    """Delete the photo everywhere (album, gallery, feed, its likes) and un-catch
+    """Delete the photo everywhere (album, gallery, feed, its likes and comments) and un-catch
     the animal: the badge and all of the user's captures of that species go,
     image files included. The animal is locked again unless a friend has
     caught it, and catching it again starts over with a new badge."""
     user_id, species_id = photo.user_id, photo.species_id
-    db.execute(delete(PhotoLike).where(PhotoLike.photo_id == photo.id))
+    clear_reactions(db, photo.id)
     db.delete(photo)
     db.execute(delete(Badge).where(Badge.user_id == user_id, Badge.species_id == species_id))
     db.flush()
@@ -286,6 +305,7 @@ def user_profile(username: str, user: User = Depends(current_user), db: Session 
     close = friendship in ("self", "friends")
     visible = [p for p in photos if close or (p.species_id in revealed and not owner.is_private)]
     counts, liked = _like_info(db, [p.id for p in visible], user.id)
+    comments = _comment_counts(db, [p.id for p in visible])
 
     return ProfileOut(
         username=owner.username, joined=owner.created_at, friendship=friendship,
@@ -296,7 +316,8 @@ def user_profile(username: str, user: User = Depends(current_user), db: Session 
         + _set_achievements(owner.state, members, caught_ids),
         legendaries=[species_out(m.species, m.species_id in revealed, m) for m in members
                      if m.rarity == "legendary" and m.species_id in caught_ids],
-        photos=[photo_out(p, user, friends, counts.get(p.id, 0), p.id in liked, p.species_id in revealed)
+        photos=[photo_out(p, user, friends, counts.get(p.id, 0), p.id in liked, p.species_id in revealed,
+                          comments=comments.get(p.id, 0))
                 for p in visible],
         hidden_photos=len(photos) - len(visible))
 
@@ -329,9 +350,10 @@ def species_gallery(species_key: str,
              else (AlbumPhoto.created_at.desc(), AlbumPhoto.id.desc()))
     rows = db.execute(q.order_by(*order).limit(limit).offset(offset)).all()
     _, liked = _like_info(db, [p.id for p, _ in rows], user.id)
+    comments = _comment_counts(db, [p.id for p, _ in rows])
     return GalleryOut(species=species_out(s, True), scope=scope, sort=sort, total=total, photos=[
         photo_out(p, user, friends, count, p.id in liked,
-                  rank=offset + i + 1 if sort == "top" else None)
+                  rank=offset + i + 1 if sort == "top" else None, comments=comments.get(p.id, 0))
         for i, (p, count) in enumerate(rows)])
 
 
@@ -398,9 +420,11 @@ def news_feed(scope: Literal["near", "state", "all", "friends"] = "all",
     more = len(rows) > limit
     rows = rows[:limit]
     counts, liked = _like_info(db, [p.id for p in rows], user.id)
+    comments = _comment_counts(db, [p.id for p in rows])
     return FeedOut(scope=scope, next_before=rows[-1].capture_id if more else None, photos=[
         photo_out(p, user, friends, counts.get(p.id, 0), p.id in liked,
-                  revealed=p.species_id in revealed, show_image=p.species_id in revealed)
+                  revealed=p.species_id in revealed, show_image=p.species_id in revealed,
+                  comments=comments.get(p.id, 0))
         for p in rows])
 
 
@@ -440,6 +464,61 @@ def like_photo(photo_id: int, user: User = Depends(current_user), db: Session = 
 def unlike_photo(photo_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
     photo = _visible_photo(db, photo_id, user)
     db.execute(delete(PhotoLike).where(PhotoLike.photo_id == photo.id, PhotoLike.user_id == user.id))
+    db.commit()
+    return Response(status_code=204)
+
+
+# --- comments -----------------------------------------------------------------
+
+# Light spam guard: at most this many comments per player per window.
+COMMENT_LIMITS = ((timedelta(minutes=1), 5), (timedelta(days=1), 100))
+
+
+def _aware(t: datetime) -> datetime:
+    return t if t.tzinfo else t.replace(tzinfo=timezone.utc)
+
+
+def comment_out(c: PhotoComment, photo: AlbumPhoto, viewer: User) -> CommentOut:
+    return CommentOut(id=c.id, username=c.user.username, body=c.body, created_at=c.created_at,
+                      is_mine=c.user_id == viewer.id, can_delete=viewer.id in (c.user_id, photo.user_id))
+
+
+@router.get("/photos/{photo_id}/comments", response_model=list[CommentOut])
+def photo_comments(photo_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    """Comments on a photo, oldest first. Same visibility as the photo itself."""
+    photo = _visible_photo(db, photo_id, user)
+    rows = db.scalars(select(PhotoComment).where(PhotoComment.photo_id == photo.id)
+                      .order_by(PhotoComment.created_at, PhotoComment.id).limit(500)).all()
+    return [comment_out(c, photo, user) for c in rows]
+
+
+@router.post("/photos/{photo_id}/comments", response_model=CommentOut, status_code=201)
+def add_comment(photo_id: int, body: CommentIn, user: User = Depends(current_user),
+                db: Session = Depends(get_db)):
+    photo = _visible_photo(db, photo_id, user)
+    text_ = " ".join(body.body.split())
+    if not text_:
+        raise HTTPException(422, "Write something first")
+    now = datetime.now(timezone.utc)
+    recent = [_aware(t) for t in db.scalars(select(PhotoComment.created_at).where(
+        PhotoComment.user_id == user.id, PhotoComment.created_at >= now - max(w for w, _ in COMMENT_LIMITS)))]
+    for window, most in COMMENT_LIMITS:
+        if sum(t >= now - window for t in recent) >= most:
+            raise HTTPException(429, "You're commenting too fast. Try again in a bit.")
+    c = PhotoComment(photo_id=photo.id, user_id=user.id, body=text_)
+    db.add(c)
+    db.commit()
+    db.refresh(c)
+    return comment_out(c, photo, user)
+
+
+@router.delete("/comments/{comment_id}", status_code=204)
+def delete_comment(comment_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    c = db.get(PhotoComment, comment_id)
+    photo = c and db.get(AlbumPhoto, c.photo_id)
+    if not c or not photo or user.id not in (c.user_id, photo.user_id):
+        raise HTTPException(404, "No such comment")
+    db.delete(c)
     db.commit()
     return Response(status_code=204)
 
