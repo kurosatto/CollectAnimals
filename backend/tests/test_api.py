@@ -183,6 +183,9 @@ def test_capture_awards_badge_once(client, fake):
     assert col["caught"] == 1 and col["total"] == 100
     coyote = next(e for e in col["entries"] if e["species"]["slug"] == "coyote")
     assert coyote["caught"] and coyote["capture_count"] == 2
+    # Habitat scene: coyotes are out at dawn and dusk; uncaught animals carry no hint.
+    assert coyote["activity"] == "any"
+    assert all(e["activity"] is None for e in col["entries"] if not e["caught"])
 
     # Badges are per user.
     assert client.get("/me/collection", headers=signup(client, "bob")).json()["caught"] == 0
@@ -538,3 +541,10 @@ def test_bots_befriend_new_players(client):
     # Removing a bot works like removing anyone.
     assert client.delete("/friends/birdnerd", headers=h).status_code == 204
     assert client.get("/friends", headers=h).json()["friends"] == []
+
+
+def test_activity_from_active_time():
+    from app import dex
+    assert dex.activity("raccoon", "CA") == "night"
+    assert dex.activity("coyote", "CA") == "any"
+    assert dex.activity("western_fence_lizard", "CA") == "day"

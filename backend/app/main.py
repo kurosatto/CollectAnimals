@@ -598,6 +598,7 @@ def my_collection(state: str | None = Query(None), user: User = Depends(current_
             caught=b is not None, capture_count=b.capture_count if b else 0,
             earned_at=b.earned_at if b else None, friends_caught=friends_caught.get(m.species_id, 0),
             photo_url=storage.url(photos[m.species_id]) if m.species_id in photos else None,
-            in_season=dex.in_season(m.species.slug, code, month)))
+            in_season=dex.in_season(m.species.slug, code, month),
+            activity=dex.activity(m.species.slug, code) if b else None))
     return CollectionOut(state=code, caught=sum(e.caught for e in entries), total=len(entries),
                          entries=entries)

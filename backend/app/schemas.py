@@ -155,6 +155,8 @@ class CollectionEntry(BaseModel):
     photo_url: str | None = None
     # Seen in the state this month in real sightings (or no data to say otherwise).
     in_season: bool = True
+    # "day", "night" or "any": when it's awake in the Habitat scene (captured animals only).
+    activity: str | None = None
 
 
 class CollectionOut(BaseModel):
