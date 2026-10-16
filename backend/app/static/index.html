@@ -701,8 +701,15 @@ function habSpeed(a) {
 
 // Where the scene's parts sit for a canvas this wide (320 on phones, 480 wider).
 function habLayout(w) {
-  return { w, land: Math.round(w * .64), sea: Math.round(w * .73), water: 168, tree: Math.round(w * .1),
-           pond: { x: Math.round(w * .36), y: 229, rx: Math.round(w * .11), ry: 12 } };
+  const L = { w, land: Math.round(w * .64), sea: Math.round(w * .73), water: 168, tree: Math.round(w * .1),
+              pond: { x: Math.round(w * .36), y: 229, rx: Math.round(w * .11), ry: 12 }, shore: [], surf: [] };
+  // On each row: where the meadow gives way to sand, and the sand to the sea.
+  for (let y = 0; y < HAB_H; y++) {
+    const k = Math.max(0, y - L.water);
+    L.shore[y] = Math.round(L.land + 2 + k * .1 + Math.sin(y * .13) * 3 + Math.sin(y * .41) * 1.2);
+    L.surf[y] = Math.round(L.sea + k * .08 + Math.sin(y * .09 + 1) * 3);
+  }
+  return L;
 }
 
 const rnd = (lo, hi) => lo + Math.random() * (hi - lo);
@@ -980,21 +987,20 @@ function habDraw() {
     const awake = habAwake(a, phase);
     const roost = !awake && HAB_FLIERS.has(a.role) ? habRoost(roosting++) : null;
     const [x, y, sx = 1, sy = 1, tilt = 0] = habPose(a, awake, roost);
-    return { a, awake, x: Math.round(x), y: Math.round(y), sx, sy, tilt, sky: awake && HAB_FLIERS.has(a.role),
-             hidden: awake && a.mode === "under" };
+    return { a, awake, phase, roost: !!roost, x: Math.round(x), y: Math.round(y), sx, sy, tilt,
+             sky: awake && HAB_FLIERS.has(a.role), hidden: awake && a.mode === "under" };
   });
   const sea = poses.filter((p) => HAB_SEA.has(p.a.role) && !p.sky).sort((p, q) => p.y - q.y);
   const land = poses.filter((p) => !HAB_SEA.has(p.a.role) && !p.sky).sort((p, q) => p.y - q.y);
   const sky = poses.filter((p) => p.sky);
   sea.forEach((p) => habSprite(c, p));
   // Seawater over everything in the sea.
-  c.fillStyle = phase === "night" ? "rgba(20,40,90,.35)" : "rgba(40,120,200,.28)";
+  c.fillStyle = { day: "rgba(40,140,210,.31)", dawn: "rgba(80,100,180,.31)", dusk: "rgba(80,80,160,.31)",
+                  night: "rgba(20,40,100,.35)" }[phase];
   c.fillRect(L.sea, L.water + 3, L.w - L.sea, HAB_H);
   land.forEach((p) => habSprite(c, p));
   sky.forEach((p) => habSprite(c, p));
   habFx(c, phase);
-  if (phase === "night") { c.fillStyle = "rgba(8,12,40,.42)"; c.fillRect(0, 0, L.w, HAB_H); }
-  else if (phase !== "day") { c.fillStyle = "rgba(90,40,80,.12)"; c.fillRect(0, 0, L.w, HAB_H); }
   for (const p of poses) {
     if (/firefly/.test(p.a.s.slug) && p.awake && phase !== "day") {
       const on = Math.sin(p.a.phase * 4) > -.2;
@@ -1018,12 +1024,24 @@ function habDraw() {
   habBubble(poses);
 }
 
+// Animals standing on the ground get a soft shadow under their feet.
+const HAB_NO_SHADOW = new Set(["swim", "jelly", "reef", "float", "paddle", "wade", "dangle"]);
+
 function habSprite(c, p) {
-  const img = habImgs[p.a.s.slug];
-  if (!img || !img.complete || !img.naturalWidth) return;
-  const { a, x, y } = p;
+  const raw = habImgs[p.a.s.slug];
+  if (!raw || !raw.complete || !raw.naturalWidth) return;
+  const { a, x, y } = p, img = habTinted(raw, a.s.slug, p.phase);
   p.box = [x - 16, y - 32, x + 16, y];
   if (p.hidden) return;
+  if (!p.sky && !p.roost && !HAB_NO_SHADOW.has(a.role)) {
+    const gy = a.role === "hop" && p.awake ? Math.round(a.y) : y;
+    c.fillStyle = "rgba(20,32,10,.25)";
+    c.fillRect(x - 7, gy - 1, 14, 1); c.fillRect(x - 9, gy, 18, 1); c.fillRect(x - 6, gy + 1, 12, 1);
+  }
+  if (a.role === "wade" && p.awake) {
+    c.fillStyle = "rgba(225,245,255,.6)";
+    c.fillRect(x - 10, y - 1, 5, 1); c.fillRect(x + 5, y - 1, 5, 1);
+  }
   c.save();
   if (a.role === "paddle") { c.beginPath(); c.rect(0, 0, hab.L.w, y - 8); c.clip(); }
   // A diving bird disappears into the water as it goes in.
@@ -1161,7 +1179,11 @@ function pxLayer(w, h) {
   const d = new Int32Array(w * h).fill(-1);
   return {
     w, h, d,
-    set(x, y, col) { x |= 0; y |= 0; if (x >= 0 && y >= 0 && x < w && y < h) d[y * w + x] = col; },
+    own: null,  // when set: marks pixels already colored for the time of day (sky, sun, moon)
+    set(x, y, col, keep = 0) {
+      x |= 0; y |= 0;
+      if (x >= 0 && y >= 0 && x < w && y < h) { d[y * w + x] = col; if (this.own) this.own[y * w + x] = keep; }
+    },
     get(x, y) { return x >= 0 && y >= 0 && x < w && y < h ? d[y * w + x] : -1; },
     // Copy onto another layer, with a 1px outline around the shapes.
     onto(dst, outline) {
@@ -1209,8 +1231,39 @@ function pxBlob(t, cx, cy, rx, ry, pal, { rough = 0, grain = 2, seed = 0, flat =
   }
 }
 
-const HAB_SKY = { day: ["#3f97e0", "#d4f1fd"], dawn: ["#6f6cc0", "#ffd3a1"], dusk: ["#3f3378", "#f8a070"],
-                  night: ["#070d26", "#22336a"] };
+const HAB_SKY = { day: ["#3f8fd8", "#7cc1f0", "#cdeefb"], dawn: ["#4b4f9e", "#b884b8", "#ffd1a0"],
+                  dusk: ["#272463", "#93487a", "#ff9a5a"], night: ["#040820", "#0c1840", "#25386e"] };
+// How each time of day lights the land and the animals: per channel, value * mul + add.
+const HAB_GRADE = { dawn: [[.9, 12], [.84, 10], [.88, 22]], dusk: [[.92, 16], [.78, 6], [.78, 18]],
+                    night: [[.34, 8], [.42, 14], [.6, 42]] };
+// Animals get a little less of it so they stay easy to see.
+const HAB_SPRITE_GRADE = Object.fromEntries(Object.entries(HAB_GRADE).map(([k, g]) =>
+  [k, g.map(([m, a]) => [m + (1 - m) * .3, a * .7])]));
+
+function gradeData(d, g, skip) {
+  for (let i = 0, p = 0; i < d.length; i += 4, p++) {
+    if (skip && skip[p]) continue;
+    d[i] = d[i] * g[0][0] + g[0][1]; d[i + 1] = d[i + 1] * g[1][0] + g[1][1]; d[i + 2] = d[i + 2] * g[2][0] + g[2][1];
+  }
+}
+
+const habTints = {};
+function habTinted(img, slug, phase) {
+  const g = HAB_SPRITE_GRADE[phase];
+  if (!g) return img;
+  const key = `${slug}/${phase}`;
+  if (!habTints[key]) {
+    const cv = document.createElement("canvas");
+    cv.width = img.naturalWidth; cv.height = img.naturalHeight;
+    const c = cv.getContext("2d");
+    c.drawImage(img, 0, 0);
+    const id = c.getImageData(0, 0, cv.width, cv.height);
+    gradeData(id.data, g);
+    c.putImageData(id, 0, 0);
+    habTints[key] = cv;
+  }
+  return habTints[key];
+}
 
 // Each state gets its own scenery: California has the snowy Sierra behind golden
 // hills dotted with oaks, a coast live oak, poppies, a sea stack and kelp; North
@@ -1229,43 +1282,78 @@ const HAB_SCENES = {
 };
 
 function habBackground(L, phase, state) {
-  const W = L.w, H = HAB_H, sc = HAB_SCENES[state] || HAB_SCENES.default, P = pxPalette(phase);
+  // Land is painted in daylight colors, then graded for the time of day at the end.
+  const W = L.w, H = HAB_H, sc = HAB_SCENES[state] || HAB_SCENES.default, P = pxPalette("day");
   const night = phase === "night", r = mulberry(7);
   const img = pxLayer(W, H);
-  // Sky: smooth bands, dithered into each other.
-  const [top, bottom] = HAB_SKY[phase], skyTop = P(top), skyBot = P(bottom), skyH = L.water + 4;
-  const skyPal = [0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => pxMix(hexRgb(top).reduce((a, v) => (a << 8) | v, 0),
-    hexRgb(bottom).reduce((a, v) => (a << 8) | v, 0), i / 8));
-  for (let y = 0; y < skyH; y++) for (let x = 0; x < W; x++) img.set(x, y, ramp(skyPal, y / skyH, x, y));
-  if (night) {
-    for (let i = 0; i < 80; i++) {
-      const x = Math.floor(r() * W), y = Math.floor(r() * 130), b = r();
-      img.set(x, y, b > .85 ? 0xffffff : b > .5 ? 0xc8d4ff : 0x7f8fc8);
-      if (b > .95) { img.set(x - 1, y, 0x8f9fd8); img.set(x + 1, y, 0x8f9fd8); img.set(x, y - 1, 0x8f9fd8); img.set(x, y + 1, 0x8f9fd8); }
-    }
-    // Moon with shaded craters and a soft halo.
-    const mx = W - 60, my = 34;
-    for (let dy = -16; dy <= 16; dy++) for (let dx = -16; dx <= 16; dx++) {
-      const d = Math.hypot(dx, dy);
-      if (d > 10 && d < 16 && bayer(mx + dx, my + dy) < (16 - d) / 14) img.set(mx + dx, my + dy, 0x2e3f78);
-    }
-    pxBlob(img, mx, my, 10, 10, [0xbfbfa8, 0xe2e0c4, 0xf6f4dc, 0xffffef]);
-    for (const [dx, dy, rr] of [[-3, -2, 2], [3, 3, 2], [-2, 5, 1], [4, -4, 1]]) pxBlob(img, mx + dx, my + dy, rr, rr, [0xb4b39c, 0xcfcdb3]);
-  } else {
-    const low = phase !== "day", sx = low ? 60 : W - 70, sy = low ? 128 : 36;
-    const sunCol = P(low ? "#ffb35c" : "#fff2a8"), halo = P(low ? "#ffd8a0" : "#fffbe0");
-    for (let dy = -22; dy <= 22; dy++) for (let dx = -22; dx <= 22; dx++) {
-      const d = Math.hypot(dx, dy);
-      if (d > 11 && d < 22 && bayer(sx + dx, sy + dy) < (22 - d) / 22 * .7) img.set(sx + dx, sy + dy, pxMix(halo, img.get(sx + dx, sy + dy), .5));
-      else if (d <= 11) img.set(sx + dx, sy + dy, d > 9.5 ? pxMix(sunCol, halo, .5) : sunCol);
-    }
+  img.own = new Uint8Array(W * H);
+  const pack = (a) => (Math.round(a[0]) << 16) | (Math.round(a[1]) << 8) | Math.round(a[2]);
+  const unpack = (v) => [v >> 16 & 255, v >> 8 & 255, v & 255];
+  const blend = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k];
+  const dith = (x, y, k) => k * 16 > BAYER[(y & 3) * 4 + (x & 3)] + .5;
+  const put = (x, y, c) => img.set(Math.round(x), Math.round(y), pack(c), 1);
+  const get = (x, y) => unpack(Math.max(0, img.get(x, y)));
+  // Sky: a dithered gradient through three colors down to the horizon.
+  const [s0, s1, s2] = HAB_SKY[phase].map(hexRgb), HZ = L.water;
+  const skyAt = (k) => k < .55 ? blend(s0, s1, k / .55) : blend(s1, s2, (k - .55) / .45);
+  const STEPS = 14, steps = Array.from({ length: STEPS }, (_, i) => skyAt(i / (STEPS - 1)));
+  for (let y = 0; y < H; y++) {
+    const v = Math.min(y / HZ, 1) * (STEPS - 1), b = Math.floor(v);
+    for (let x = 0; x < W; x++) put(x, y, steps[Math.min(b + (dith(x, y, v - b) ? 1 : 0), STEPS - 1)]);
   }
+  const skyTop = pack(s0), skyBot = pack(s2);
+  // Rings of soft light around the sun or moon, solid inside and dithered at the edge.
+  const halo = (cx, cy, r0, r1, col, amt) => {
+    for (let y = cy - r1; y <= cy + r1; y++) for (let x = cx - r1; x <= cx + r1; x++) {
+      const dd = Math.hypot(x - cx, y - cy);
+      if (dd <= r0 || dd > r1 || y < 0 || y >= HZ) continue;
+      const k = 1 - (dd - r0) / (r1 - r0);
+      const ring = k > .66 ? .3 : k > .33 ? .17 : dith(x, y, k * 3) ? .17 : 0;
+      if (ring) put(x, y, blend(get(x, y), col, ring * amt));
+    }
+  };
+  const disc = (cx, cy, rr, fn) => {
+    for (let y = -rr; y <= rr; y++) for (let x = -rr; x <= rr; x++)
+      if (x * x + y * y <= rr * rr + rr * .8) fn(cx + x, cy + y, x / rr, y / rr);
+  };
+  const stars = [];
+  if (night) {
+    // A faint band of the Milky Way, then stars, a few of them bright.
+    for (let y = 0; y < HZ - 20; y++) for (let x = 0; x < W; x++) {
+      const band = 1 - Math.abs(x * .5 - y - W * .1) / 24;
+      if (band > 0 && dith(x, y, band * vnoise(x / 7, y / 7, 5) * .6)) put(x, y, blend(get(x, y), hexRgb("#7584c4"), .28));
+    }
+    const sr = mulberry(11);
+    for (let i = 0; i < 120; i++) {
+      const x = Math.floor(sr() * W), y = Math.floor(sr() * (HZ - 26)), b = sr();
+      put(x, y, blend(get(x, y), [255, 255, 255], .3 + b * .7));
+      if (b > .9) {
+        stars.push([x, y]);
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) put(x + dx, y + dy, blend(get(x + dx, y + dy), hexRgb("#cfe0ff"), .4));
+      }
+    }
+    const mx = W - 72, my = 38;
+    hab.glowX = mx;
+    halo(mx, my, 10, 32, hexRgb("#8fa2e0"), .6);
+    disc(mx, my, 10, (x, y, u, v) => {
+      const l = u * .5 - v * .6;
+      put(x, y, hexRgb(l > .4 ? "#fffbe6" : l > -.3 ? "#f1ebc8" : "#d8cfa6"));
+    });
+    for (const [dx, dy, rr] of [[-3, -2, 2], [3, 3, 1], [2, -5, 1], [-5, 4, 1]]) disc(mx + dx, my + dy, rr, (x, y) => put(x, y, hexRgb("#cfc499")));
+  } else {
+    const low = phase !== "day";
+    const sx = low ? Math.round(W * .52) : W - 78, sy = low ? HZ - 30 : 36, sr = low ? 15 : 11;
+    hab.glowX = sx;
+    halo(sx, sy, sr, sr + (low ? 40 : 26), hexRgb(low ? "#ffd08a" : "#fff6cc"), .75);
+    disc(sx, sy, sr, (x, y, u, v) => put(x, y, hexRgb(Math.hypot(u - .3, v + .3) < .5 ? "#fffbe8" : low ? "#ffc867" : "#ffe98a")));
+  }
+  hab.stars = stars;
   // Far mountains, sloping down to the coast.
   const coastEnd = L.sea + 10;
   // Mountains and hills sink toward the coast instead of stopping in a wall.
   const env = (x, len) => { const k = clamp01((coastEnd - 14 - x) / len); return k * k * (3 - 2 * k); };
   const fade = (x, h) => Math.round(150 - (150 - h) * env(x, 90));
-  const atmo = (col, k) => pxMix(col, skyBot, k);
+  const atmo = (col, k) => pxMix(col, 0xcdeefb, k);
   if (state === "CA") {
     // The Sierra Nevada: sharp shaded peaks with snow on top.
     const rock = P("#6c6a8c", "#8583a6", "#9e9cbc", "#b8b6d2"), snow = P("#aeb9dc", "#d2dbf2", "#f2f5ff", "#ffffff");
@@ -1340,14 +1428,14 @@ function habBackground(L, phase, state) {
   for (let x = L.sea - 30; x < W; x++) img.set(x, L.water, P("#cdeefc"));
   // Meadow with patchy grass color.
   const mead = P(...sc.meadow);
-  for (let y = L.water + 4; y < H; y++) for (let x = 0; x < L.land + 8; x++) {
+  for (let y = L.water + 4; y < H; y++) for (let x = 0; x < L.shore[y] + 3; x++) {
     img.set(x, y, ramp(mead, .35 + (fbm(x / 16, y / 7, 17) - .5) * 1.1 + (y < L.water + 8 ? .2 : 0), x, y));
   }
   // Sandy shore curving down to the sea, wet near the water.
   const sand = P("#cdb27a", "#dcc38b", "#e9d49f", "#f4e3b6"), wet = P("#b39a68", "#c4aa76");
   for (let y = L.water + 2; y < H; y++) {
-    const x0 = Math.round(L.land - 6 + (y - L.water) * .12), x1 = Math.round(L.sea + (y - L.water) * .08);
-    for (let x = x0 + Math.round((hash2(0, y, 3) - .5) * 3); x < x1; x++) {
+    const x0 = L.shore[y], x1 = L.surf[y];
+    for (let x = x0; x < x1; x++) {
       const speck = hash2(x, y, 4);
       if (x >= x1 - 4) img.set(x, y, ramp(wet, (x1 - x) / 4, x, y));
       else img.set(x, y, speck > .93 ? sand[0] : speck < .05 ? sand[3] : ramp(sand, .45 + (vnoise(x / 6, y / 3, 5) - .5) * .7, x, y));
@@ -1452,38 +1540,65 @@ function habBackground(L, phase, state) {
     for (let y = L.water; y < L.water + 4; y++) for (let dx = -8; dx <= 8; dx++) lh.set(lx + dx, y, ramp(P("#7a3a2a", "#9a4c36", "#b8634a"), .8 - (dx + 8) / 17, lx + dx, y));
     lh.onto(img, P("#14161b"));
   }
-  // The tree for roosting birds and a spider's thread.
-  const tree = pxLayer(W, H), tx = L.tree, kind = sc.tree;
-  const bark = P("#3f2717", "#59391f", "#77502c", "#94683c");
-  const trunkTop = kind === "pine" ? 76 : 104;
-  for (let y = trunkTop; y < 196; y++) {
-    const hw = kind === "pine" ? 2 + (y > 186 ? 2 : 0) : 3 + (y > 186 ? (y - 186) * .5 : 0);
-    for (let dx = -Math.ceil(hw); dx <= Math.ceil(hw); dx++) {
-      const v = .85 - (dx + hw) / (2 * hw + 1) * .8 + (hash2(tx + dx, y >> 2, 6) - .5) * .3;
-      tree.set(tx + dx, y, ramp(bark, v, tx + dx, y));
+  // The tree for roosting birds and a spider's thread: a big leafy oak, or in
+  // North Carolina a longleaf pine.
+  const tree = pxLayer(W, H), tx = L.tree, kind = sc.tree, ground = 194;
+  for (let y = ground - 5; y <= ground + 6; y++) for (let x = tx - 30; x <= tx + 40; x++)
+    if (((x - tx - 6) / 34) ** 2 + ((y - ground) / 6) ** 2 <= 1 && dith(x, y, .5)) img.set(x, y, pxMix(img.get(x, y), 0x1e3a14, .45));
+  const bark = P("#4a3020", "#6e4a2e", "#8f6840", "#a98050");
+  if (kind === "pine") {
+    for (let y = 76; y < 196; y++) {
+      const hw = 2 + (y > 186 ? 2 : 0);
+      for (let dx = -hw; dx <= hw; dx++) {
+        const v = .85 - (dx + hw) / (2 * hw + 1) * .8 + (hash2(tx + dx, y >> 2, 6) - .5) * .3;
+        tree.set(tx + dx, y, ramp(bark, v, tx + dx, y));
+      }
+    }
+    const leaf = P("#1c4426", "#265732", "#316b3d", "#3f8049", "#55985a");
+    const crowns = [[-12, 110, 9, 4], [14, 100, 10, 4], [-4, 82, 12, 6], [6, 92, 9, 4], [-9, 96, 8, 4], [2, 74, 7, 4]];
+    for (const [dx, dy] of crowns) for (let i = 0; i < Math.abs(dx); i++) tree.set(tx + Math.sign(dx) * i, dy + 2 + Math.floor(i / 4), bark[1]);
+    crowns.forEach(([dx, dy, rx, ry], i) => pxBlob(tree, tx + dx, dy, rx, ry, leaf, { rough: .8, grain: 1, seed: i }));
+    tree.onto(img, P("#13281a"));
+  } else {
+    const limb = (x0, y0, x1, y1, w0, w1) => {
+      const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+      for (let k = 0; k <= n; k++) {
+        const f = k / n, x = Math.round(x0 + (x1 - x0) * f), y = Math.round(y0 + (y1 - y0) * f), w = Math.round(w0 + (w1 - w0) * f);
+        for (let j = 0; j < w; j++) img.set(x, y + j, bark[j === 0 ? 2 : j === w - 1 ? 0 : 1]);
+      }
+    };
+    for (let y = 92; y <= ground; y++) {
+      const hw = 4 + (y > ground - 8 ? Math.round((y - ground + 8) * .9) : 0);
+      for (let x = tx - hw; x < tx + hw; x++) {
+        const u = (x - tx + .5) / hw;
+        let col = u < -.45 ? bark[2] : u < .35 ? bark[1] : bark[0];
+        if (hash2(x, Math.floor(y / 3), 13) > .78) col = bark[0];
+        else if (u < -.45 && hash2(x, y, 14) > .85) col = bark[3];
+        img.set(x, y, col);
+      }
+    }
+    limb(tx + 2, 104, tx + 28, 100, 3, 2);
+    limb(tx - 2, 110, tx - 22, 101, 3, 2);
+    limb(tx + 2, 133, tx + 18, 130, 2, 1);
+    // California's coast live oak is a darker, olive green.
+    const leaf = kind === "oak" ? P("#24391c", "#344f25", "#486b2f", "#62893c", "#86ab55")
+      : P("#22492a", "#2f6633", "#41863d", "#5aa548", "#84c55c");
+    const crown = [[-20, 88, 12], [22, 86, 13], [-8, 74, 14], [12, 70, 13], [2, 58, 11], [0, 92, 18],
+                   [-18, 104, 13], [17, 101, 14], [-4, 112, 9], [27, 106, 8]];
+    for (const [dx, cy, rr] of crown) {
+      const cx = tx + dx;
+      for (let y = cy - rr - 2; y <= cy + rr + 2; y++) for (let x = cx - rr - 2; x <= cx + rr + 2; x++) {
+        const a = Math.atan2(y - cy, x - cx), dd = Math.hypot(x - cx, y - cy);
+        const edge = rr * (.88 + vnoise(a * 2.4 + 10, dx, 17) * .24);
+        if (dd > edge) continue;
+        // Lit from the upper left, like the rest of the scene.
+        const l = -(x - cx) / rr * .45 - (y - cy) / rr * .75 + (hash2(x, y, 18) - .5) * .5;
+        let i = dd > edge - 1.2 && l < .25 ? 0 : l > .62 ? 4 : l > .2 ? 3 : l > -.3 ? 2 : 1;
+        if (hash2(x >> 1, y, 19) > .86) i = Math.max(0, Math.min(4, i + (l > 0 ? 1 : -1)));
+        img.set(x, y, leaf[i]);
+      }
     }
   }
-  if (kind !== "pine") {
-    // Branches out to the sides.
-    for (let i = 0; i < 18; i++) { tree.set(tx + 3 + i, 104 - Math.floor(i / 3), bark[i % 4 ? 2 : 1]); tree.set(tx + 3 + i, 105 - Math.floor(i / 3), bark[1]); }
-    for (let i = 0; i < 12; i++) { tree.set(tx - 3 - i, 110 - Math.floor(i / 2), bark[2]); tree.set(tx - 3 - i, 111 - Math.floor(i / 2), bark[1]); }
-  }
-  const leaf = kind === "oak" ? P("#2f4a1f", "#405f27", "#557a31", "#6c933d", "#87ab4f")
-    : kind === "pine" ? P("#1c4426", "#265732", "#316b3d", "#3f8049", "#55985a")
-    : P("#24572d", "#2f6d37", "#3d8543", "#519c51", "#6db564");
-  const crowns = kind === "oak"
-    ? [[-18, 108, 16, 9], [16, 103, 17, 10], [-2, 96, 22, 11], [-14, 98, 12, 7], [10, 92, 13, 7]]
-    : kind === "pine"
-    ? [[-12, 110, 9, 4], [14, 100, 10, 4], [-4, 82, 12, 6], [6, 92, 9, 4], [-9, 96, 8, 4], [2, 74, 7, 4]]
-    : [[-12, 106, 16, 12], [11, 99, 17, 13], [0, 87, 18, 14], [-6, 96, 12, 9]];
-  if (kind === "pine") {
-    // Little branches out to each tuft.
-    for (const [dx, dy] of crowns) for (let i = 0; i < Math.abs(dx); i++) tree.set(tx + Math.sign(dx) * i, dy + 2 + Math.floor(i / 4), bark[1]);
-  }
-  crowns.forEach(([dx, dy, rx, ry], i) => pxBlob(tree, tx + dx, dy, rx, ry, leaf, { rough: kind === "pine" ? .8 : .6, grain: kind === "pine" ? 1 : 2, seed: i }));
-  tree.onto(img, P(kind === "oak" ? "#1e2d14" : "#13281a"));
-  // Roots and a shadow under the tree.
-  for (let dx = -10; dx <= 10; dx++) if (hash2(dx, 3) > .3) img.set(tx + dx, 196, pxMix(img.get(tx + dx, 196), 0, .25));
 
   const cv = document.createElement("canvas");
   cv.width = W; cv.height = H;
@@ -1492,6 +1607,7 @@ function habBackground(L, phase, state) {
     const v = img.d[i] < 0 ? skyTop : img.d[i];
     data.data[i * 4] = v >> 16 & 255; data.data[i * 4 + 1] = v >> 8 & 255; data.data[i * 4 + 2] = v & 255; data.data[i * 4 + 3] = 255;
   }
+  if (HAB_GRADE[phase]) gradeData(data.data, HAB_GRADE[phase], img.own);
   c.putImageData(data, 0, 0);
   return cv;
 }
@@ -1554,11 +1670,37 @@ function habAmbient(c, L, phase) {
   }
   // Surf washing up the shore.
   c.fillStyle = phase === "night" ? "rgba(190,210,250,.55)" : "rgba(255,255,255,.85)";
-  for (let y = L.water + 3; y < HAB_H; y += 1) {
-    const x1 = L.sea + (y - L.water) * .08, wash = (Math.sin(t * 1.2 + y * .05) + 1) * 2.5;
-    const foam = Math.round(1 + (Math.sin(y * .45 - t * 2) + 1) * 1.2);
-    c.fillRect(Math.round(x1 - wash), y, foam, 1);
+  const roll = (t * .3) % 1, night = phase === "night";
+  for (let y = L.water + 1; y < HAB_H; y++) {
+    const e = L.surf[y], sway = Math.round(Math.sin(t * 1.4 + y * .21) * 1.5);
+    c.fillStyle = night ? "rgba(200,215,255,.55)" : "rgba(255,255,255,.85)";
+    c.fillRect(e - 1 + sway, y, 2, 1);
+    // A wave rolling in toward the beach.
+    c.fillStyle = night ? `rgba(200,215,255,${.5 * roll})` : `rgba(255,255,255,${.7 * roll})`;
+    if ((y + Math.floor(t * 6)) % 3) c.fillRect(e + 2 + Math.round((1 - roll) * 16) + sway, y, 1, 1);
   }
+  // Sun or moon glitter on the sea.
+  if (hab.glowX > L.surf[L.water] + 8) {
+    c.fillStyle = night ? "rgba(225,232,255,.5)" : phase === "day" ? "rgba(255,250,215,.7)" : "rgba(255,210,150,.6)";
+    for (let y = L.water + 2; y < L.water + 44; y += 2) {
+      const k = (y - L.water) / 44, w = Math.round((3 + k * 12) * (.6 + .4 * Math.sin(t * 2.1 + y * 1.7)));
+      if (Math.sin(t * 3 + y * 2.3) > -.3) c.fillRect(hab.glowX - (w >> 1) + Math.round(Math.sin(t + y) * 2), y, w, 1);
+    }
+  }
+  // Light drifting across the pond.
+  const p = L.pond;
+  c.fillStyle = night ? "rgba(200,215,255,.45)" : "rgba(225,245,255,.65)";
+  for (let i = 0; i < 3; i++) {
+    const k = (t * .06 + i / 3) % 1;
+    c.fillRect(Math.round(p.x - p.rx * .7 + k * p.rx * 1.4), p.y - 4 + i * 4, 4 - i, 1);
+  }
+  // Bright stars twinkle.
+  if (night) (hab.stars || []).forEach(([x, y], i) => {
+    const s = Math.sin(t * 2.3 + i * 1.9);
+    if (s <= .4) return;
+    c.fillStyle = `rgba(255,255,255,${((s - .4) * 1.5).toFixed(2)})`;
+    c.fillRect(x - 1, y, 3, 1); c.fillRect(x, y - 1, 1, 3);
+  });
   // Glints that slide along the waves and fade in and out.
   for (let i = 0; i < 16; i++) {
     const a = Math.sin(t * 1.3 + i * 2.1);
