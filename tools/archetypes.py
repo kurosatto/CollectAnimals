@@ -6,7 +6,7 @@ import math
 
 import numpy as np
 
-from pixel import _XS, _YS, Sprite, mix
+from pixel import N, PAD_TOP, _XS, _YS, Sprite, mix
 
 PINK = "#f2a7b4"
 
@@ -98,10 +98,10 @@ def mammal(s: Sprite, fur, light=WHITE, *, ears="point", ear_in=PINK, tail="long
 
 def _lift(s: Sprite, dy: int):
     """Raise everything but the bottom row of feet (a bob in the stride)."""
-    keep_col, keep_reg = s.col[28:].copy(), s.reg[28:].copy()
+    keep_col, keep_reg = s.col[28 + PAD_TOP:].copy(), s.reg[28 + PAD_TOP:].copy()
     s.shift(0, -dy)
     feet = keep_reg > 0
-    s.col[28:][feet], s.reg[28:][feet] = keep_col[feet], keep_reg[feet]
+    s.col[28 + PAD_TOP:][feet], s.reg[28 + PAD_TOP:][feet] = keep_col[feet], keep_reg[feet]
 
 
 def _ears(s: Sprite, kind, fur, inner):
@@ -687,8 +687,8 @@ def snake(s: Sprite, body, *, belly=None, bands=None, band_period=4.0, band_len=
             s.ellipse(x, y, 1.4, 1.2, "#d9c08a" if i % 2 == 0 else "#b89b62")
     # Stamp discs along the path; each pixel remembers the arc length and centre
     # distance of the last disc covering it, so the front of the coil wins.
-    tmap = np.full((32, 32), -1.0)
-    dmap = np.full((32, 32), 99.0)
+    tmap = np.full((N, N), -1.0)
+    dmap = np.full((N, N), 99.0)
     t = 0.0
     for a, b in zip(pts, pts[1:]):
         L = math.dist(a, b)
