@@ -4,6 +4,7 @@ import android.app.Application
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,6 +37,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -49,6 +51,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -58,6 +61,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
@@ -80,6 +84,10 @@ data class SocialState(
     val commentsFor: OnlinePhoto? = null,
     val comments: List<PhotoComment>? = null,
     val commentError: String? = null,
+    // The friend whose Field Guide is open, and the guide once loaded.
+    val guideFor: String? = null,
+    val guide: FriendGuide? = null,
+    val guideError: String? = null,
     val loading: Boolean = false,
     val message: String? = null,
 )
@@ -187,6 +195,17 @@ class SocialViewModel(app: Application) : AndroidViewModel(app) {
         val s = runCatching { Online.suggestions() }.getOrDefault(emptyList())
         _state.update { it.copy(friends = f, suggestions = s) }
     }
+
+    fun openGuide(username: String) {
+        _state.update { it.copy(guideFor = username, guide = null, guideError = null) }
+        viewModelScope.launch {
+            runCatching { Online.friendGuide(username) }
+                .onSuccess { g -> _state.update { if (it.guideFor == username) it.copy(guide = g) else it } }
+                .onFailure { e -> _state.update { it.copy(guideError = e.message) } }
+        }
+    }
+
+    fun closeGuide() = _state.update { it.copy(guideFor = null, guide = null, guideError = null) }
 
     fun loadAlbum() = run {
         val a = Online.album()
@@ -310,6 +329,7 @@ fun SocialScreen(state: UiState, social: SocialViewModel, onSignIn: () -> Unit, 
         if (section == "feed") FeedSection(s, social, state, onOpenDex) else FriendsSection(s, social)
     }
     CommentsDialog(s, social)
+    FriendGuideDialog(s, social, state)
 }
 
 /** Comments on one photo. Anyone who can see the photo can join in, friends or not. */
@@ -437,7 +457,8 @@ private fun FriendsSection(s: SocialState, social: SocialViewModel) {
             TextButton(onClick = { social.accept(u.username) }) { Text("Accept") }
             TextButton(onClick = { social.remove(u.username) }) { Text("Decline") }
         }
-        section("Friends (${f.friends.size})", f.friends, empty = "No friends yet. Add one above, or a bot below.") { u ->
+        section("Friends (${f.friends.size})", f.friends, empty = "No friends yet. Add one above, or a bot below.",
+            onOpen = social::openGuide) { u ->
             TextButton(onClick = { social.remove(u.username) }) { Text("Remove") }
         }
         section("Waiting for them to accept", f.outgoing) { u ->
@@ -451,6 +472,7 @@ private fun FriendsSection(s: SocialState, social: SocialViewModel) {
 
 private fun androidx.compose.foundation.lazy.LazyListScope.section(
     title: String, people: List<FriendEntry>, empty: String? = null,
+    onOpen: ((String) -> Unit)? = null,
     actions: @Composable (FriendEntry) -> Unit,
 ) {
     if (people.isEmpty() && empty == null) return
@@ -458,20 +480,87 @@ private fun androidx.compose.foundation.lazy.LazyListScope.section(
         Text(title, style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 12.dp, bottom = 4.dp))
     }
     if (people.isEmpty()) item(key = "e-$title") { Text(empty!!, color = MaterialTheme.colorScheme.outline) }
-    items(people, key = { "$title-${it.username}" }) { u -> FriendRow(u) { actions(u) } }
+    items(people, key = { "$title-${it.username}" }) { u -> FriendRow(u, onOpen) { actions(u) } }
 }
 
-/** One line per person, bots included, so every row is the same height. */
+/** One line per person, bots included, so every row is the same height. Tapping a
+ *  friend opens their Field Guide. */
 @Composable
-private fun FriendRow(u: FriendEntry, actions: @Composable () -> Unit) {
-    Row(Modifier.fillMaxWidth().height(48.dp), verticalAlignment = Alignment.CenterVertically) {
+private fun FriendRow(u: FriendEntry, onOpen: ((String) -> Unit)?, actions: @Composable () -> Unit) {
+    Row(Modifier.fillMaxWidth().height(48.dp).let { m -> onOpen?.let { m.clickable { it(u.username) } } ?: m },
+        verticalAlignment = Alignment.CenterVertically) {
         Text((if (u.isBot) "🤖 " else "") + u.username, Modifier.weight(1f), maxLines = 1,
             overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyLarge)
-        if (u.caught > 0) Text("${u.caught} caught", style = MaterialTheme.typography.bodySmall,
+        if (u.caught > 0) Text("${u.caught} captured", style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.outline, maxLines = 1, modifier = Modifier.padding(end = 4.dp))
         actions()
     }
     HorizontalDivider()
+}
+
+// --- A friend's Field Guide ---------------------------------------------------------------
+
+private val RARITY_ORDER = listOf("common", "uncommon", "rare", "legendary")
+
+/** The friend's Field Guide in their own state: Captured, then Not captured yet. */
+@Composable
+fun FriendGuideDialog(s: SocialState, social: SocialViewModel, game: UiState) {
+    val who = s.guideFor ?: return
+    val g = s.guide
+    // A plain Dialog, not AlertDialog: AlertDialog measures intrinsics, which lazy grids can't do.
+    Dialog(onDismissRequest = social::closeGuide) {
+        Surface(shape = RoundedCornerShape(20.dp), tonalElevation = 6.dp) {
+            Column(Modifier.padding(16.dp)) {
+                val stateName = g?.let { gd -> game.states.firstOrNull { it.code == gd.state }?.name ?: gd.state }
+                Text(if (g == null) "$who's Field Guide" else "$who's Field Guide · $stateName · ${g.caught}/${g.total}",
+                    style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Spacer(Modifier.height(8.dp))
+                when {
+                    s.guideError != null -> Text(s.guideError, color = MaterialTheme.colorScheme.error)
+                    g == null -> Box(Modifier.fillMaxWidth().height(120.dp), Alignment.Center) { CircularProgressIndicator() }
+                    else -> {
+                        // Numbered in Field Guide order (common to legendary), as on the website.
+                        val numbered = g.entries.withIndex()
+                            .sortedBy { (i, e) -> RARITY_ORDER.indexOf(e.rarity) * 1000 + i }
+                            .mapIndexed { i, e -> i + 1 to e.value }
+                        LazyVerticalGrid(columns = GridCells.Adaptive(72.dp), modifier = Modifier.weight(1f, fill = false),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            for ((title, list) in listOf("Captured" to numbered.filter { it.second.caught },
+                                                         "Not captured yet" to numbered.filter { !it.second.caught })) {
+                                if (list.isEmpty()) continue
+                                item(key = "h-$title", span = { GridItemSpan(maxLineSpan) }) {
+                                    Text(title, style = MaterialTheme.typography.titleSmall,
+                                        modifier = Modifier.padding(top = 8.dp, bottom = 2.dp))
+                                }
+                                items(list, key = { "$title-${it.second.number}" }) { (n, e) -> GuideTile(n, e) }
+                            }
+                        }
+                    }
+                }
+                TextButton(onClick = social::closeGuide, modifier = Modifier.align(Alignment.End)) { Text("Close") }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GuideTile(n: Int, e: GuideEntry) {
+    val border = if (e.caught) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+    Column(Modifier.clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.surface)
+        .border(if (e.caught) 2.dp else 1.dp, border, RoundedCornerShape(8.dp)).padding(4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally) {
+        Text("#%03d".format(n), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+        Box(Modifier.size(48.dp), Alignment.Center) {
+            if (e.slug != null) PixelSprite(e.slug, caught = true, modifier = Modifier.fillMaxSize()
+                .let { if (e.caught) it else it.alpha(0.6f) })
+            else Text("?", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.outline)
+        }
+        Text(e.commonName ?: "???", style = MaterialTheme.typography.labelSmall, maxLines = 1,
+            overflow = TextOverflow.Ellipsis, color = if (e.caught) rarityColor(e.rarity) else MaterialTheme.colorScheme.outline)
+        Text(when { e.caught -> "✓"; e.youCaught -> "You have it"; else -> " " },
+            style = MaterialTheme.typography.labelSmall, maxLines = 1,
+            color = if (e.caught) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline)
+    }
 }
 
 // --- Photos tab when signed in: your album on the server -------------------------------------

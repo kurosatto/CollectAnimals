@@ -169,6 +169,10 @@ object Online {
         }
     }
 
+    /** A friend's Field Guide, in the friend's own state (friends only). */
+    suspend fun friendGuide(username: String): FriendGuide =
+        FriendGuide.parse(username, JSONObject(call("GET", "/users/${q(username)}/collection")))
+
     // --- Photos, feed, likes -----------------------------------------------------------
 
     suspend fun album(): List<OnlinePhoto> = OnlinePhoto.list(JSONObject(call("GET", "/me/album")).getJSONArray("photos"))
@@ -294,6 +298,29 @@ data class Friends(val friends: List<FriendEntry>, val incoming: List<FriendEntr
         fun parse(o: JSONObject): Friends {
             fun l(k: String) = o.getJSONArray(k).let { a -> List(a.length()) { FriendEntry.parse(a.getJSONObject(it)) } }
             return Friends(l("friends"), l("incoming"), l("outgoing"))
+        }
+    }
+}
+
+/** One animal on a friend's Field Guide. Names stay "???" until you or a friend captured it. */
+data class GuideEntry(val number: Int, val slug: String?, val commonName: String?, val rarity: String,
+                      val category: String, val caught: Boolean, val youCaught: Boolean) {
+    companion object {
+        fun parse(o: JSONObject): GuideEntry {
+            val s = o.getJSONObject("species")
+            return GuideEntry(s.getInt("number"), s.optStringOrNull("slug"), s.optStringOrNull("common_name"),
+                s.getString("rarity"), s.getString("category"), o.getBoolean("caught"), o.optBoolean("you_caught"))
+        }
+    }
+}
+
+data class FriendGuide(val username: String, val state: String, val caught: Int, val total: Int,
+                       val entries: List<GuideEntry>) {
+    companion object {
+        fun parse(username: String, o: JSONObject): FriendGuide {
+            val a = o.getJSONArray("entries")
+            return FriendGuide(o.optString("username").ifEmpty { username }, o.getString("state"),
+                o.getInt("caught"), o.getInt("total"), List(a.length()) { GuideEntry.parse(a.getJSONObject(it)) })
         }
     }
 }

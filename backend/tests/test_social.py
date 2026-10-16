@@ -504,3 +504,27 @@ def test_comments_from_strangers(client, fake):
     from app.models import PhotoComment
     with SessionLocal() as db:
         assert not db.query(PhotoComment).filter_by(photo_id=photo).count()
+
+
+def test_friend_field_guide_uses_their_state(client, fake):
+    ana, nina, zed = signup(client, "ana"), signup(client, "nina", state="NC"), signup(client, "zed")
+    catch(client, fake, nina, "american_black_bear")
+    catch(client, fake, ana, "coyote")
+    catch(client, fake, zed, "bobcat")
+    assert client.get("/users/nina/collection", headers=ana).status_code == 403   # not friends yet
+    befriend(client, ana, nina, "nina", "ana")
+    assert client.get("/users/nobody/collection", headers=ana).status_code == 404
+
+    g = client.get("/users/nina/collection", headers=ana).json()
+    assert g["state"] == "NC" and g["username"] == "nina" and g["caught"] == 1
+    assert g["total"] == client.get("/me/collection", headers=nina).json()["total"]
+    by = {e["species"]["slug"]: e for e in g["entries"] if e["species"]["revealed"]}
+    bear = by["american_black_bear"]
+    assert bear["caught"] and not bear["you_caught"] and bear["photo_url"]
+    coyote = by["coyote"]                  # ana's own capture: named, but not nina's
+    assert not coyote["caught"] and coyote["you_caught"]
+    assert "bobcat" not in by              # zed is nobody's friend, so it stays "???"
+    assert sum(not e["species"]["revealed"] for e in g["entries"]) == g["total"] - 2
+    # Friendship works both ways, in the viewer's own state.
+    back = client.get("/users/ana/collection", headers=nina).json()
+    assert back["state"] == "CA" and back["caught"] == 1
