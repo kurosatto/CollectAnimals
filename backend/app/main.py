@@ -4,11 +4,11 @@ import json
 import time
 import uuid
 from contextlib import asynccontextmanager
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, UploadFile, status
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import FileResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
 from PIL import Image, ImageOps, UnidentifiedImageError
@@ -18,15 +18,14 @@ from sqlalchemy.orm import Session
 
 from . import classifier as clf
 from . import dex
-from . import bonds, duels, goals, outings, places, scoring, social
+from . import bonds, duels, goals, places, scoring, social
 from . import states as st
 from .auth import create_token, current_user, hash_password, optional_user, verify_password
 from .classifier import OTHER_LABEL, Prediction
 from .config import settings
 from .db import Base, SessionLocal, add_missing_columns, engine, get_db
 from .models import AlbumPhoto, Badge, Capture, Friendship, IdFeedback, PhotoLike, Species, StateSpecies, User
-from .schemas import (BondNoteOut, BondOut, BondsOut, BuddyIn, BuddyOut, CaptureOut, EventOut, OutingsOut, SeasonOut,
-                      SeasonSpecies, TimelineItem, TimelineOut, ChallengeOut, ChallengesOut, ChoiceOut, ScoreOut, ScorePart, SetOut, SetSpecies, SetsOut, CollectionEntry, CollectionOut, DexOut, HotspotOut, HotspotSpecies,
+from .schemas import (BondNoteOut, BondOut, BondsOut, BuddyIn, BuddyOut, CaptureOut, ChallengeOut, ChallengesOut, ChoiceOut, ScoreOut, ScorePart, SetOut, SetSpecies, SetsOut, CollectionEntry, CollectionOut, DexOut, HotspotOut, HotspotSpecies,
                       PickIn, PredictionOut, RegisterIn, SpeciesMatch, SpeciesOut, StateOut, TokenOut, UserOut, UserUpdate)
 from .social import find_species, friend_ids, revealed_species_ids, species_out, user_named
 from .storage import get_storage
@@ -108,7 +107,6 @@ async def lifespan(app: FastAPI):
     dex.load(settings.details_csv, st.all_states())
     places.load(settings.places_json)
     goals.load(settings.sets_json)
-    outings.load(settings.events_json)
     if clf.get_classifier() is None:
         clf.load_classifier(settings.model_path)
     yield
@@ -852,95 +850,3 @@ def set_buddy(body: BuddyIn, user: User = Depends(current_user), db: Session = D
     user.buddy_species_id = sp.id
     db.commit()
     return my_buddy(user, db)
-
-
-# --- outing days, seasons and the photo timeline (app/outings.py) ----------------
-
-def _capture_days(db: Session, user: User, utc_offset: int) -> list[tuple[str, date]]:
-    """(slug, local date) for each of the player's captures that counts for an animal."""
-    rows = db.execute(select(Species.slug, Capture.taken_at, Capture.created_at)
-                      .join(Species, Species.id == Capture.species_id).where(Capture.user_id == user.id)).all()
-    return [(slug, bonds.local_time(t, c, utc_offset).date()) for slug, t, c in rows]
-
-
-@app.get("/me/outings", response_model=OutingsOut)
-def my_outings(user: User = Depends(current_user), db: Session = Depends(get_db)):
-    """Outing days this week (days with a capture, by upload time in the state's
-    time) and the last few weeks. Goal: a few days a week, not every day."""
-    state = state_or_404(user.state)
-    start, end = goals.week_bounds(state.utc_offset)
-    local = lambda d: (_aware(d) + timedelta(hours=state.utc_offset)).date()
-    days = {local(c) for c in db.scalars(select(Capture.created_at).where(
-        Capture.user_id == user.id, Capture.species_id.is_not(None)))}
-    first = local(start)
-    weeks = []
-    for back in range(3, -1, -1):
-        a = first - timedelta(days=7 * back)
-        weeks.append(sum(a <= d < a + timedelta(days=7) for d in days))
-    this = sorted(d.isoformat() for d in days if first <= d < first + timedelta(days=7))
-    return OutingsOut(week_start=start, week_end=end, days=this, goal=outings.OUTING_GOAL,
-                      done=len(this) >= outings.OUTING_GOAL, recent_weeks=weeks)
-
-
-@app.get("/me/season", response_model=SeasonOut)
-def my_season(user: User = Depends(current_user), db: Session = Depends(get_db)):
-    """What the season brings in the player's state: animals arriving this month
-    and the events running now, with the player's event progress."""
-    state = state_or_404(user.state)
-    today = (datetime.now(timezone.utc) + timedelta(hours=state.utc_offset)).date()
-    members = {m.species.slug: m for m in state_species(db, state.code)}
-    caught = set(db.scalars(select(Badge.species_id).where(Badge.user_id == user.id)))
-    revealed = revealed_species_ids(db, user)
-
-    def row(slug: str) -> SeasonSpecies:
-        m = members[slug]
-        return SeasonSpecies(species=species_out(m.species, m.species_id in revealed, m), caught=m.species_id in caught)
-
-    arrivals = [row(s) for s in outings.arrivals(state.code, list(members), today.month)][:8]
-    days = _capture_days(db, user, state.utc_offset)
-    events = []
-    for ev in outings.events_for(state.code, {s: m.species.category for s, m in members.items()}, today):
-        p = outings.event_progress(ev, days)
-        events.append(EventOut(id=ev.id, title=ev.title, description=ev.description, start=ev.start.isoformat(),
-                               end=ev.end.isoformat(), progress=min(p, ev.goal), goal=ev.goal, done=p >= ev.goal,
-                               species=[row(s) for s in ev.slugs]))
-    return SeasonOut(state=state.code, month=today.month, arrivals=arrivals, events=events)
-
-
-@app.get("/me/captures", response_model=TimelineOut)
-def my_captures(species: str = Query(...), user: User = Depends(current_user), db: Session = Depends(get_db)):
-    """Every photo the player took of one animal, newest first, with the field
-    notes each one ticked. Private: only the album photo is ever shown to others."""
-    sp = find_species(db, species)
-    if not db.scalar(select(Badge.id).where(Badge.user_id == user.id, Badge.species_id == sp.id)):
-        raise HTTPException(404, "You haven't captured this animal yet")
-    state = state_or_404(user.state)
-    album = db.scalar(select(AlbumPhoto.capture_id).where(AlbumPhoto.user_id == user.id,
-                                                          AlbumPhoto.species_id == sp.id))
-    caps = list(db.scalars(select(Capture).where(Capture.user_id == user.id, Capture.species_id == sp.id)
-                           .order_by(Capture.id)))
-    items, seen = [], []
-    for c in caps:
-        s = bonds.Sighting(bonds.local_time(c.taken_at, c.created_at, state.utc_offset), c.latitude, c.longitude,
-                           c.score_stars)
-        ticked = ([bonds.NOTE_TITLES["first"]] if not seen else []) + bonds.newly_done(seen, seen + [s])
-        seen.append(s)
-        items.append(TimelineItem(capture_id=c.id, taken=s.local, stars=c.score_stars, score=c.score,
-                                  has_place=c.latitude is not None, in_album=c.id == album, notes=ticked))
-    items.reverse()
-    return TimelineOut(species=species_out(sp, True, state_member(db, state.code, sp.id)), photos=items)
-
-
-@app.get("/me/captures/{capture_id}/photo", include_in_schema=False)
-def my_capture_photo(capture_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
-    """One of the player's own photos, for their timeline (owner only)."""
-    c = db.get(Capture, capture_id)
-    data = None
-    if c and c.user_id == user.id and c.image_path:
-        try:
-            data = get_storage().get(c.image_path)
-        except ValueError:
-            data = None
-    if data is None:
-        raise HTTPException(404, "Not found")
-    return Response(data, media_type="image/jpeg", headers={"Cache-Control": "private, max-age=86400"})
