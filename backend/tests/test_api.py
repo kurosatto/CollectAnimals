@@ -475,6 +475,17 @@ def test_sprites(client):
     assert client.get("/sprites/coyote_silhouette.png").status_code == 200
     assert client.get("/sprites/red_wolf.png").status_code == 200  # North Carolina
     assert client.get("/sprites/nope.png").status_code == 404
+
+
+def test_sprite_animations(client):
+    idx = client.get("/sprites/anim/index.json").json()
+    assert idx["rows"] == ["idle", "walk", "fly", "swim", "sleep"] and idx["frames"] == 4
+    assert {"walk", "sleep"} <= set(idx["acts"]["mule_deer"])
+    assert "fly" in idx["acts"]["american_robin"]
+    r = client.get("/sprites/anim/mule_deer.png")
+    assert r.status_code == 200 and r.headers["content-type"] == "image/png"
+    assert client.get("/sprites/anim/nope.png").status_code == 404
+    assert client.get("/sprites/anim/..%2Fcoyote.png").status_code == 404
     assert client.get("/sprites/..%2Fcalifornia_100.png").status_code == 404
 
 

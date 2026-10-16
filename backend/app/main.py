@@ -140,6 +140,24 @@ def silhouette_by_number(number: int, db: Session = Depends(get_db)):
     return FileResponse(path, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
 
 
+@app.get("/sprites/anim/index.json", include_in_schema=False)
+def sprite_anim_index():
+    """Which poses (idle, walk, fly, swim, sleep) each species' animation sheet really draws."""
+    path = settings.sprites_dir / "anim" / "index.json"
+    if not path.is_file():
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No animations")
+    return FileResponse(path, media_type="application/json", headers={"Cache-Control": "public, max-age=3600"})
+
+
+@app.get("/sprites/anim/{slug}.png", include_in_schema=False)
+def sprite_anim(slug: str):
+    """A species' animation sheet: a row of four 32x32 frames for each pose."""
+    path = settings.sprites_dir / "anim" / f"{slug}.png"
+    if not slug.replace("_", "").isalnum() or not path.is_file():
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No such sprite")
+    return FileResponse(path, media_type="image/png", headers={"Cache-Control": "public, max-age=3600"})
+
+
 @app.get("/sprites/{name}.png", include_in_schema=False)
 def sprite(name: str):
     """Pixel-art sprites: `{slug}.png` in colour, `{slug}_silhouette.png` until caught."""
