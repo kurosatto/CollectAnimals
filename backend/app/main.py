@@ -18,14 +18,14 @@ from sqlalchemy.orm import Session
 
 from . import classifier as clf
 from . import dex
-from . import duels, goals, places, scoring, social
+from . import bonds, duels, goals, places, scoring, social
 from . import states as st
 from .auth import create_token, current_user, hash_password, optional_user, verify_password
 from .classifier import OTHER_LABEL, Prediction
 from .config import settings
 from .db import Base, SessionLocal, add_missing_columns, engine, get_db
 from .models import AlbumPhoto, Badge, Capture, Friendship, IdFeedback, PhotoLike, Species, StateSpecies, User
-from .schemas import (CaptureOut, ChallengeOut, ChallengesOut, ChoiceOut, ScoreOut, ScorePart, SetOut, SetSpecies, SetsOut, CollectionEntry, CollectionOut, DexOut, HotspotOut, HotspotSpecies,
+from .schemas import (BondNoteOut, BondOut, BondsOut, BuddyIn, BuddyOut, CaptureOut, ChallengeOut, ChallengesOut, ChoiceOut, ScoreOut, ScorePart, SetOut, SetSpecies, SetsOut, CollectionEntry, CollectionOut, DexOut, HotspotOut, HotspotSpecies,
                       PickIn, PredictionOut, RegisterIn, SpeciesMatch, SpeciesOut, StateOut, TokenOut, UserOut, UserUpdate)
 from .social import find_species, friend_ids, revealed_species_ids, species_out, user_named
 from .storage import get_storage
@@ -430,6 +430,7 @@ async def create_capture(photo: UploadFile = File(...),
     score = (_score_capture(model, capture, top.label, members[top.label].rarity, image, state.code,
                             set(members), new_badge, confidence=top.probability) if matched else None)
     db.commit()
+    bond, bond_up = _bond_after(db, user, capture) if matched else (None, [])
 
     # Don't give away names the player hasn't unlocked yet.
     revealed = revealed_species_ids(db, user)
@@ -438,6 +439,8 @@ async def create_capture(photo: UploadFile = File(...),
                    if new_badge else f"Another {names[top.label]} for your collection.")
         if album_photo:
             message += " It's now in your album."
+        if bond_up:
+            message += f" Bond with the {names[top.label]}: {bonds.title(bond)} ({', '.join(bond_up)} ✓)."
     elif species is not None and species.id in revealed:
         message = f"Might be a {names[top.label]}, but we're not sure. Try a clearer photo!"
     elif species is not None:
@@ -465,6 +468,8 @@ async def create_capture(photo: UploadFile = File(...),
                            probability=round(p.probability, 4))
                  for p in preds if p.label in species_by_slug],
         score=score,
+        bond=bond,
+        bond_up=bond_up,
     )
 
 
@@ -560,15 +565,18 @@ def pick_capture_species(capture_id: int, body: PickIn, user: User = Depends(cur
         _rescore_picked(db, capture, species, m, user, new_badge)
     _record_feedback(db, capture, user, guesses, species.slug)
     db.commit()
+    bond, bond_up = _bond_after(db, user, capture)
 
     message = (f"Got it: a {name}! New badge unlocked." if new_badge
                else f"Got it: another {name} for your collection.")
     if album_photo:
         message += " It's now in your album."
+    if bond_up:
+        message += f" Bond with the {name}: {bonds.title(bond)} ({', '.join(bond_up)} ✓)."
     return CaptureOut(capture_id=capture.id, matched=True, species=species_out(species, True, m),
                       confidence=capture.confidence, new_badge=new_badge, message=message,
                       top_predictions=[], album_photo_id=album_photo.id if album_photo else None,
-                      score=score_out(capture))
+                      score=score_out(capture), bond=bond, bond_up=bond_up)
 
 
 def _record_feedback(db: Session, capture: Capture, user: User, guesses: list[str], chosen: str | None) -> None:
@@ -667,6 +675,7 @@ def _collection(db: Session, owner: User, viewer: User, st_: st.State) -> Collec
                              .join(Capture, Capture.id == AlbumPhoto.capture_id)
                              .where(AlbumPhoto.user_id == owner.id)).all())
     storage = get_storage()
+    bond_levels = {sid: bonds.level(bonds.notes(sg)) for sid, sg in _sightings(db, owner.id, st_.utc_offset).items()}
     entries = []
     for m in state_species(db, code):
         b = badges.get(m.species_id)
@@ -678,7 +687,8 @@ def _collection(db: Session, owner: User, viewer: User, st_: st.State) -> Collec
             you_caught=m.species_id in mine,
             photo_url=storage.url(photos[m.species_id]) if m.species_id in photos else None,
             in_season=dex.in_season(m.species.slug, code, month),
-            activity=dex.activity(m.species.slug, code) if b else None))
+            activity=dex.activity(m.species.slug, code) if b else None,
+            bond=bond_levels.get(m.species_id, 0) if b else 0))
     return CollectionOut(state=code, username=owner.username,
                          caught=sum(e.caught for e in entries), total=len(entries), entries=entries)
 
@@ -733,3 +743,110 @@ def my_challenges(user: User = Depends(current_user), db: Session = Depends(get_
         out.append(ChallengeOut(id=ch.id, title=ch.title, progress=min(p, ch.goal), goal=ch.goal, done=p >= ch.goal))
     return ChallengesOut(state=state.code, week_start=start, week_end=end, challenges=out,
                          done=sum(c.done for c in out))
+
+
+# --- bonds and buddy (app/bonds.py) ---------------------------------------------
+
+def _sightings(db: Session, user_id: int, utc_offset: int, species_id: int | None = None,
+               skip_capture: int | None = None) -> dict[int, list[bonds.Sighting]]:
+    """The player's captures that count for an animal, per species, oldest first."""
+    q = select(Capture).where(Capture.user_id == user_id, Capture.species_id.is_not(None)).order_by(Capture.id)
+    if species_id is not None:
+        q = q.where(Capture.species_id == species_id)
+    out: dict[int, list[bonds.Sighting]] = {}
+    for c in db.scalars(q):
+        if c.id == skip_capture:
+            continue
+        out.setdefault(c.species_id, []).append(bonds.Sighting(
+            bonds.local_time(c.taken_at, c.created_at, utc_offset), c.latitude, c.longitude, c.score_stars))
+    return out
+
+
+def _bond_after(db: Session, user: User, capture: Capture) -> tuple[int, list[str]]:
+    """Bond hearts with the capture's animal now, and the field notes it ticked."""
+    offset = (st.get(user.state) or st.get(None)).utc_offset
+    after = _sightings(db, user.id, offset, capture.species_id).get(capture.species_id, [])
+    before = _sightings(db, user.id, offset, capture.species_id, skip_capture=capture.id).get(capture.species_id, [])
+    return bonds.level(bonds.notes(after)), bonds.newly_done(before, after)
+
+
+def _bond_out(species: Species, m: StateSpecies | None, sightings: list[bonds.Sighting]) -> BondOut:
+    ns = bonds.notes(sightings)
+    lvl = bonds.level(ns)
+    return BondOut(species=species_out(species, True, m), level=lvl, max_level=len(ns), title=bonds.title(lvl),
+                   notes=[BondNoteOut(id=n.id, title=n.title, hint=n.hint, progress=n.progress, goal=n.goal,
+                                      done=n.done) for n in ns])
+
+
+@app.get("/me/bonds", response_model=BondsOut)
+def my_bonds(species: str | None = Query(None), user: User = Depends(current_user),
+             db: Session = Depends(get_db)):
+    """Bond hearts and field notes for every animal the player has captured
+    (or just ?species=, by number or slug), closest bonds first."""
+    state = state_or_404(user.state)
+    sid = find_species(db, species).id if species else None
+    seen = _sightings(db, user.id, state.utc_offset, sid)
+    members = {m.species_id: m for m in state_species(db, state.code)}
+    out = []
+    for species_id, sightings in seen.items():
+        sp = db.get(Species, species_id)
+        out.append(_bond_out(sp, members.get(species_id), sightings))
+    out.sort(key=lambda b: (-b.level, b.species.common_name or ""))
+    return BondsOut(state=state.code, bonds=out)
+
+
+def _buddy_suggestion(db: Session, user: User, state: st.State, buddy: Species) -> str | None:
+    """An animal around this month that the player hasn't captured, preferring
+    the buddy's own kind. Hidden names stay hidden. Never a dangerous one."""
+    month = (datetime.now(timezone.utc) + timedelta(hours=state.utc_offset)).month
+    caught = set(db.scalars(select(Badge.species_id).where(Badge.user_id == user.id)))
+    revealed = revealed_species_ids(db, user)
+    options = [m for m in state_species(db, state.code)
+               if m.species_id not in caught and dex.in_season(m.species.slug, state.code, month)
+               and dex.details(m.species.slug, state.code).get("safety") != "danger"]
+    if not options:
+        return None
+    same = [m for m in options if m.species.category == buddy.category] or options
+    # Changes once a day, so the buddy doesn't say something new on every refresh.
+    day = (datetime.now(timezone.utc) + timedelta(hours=state.utc_offset)).toordinal()
+    m = same[(day + user.id) % len(same)]
+    return f"the {m.common_name}" if m.species_id in revealed else f"a mystery {m.species.category}"
+
+
+@app.get("/me/buddy", response_model=BuddyOut | None)
+def my_buddy(user: User = Depends(current_user), db: Session = Depends(get_db)):
+    """The player's buddy: the animal they picked (or, until they pick, their
+    closest bond), its mood from the last week's outings and what it says.
+    None before the first capture."""
+    state = state_or_404(user.state)
+    seen = _sightings(db, user.id, state.utc_offset)
+    if not seen:
+        return None
+    chosen = user.buddy_species_id in seen
+    if chosen:
+        sid = user.buddy_species_id
+    else:
+        sid = max(seen, key=lambda k: (bonds.level(bonds.notes(seen[k])), len(seen[k]), -k))
+    sp = db.get(Species, sid)
+    bond = _bond_out(sp, state_member(db, state.code, sid), seen[sid])
+    since = datetime.now(timezone.utc) - timedelta(days=7)
+    days = {(_aware(c) + timedelta(hours=state.utc_offset)).date() for c in db.scalars(
+        select(Capture.created_at).where(Capture.user_id == user.id, Capture.species_id.is_not(None)))
+        if _aware(c) >= since}
+    mood = bonds.mood(len(days))
+    ns = bonds.notes(seen[sid])
+    suggestion = _buddy_suggestion(db, user, state, sp) if bonds.level(ns) == len(ns) else None
+    return BuddyOut(chosen=chosen, bond=bond, mood=mood, outing_days=len(days),
+                    line=bonds.buddy_line(mood, ns, suggestion),
+                    activity=dex.activity(sp.slug, state.code))
+
+
+@app.put("/me/buddy", response_model=BuddyOut | None)
+def set_buddy(body: BuddyIn, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    """Pick any animal you've captured as your buddy."""
+    sp = find_species(db, body.species)
+    if not db.scalar(select(Badge).where(Badge.user_id == user.id, Badge.species_id == sp.id)):
+        raise HTTPException(400, "Capture this animal first to make it your buddy")
+    user.buddy_species_id = sp.id
+    db.commit()
+    return my_buddy(user, db)
