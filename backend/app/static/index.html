@@ -173,25 +173,6 @@
   .welcome { border-color:var(--accent); }
   .welcome p { margin:6px 0 0; }
   label.inline { display:flex; align-items:center; gap:6px; font-size:.9rem; color:var(--muted); }
-  .duel-cards { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-  .fcard { border:2px solid var(--line); border-radius:12px; padding:8px; display:grid; gap:4px; background:var(--bg); }
-  .fcard.back { place-items:center; min-height:200px; color:var(--muted); font-size:2rem; border-style:dashed; }
-  .fcard .who { font-size:.75rem; color:var(--muted); }
-  .fcard .sprite { width:64px; height:64px; margin:0 auto; }
-  .fcard .nm { font-weight:700; text-align:center; font-size:.9rem; }
-  .fcard .rarity { text-align:center; }
-  .fcard .stat { display:grid; grid-template-columns:1fr auto; gap:6px; align-items:center; padding:4px 8px;
-                 border-radius:8px; font-size:.85rem; background:var(--card); border:1px solid var(--line); color:var(--ink); }
-  .fcard button.stat { cursor:pointer; }
-  .fcard .stat span { justify-self:start; }
-  .fcard button.stat:hover { border-color:var(--accent); }
-  .fcard .stat.picked { border-color:var(--legendary); font-weight:700; }
-  .fcard .stat b { font-variant-numeric:tabular-nums; }
-  .duel-rounds { display:flex; gap:6px; margin-top:6px; }
-  .duel-rounds span { width:22px; height:22px; border-radius:50%; display:grid; place-items:center; font-size:.75rem;
-                      border:1px solid var(--line); }
-  .duel-rounds .win { background:var(--accent); color:#fff; border-color:var(--accent); }
-  .duel-rounds .lose { background:#c0392b; color:#fff; border-color:#c0392b; }
   .week { display:grid; gap:10px; }
   .week-row { display:grid; grid-template-columns:22px 1fr auto; gap:8px; align-items:center; font-size:.9rem; }
   .week-row .tick { width:22px; height:22px; border-radius:50%; border:2px solid var(--line); display:grid;
@@ -322,22 +303,8 @@
       <p id="friend-msg" class="muted"></p>
       <div id="friend-lists"></div>
     </div>
-    <div class="card off" data-tab="friends">
-      <h2>Card duels <span class="muted" id="duel-record"></span></h2>
-      <p class="muted" style="margin-top:0">Every animal you've captured is a card. Challenge a friend: pick the stat you
-        think beats their card, five rounds, most rounds wins.</p>
-      <div id="duel-list" class="feed"></div>
-    </div>
   </section>
 </main>
-<dialog id="duel"><div class="dex">
-  <div class="dex-head"><div style="flex:1"><h2 id="duel-title">Card duel</h2>
-    <div class="muted" id="duel-score"></div></div>
-    <button class="close" id="duel-close" aria-label="Close">×</button></div>
-  <p id="duel-msg" style="margin:8px 0"></p>
-  <div class="duel-cards" id="duel-cards"></div>
-  <div class="profile-actions" id="duel-actions"></div>
-</div></dialog>
 <dialog id="dex"><div class="dex">
   <div class="dex-head">
     <img class="sprite dex-sprite" id="dex-sprite" alt="">
@@ -2379,8 +2346,7 @@ async function loadFriends() {
   section("Friend requests", f.incoming, [
     ["Accept", "", (u) => api(`/friends/requests/${encodeURIComponent(u)}/accept`, { method: "POST" })],
     ["Decline", "ghost", del]]);
-  section("Your friends", f.friends, [["Duel", "", startDuel], ["Profile", "ghost", openProfile], ["Remove", "ghost", del]]);
-  loadDuels();
+  section("Your friends", f.friends, [["Profile", "ghost", openProfile], ["Remove", "ghost", del]]);
   section("Waiting for them to accept", f.outgoing, [["Cancel", "ghost", del]]);
   if (!f.friends.length && !f.incoming.length && !f.outgoing.length)
     box.append(el("p", "muted", "No friends yet. Add someone by their username."));
@@ -2390,101 +2356,6 @@ async function loadFriends() {
   section("Bot friends to add 🤖", bots, [["Add", "", (u) => api("/friends/requests", { method: "POST",
     headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: u }) })]]);
 }
-
-// Card duels: five rounds of "my stat beats yours" with the animals each player captured.
-const STAT_NAMES = { size: "Size", weight: "Weight", rarity: "Rarity", photo: "Photo" };
-let duel = null;
-
-function fieldCard(card, label, { pick, picked } = {}) {
-  const c = el("div", "fcard");
-  const s = card.species;
-  const img = el("img", "sprite"); img.src = spriteUrl(s.slug, true); img.alt = "";
-  const rar = el("div", "rarity", s.rarity); rar.style.color = `var(--${s.rarity})`;
-  c.append(el("div", "who", label), img, el("div", "nm", s.common_name), rar);
-  for (const [k, name] of Object.entries(STAT_NAMES)) {
-    const row = el(pick ? "button" : "div", "stat" + (picked === k ? " picked" : ""));
-    if (pick) { row.type = "button"; row.onclick = () => pick(k); }
-    row.append(el("span", "", name), el("b", "", String(card.stats[k])));
-    c.append(row);
-  }
-  return c;
-}
-
-function showDuel(d) {
-  duel = d;
-  $("duel-title").textContent = `Card duel with ${d.opponent}`;
-  const dots = el("div", "duel-rounds");
-  for (let i = 0; i < d.total_rounds; i++) {
-    const r = d.rounds[i];
-    dots.append(el("span", r ? r.result : "", r ? { win: "✓", lose: "✗", tie: "=" }[r.result] : String(i + 1)));
-  }
-  $("duel-score").innerHTML = "";
-  $("duel-score").append(`You ${d.your_points} – ${d.their_points} ${d.opponent}`, dots);
-  const cards = $("duel-cards"), actions = $("duel-actions"), msg = $("duel-msg");
-  cards.innerHTML = ""; actions.innerHTML = "";
-  const last = d.rounds[d.rounds.length - 1];
-  if (d.finished) {
-    msg.textContent = { win: "🏆 You won the duel!", lose: `${d.opponent} won this one.`, tie: "It's a tie!" }[d.outcome];
-    if (last) cards.append(fieldCard(last.mine, "Your card", { picked: last.stat }),
-                           fieldCard(last.theirs, `${d.opponent}'s card`, { picked: last.stat }));
-    if (d.you_started) {
-      const again = el("button", "", "Play again");
-      again.onclick = () => startDuel(d.opponent);
-      actions.append(again);
-    }
-  } else if (d.next_card) {
-    msg.textContent = last
-      ? `Round ${d.round}: ${STAT_NAMES[last.stat]} ${last.mine.stats[last.stat]} vs ${last.theirs.stats[last.stat]}, `
-        + { win: "you win it!", lose: `${d.opponent} wins it.`, tie: "a tie." }[last.result]
-        + ` Round ${d.round + 1}: pick a stat.`
-      : "Round 1: pick the stat you think beats their card.";
-    cards.append(fieldCard(d.next_card, "Your card", { pick: playDuel }), el("div", "fcard back", "?"));
-    if (last) {
-      const prev = el("p", "muted", `Their last card: ${last.theirs.species.common_name}`);
-      actions.append(prev);
-    }
-  } else {
-    msg.textContent = `${d.opponent} started this duel; it's still going.`;
-  }
-  if (!$("duel").open) $("duel").showModal();
-}
-
-async function startDuel(username) {
-  try {
-    showDuel(await api("/duels", { method: "POST", headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ opponent: username }) }));
-  } catch (err) { $("friend-msg").textContent = err.message; }
-}
-
-async function playDuel(stat) {
-  $("duel-cards").querySelectorAll("button").forEach((b) => (b.disabled = true));
-  try { showDuel(await api(`/duels/${duel.id}/play`, { method: "POST",
-    headers: { "Content-Type": "application/json" }, body: JSON.stringify({ stat }) })); }
-  catch (err) { $("duel-msg").textContent = err.message; }
-  if (duel && duel.finished) loadDuels();
-}
-
-async function loadDuels() {
-  try {
-    const r = await api("/duels");
-    $("duel-record").textContent = r.played ? `${r.wins} won of ${r.played}` : "";
-    const list = $("duel-list");
-    list.innerHTML = "";
-    if (!r.duels.length) list.append(el("p", "muted", "No duels yet. Press Duel next to a friend to start one."));
-    for (const d of r.duels) {
-      const row = el("div", "feed-item");
-      const what = el("div", "what");
-      const vs = d.you_started ? `You challenged ${d.opponent}` : `${d.opponent} challenged you`;
-      const res = d.finished ? `${d.your_points}–${d.their_points}, `
-        + { win: "you won", lose: "you lost", tie: "tie" }[d.outcome] : `round ${d.round + 1} of ${d.total_rounds}`;
-      what.append(el("strong", "", vs), el("div", "when", res));
-      row.append(what);
-      row.onclick = async () => showDuel(await api(`/duels/${d.id}`));
-      list.append(row);
-    }
-  } catch {}
-}
-$("duel-close").onclick = () => $("duel").close();
 
 // New players start with the example bots as friends; say so plainly, once.
 async function botWelcome(username) {
