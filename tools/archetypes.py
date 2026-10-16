@@ -935,7 +935,8 @@ def sea_turtle(s: Sprite, shell, skin, *, scutes=None):
     for cx, cy in ((13, 15), (18, 13), (23, 15), (15, 19), (21, 19)):
         s.paint(s.m_ellipse(cx, cy, 2.2, 1.8), scutes or mix(shell, "#ffffff", 0.2), within=m)
     s.ellipse(18, 23.5, 10, 1.5, mix(skin, "#ffffff", 0.3))
-    s.ellipse(9, 9.5 + w * 3, 6, 2.6, skin, rot=-30 + w * 35)
+    # Front flipper sweeps back along the shell (pointing up, it read as rabbit ears).
+    s.ellipse(14 - w * 4, 23.5 - w * 1.5, 7, 2.4, skin, rot=-12 + w * 50, edge=True)
     s.ellipse(5.5, 16.5, 5, 4.2, skin, edge=True)
     s.paint(s.m_px([(4, 14), (7, 14), (6, 16), (3, 17)]), mix(skin, "#000000", 0.25))
     s.eye(3, 15)
