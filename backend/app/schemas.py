@@ -152,6 +152,9 @@ class CaptureOut(BaseModel):
     choices: list[ChoiceOut] = []
     # Points and stars for this photo (None when it didn't count for any animal).
     score: ScoreOut | None = None
+    # Bond hearts with this animal after the photo, and the field notes it ticked.
+    bond: int | None = None
+    bond_up: list[str] = []
 
 
 class CollectionEntry(BaseModel):
@@ -167,6 +170,8 @@ class CollectionEntry(BaseModel):
     in_season: bool = True
     # "day", "night" or "any": when it's awake in the Habitat scene (captured animals only).
     activity: str | None = None
+    # Bond hearts (0-6) from the owner's field notes for this animal.
+    bond: int = 0
 
 
 class CollectionOut(BaseModel):
@@ -334,3 +339,39 @@ class FriendsOut(BaseModel):
     friends: list[FriendOut]
     incoming: list[FriendOut]
     outgoing: list[FriendOut]
+
+
+class BondNoteOut(BaseModel):
+    id: str
+    title: str
+    hint: str
+    progress: int
+    goal: int
+    done: bool
+
+
+class BondOut(BaseModel):
+    species: SpeciesOut
+    level: int
+    max_level: int
+    title: str | None
+    notes: list[BondNoteOut]
+
+
+class BondsOut(BaseModel):
+    state: str
+    bonds: list[BondOut]
+
+
+class BuddyOut(BaseModel):
+    # False while the player hasn't picked one (we show their closest bond).
+    chosen: bool
+    bond: BondOut
+    mood: str
+    outing_days: int
+    line: str
+    activity: str | None = None
+
+
+class BuddyIn(BaseModel):
+    species: str

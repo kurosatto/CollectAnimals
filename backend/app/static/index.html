@@ -203,6 +203,29 @@
                 white-space:nowrap; pointer-events:none; box-shadow:0 2px 6px rgba(0,0,0,.15); }
   .hab-bar { display:flex; justify-content:space-between; align-items:center; gap:8px; margin:8px 0 12px; font-size:.85rem; }
   .hab-bar button { padding:4px 10px; font-size:.8rem; white-space:nowrap; }
+  /* Bonds and buddy (app/bonds.py): hearts are field notes done. */
+  .hearts { color:#d6455d; letter-spacing:.02em; white-space:nowrap; }
+  .hearts .off { color:var(--line); }
+  .guide .tile .status .hearts { font-size:.6rem; letter-spacing:0; }
+  .buddy { display:flex; gap:12px; align-items:center; border:1px solid var(--line); border-radius:12px;
+           padding:10px 12px; margin-bottom:10px; background:var(--bg); }
+  .buddy img { width:64px; height:64px; image-rendering:pixelated; flex:none; cursor:pointer;
+               animation:buddy-bob 1.6s ease-in-out infinite; }
+  .buddy.napping img { animation:none; filter:saturate(.6) brightness(.9); }
+  .buddy.excited img { animation-duration:.7s; }
+  @keyframes buddy-bob { 50% { transform:translateY(-4px); } }
+  @media (prefers-reduced-motion: reduce) { .buddy img { animation:none; } }
+  .buddy .who { font-weight:600; display:flex; flex-wrap:wrap; gap:4px 8px; align-items:baseline; }
+  .buddy .say { margin:4px 0 0; font-size:.9rem; }
+  .buddy .say::before { content:"“"; } .buddy .say::after { content:"”"; }
+  .bond { margin-top:12px; border-top:1px solid var(--line); padding-top:10px; }
+  .bond-head { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:6px 12px; }
+  .bond-head button { padding:4px 10px; font-size:.8rem; }
+  .notes { list-style:none; padding:0; margin:8px 0 0; display:grid; gap:6px; font-size:.85rem; }
+  .notes li { display:grid; grid-template-columns:1.2em 1fr auto; gap:6px; align-items:baseline; }
+  .notes li.done { color:var(--muted); }
+  .notes .tick { color:#d6455d; }
+  .notes .hint { display:block; font-size:.78rem; color:var(--muted); }
 </style>
 </head>
 <body>
@@ -276,6 +299,7 @@
     </div>
     <div class="card off" data-tab="dex">
       <h2>Field Guide <span id="progress" class="muted"></span></h2>
+      <div id="buddy" class="buddy hidden"></div>
       <div id="habitat" class="habitat">
         <canvas id="hab-canvas" width="480" height="270" aria-label="Your habitat: the animals you've captured"></canvas>
         <div id="hab-bubble" class="hab-bubble hidden"></div>
@@ -313,6 +337,7 @@
       <div class="status" id="dex-status"></div></div>
     <button class="close" id="dex-close" aria-label="Close">×</button>
   </div>
+  <div id="dex-bond" class="bond hidden"></div>
   <div class="dex-body">
     <div class="dex-map"><div id="dex-map"></div><div class="muted" id="dex-map-note" style="font-size:.8rem"></div>
       <p id="dex-where" style="margin:8px 0 0; white-space:pre-line"></p>
@@ -620,7 +645,7 @@ async function loadSets() {
 
 async function loadCollection() {
   const c = await api("/me/collection");
-  loadSets(); loadChallenges();
+  loadSets(); loadChallenges(); loadBuddy();
   const entries = [...c.entries].sort((a, b) => dexSort(a.species, b.species));
   caughtNums = new Set(entries.filter((e) => e.caught).map((e) => e.species.number));
   if (hab.visit) hab.visit.home = entries; else habitatSet(entries);
@@ -682,7 +707,10 @@ function addTile(grid, e, i, tier, owner = null) {
     grid.append(t);
     return;
   }
-  if (state === "mine") { st.textContent = "✓"; st.classList.add("mine"); t.title = "Captured"; }
+  if (state === "mine") {
+    st.append(heartsEl(e.bond || 1));
+    t.title = `Captured. Bond: ${BOND_TITLES[(e.bond || 1) - 1]}`;
+  }
   else if (state === "friend") {
     st.textContent = `👥 ${e.friends_caught}`;
     st.classList.add("friend");
@@ -690,6 +718,78 @@ function addTile(grid, e, i, tier, owner = null) {
   }
   t.onclick = () => openDex(s.number, i + 1, e.caught);
   grid.append(t);
+}
+
+// Bonds: six field notes per captured animal, each a heart (app/bonds.py). The
+// buddy is the animal the player keeps closest; its mood follows recent outings.
+const BOND_MAX = 6;
+const BOND_TITLES = ["Met", "Familiar", "Regular", "Friend", "Good friend", "Lifelong friend"];
+function heartsEl(n, max = BOND_MAX) {
+  const h = el("span", "hearts");
+  h.append("♥".repeat(n));
+  if (max > n) h.append(el("span", "off", "♥".repeat(max - n)));
+  h.setAttribute("aria-label", `Bond ${n} of ${max}`);
+  return h;
+}
+
+async function loadBuddy() {
+  const box = $("buddy");
+  let b = null;
+  try { b = await api("/me/buddy"); } catch { /* the Field Guide works without it */ }
+  box.classList.toggle("hidden", !b);
+  if (!b) return;
+  const s = b.bond.species;
+  box.className = `buddy ${b.mood}`;
+  box.innerHTML = "";
+  const img = el("img");
+  img.src = spriteUrl(s.slug, true);
+  img.alt = s.common_name;
+  img.title = "Open its page";
+  img.onclick = () => openDex(s.number, dexNumbers[s.number], true);
+  const text = el("div");
+  const who = el("div", "who");
+  const MOOD = { napping: "napping 💤", happy: "happy", excited: "excited!" };
+  who.append(el("span", "", (b.chosen ? "Your buddy: " : "") + s.common_name), heartsEl(b.bond.level, b.bond.max_level),
+             el("span", "muted", `${b.bond.title} · ${MOOD[b.mood] || b.mood}`));
+  text.append(who, el("p", "say", b.line));
+  if (!b.chosen) text.append(el("div", "muted", "Pick any animal you've captured as your buddy from its page."));
+  box.append(img, text);
+}
+
+async function showBond(number) {
+  const box = $("dex-bond");
+  box.classList.add("hidden");
+  if (number == null) return;
+  let r;
+  try { r = await api(`/me/bonds?species=${number}`); } catch { return; }
+  const b = r.bonds[0];
+  if (!b) return;
+  box.innerHTML = "";
+  const head = el("div", "bond-head");
+  const left = el("div");
+  left.append(el("strong", "", `Bond: ${b.title} `), heartsEl(b.level, b.max_level));
+  const pick = el("button", "ghost", "Make my buddy");
+  pick.onclick = async () => {
+    pick.disabled = true;
+    try { await api("/me/buddy", { method: "PUT", headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ species: String(number) }) });
+          pick.textContent = "Your buddy ✓"; loadBuddy(); }
+    catch (err) { pick.textContent = err.message; }
+  };
+  api("/me/buddy").then((me) => {
+    if (me && me.chosen && me.bond.species.number === number) { pick.textContent = "Your buddy ✓"; pick.disabled = true; }
+  }).catch(() => {});
+  head.append(left, pick);
+  const list = el("ul", "notes");
+  for (const n of b.notes) {
+    const li = el("li", n.done ? "done" : "");
+    const what = el("span", "", n.title);
+    what.append(el("span", "hint", n.hint));
+    li.append(el("span", "tick", n.done ? "♥" : "♡"), what, el("span", "muted", n.done ? "" : `${n.progress} / ${n.goal}`));
+    list.append(li);
+  }
+  box.append(head, list);
+  box.classList.remove("hidden");
 }
 
 // Colour pixel art once caught, a silhouette until then.
@@ -1955,6 +2055,7 @@ async function openDex(key, num, caught, stateCode = myState.code) {
   $("dex-weight").textContent = d.weight || "Unknown";
   $("dex-fact").textContent = d.fun_fact || "🔒 Capture one, or have a friend capture one, to unlock its fun fact.";
   drawSeason(d.season);
+  showBond(d.captured && stateCode === myState.code ? s.number : null);
   gallery = { species: s, scope: "all", sort: "top" };
   loadGallery();
   $("dex").showModal();
