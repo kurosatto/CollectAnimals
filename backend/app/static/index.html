@@ -799,7 +799,7 @@ function habitatSet(entries) {
     const a = { s: e.species, activity: e.activity || "day", role: habRole(e.species) };
     a.speed = habSpeed(a);
     habSpawn(a);
-    if (!habImgs[a.s.slug]) { habImgs[a.s.slug] = new Image(); habImgs[a.s.slug].src = spriteUrl(a.s.slug, true); }
+    if (!habImgs[a.s.slug]) habImgs[a.s.slug] = habLoadFrames(a.s.slug);
     return a;
   });
   habNote();
@@ -1057,6 +1057,39 @@ function habDraw() {
   habBubble(poses);
 }
 
+// Each animal's frames sit side by side in /sprites/<slug>_frames.png, in the order
+// tools/make_sprites.py draws them (FRAMES there). If the sheet is missing, the
+// single sprite is used for every pose.
+const HAB_FRAMES = { idle: 0, walk: [1, 2], sleep: 3, fly: [4, 5, 6], swim: [7, 8] };
+function habLoadFrames(slug) {
+  const img = new Image();
+  img.onerror = () => { img.onerror = null; img.src = spriteUrl(slug, true); };
+  img.src = `/sprites/${encodeURIComponent(slug)}_frames.png`;
+  return img;
+}
+
+// Which frame to show: walking legs, wingbeats (gliding holds the wings level),
+// swimming tails, or closed eyes and a resting pose when asleep.
+function habFrame(a, awake) {
+  if (!awake) return HAB_FRAMES.sleep;
+  const [level, up, down] = HAB_FRAMES.fly, beat = (rate) => {
+    const v = Math.sin(a.phase * rate);
+    return v > .45 ? up : v < -.45 ? down : level;
+  };
+  switch (a.role) {
+    case "fly": return habFlap(a, 1) === 0 && HAB_GLIDERS.test(a.s.slug) ? level : beat(HAB_GLIDERS.test(a.s.slug) ? 7 : 13);
+    case "soar": return Math.sin(a.phase * .45) > .75 ? beat(6) : level;
+    case "dive": return a.mode === "dive" ? HAB_FRAMES.idle : a.mode === "rise" ? beat(16) : beat(7);
+    case "skim": return Math.sin(a.phase * 9) > 0 ? level : down;
+    case "hover": return Math.sin(a.phase * 40) > 0 ? up : down;
+    case "flutter": return beat(11);
+    case "swim": return a.mode === "leap" ? HAB_FRAMES.swim[0] : HAB_FRAMES.swim[Math.floor(a.phase * 3) % 2];
+    case "walk": case "beach": case "shore": case "wade":
+      return a.pause > 0 ? HAB_FRAMES.idle : HAB_FRAMES.walk[Math.floor(a.odo / 4) % 2];
+    default: return HAB_FRAMES.idle;
+  }
+}
+
 // Animals standing on the ground get a soft shadow under their feet.
 const HAB_NO_SHADOW = new Set(["swim", "jelly", "reef", "float", "paddle", "wade", "dangle"]);
 
@@ -1084,6 +1117,9 @@ function habSprite(c, p) {
     c.fillRect(x, 104, 1, y - 104 - 26);
   }
   if (!p.awake) c.globalAlpha = .85;
+  const sheet = raw.naturalWidth > raw.naturalHeight, f = sheet ? habFrame(a, p.awake) : 0;
+  // With real wingbeats, the squash that fakes them isn't needed.
+  if (sheet && p.sky) { p.sx = a.mode === "dive" ? p.sx : 1; p.sy = 1; }
   // Fliers and swimmers turn and squash around their middle, the rest around
   // their feet. Sprites face left; mirror the ones heading right.
   const mid = p.sky || a.role === "swim" || a.role === "jelly" ? 16 : 0;
@@ -1091,7 +1127,7 @@ function habSprite(c, p) {
   if (a.dir > 0 && a.role !== "reef") c.scale(-1, 1);
   if (p.tilt) c.rotate(-p.tilt);
   if (p.sx !== 1 || p.sy !== 1) c.scale(p.sx, p.sy);
-  c.drawImage(img, -16, mid - 32);
+  c.drawImage(img, f * 32, 0, 32, 32, -16, mid - 32, 32, 32);
   c.restore();
   if (a.role === "paddle") {
     c.fillStyle = "rgba(255,255,255,.55)";

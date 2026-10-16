@@ -940,10 +940,24 @@ def load_species(state=None):
     return rows
 
 
-def draw(slug) -> Image.Image:
+def draw(slug, pose="idle", frame=0) -> Image.Image:
     s = Sprite()
+    s.pose, s.frame = pose, frame
     S[slug](s)
     return s.render()
+
+
+# Frames in {slug}_frames.png, left to right, each 32x32. The habitat on the web
+# picks from these; the order is shared with HAB_FRAMES in index.html.
+FRAMES = [("idle", 0), ("walk", 0), ("walk", 1), ("sleep", 0), ("fly", 0), ("fly", 1), ("fly", 2),
+          ("swim", 0), ("swim", 1)]
+
+
+def frames(slug) -> Image.Image:
+    out = Image.new("RGBA", (32 * len(FRAMES), 32))
+    for i, (pose, frame) in enumerate(FRAMES):
+        out.alpha_composite(draw(slug, pose, frame), (32 * i, 0))
+    return out
 
 
 def sheet(rows, scale=4, cols=10, silhouettes=False):
@@ -982,12 +996,13 @@ def main():
         img = draw(slug)
         img.save(args.out / f"{slug}.png", optimize=True)
         silhouette(img).save(args.out / f"{slug}_silhouette.png", optimize=True)
+        frames(slug).save(args.out / f"{slug}_frames.png", optimize=True)
     if not args.state:
         with open(args.out / "credits.csv", "w", newline="", encoding="utf-8") as f:
             w = csv.writer(f)
             w.writerow(["slug", "file", "silhouette", "source", "license"])
             for slug in sorted(slugs):
-                w.writerow([slug, f"{slug}.png", f"{slug}_silhouette.png",
+                w.writerow([slug, f"{slug}.png;{slug}_frames.png", f"{slug}_silhouette.png",
                             "drawn by tools/make_sprites.py (original pixel art, no photo source)", "CC0-1.0"])
     if args.sheet:
         args.sheet.parent.mkdir(parents=True, exist_ok=True)
@@ -997,7 +1012,7 @@ def main():
         both.alpha_composite(color, (0, 0))
         both.alpha_composite(sil, (0, color.height + 16))
         both.save(args.sheet, optimize=True)
-    print(f"wrote {len(slugs) * 2} sprites to {args.out}")
+    print(f"wrote {len(slugs) * 3} sprites to {args.out}")
 
 
 if __name__ == "__main__":

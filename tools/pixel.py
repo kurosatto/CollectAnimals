@@ -94,6 +94,11 @@ class Sprite:
         self.shaded: dict[int, bool] = {}
         self.edged: set[int] = set()
         self.n = 0
+        # Animation frames: drawings check `pose` (idle, walk, sleep, fly, swim)
+        # and `frame`; shift_y moves the finished sprite down (an animal lying down).
+        self.pose = "idle"
+        self.frame = 0
+        self.shift_y = 0
         self.last = np.zeros((N, N), bool)
 
     # -- masks -----------------------------------------------------------------
@@ -221,10 +226,20 @@ class Sprite:
 
     # -- cute details ----------------------------------------------------------
     def eye(self, x, y, size=2, color="#1d1428", shine="#ffffff", mirror=False):
+        if self.pose == "sleep":
+            self.closed_eye(x, y, size, mirror=mirror)
+            return
         pts = [(x + i, y + j) for i in range(size) for j in range(size)]
         self.px(pts, color, mirror=mirror)
         if size >= 2 and shine:
             self.px([(x, y)], shine, mirror=mirror)
+
+    def closed_eye(self, x, y, size=2, color="#1d1428", mirror=False):
+        """A sleepy curve: the bottom row of the eye, its ends turned up."""
+        pts = [(x + i, y + size - 1) for i in range(size)]
+        if size >= 2:
+            pts += [(x - 1, y + size - 2)]
+        self.px(pts, color, mirror=mirror)
 
     def blush(self, x, y, w=2, color="#f59aa8", mirror=False):
         self.px([(x + i, y) for i in range(w)], color, mirror=mirror)
@@ -270,6 +285,9 @@ class Sprite:
             tint = src * (1 - k) + np.array(OUTLINE_INK) * k
             img[nb, :3] = tint[nb].astype(np.uint8)
             img[nb, 3] = 255
+        if self.shift_y:
+            img = np.roll(img, self.shift_y, axis=0)
+            img[:self.shift_y] = 0
         return Image.fromarray(img, "RGBA")
 
 

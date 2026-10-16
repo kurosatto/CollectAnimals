@@ -14,6 +14,33 @@ PINK = "#f2a7b4"
 S: dict = {}
 
 
+# --------------------------------------------------------------------------- animation
+# The habitat animates each animal with a few frames drawn from the same plan:
+# s.pose is "idle", "walk" (frames 0-1), "sleep", "fly" (0 level, 1 up, 2 down)
+# or "swim" (0-1). Plans that don't move a part for a pose just draw it as idle;
+# every plan closes its eyes when asleep (Sprite.eye).
+def _swing(s: Sprite, a=1.0):
+    """How far a leg swings forward on this walking frame (0 when not walking)."""
+    if s.pose != "walk":
+        return 0.0
+    return a if s.frame == 0 else -a
+
+
+def _wing(s: Sprite, x, y, col, *, size=1.0, far=False):
+    """A wing spread from the shoulder at (x, y) for the flying frames."""
+    k = size
+    if far:
+        col = mix(col, "#1a1420", 0.3)
+        x, y = x + 2.5, y - 1
+    if s.frame == 1:    # up
+        pts, r = [(x, y), (x + 2 * k, y - 6 * k), (x + 3.5 * k, y - 12 * k)], (3.0 * k, 1.3)
+    elif s.frame == 2:  # down
+        pts, r = [(x, y + 1), (x + 2.5 * k, y + 6 * k), (x + 3.5 * k, y + 10 * k)], (2.8 * k, 1.2)
+    else:               # level, gliding
+        pts, r = [(x, y), (x + 5 * k, y - 2.5 * k), (x + 10 * k, y - 4 * k)], (3.0 * k, 1.2)
+    return s.path(pts, r, col, edge=not far)
+
+
 def sprite(slug):
     def deco(fn):
         S[slug] = fn
@@ -70,7 +97,13 @@ def mammal(s: Sprite, fur, light=WHITE, *, ears="point", ear_in=PINK, tail="long
     s.ellipse(16, 24, 7, 5.5, fur)
     if belly:
         s.ellipse(16, 25.5, 4, 3.5, light)
-    s.ellipse(12, 29, 2.4, 1.6, feet or mix(fur, "#000000", 0.15), mirror=True)
+    foot = feet or mix(fur, "#000000", 0.15)
+    if s.pose == "walk":
+        # one foot up, then the other
+        s.ellipse(12, 29 - (s.frame == 0), 2.4, 1.6, foot)
+        s.ellipse(20, 29 - (s.frame == 1), 2.4, 1.6, foot)
+    else:
+        s.ellipse(12, 29, 2.4, 1.6, foot, mirror=True)
 
     # ears
     _ears(s, ears, fur if head == fur else head, ear_in)
@@ -157,14 +190,20 @@ def quad(s: Sprite, fur, light=WHITE, *, build="dog", ears="point", ear_in=PINK,
     if behind:
         behind(s, b)
 
-    for x, back in ((b["fx"] + 2.2, False), (b["bx"] + 1.6, True)):
-        _leg(s, x, b["top"], ground, b["leg"], far(legs), back, build, far(feet) if feet else None)
+    lying = s.pose == "sleep"
+    if lying:
+        s.shift_y = max(0, round(ground - (by + bry) - 2))
+    sw = _swing(s, 1.8)
+    for x, back, k in ((b["fx"] + 2.2, False, -1), (b["bx"] + 1.6, True, 1)):
+        if not lying:
+            _leg(s, x, b["top"], ground, b["leg"], far(legs), back, build, far(feet) if feet else None, k * sw)
     _tail(s, tail, bx + brx - 1, by - bry * 0.3, tail_col, tail_tip)
     ear_x = hx + (0.8 if build == "bear" else 2.6)
     _side_ear(s, ears, ear_x - 1, hy - hry + 0.6, far(head), None)
 
-    for x, back in ((b["fx"], False), (b["bx"], True)):
-        _leg(s, x, b["top"], ground, b["leg"], legs, back, build, feet)
+    for x, back, k in ((b["fx"], False, 1), (b["bx"], True, -1)):
+        if not lying:
+            _leg(s, x, b["top"], ground, b["leg"], legs, back, build, feet, k * sw)
     body = s.ellipse(bx, by, brx, bry, fur)
     if build == "bear":
         s.ellipse(bx - 3.5, by - bry + 1.5, 4.5, 2.6, fur)  # shoulder hump
@@ -187,20 +226,25 @@ def quad(s: Sprite, fur, light=WHITE, *, build="dog", ears="point", ear_in=PINK,
     ny = round(sy1 - sr1 + 0.3)
     s.px([(round(sx1 - sr1 + 0.4), ny), (round(sx1 - sr1 + 1.4), ny)], nose)
     ex, ey = round(hx - hrx * 0.45), round(hy - hry * 0.45)
-    s.px([(ex, ey), (ex + 1, ey), (ex, ey + 1), (ex + 1, ey + 1)], eye_col)
-    s.px([(ex, ey)], "#ffffff")
+    if lying:
+        s.closed_eye(ex, ey)
+    else:
+        s.px([(ex, ey), (ex + 1, ey), (ex, ey + 1), (ex + 1, ey + 1)], eye_col)
+        s.px([(ex, ey)], "#ffffff")
     if blush:
         s.px([(ex + 1, ey + 2), (ex + 2, ey + 2)], "#f59aa8")
     if front:
         front(s, b)
 
 
-def _leg(s: Sprite, x, top, ground, r, col, back, build, feet):
+def _leg(s: Sprite, x, top, ground, r, col, back, build, feet, swing=0.0):
+    """swing moves the foot forward (negative, toward the head) or back."""
+    lift = 0.8 if swing < 0 else 0  # the leg swinging forward is off the ground
     if back and build in ("deer", "dog", "cat", "sheep"):
         # back legs bend at the hock
-        pts = [(x, top - 1), (x + 1.4, top + (ground - top) * 0.45), (x + 0.4, ground - 0.8)]
+        pts = [(x, top - 1), (x + 1.4 + swing * 0.5, top + (ground - top) * 0.45), (x + 0.4 + swing, ground - 0.8 - lift)]
     else:
-        pts = [(x, top - 1), (x - 0.2, ground - 0.8)]
+        pts = [(x, top - 1), (x - 0.2 + swing, ground - 0.8 - lift)]
     m = s.path(pts, (r * 1.35, r * 0.9) if build != "bear" else r, col)
     if feet:
         s.paint(s.m_ellipse(pts[-1][0] - 0.3, ground - 0.9, r + 0.6, 1.3), feet, within=m)
@@ -282,7 +326,8 @@ def pinniped(s: Sprite, fur, light, *, spots=None, ears=False, proboscis=None, w
 
 def whale(s: Sprite, body, belly, *, flipper=WHITE):
     s.px([(6, 2), (8, 1), (10, 2), (7, 4), (9, 4), (8, 6)], "#8fd3ff")
-    s.poly([(25, 15), (31, 9), (30, 15), (31, 21)], body)
+    t = (-2 if s.frame == 0 else 2) if s.pose == "swim" else 0
+    s.poly([(25, 15), (31, 9 + t), (30, 15 + t), (31, 21 + t)], body)
     s.ellipse(14, 17, 12, 7.5, body, edge=True)
     m = s.ellipse(13, 21, 9.5, 3.5, belly)
     for x in range(6, 21, 3):
@@ -310,17 +355,28 @@ def bird(s: Sprite, body, belly, *, head=None, wing=None, tail_col=None, beak="c
         s.poly([(20, cy), (27, cy - 3), (28, cy + 1), (22, cy + 4)], tail_col)
     elif tail == "fan":
         s.poly([(20, cy), (29, cy - 9), (31, cy - 1), (23, cy + 4)], tail_col)
-    s.line(13, 25, 13, 29, legs)
-    s.line(17, 25, 17, 29, legs)
-    s.px([(12, 29), (16, 29)], legs)
+    fly = s.pose == "fly"
+    if fly:
+        if s.frame == 1:
+            _wing(s, 19, cy - 1, wing, far=True)
+    elif s.pose == "sleep":
+        s.shift_y = 3  # sitting down, legs tucked under
+    else:
+        sw = _swing(s, 1.5)
+        s.line(13, 25, 13 - sw, 29, legs)
+        s.line(17, 25, 17 + sw, 29, legs)
+        s.px([(round(12 - sw), 29), (round(16 + sw), 29)], legs)
     rb = 8.5 if big else 8
     s.ellipse(16.5, cy + 1, rb, 7, body)
     s.ellipse(13.5, cy + 3, 5.5, 4.5, belly)
     if belly_mark:
         belly_mark(s, s.last)
-    s.ellipse(20, cy, 5.8, 4.2, wing, rot=-15, edge=True)
-    if wing_mark:
-        wing_mark(s, s.last)
+    if fly:
+        _wing(s, 19, cy - 1, wing)
+    else:
+        s.ellipse(20, cy, 5.8, 4.2, wing, rot=-15, edge=True)
+        if wing_mark:
+            wing_mark(s, s.last)
     if crest == "jay":
         s.poly([(12, 6), (17, -1), (17, 7)], head)
     elif crest == "quail":
@@ -367,10 +423,17 @@ def owl(s: Sprite, body, face, *, tufts=False, eye_col="#f6c33c", belly=None, be
     if bars:
         for y in range(19, 30, 2):
             s.paint(s.m_line(11, y, 21, y), bars, within=s.last)
-    s.ellipse(5.5, 20, 3, 6.5, mix(body, "#000000", 0.18), rot=-10, mirror=True)
+    wing = mix(body, "#000000", 0.18)
+    if s.pose == "fly":
+        cx, cy, rx, ry, rot = {0: (2.5, 17, 5, 2.6, -10), 1: (3.5, 10, 2.6, 7, 30), 2: (4, 25, 2.6, 6.5, -30)}[s.frame]
+        s.ellipse(cx, cy, rx, ry, wing, rot=rot, mirror=True, edge=True)
+    else:
+        s.ellipse(5.5, 20, 3, 6.5, wing, rot=-10, mirror=True)
     s.ellipse(16, 10, 10, 8, body, edge=True)
     s.ellipse(11.5, 10.5, 4.5, 4.8, face, mirror=True, edge=disk_edge is not None)
-    if eye_col:
+    if s.pose == "sleep":
+        s.closed_eye(10, 10, 3, mirror=True)
+    elif eye_col:
         s.ellipse(11.5, 10.5, 2.4, 2.4, eye_col, mirror=True, shade=False)
         s.px([(11, 10), (12, 10), (11, 11), (12, 11)], EYE, mirror=True)
         s.px([(11, 10)], WHITE, mirror=True)
@@ -385,12 +448,28 @@ def wader(s: Sprite, body, *, neck=None, head=None, beak="#e8b830", legs="#3d353
           cap=None, wing=None, curved=False, face=None):
     neck = neck or body
     head = head or neck
-    s.line(18, 19, 17, 30, legs)
-    s.line(21, 19, 22, 30, legs)
-    s.px([(16, 30), (23, 30)], legs)
+    wing = wing or mix(body, "#000000", 0.12)
+    if s.pose == "fly":
+        # legs trail out behind
+        s.line(21, 18, 31, 21, legs)
+        s.line(20, 19, 31, 23, legs)
+        if s.frame == 1:
+            _wing(s, 21, 13, wing, far=True)
+    elif s.pose == "sleep":
+        # resting on one leg
+        s.line(19, 19, 19, 30, legs)
+        s.px([(18, 30), (20, 30)], legs)
+    else:
+        sw = _swing(s, 2)
+        s.line(18, 19, 17 - sw, 30, legs)
+        s.line(21, 19, 22 + sw, 30, legs)
+        s.px([(round(16 - sw), 30), (round(23 + sw), 30)], legs)
     s.ellipse(20, 15, 7, 5, body)
-    s.ellipse(22, 14, 5, 3.3, wing or mix(body, "#000000", 0.12), rot=-10, edge=True)
-    s.poly([(26, 14), (31, 17), (25, 18)], wing or mix(body, "#000000", 0.12))
+    if s.pose == "fly":
+        _wing(s, 21, 13, wing)
+    else:
+        s.ellipse(22, 14, 5, 3.3, wing, rot=-10, edge=True)
+    s.poly([(26, 14), (31, 17), (25, 18)], wing)
     s.path([(15, 14), (13, 11), (14, 8), (11, 5)], 1.8, neck)
     if plume:
         s.path([(12, 3), (17, 2), (20, 3)], (1, 0.5), plume, shade=False)
@@ -442,7 +521,8 @@ def hummingbird(s: Sprite, *, head="#d93a8a", crown="#6aa56e", throat=None):
     s.poly([(18, 20), (24, 28), (20, 29)], "#4d7a52")
     s.ellipse(16, 18, 5.5, 6.5, "#6aa56e", rot=20)
     s.ellipse(14, 20, 3.5, 4, "#c9d6c0")
-    s.ellipse(19, 12, 6, 2.6, "#e6f4fc", rot=-55, shade=False)
+    wx, wy, rot = {0: (21, 13, -25), 1: (19, 11, -65), 2: (21, 17, 15)}[s.frame] if s.pose == "fly" else (19, 12, -55)
+    s.ellipse(wx, wy, 6, 2.6, "#e6f4fc", rot=rot, shade=False)
     s.ellipse(12, 11, 5.2, 5, head, edge=True)
     s.paint(s.m_ellipse(13.5, 8.3, 4, 2.3), crown, within=s.last)
     if throat:
@@ -456,15 +536,28 @@ def hummingbird(s: Sprite, *, head="#d93a8a", crown="#6aa56e", throat=None):
 def pelican(s: Sprite):
     """Standing, so it reads as a bird whether it's perched or flying."""
     s.poly([(25, 17), (31, 15), (30, 21)], "#3f3b3d")
-    s.line(15, 24, 15, 28, "#3d3a3c")
-    s.line(19, 24, 19, 28, "#3d3a3c")
-    s.px([(13, 29), (14, 29), (15, 29), (17, 29), (18, 29), (19, 29)], "#3d3a3c")
+    fly = s.pose == "fly"
+    if fly:
+        if s.frame == 1:
+            _wing(s, 20, 17, "#b9b4ac", size=1.1, far=True)
+    elif s.pose == "sleep":
+        s.shift_y = 2
+    else:
+        sw = _swing(s, 1.5)
+        s.line(15, 24, 15 - sw, 28, "#3d3a3c")
+        s.line(19, 24, 19 + sw, 28, "#3d3a3c")
+        s.px([(round(13 - sw), 29), (round(14 - sw), 29), (round(15 - sw), 29),
+              (round(17 + sw), 29), (round(18 + sw), 29), (round(19 + sw), 29)], "#3d3a3c")
     s.ellipse(18.5, 20, 9.5, 6, "#6f6a6c")
     s.ellipse(16, 22.5, 5.5, 3.4, "#8a8486")
-    m = s.ellipse(20.5, 18, 7.5, 3.8, "#b9b4ac", rot=-10, edge=True)
-    s.paint(s.m_poly([(24, 16), (29, 15), (28, 21), (24, 21)]), "#3f3b3d", within=m)
-    for x in range(16, 24, 3):
-        s.paint(s.m_line(x, 17, x + 2, 20), "#8f8a84", within=m)
+    if fly:
+        m = _wing(s, 20, 17, "#b9b4ac", size=1.1)
+        s.paint(s.m_ellipse(*{0: (30, 13), 1: (24, 4), 2: (24, 28)}[s.frame], 2.5, 2.5), "#3f3b3d", within=m)
+    else:
+        m = s.ellipse(20.5, 18, 7.5, 3.8, "#b9b4ac", rot=-10, edge=True)
+        s.paint(s.m_poly([(24, 16), (29, 15), (28, 21), (24, 21)]), "#3f3b3d", within=m)
+        for x in range(16, 24, 3):
+            s.paint(s.m_line(x, 17, x + 2, 20), "#8f8a84", within=m)
     s.path([(12, 20), (10, 15), (12, 10)], 2.4, "#5a3a2e")
     s.paint(s.m_path([(13, 19), (11.5, 15), (13, 11)], 0.6), "#f4efe2")
     s.ellipse(12.5, 7.5, 4.4, 3.8, "#f4efe2", edge=True)
@@ -494,15 +587,16 @@ def lizard(s: Sprite, body, belly, *, head=None, pattern=None, tail_col=None, th
     legs = legs or mix(body, "#000000", 0.15)
     tp = tail_pts or [(20, 22), (26, 25), (30, 22), (30, 16)]
     s.path(tp, (2.4, 0.7), tail_col)
-    s.path([(20, 23), (22, 27), (24, 27)], 1.1, mix(legs, "#000000", 0.15))
-    s.path([(10, 23), (9, 27), (7, 27)], 1.1, mix(legs, "#000000", 0.15))
+    sw = _swing(s, 1.5)
+    s.path([(20, 23), (22 + sw, 27), (24 + sw, 27)], 1.1, mix(legs, "#000000", 0.15))
+    s.path([(10, 23), (9 + sw, 27), (7 + sw, 27)], 1.1, mix(legs, "#000000", 0.15))
     ry = 4.3 if wide else 3.6
     body_m = s.ellipse(15, 22, 7.5, ry, body)
     s.paint(s.m_ellipse(15, 24.8, 6.5, 1.6), belly, within=body_m)
     if pattern:
         pattern(s, body_m)
-    s.path([(17, 24), (17, 28), (15, 28)], 1.1, legs)
-    s.path([(12, 24), (12, 28), (10, 28)], 1.1, legs)
+    s.path([(17, 24), (17 - sw, 28), (15 - sw, 28)], 1.1, legs)
+    s.path([(12, 24), (12 - sw, 28), (10 - sw, 28)], 1.1, legs)
     hm = s.ellipse(7.5, 18.5, 5.5 if smooth else 5.2, 4.3 if smooth else 3.8, head, edge=True)
     s.paint(s.m_ellipse(6, 21.5, 4.5, 1.3), throat or belly, within=hm)
     if horns:
@@ -572,8 +666,9 @@ def turtle(s: Sprite, shell, skin, *, dome=False, scutes=None, speckle=None, rim
     s.ellipse(5, 18.5, 4.5, 4, skin, edge=True)
     if speckle:
         s.px([(3, 17), (6, 16), (5, 20), (7, 19)], speckle)
-    s.ellipse(11, 27, 2.4, 3.2, skin, mirror=False)
-    s.ellipse(22, 27, 2.4, 3.2, skin)
+    sw = _swing(s, 1)
+    s.ellipse(11 - sw, 27 - (sw > 0), 2.4, 3.2, skin, mirror=False)
+    s.ellipse(22 + sw, 27 - (sw < 0), 2.4, 3.2, skin)
     s.poly([(26, 23), (30, 25), (26, 26)], skin)
     ry = 10 if dome else 7.5
     m = s.fill(s.m_ellipse(17, 25, 11, ry) & (s.m_poly([(0, 0), (32, 0), (32, 25.5), (0, 25.5)])), shell, edge=True)
@@ -613,8 +708,10 @@ def butterfly(s: Sprite, fore, hind, *, body="#2b2630", pattern=None, tails=Fals
     """Top view, wings spread."""
     if tails:
         s.path([(11, 23), (10, 28)], (1.2, 0.8), hind, mirror=True)
-    fm = s.poly([(15, 11), (5, 3), (1.5, 6), (2, 14), (14, 17)], fore, mirror=True, edge=True)
-    hm = s.poly([(15, 16), (5, 16), (4, 22), (9, 27), (15, 22)], hind, mirror=True, edge=True)
+    k = {1: 0.45, 2: 0.75}.get(s.frame, 1.0) if s.pose == "fly" else 1.0
+    sq = lambda pts: [(16 - (16 - x) * k, y) for x, y in pts]  # noqa: E731
+    fm = s.poly(sq([(15, 11), (5, 3), (1.5, 6), (2, 14), (14, 17)]), fore, mirror=True, edge=True)
+    hm = s.poly(sq([(15, 16), (5, 16), (4, 22), (9, 27), (15, 22)]), hind, mirror=True, edge=True)
     if pattern:
         pattern(s, fm, hm)
     s.line(15, 8, 11, 2, body)
@@ -626,8 +723,9 @@ def butterfly(s: Sprite, fore, hind, *, body="#2b2630", pattern=None, tails=Fals
 
 
 def bee(s: Sprite):
-    s.ellipse(20, 8, 4.5, 6.5, "#e6f4fc", rot=25, shade=False, edge=True)
-    s.ellipse(25, 11, 3.5, 5, "#d6ecfa", rot=40, shade=False, edge=True)
+    w = {1: -25, 2: 25}.get(s.frame, 0) if s.pose == "fly" else 0
+    s.ellipse(20, 8, 4.5, 6.5, "#e6f4fc", rot=25 + w, shade=False, edge=True)
+    s.ellipse(25, 11, 3.5, 5, "#d6ecfa", rot=40 + w, shade=False, edge=True)
     s.poly([(26, 21), (31, 23), (26, 24)], "#3a2a22")
     m = s.ellipse(18, 19, 8.5, 7, "#f0b429")
     for x in (16, 21, 25):
@@ -668,7 +766,7 @@ def beetle_top(s: Sprite, shell, *, head=BLACK, spots=(), stripes=False, fan=Fal
 
 def dragonfly(s: Sprite, thorax, abdomen, *, wing="#e6f4fc", wing_tint=None):
     for cy in (10, 14):
-        rot = -8 if cy == 10 else 10
+        rot = (-8 if cy == 10 else 10) + ({1: -14, 2: 14}.get(s.frame, 0) if s.pose == "fly" else 0)
         m = s.ellipse(8, cy, 7.5, 2.1, wing, rot=rot, shade=False, edge=True, mirror=True)
         if wing_tint:
             s.paint(s.m_ellipse(13, cy, 3.5, 2.3, rot=rot), wing_tint, within=m, mirror=True)
@@ -705,7 +803,8 @@ def fish(s: Sprite, body, belly, *, fin=None, pattern=None, slim=False):
     """Side view facing left."""
     fin = fin or mix(body, "#000000", 0.15)
     ry = 6 if slim else 7.5
-    s.poly([(24, 16.5), (31, 10), (29.5, 16.5), (31, 23)], fin)
+    t = (-2 if s.frame == 0 else 2) if s.pose == "swim" else 0
+    s.poly([(24, 16.5), (31, 10 + t), (29.5, 16.5 + t), (31, 23 + t)], fin)
     s.poly([(10, 11 if slim else 9.5), (17, 7 if slim else 6), (22, 11)], fin)
     s.poly([(12, 22), (16, 26), (19, 22)], fin)
     m = s.ellipse(15, 16.5, 11, ry, body, edge=True)
@@ -720,7 +819,8 @@ def fish(s: Sprite, body, belly, *, fin=None, pattern=None, slim=False):
 
 
 def dolphin(s: Sprite, body, belly):
-    s.poly([(24, 16), (31, 9), (29, 16), (31, 21)], body)
+    t = (-2 if s.frame == 0 else 2) if s.pose == "swim" else 0
+    s.poly([(24, 16), (31, 9 + t), (29, 16 + t), (31, 21 + t)], body)
     s.poly([(14, 11), (20, 4), (21, 12)], body)
     m = s.ellipse(15, 17, 11.5, 6, body, edge=True)
     s.paint(s.m_ellipse(12, 20.5, 9, 2.8), belly, within=m)
@@ -733,13 +833,15 @@ def dolphin(s: Sprite, body, belly):
 
 
 def sea_turtle(s: Sprite, shell, skin, *, scutes=None):
+    stroke = s.pose == "swim" and s.frame == 1
     s.ellipse(9, 24, 6, 2.5, skin, rot=25)
-    s.ellipse(24, 25, 3.5, 2, skin, rot=-20)
+    s.ellipse(24, 25, 3.5, 2, skin, rot=-20 if not stroke else 10)
     m = s.ellipse(18, 17, 11, 7.5, shell, edge=True)
     for cx, cy in ((13, 15), (18, 13), (23, 15), (15, 19), (21, 19)):
         s.paint(s.m_ellipse(cx, cy, 2.2, 1.8), scutes or mix(shell, "#ffffff", 0.2), within=m)
     s.ellipse(18, 23.5, 10, 1.5, mix(skin, "#ffffff", 0.3))
-    s.ellipse(9, 9.5, 6, 2.6, skin, rot=-30)
+    # Front flipper sweeps back along the shell, or reaches forward mid-stroke.
+    s.ellipse(14, 23.5, 7, 2.4, skin, rot=-12, edge=True) if not stroke else s.ellipse(9, 22, 6, 2.6, skin, rot=40, edge=True)
     s.ellipse(5.5, 16.5, 5, 4.2, skin, edge=True)
     s.paint(s.m_px([(4, 14), (7, 14), (6, 16), (3, 17)]), mix(skin, "#000000", 0.25))
     s.eye(3, 15)
@@ -748,14 +850,15 @@ def sea_turtle(s: Sprite, shell, skin, *, scutes=None):
 
 def alligator(s: Sprite, body="#4a5a3a", belly="#e8e0b8"):
     s.path([(20, 22), (26, 24), (30, 22), (31, 17)], (2.8, 0.8), body)
-    s.path([(20, 23), (22, 27), (24, 27)], 1.2, mix(body, "#000000", 0.2))
-    s.path([(10, 23), (9, 27), (7, 27)], 1.2, mix(body, "#000000", 0.2))
+    sw = _swing(s, 1.5)
+    s.path([(20, 23), (22 + sw, 27), (24 + sw, 27)], 1.2, mix(body, "#000000", 0.2))
+    s.path([(10, 23), (9 + sw, 27), (7 + sw, 27)], 1.2, mix(body, "#000000", 0.2))
     m = s.ellipse(15, 21.5, 8, 4, body)
     s.paint(s.m_ellipse(15, 24.6, 7, 1.6), belly, within=m)
     for x in (10, 13, 16, 19, 22, 25, 28):
         s.px([(x, 18 if x < 22 else 19 + (x - 22) // 3)], mix(body, "#000000", 0.4))
-    s.path([(17, 24), (17, 28), (15, 28)], 1.2, body)
-    s.path([(12, 24), (12, 28), (10, 28)], 1.2, body)
+    s.path([(17, 24), (17 - sw, 28), (15 - sw, 28)], 1.2, body)
+    s.path([(12, 24), (12 - sw, 28), (10 - sw, 28)], 1.2, body)
     s.ellipse(8, 18.5, 4.5, 3.6, body, edge=True)
     s.poly([(5, 18), (-1, 19.5), (-1, 22.5), (6, 22)], body)
     s.paint(s.m_line(0, 21, 6, 21), mix(body, "#000000", 0.5))
@@ -768,8 +871,9 @@ def alligator(s: Sprite, body="#4a5a3a", belly="#e8e0b8"):
 def turkey(s: Sprite):
     for i, c in enumerate(("#c8a06a", "#5a3e2a", "#8a6440", "#3e2a1e")):
         s.ellipse(20, 15, 11 - i * 1.7, 12 - i * 1.7, c, shade=False)
-    s.line(14, 25, 13, 30, "#c86a5a")
-    s.line(18, 25, 19, 30, "#c86a5a")
+    sw = _swing(s, 1.5)
+    s.line(14, 25, 13 - sw, 30, "#c86a5a")
+    s.line(18, 25, 19 + sw, 30, "#c86a5a")
     s.ellipse(16, 21, 7, 6.5, "#4e3a30")
     s.paint(s.m_px([(12, 19), (15, 18), (18, 20), (14, 22), (17, 23), (20, 22)]), "#8a6a3a")
     s.ellipse(19, 21, 4.5, 3.5, "#3a2a24", rot=-20, edge=True)

@@ -142,7 +142,8 @@ def silhouette_by_number(number: int, db: Session = Depends(get_db)):
 
 @app.get("/sprites/{name}.png", include_in_schema=False)
 def sprite(name: str):
-    """Pixel-art sprites: `{slug}.png` in colour, `{slug}_silhouette.png` until caught."""
+    """Pixel-art sprites: `{slug}.png` in colour, `{slug}_silhouette.png` until caught, and
+    `{slug}_frames.png` with the habitat's animation frames side by side."""
     slug = name.removesuffix("_silhouette")
     path = settings.sprites_dir / f"{name}.png"
     if not slug.replace("_", "").isalnum() or not path.is_file():
