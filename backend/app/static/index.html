@@ -1568,7 +1568,9 @@ function habBackground(L, phase, state) {
   const coastEnd = L.sea + 10;
   // Mountains and hills sink toward the coast instead of stopping in a wall.
   const env = (x, len) => { const k = clamp01((coastEnd - 14 - x) / len); return k * k * (3 - 2 * k); };
-  const fade = (x, h) => Math.round(150 - (150 - h) * env(x, 90));
+  // Mountains reach down to the sea's horizon so none of them float over the coast.
+  const foot = L.water + 1;
+  const fade = (x, h) => Math.round(foot - (foot - h) * env(x, 90));
   const atmo = (col, k) => pxMix(col, 0xcdeefb, k);
   if (state === "CA") {
     // The Sierra Nevada: sharp shaded peaks with snow on top.
@@ -1581,7 +1583,7 @@ function habBackground(L, phase, state) {
     }
     for (let x = 0; x < coastEnd; x++) {
       const h = hm[x + 1], s = hm[x + 2] - hm[x];
-      for (let y = h; y < 150; y++) {
+      for (let y = h; y < foot; y++) {
         const v = .5 - s * .3 + (vnoise(x / 7, y / 4, 9) - .5) * .22 - (y - h) * .006;
         const isSnow = y < 98 + vnoise(x / 4, y / 3, 5) * 8 - (y - h) * .2;
         img.set(x, y, atmo(ramp(isSnow ? snow : rock, v, x, y), .28));
@@ -1593,7 +1595,7 @@ function habBackground(L, phase, state) {
       const pal = P(a, b);
       for (let x = 0; x < coastEnd; x++) {
         const h = fade(x, Math.round(base - fbm(x / 40, i * 3, 11 + i) * 18 + Math.sin(x / 23 + i) * 2));
-        for (let y = h; y < 150; y++) img.set(x, y, y === h ? pal[1] : ramp(pal, .7 - (y - h) / 30, x, y));
+        for (let y = h; y < foot; y++) img.set(x, y, y === h ? pal[1] : ramp(pal, .7 - (y - h) / 30, x, y));
       }
     });
   }
