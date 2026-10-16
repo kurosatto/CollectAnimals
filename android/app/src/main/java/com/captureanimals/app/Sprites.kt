@@ -11,7 +11,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 
 /**
- * The species' 32×32 pixel art from species/sprites (packaged as assets): in colour once
+ * The species' 40×40 pixel art from species/sprites (packaged as assets): in colour once
  * caught, a silhouette until then. Scaled up without smoothing so the pixels stay crisp.
  */
 @Composable

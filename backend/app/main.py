@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 
 from . import classifier as clf
 from . import dex
-from . import bonds, duels, goals, places, scoring, social
+from . import bonds, goals, places, scoring, social
 from . import states as st
 from .auth import create_token, current_user, hash_password, optional_user, verify_password
 from .classifier import OTHER_LABEL, Prediction
@@ -119,7 +119,6 @@ app = FastAPI(title="Capture Animals", lifespan=lifespan,
 LOGIN_WINDOW, LOGIN_MAX_FAILURES = 300, 10
 _failed_logins: dict[str, list[float]] = {}
 app.include_router(social.router)
-app.include_router(duels.router)
 # Third-party browser libraries, served from here so the app works without a CDN.
 app.mount("/vendor", StaticFiles(directory=STATIC_DIR / "vendor"), name="vendor")
 

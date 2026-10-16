@@ -152,7 +152,7 @@
   /* Field Guide: small sprite tiles so lots fit on a phone screen. */
   .guide { grid-template-columns:repeat(auto-fill,minmax(64px,1fr)); gap:5px; }
   .guide .tile { padding:5px 4px; font-size:.72rem; text-align:center; line-height:1.2; }
-  .guide .tile .sprite { width:100%; height:auto; aspect-ratio:1; max-width:56px; margin:2px auto; display:block; }
+  .guide .tile .sprite { width:100%; height:auto; aspect-ratio:1; max-width:64px; margin:2px auto; display:block; }
   .guide .tile .num { font-size:.62rem; }
   .guide .tile .name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .guide .tile .sci, .guide .tile .rarity { display:none; }
@@ -173,25 +173,6 @@
   .welcome { border-color:var(--accent); }
   .welcome p { margin:6px 0 0; }
   label.inline { display:flex; align-items:center; gap:6px; font-size:.9rem; color:var(--muted); }
-  .duel-cards { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-  .fcard { border:2px solid var(--line); border-radius:12px; padding:8px; display:grid; gap:4px; background:var(--bg); }
-  .fcard.back { place-items:center; min-height:200px; color:var(--muted); font-size:2rem; border-style:dashed; }
-  .fcard .who { font-size:.75rem; color:var(--muted); }
-  .fcard .sprite { width:64px; height:64px; margin:0 auto; }
-  .fcard .nm { font-weight:700; text-align:center; font-size:.9rem; }
-  .fcard .rarity { text-align:center; }
-  .fcard .stat { display:grid; grid-template-columns:1fr auto; gap:6px; align-items:center; padding:4px 8px;
-                 border-radius:8px; font-size:.85rem; background:var(--card); border:1px solid var(--line); color:var(--ink); }
-  .fcard button.stat { cursor:pointer; }
-  .fcard .stat span { justify-self:start; }
-  .fcard button.stat:hover { border-color:var(--accent); }
-  .fcard .stat.picked { border-color:var(--legendary); font-weight:700; }
-  .fcard .stat b { font-variant-numeric:tabular-nums; }
-  .duel-rounds { display:flex; gap:6px; margin-top:6px; }
-  .duel-rounds span { width:22px; height:22px; border-radius:50%; display:grid; place-items:center; font-size:.75rem;
-                      border:1px solid var(--line); }
-  .duel-rounds .win { background:var(--accent); color:#fff; border-color:var(--accent); }
-  .duel-rounds .lose { background:#c0392b; color:#fff; border-color:#c0392b; }
   .week { display:grid; gap:10px; }
   .week-row { display:grid; grid-template-columns:22px 1fr auto; gap:8px; align-items:center; font-size:.9rem; }
   .week-row .tick { width:22px; height:22px; border-radius:50%; border:2px solid var(--line); display:grid;
@@ -205,7 +186,7 @@
   .set-head { display:flex; justify-content:space-between; gap:8px; font-weight:600; }
   .set .desc { font-size:.8rem; color:var(--muted); }
   .set-sprites { display:flex; flex-wrap:wrap; gap:2px; }
-  .set-sprites img { width:32px; height:32px; image-rendering:pixelated; cursor:pointer; }
+  .set-sprites img { width:40px; height:40px; image-rendering:pixelated; cursor:pointer; }
   .set-sprites img.missing { opacity:.4; }
   .score { margin-top:12px; border:1px solid var(--line); border-radius:10px; padding:10px 12px; max-width:320px; }
   .score-head { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
@@ -323,7 +304,7 @@
         <canvas id="hab-canvas" width="480" height="270" aria-label="Your habitat: the animals you've captured"></canvas>
         <div id="hab-bubble" class="hab-bubble hidden"></div>
       </div>
-      <div class="hab-bar"><span id="hab-note" class="muted"></span><button class="ghost" id="hab-peek"></button></div>
+      <div class="hab-bar" id="hab-bar"><span id="hab-note" class="muted"></span><button class="ghost" id="hab-peek"></button></div>
       <div id="grid" class="grid guide"></div>
     </div>
     <div class="card off" data-tab="dex">
@@ -346,22 +327,8 @@
       <p id="friend-msg" class="muted"></p>
       <div id="friend-lists"></div>
     </div>
-    <div class="card off" data-tab="friends">
-      <h2>Card duels <span class="muted" id="duel-record"></span></h2>
-      <p class="muted" style="margin-top:0">Every animal you've captured is a card. Challenge a friend: pick the stat you
-        think beats their card, five rounds, most rounds wins.</p>
-      <div id="duel-list" class="feed"></div>
-    </div>
   </section>
 </main>
-<dialog id="duel"><div class="dex">
-  <div class="dex-head"><div style="flex:1"><h2 id="duel-title">Card duel</h2>
-    <div class="muted" id="duel-score"></div></div>
-    <button class="close" id="duel-close" aria-label="Close">×</button></div>
-  <p id="duel-msg" style="margin:8px 0"></p>
-  <div class="duel-cards" id="duel-cards"></div>
-  <div class="profile-actions" id="duel-actions"></div>
-</div></dialog>
 <dialog id="dex"><div class="dex">
   <div class="dex-head">
     <img class="sprite dex-sprite" id="dex-sprite" alt="">
@@ -681,7 +648,7 @@ async function loadCollection() {
   loadSets(); loadChallenges(); loadBuddy();
   const entries = [...c.entries].sort((a, b) => dexSort(a.species, b.species));
   caughtNums = new Set(entries.filter((e) => e.caught).map((e) => e.species.number));
-  habitatSet(entries);
+  if (hab.visit) hab.visit.home = entries; else habitatSet(entries);
   entries.forEach((e, i) => { dexNumbers[e.species.number] = i + 1; });
   loadHotspots();
   $("progress").textContent = `${c.caught} / ${c.total}`;
@@ -835,8 +802,11 @@ const spriteUrl = (slug, caught) => `/sprites/${encodeURIComponent(slug)}${caugh
 // and a button peeks at the other half of the day. Tap an animal for its name,
 // tap again for its Field Guide page.
 const HAB_H = 270;
+// While you look at a friend's profile, the scene moves into it and shows their
+// animals in their state's scenery (`visit`); closing the profile brings yours back.
 const hab = { w: 0, L: null, animals: [], peek: false, picked: null, pickedUntil: 0, last: 0, bg: null, bgKey: "", t: 0,
-              fx: [] };
+              fx: [], visit: null };
+const habState = () => (hab.visit ? hab.visit.state : myState.code);
 const habImgs = {};
 // Animation sheets (species/sprites/anim): a row of four frames for each pose, and
 // an index of the poses each species really draws. Without them the scene falls
@@ -949,7 +919,7 @@ function habitatSet(entries) {
   hab.animals = entries.filter((e) => e.caught && e.species.slug).map((e) => {
     const prev = old.get(e.species.slug);
     if (prev && !relayout) { prev.s = e.species; prev.activity = e.activity || "day"; return prev; }
-    const a = { s: e.species, activity: e.activity || "day", role: habRole(e.species) };
+    const a = { s: e.species, activity: e.activity || "day", role: habRole(e.species), num: e.num };
     a.speed = habSpeed(a);
     habSpawn(a);
     if (!habImgs[a.s.slug]) { habImgs[a.s.slug] = new Image(); habImgs[a.s.slug].src = spriteUrl(a.s.slug, true); }
@@ -975,8 +945,9 @@ const habAwake = (a, phase) => phase === "dawn" || phase === "dusk" || a.activit
 function habNote() {
   const phase = habPhase(), n = hab.animals.length;
   const asleep = hab.animals.filter((a) => !habAwake(a, phase)).length;
-  $("hab-note").textContent = !n ? "Capture animals and they'll move in here."
-    : `${n} animal${n > 1 ? "s" : ""} live${n > 1 ? "" : "s"} here` + (asleep ? `, ${asleep} asleep` : "")
+  const who = hab.visit ? `${hab.visit.username}'s habitat` : "here";
+  $("hab-note").textContent = !n ? (hab.visit ? `No animals in ${who} yet.` : "Capture animals and they'll move in here.")
+    : `${n} animal${n > 1 ? "s" : ""} live${n > 1 ? "" : "s"} ${hab.visit ? "in " + who : "here"}` + (asleep ? `, ${asleep} asleep` : "")
       + ". Tap one to say hi.";
   const night = phase === "night";
   $("hab-peek").textContent = hab.peek ? "Back to now" : night || phase === "dusk" ? "☀️ Peek at daytime" : "🌙 Peek at night";
@@ -1189,9 +1160,9 @@ function habAnim(a, awake, roost) {
 function habDraw() {
   const cv = $("hab-canvas");
   if (!hab.L || !cv) return;
-  const L = hab.L, phase = habPhase(), key = `${L.w}/${phase}/${myState.code}`;
+  const L = hab.L, phase = habPhase(), key = `${L.w}/${phase}/${habState()}`;
   if (cv.width !== L.w) { cv.width = L.w; cv.height = HAB_H; }
-  if (hab.bgKey !== key) { hab.bg = habBackground(L, phase, myState.code); hab.bgKey = key; }
+  if (hab.bgKey !== key) { hab.bg = habBackground(L, phase, habState()); hab.bgKey = key; }
   const c = cv.getContext("2d");
   c.imageSmoothingEnabled = false;
   c.drawImage(hab.bg, 0, 0);
@@ -1251,7 +1222,10 @@ function habSprite(c, p) {
   const { a, x, y } = p, sheet = habSheets[a.s.slug];
   const framed = p.anim && sheet && sheet.complete && sheet.naturalWidth;
   const img = framed ? habTinted(sheet, `${a.s.slug}@anim`, p.phase) : habTinted(raw, a.s.slug, p.phase);
-  p.box = [x - 16, y - 32, x + 16, y];
+  // Frame size from the image (40 px: a 32 px drawing with room for wings, tails
+  // and antlers), feet on its bottom row.
+  const F = framed ? sheet.naturalWidth / habAnimIdx.frames : raw.naturalWidth;
+  p.box = [x - F / 2, y - F, x + F / 2, y];
   if (p.hidden) return;
   if (!p.sky && !p.roost && !HAB_NO_SHADOW.has(a.role)) {
     const gy = a.role === "hop" && p.awake ? Math.round(a.y) : y;
@@ -1278,8 +1252,8 @@ function habSprite(c, p) {
   if (a.dir > 0 && a.role !== "reef") c.scale(-1, 1);
   if (p.tilt) c.rotate(-p.tilt);
   if (p.sx !== 1 || p.sy !== 1) c.scale(p.sx, p.sy);
-  if (framed) c.drawImage(img, p.anim[1] * 32, habAnimIdx.rows.indexOf(p.anim[0]) * 32, 32, 32, -16, mid - 32, 32, 32);
-  else c.drawImage(img, -16, mid - 32);
+  if (framed) c.drawImage(img, p.anim[1] * F, habAnimIdx.rows.indexOf(p.anim[0]) * F, F, F, -F / 2, mid - F, F, F);
+  else c.drawImage(img, -F / 2, mid - F);
   c.restore();
   if (a.role === "paddle") {
     c.fillStyle = "rgba(255,255,255,.55)";
@@ -1342,7 +1316,8 @@ function habTap(ev) {
   if (!hits.length) { hab.picked = null; habDraw(); return; }
   const h = hits[0];
   if (hab.picked === h.a && performance.now() < hab.pickedUntil) {
-    openDex(h.a.s.number, dexNumbers[h.a.s.number], true);
+    if (hab.visit) openDex(h.a.s.number, h.a.num, caughtNums.has(h.a.s.number), hab.visit.state);
+    else openDex(h.a.s.number, dexNumbers[h.a.s.number], true);
     return;
   }
   hab.picked = h.a;
@@ -1353,12 +1328,32 @@ function habTap(ev) {
   if (habStill) habDraw();
 }
 
+// Show a friend's animals (their Field Guide entries) in their state's scenery,
+// inside `slot` on their profile.
+function habVisit(username, state, entries, slot) {
+  if (!hab.visit) hab.visit = { home: hab.animals.map((a) => ({ caught: true, species: a.s, activity: a.activity })) };
+  Object.assign(hab.visit, { username, state });
+  slot.append($("habitat"), $("hab-bar"));
+  hab.animals = []; hab.w = 0; hab.picked = null; hab.fx = [];
+  habitatSet(entries);
+}
+
+// Back to your own scene, in its place on the Field Guide tab.
+function habLeave() {
+  if (!hab.visit) return;
+  const home = hab.visit.home;
+  hab.visit = null;
+  $("grid").before($("habitat"), $("hab-bar"));
+  hab.animals = []; hab.w = 0; hab.picked = null; hab.fx = [];
+  habitatSet(home);
+}
+
 function habLoop(now) {
   requestAnimationFrame(habLoop);
   const box = $("habitat");
   if (document.hidden || !box || box.closest(".off") || box.closest(".hidden")) { hab.last = 0; return; }
   const w = box.clientWidth < 520 ? 320 : 480;
-  if (!hab.L || w !== hab.w) habitatSet(hab.animals.map((a) => ({ caught: true, species: a.s, activity: a.activity })));
+  if (!hab.L || w !== hab.w) habitatSet(hab.animals.map((a) => ({ caught: true, species: a.s, activity: a.activity, num: a.num })));
   const dt = hab.last ? Math.min((now - hab.last) / 1000, .1) : 0;
   hab.last = now;
   const phase = habPhase();
@@ -1868,7 +1863,7 @@ function habAmbient(c, L, phase) {
       c.drawImage(img, x, y);
     });
   }
-  if (myState.code === "CA") {
+  if (habState() === "CA") {
     // Kelp swaying on the sea floor, with leaf blades.
     const dark = phase === "night" ? "#24402a" : "#3f6a26", light = phase === "night" ? "#355a2f" : "#6d9a35";
     for (let i = 0; i < 4; i++) {
@@ -1880,7 +1875,7 @@ function habAmbient(c, L, phase) {
         if (j % 9 === 4) { c.fillStyle = light; c.fillRect(x + (j % 18 ? 2 : -3), y, 3, 1); c.fillStyle = dark; c.fillRect(x + (j % 18 ? 2 : -3), y + 1, 3, 1); }
       }
     }
-  } else if (myState.code === "NC" && phase !== "day") {
+  } else if (habState() === "NC" && phase !== "day") {
     // The lighthouse lamp flashes after sundown.
     const on = Math.sin(t * 2.4) > .2, lx = L.sea - 12, ly = L.water - 62;
     if (on) {
@@ -2266,6 +2261,7 @@ function bar(label, t, color) {
 }
 
 async function openProfile(username) {
+  habLeave();
   const box = $("album-photos");
   box.innerHTML = "";
   $("album-title").textContent = username;
@@ -2298,6 +2294,27 @@ async function openProfile(username) {
   if (act.childNodes.length) box.append(act);
 
   const sec = (title) => { const h = el("h3", "", title); box.append(h); return h; };
+  // Friends see each other's whole Field Guide, in the owner's own state; it comes
+  // first so it's what you see when you open a friend.
+  if (u.friendship === "friends" || u.friendship === "self") {
+    try {
+      const g = await api(`/users/${name}/collection`);
+      const stName = (states.find((x) => x.code === g.state) || {}).name || g.state;
+      sec(`Field Guide · ${stName} · ${g.caught}/${g.total}`);
+      const sorted = [...g.entries].sort((a, b) => dexSort(a.species, b.species));
+      sorted.forEach((e, i) => { e.num = i + 1; });
+      // A friend's live habitat: their animals, in their state's scenery.
+      if (u.friendship === "friends") {
+        const slot = el("div", "visit");
+        box.append(slot);
+        habVisit(u.username, g.state, sorted, slot);
+      }
+      const guide = el("div", "grid guide");
+      fillGuide(guide, sorted, { username: u.username, state: g.state });
+      box.append(guide);
+    } catch (err) { box.append(el("p", "muted", err.message)); }
+  }
+
   sec("Rarity");
   for (const r of ["common", "uncommon", "rare", "legendary"])
     if (u.by_rarity[r]) box.append(bar(r[0].toUpperCase() + r.slice(1), u.by_rarity[r], `var(--${r})`));
@@ -2308,19 +2325,6 @@ async function openProfile(username) {
   }
   sec("Groups");
   for (const [cat, t] of Object.entries(u.by_category)) box.append(bar(CATEGORY_NAMES[cat] || cat, t));
-
-  // Friends see each other's whole Field Guide, in the owner's own state.
-  if (u.friendship === "friends" || u.friendship === "self") {
-    try {
-      const g = await api(`/users/${name}/collection`);
-      const stName = (states.find((x) => x.code === g.state) || {}).name || g.state;
-      sec(`Field Guide · ${stName} · ${g.caught}/${g.total}`);
-      const guide = el("div", "grid guide");
-      fillGuide(guide, [...g.entries].sort((a, b) => dexSort(a.species, b.species)),
-                { username: u.username, state: g.state });
-      box.append(guide);
-    } catch (err) { box.append(el("p", "muted", err.message)); }
-  }
 
   sec("Photos");
   const grid = el("div", "photos");
@@ -2343,6 +2347,7 @@ async function openProfile(username) {
 
 }
 $("album-close").onclick = () => $("album").close();
+$("album").addEventListener("close", habLeave);
 $("album").onclick = (e) => { if (e.target === $("album")) $("album").close(); };
 
 // --- news feed ----------------------------------------------------------------
@@ -2480,8 +2485,7 @@ async function loadFriends() {
   section("Friend requests", f.incoming, [
     ["Accept", "", (u) => api(`/friends/requests/${encodeURIComponent(u)}/accept`, { method: "POST" })],
     ["Decline", "ghost", del]]);
-  section("Your friends", f.friends, [["Duel", "", startDuel], ["Profile", "ghost", openProfile], ["Remove", "ghost", del]]);
-  loadDuels();
+  section("Your friends", f.friends, [["Field Guide", "ghost", openProfile], ["Remove", "ghost", del]]);
   section("Waiting for them to accept", f.outgoing, [["Cancel", "ghost", del]]);
   if (!f.friends.length && !f.incoming.length && !f.outgoing.length)
     box.append(el("p", "muted", "No friends yet. Add someone by their username."));
@@ -2491,101 +2495,6 @@ async function loadFriends() {
   section("Bot friends to add 🤖", bots, [["Add", "", (u) => api("/friends/requests", { method: "POST",
     headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: u }) })]]);
 }
-
-// Card duels: five rounds of "my stat beats yours" with the animals each player captured.
-const STAT_NAMES = { size: "Size", weight: "Weight", rarity: "Rarity", photo: "Photo" };
-let duel = null;
-
-function fieldCard(card, label, { pick, picked } = {}) {
-  const c = el("div", "fcard");
-  const s = card.species;
-  const img = el("img", "sprite"); img.src = spriteUrl(s.slug, true); img.alt = "";
-  const rar = el("div", "rarity", s.rarity); rar.style.color = `var(--${s.rarity})`;
-  c.append(el("div", "who", label), img, el("div", "nm", s.common_name), rar);
-  for (const [k, name] of Object.entries(STAT_NAMES)) {
-    const row = el(pick ? "button" : "div", "stat" + (picked === k ? " picked" : ""));
-    if (pick) { row.type = "button"; row.onclick = () => pick(k); }
-    row.append(el("span", "", name), el("b", "", String(card.stats[k])));
-    c.append(row);
-  }
-  return c;
-}
-
-function showDuel(d) {
-  duel = d;
-  $("duel-title").textContent = `Card duel with ${d.opponent}`;
-  const dots = el("div", "duel-rounds");
-  for (let i = 0; i < d.total_rounds; i++) {
-    const r = d.rounds[i];
-    dots.append(el("span", r ? r.result : "", r ? { win: "✓", lose: "✗", tie: "=" }[r.result] : String(i + 1)));
-  }
-  $("duel-score").innerHTML = "";
-  $("duel-score").append(`You ${d.your_points} – ${d.their_points} ${d.opponent}`, dots);
-  const cards = $("duel-cards"), actions = $("duel-actions"), msg = $("duel-msg");
-  cards.innerHTML = ""; actions.innerHTML = "";
-  const last = d.rounds[d.rounds.length - 1];
-  if (d.finished) {
-    msg.textContent = { win: "🏆 You won the duel!", lose: `${d.opponent} won this one.`, tie: "It's a tie!" }[d.outcome];
-    if (last) cards.append(fieldCard(last.mine, "Your card", { picked: last.stat }),
-                           fieldCard(last.theirs, `${d.opponent}'s card`, { picked: last.stat }));
-    if (d.you_started) {
-      const again = el("button", "", "Play again");
-      again.onclick = () => startDuel(d.opponent);
-      actions.append(again);
-    }
-  } else if (d.next_card) {
-    msg.textContent = last
-      ? `Round ${d.round}: ${STAT_NAMES[last.stat]} ${last.mine.stats[last.stat]} vs ${last.theirs.stats[last.stat]}, `
-        + { win: "you win it!", lose: `${d.opponent} wins it.`, tie: "a tie." }[last.result]
-        + ` Round ${d.round + 1}: pick a stat.`
-      : "Round 1: pick the stat you think beats their card.";
-    cards.append(fieldCard(d.next_card, "Your card", { pick: playDuel }), el("div", "fcard back", "?"));
-    if (last) {
-      const prev = el("p", "muted", `Their last card: ${last.theirs.species.common_name}`);
-      actions.append(prev);
-    }
-  } else {
-    msg.textContent = `${d.opponent} started this duel; it's still going.`;
-  }
-  if (!$("duel").open) $("duel").showModal();
-}
-
-async function startDuel(username) {
-  try {
-    showDuel(await api("/duels", { method: "POST", headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ opponent: username }) }));
-  } catch (err) { $("friend-msg").textContent = err.message; }
-}
-
-async function playDuel(stat) {
-  $("duel-cards").querySelectorAll("button").forEach((b) => (b.disabled = true));
-  try { showDuel(await api(`/duels/${duel.id}/play`, { method: "POST",
-    headers: { "Content-Type": "application/json" }, body: JSON.stringify({ stat }) })); }
-  catch (err) { $("duel-msg").textContent = err.message; }
-  if (duel && duel.finished) loadDuels();
-}
-
-async function loadDuels() {
-  try {
-    const r = await api("/duels");
-    $("duel-record").textContent = r.played ? `${r.wins} won of ${r.played}` : "";
-    const list = $("duel-list");
-    list.innerHTML = "";
-    if (!r.duels.length) list.append(el("p", "muted", "No duels yet. Press Duel next to a friend to start one."));
-    for (const d of r.duels) {
-      const row = el("div", "feed-item");
-      const what = el("div", "what");
-      const vs = d.you_started ? `You challenged ${d.opponent}` : `${d.opponent} challenged you`;
-      const res = d.finished ? `${d.your_points}–${d.their_points}, `
-        + { win: "you won", lose: "you lost", tie: "tie" }[d.outcome] : `round ${d.round + 1} of ${d.total_rounds}`;
-      what.append(el("strong", "", vs), el("div", "when", res));
-      row.append(what);
-      row.onclick = async () => showDuel(await api(`/duels/${d.id}`));
-      list.append(row);
-    }
-  } catch {}
-}
-$("duel-close").onclick = () => $("duel").close();
 
 // New players start with the example bots as friends; say so plainly, once.
 async function botWelcome(username) {
