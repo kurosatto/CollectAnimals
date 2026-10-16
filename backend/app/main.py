@@ -635,30 +635,52 @@ def my_collection(state: str | None = Query(None), user: User = Depends(current_
                   db: Session = Depends(get_db)):
     """The player's Field Guide for their state (or ?state=). Badges are per
     species, so a coyote captured in California also counts in North Carolina."""
-    st = state_or_404(state or user.state)
-    code = st.code
-    month = (datetime.now(timezone.utc) + timedelta(hours=st.utc_offset)).month
-    badges = {b.species_id: b for b in db.scalars(select(Badge).where(Badge.user_id == user.id))}
-    friends = friend_ids(db, user.id)
+    return _collection(db, user, user, state_or_404(state or user.state))
+
+
+@app.get("/users/{username}/collection", response_model=CollectionOut)
+def user_collection(username: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    """A friend's Field Guide, for their own state. Friends only: anyone else sees
+    just what the profile shows."""
+    owner = user_named(db, username)
+    if not owner:
+        raise HTTPException(404, "No such user")
+    if owner.id != user.id and owner.id not in friend_ids(db, user.id):
+        raise HTTPException(403, "Only friends can see each other's Field Guide")
+    return _collection(db, owner, user, state_or_404(owner.state))
+
+
+def _collection(db: Session, owner: User, viewer: User, st_: st.State) -> CollectionOut:
+    """`owner`'s Field Guide as `viewer` sees it. Names follow the viewer's own
+    reveals (theirs and their friends' badges, which covers a friend's captures);
+    friends_caught counts the viewer's friends, and you_caught the viewer."""
+    code = st_.code
+    month = (datetime.now(timezone.utc) + timedelta(hours=st_.utc_offset)).month
+    badges = {b.species_id: b for b in db.scalars(select(Badge).where(Badge.user_id == owner.id))}
+    mine = badges if owner.id == viewer.id else {
+        b.species_id: b for b in db.scalars(select(Badge).where(Badge.user_id == viewer.id))}
+    friends = friend_ids(db, viewer.id)
     friends_caught = dict(db.execute(
         select(Badge.species_id, func.count()).where(Badge.user_id.in_(friends))
         .group_by(Badge.species_id)).all()) if friends else {}
     photos = dict(db.execute(select(AlbumPhoto.species_id, Capture.image_path)
                              .join(Capture, Capture.id == AlbumPhoto.capture_id)
-                             .where(AlbumPhoto.user_id == user.id)).all())
+                             .where(AlbumPhoto.user_id == owner.id)).all())
     storage = get_storage()
     entries = []
     for m in state_species(db, code):
         b = badges.get(m.species_id)
+        revealed = b is not None or m.species_id in mine or friends_caught.get(m.species_id, 0) > 0
         entries.append(CollectionEntry(
-            species=species_out(m.species, b is not None or friends_caught.get(m.species_id, 0) > 0, m),
+            species=species_out(m.species, revealed, m),
             caught=b is not None, capture_count=b.capture_count if b else 0,
             earned_at=b.earned_at if b else None, friends_caught=friends_caught.get(m.species_id, 0),
+            you_caught=m.species_id in mine,
             photo_url=storage.url(photos[m.species_id]) if m.species_id in photos else None,
             in_season=dex.in_season(m.species.slug, code, month),
             activity=dex.activity(m.species.slug, code) if b else None))
-    return CollectionOut(state=code, caught=sum(e.caught for e in entries), total=len(entries),
-                         entries=entries)
+    return CollectionOut(state=code, username=owner.username,
+                         caught=sum(e.caught for e in entries), total=len(entries), entries=entries)
 
 
 def _aware(d: datetime) -> datetime:

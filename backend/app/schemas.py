@@ -160,6 +160,8 @@ class CollectionEntry(BaseModel):
     capture_count: int = 0
     earned_at: datetime | None = None
     friends_caught: int = 0
+    # Whether the viewer has it (differs from `caught` on a friend's Field Guide).
+    you_caught: bool = False
     photo_url: str | None = None
     # Seen in the state this month in real sightings (or no data to say otherwise).
     in_season: bool = True
@@ -169,6 +171,8 @@ class CollectionEntry(BaseModel):
 
 class CollectionOut(BaseModel):
     state: str
+    # Whose Field Guide this is.
+    username: str = ""
     caught: int
     total: int
     entries: list[CollectionEntry]

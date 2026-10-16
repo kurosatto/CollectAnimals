@@ -150,18 +150,18 @@
   .tile .status, .dex .status { font-size:.75rem; font-weight:600; margin-top:4px; }
   .tile.mine { border-color:var(--accent); border-width:2px; }
   /* Field Guide: small sprite tiles so lots fit on a phone screen. */
-  #grid { grid-template-columns:repeat(auto-fill,minmax(64px,1fr)); gap:5px; }
-  #grid .tile { padding:5px 4px; font-size:.72rem; text-align:center; line-height:1.2; }
-  #grid .tile .sprite { width:100%; height:auto; aspect-ratio:1; max-width:56px; margin:2px auto; display:block; }
-  #grid .tile .num { font-size:.62rem; }
-  #grid .tile .name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  #grid .tile .sci, #grid .tile .rarity { display:none; }
-  #grid .tile .status { margin-top:1px; font-size:.65rem; min-height:1em; }
-  #grid .tier { grid-column:1 / -1; margin:6px 0 0; font-size:.68rem; }
-  #grid .section { grid-column:1 / -1; margin:16px 0 0; font-weight:700; font-size:.95rem;
+  .guide { grid-template-columns:repeat(auto-fill,minmax(64px,1fr)); gap:5px; }
+  .guide .tile { padding:5px 4px; font-size:.72rem; text-align:center; line-height:1.2; }
+  .guide .tile .sprite { width:100%; height:auto; aspect-ratio:1; max-width:56px; margin:2px auto; display:block; }
+  .guide .tile .num { font-size:.62rem; }
+  .guide .tile .name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .guide .tile .sci, .guide .tile .rarity { display:none; }
+  .guide .tile .status { margin-top:1px; font-size:.65rem; min-height:1em; }
+  .guide .tier { grid-column:1 / -1; margin:6px 0 0; font-size:.68rem; }
+  .guide .section { grid-column:1 / -1; margin:16px 0 0; font-weight:700; font-size:.95rem;
                    border-bottom:1px solid var(--line); padding-bottom:3px; }
-  #grid .section:first-child { margin-top:0; }
-  #grid .divider { grid-column:1 / -1; border-top:1px dashed var(--line); margin:12px 0 0; }
+  .guide .section:first-child { margin-top:0; }
+  .guide .divider { grid-column:1 / -1; border-top:1px dashed var(--line); margin:12px 0 0; }
   .status.mine { color:var(--accent); }
   .status.friend { color:var(--muted); }
   .sprite.shadow { opacity:.55; }
@@ -300,7 +300,7 @@
         <div id="hab-bubble" class="hab-bubble hidden"></div>
       </div>
       <div class="hab-bar"><span id="hab-note" class="muted"></span><button class="ghost" id="hab-peek"></button></div>
-      <div id="grid" class="grid"></div>
+      <div id="grid" class="grid guide"></div>
     </div>
     <div class="card off" data-tab="dex">
       <h2>Sets</h2>
@@ -660,8 +660,12 @@ async function loadCollection() {
   entries.forEach((e, i) => { dexNumbers[e.species.number] = i + 1; });
   loadHotspots();
   $("progress").textContent = `${c.caught} / ${c.total}`;
-  const grid = $("grid");
-  grid.innerHTML = "";
+  $("grid").innerHTML = "";
+  fillGuide($("grid"), entries);
+}
+
+// The Field Guide grid: yours, or a friend's (`owner`, shown in their own state).
+function fillGuide(grid, entries, owner = null) {
   // Captured first, then the rest: animals seen this month before ones that aren't
   // around this time of year (split by a plain line, no label). Inside each group,
   // common to legendary; the numbers keep the full Field Guide order.
@@ -679,12 +683,11 @@ async function loadCollection() {
     else grid.append(el("div", uncaughtShown ? "divider" : "section", uncaughtShown ? "" : "Not captured yet"));
     if (title === "Not captured yet") uncaughtShown = true;
     let tier = null;
-    list.forEach(([e, i]) => addTile(e, i, tier !== e.species.rarity && (tier = e.species.rarity)));
+    list.forEach(([e, i]) => addTile(grid, e, i, tier !== e.species.rarity && (tier = e.species.rarity), owner));
   }
 }
 
-function addTile(e, i, tier) {
-  const grid = $("grid");
+function addTile(grid, e, i, tier, owner = null) {
   const s = e.species;
   if (tier) {
     const h = el("div", "tier", tier);
@@ -704,6 +707,14 @@ function addTile(e, i, tier) {
     ? s.common_name + (e.capture_count > 1 ? ` ×${e.capture_count}` : "") : "???";
   t.querySelector(".sci").textContent = s.revealed ? s.scientific_name : `Unknown ${s.category}`;
   const st = t.querySelector(".status");
+  if (owner) {
+    // A friend's guide: ✓ is theirs; also say when you have one they don't.
+    if (e.caught) { st.textContent = "✓"; st.classList.add("mine"); t.title = `Captured by ${owner.username}`; }
+    else if (e.you_caught) { st.textContent = "You have it"; st.classList.add("friend"); t.title = `${owner.username} hasn't captured it yet`; }
+    t.onclick = () => openDex(s.number, i + 1, e.you_caught, owner.state);
+    grid.append(t);
+    return;
+  }
   if (state === "mine") { st.textContent = "✓"; st.classList.add("mine"); t.title = "Captured"; }
   else if (state === "friend") {
     st.textContent = `👥 ${e.friends_caught}`;
@@ -1921,8 +1932,8 @@ function drawSeason(season) {
   box.append(bars, labels);
 }
 
-async function openDex(key, num, caught) {
-  const d = await api(`/species/${encodeURIComponent(key)}/dex?state=${myState.code}`);
+async function openDex(key, num, caught, stateCode = myState.code) {
+  const d = await api(`/species/${encodeURIComponent(key)}/dex?state=${stateCode}`);
   const s = d.species;
   $("dex-sprite").src = s.slug ? spriteUrl(s.slug, true) : silhouetteUrl(s.number);
   $("dex-sprite").classList.toggle("shadow", !s.slug);
@@ -2196,6 +2207,19 @@ async function openProfile(username) {
   }
   sec("Groups");
   for (const [cat, t] of Object.entries(u.by_category)) box.append(bar(CATEGORY_NAMES[cat] || cat, t));
+
+  // Friends see each other's whole Field Guide, in the owner's own state.
+  if (u.friendship === "friends" || u.friendship === "self") {
+    try {
+      const g = await api(`/users/${name}/collection`);
+      const stName = (states.find((x) => x.code === g.state) || {}).name || g.state;
+      sec(`Field Guide · ${stName} · ${g.caught}/${g.total}`);
+      const guide = el("div", "grid guide");
+      fillGuide(guide, [...g.entries].sort((a, b) => dexSort(a.species, b.species)),
+                { username: u.username, state: g.state });
+      box.append(guide);
+    } catch (err) { box.append(el("p", "muted", err.message)); }
+  }
 
   sec("Photos");
   const grid = el("div", "photos");
