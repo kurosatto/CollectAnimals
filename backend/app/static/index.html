@@ -655,10 +655,13 @@ const spriteUrl = (slug, caught) => `/sprites/${encodeURIComponent(slug)}${caugh
 // and a button peeks at the other half of the day. Tap an animal for its name,
 // tap again for its Field Guide page.
 const HAB_H = 270;
-const hab = { w: 0, L: null, animals: [], peek: false, picked: null, pickedUntil: 0, last: 0, bg: null, bgKey: "", t: 0 };
+const hab = { w: 0, L: null, animals: [], peek: false, picked: null, pickedUntil: 0, last: 0, bg: null, bgKey: "", t: 0,
+              fx: [] };
 const habImgs = {};
 const habStill = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const HAB_ROLES = [
+  [/pelican|royal_tern|kingfisher|osprey/, "dive"],
+  [/black_skimmer/, "skim"],
   [/sea_otter|by_the_wind/, "float"],
   [/jellyfish/, "jelly"],
   [/dolphin|whale|garibaldi|red_drum|sculpin|sea_hare|loggerhead/, "swim"],
@@ -675,7 +678,11 @@ const HAB_ROLES = [
   [/frog|toad|peeper|grasshopper/, "hop"],
 ];
 const HAB_DEFAULT_ROLE = { bird: "fly", amphibian: "shore", marine: "swim", fish: "paddle" };
-const HAB_FLIERS = new Set(["fly", "soar", "hover", "flutter"]);
+const HAB_FLIERS = new Set(["fly", "soar", "hover", "flutter", "dive", "skim"]);
+// Big birds glide between bursts of slow wingbeats.
+const HAB_GLIDERS = /pelican|gull|heron|egret|goose|swan|vulture|condor|eagle|osprey|hawk|ibis|tern|skimmer/;
+// Ground animals that look around while they stand still.
+const HAB_LOOKERS = new Set(["walk", "hop", "shore", "wade", "beach"]);
 const HAB_SEA = new Set(["swim", "jelly", "reef"]);
 
 function habRole(s) {
@@ -688,7 +695,7 @@ function habSpeed(a) {
   if (/roadrunner/.test(slug)) return 45;
   if (/squirrel|chipmunk|lizard|skink|anole/.test(slug)) return 28;
   if (/tortoise|box_turtle|slug|snail/.test(slug)) return 3;
-  return { fly: 34, hover: 70, flutter: 16, hop: 22, beach: 10, swim: 12, jelly: 4, float: 4, paddle: 6,
+  return { fly: 34, dive: 32, skim: 42, hover: 70, flutter: 16, hop: 22, beach: 10, swim: 12, jelly: 4, float: 4, paddle: 6,
            wade: 5, shore: 5 }[a.role] || { mammal: 16, reptile: 8, invertebrate: 5, bird: 12 }[a.s.category] || 10;
 }
 
@@ -717,6 +724,8 @@ function habSpot(a) {
     case "flutter": return [rnd(10, L.land), rnd(122, 200)];
     case "dangle": return [L.tree + rnd(14, 26), rnd(146, 170)];
     case "soar": return [rnd(70, L.w - 70), rnd(60, 90)];
+    case "dive": return [rnd(-20, L.w + 20), /kingfisher/.test(a.s.slug) ? rnd(96, 116) : rnd(44, 100)];
+    case "skim": return [rnd(L.sea, L.w), L.water + 1];
     default: return [rnd(-20, L.w + 20), rnd(42, 128)];  // fly
   }
 }
@@ -728,7 +737,11 @@ function habSpawn(a) {
   a.dir = Math.random() < .5 ? -1 : 1;
   a.odo = 0;
   a.phase = rnd(0, 6.3);
-  if (a.role === "fly") a.vx = pick(-1, 1) * rnd(.8, 1.2);
+  a.look = rnd(1, 4);
+  a.tilt = 0;
+  if (a.role === "fly" || a.role === "dive" || a.role === "skim") a.vx = pick(-1, 1) * rnd(.8, 1.2);
+  if (a.role === "dive") { a.cy = a.y; a.mode = "fly"; a.diveIn = rnd(2, 6); }
+  if (/dolphin|whale/.test(a.s.slug)) a.leapIn = rnd(2, 6);
   if (a.role === "soar") { a.cx = a.x; a.cy = a.y; a.r = rnd(26, 46); }
 }
 
@@ -782,9 +795,92 @@ function habRoost(i) {
   return spots[i] || [t + 30 + (i - spots.length) * 18 % (hab.L.land - t - 40), 192 + (i % 2) * 8];
 }
 
+// Water a diving bird aims for: [left, right, surface y]. Kingfishers fish the pond.
+function habPool(a) {
+  const L = hab.L, p = L.pond;
+  return /kingfisher/.test(a.s.slug) ? [p.x - p.rx + 10, p.x + p.rx - 10, p.y - 3] : [L.sea + 14, L.w - 14, L.water + 2];
+}
+
+// Splash: drops flung up plus a ring on the water.
+function habSplash(x, y, n, big) {
+  for (let i = 0; i < n; i++) {
+    hab.fx.push({ kind: "drop", x: x + rnd(-3, 3), y, vx: rnd(-28, 28) * (big ? 1.6 : 1), vy: -rnd(30, 75) * (big ? 1.5 : 1),
+                  life: rnd(.4, .8) });
+  }
+  hab.fx.push({ kind: "ring", x, y, r: 2, life: 1 });
+}
+const habRipple = (x, y) => hab.fx.push({ kind: "ring", x, y, r: 1, life: .9 });
+
+// Plunge divers cruise across the sky, now and then fold their wings over the
+// water, dive in with a splash and climb back out.
+function habDive(a, dt) {
+  const [lo, hi, surf] = habPool(a);
+  a.tilt = 0;
+  if (a.mode === "dive") {
+    a.vy += 300 * dt; a.y += a.vy * dt; a.x += a.vx * a.speed * .3 * dt;
+    a.tilt = Math.min(1.35, Math.atan2(a.vy, 20));
+    if (a.y >= surf + 5) { habSplash(a.x, surf, 20, true); a.mode = "under"; a.t = rnd(.5, 1); }
+  } else if (a.mode === "under") {
+    a.t -= dt;
+    if (a.t <= 0) { a.mode = "rise"; a.vy = -55; habSplash(a.x, surf, 6); }
+  } else if (a.mode === "rise") {
+    a.y += a.vy * dt; a.x += a.vx * a.speed * .5 * dt; a.tilt = -.4;
+    if (a.y <= a.cy) { a.mode = "fly"; a.diveIn = rnd(4, 10); }
+  } else {
+    a.x += a.vx * a.speed * dt;
+    a.y += (a.cy - a.y) * Math.min(1, dt * 2);
+    // Patrol the coast (or the pond) so there's water below often.
+    const L = hab.L, p = L.pond, [min, max] = /kingfisher/.test(a.s.slug)
+      ? [p.x - p.rx - 60, p.x + p.rx + 60] : [L.w * .3, L.w + 30];
+    if ((a.x < min && a.vx < 0) || (a.x > max && a.vx > 0)) { a.vx = -a.vx; a.cy = habSpot(a)[1]; }
+    a.diveIn -= dt;
+    if (a.diveIn <= 0 && a.x > lo && a.x < hi) { a.mode = "dive"; a.vy = 15; }
+  }
+  a.dir = Math.sign(a.vx);
+}
+
+// Dolphins leap in an arc; the whale breaches nearly straight up and falls back.
+function habLeap(a, dt) {
+  const L = hab.L, whale = /whale/.test(a.s.slug), surf = L.water + 4, y0 = a.y;
+  a.lt += dt;
+  const k = Math.min(1, a.lt / a.dur);
+  a.y = a.ly - a.lh * 4 * k * (1 - k);
+  a.x += a.lvx * dt;
+  a.tilt = whale ? (k < .6 ? -1.2 + k * 1.5 : -.3 + (k - .6) * 3) : (2 * k - 1) * .9;
+  if ((y0 > surf) !== (a.y > surf)) habSplash(a.x - a.dir * (whale ? 0 : 6), surf - 1, whale ? 26 : 10, whale);
+  if (k >= 1) { a.mode = null; a.tilt = 0; a.leapIn = rnd(5, 12); a.pause = rnd(.5, 2); [a.tx, a.ty] = habSpot(a); }
+}
+
 function habStep(a, dt, awake) {
   a.phase += dt;
-  if (!awake) return;
+  if (!awake) {
+    // Fell asleep mid-leap: settle back in the water.
+    if (a.mode === "leap") { a.y = a.ly; a.mode = null; a.tilt = 0; a.leapIn = rnd(5, 12); }
+    return;
+  }
+  if (a.role === "dive") return habDive(a, dt);
+  if (a.role === "skim") {
+    // Skimmers fly low over the sea, bill cutting the water.
+    a.x += a.vx * a.speed * dt;
+    a.dir = Math.sign(a.vx);
+    if (a.x < hab.L.land || a.x > hab.L.w + 30) a.vx = -a.vx;
+    if (a.x > hab.L.sea && Math.random() < dt * 14) {
+      hab.fx.push({ kind: "dot", x: a.x - a.dir * 10, y: hab.L.water + 2, life: .9 });
+    }
+    return;
+  }
+  if (a.mode === "leap") return habLeap(a, dt);
+  if (a.leapIn !== undefined && (a.leapIn -= dt) <= 0) {
+    const whale = /whale/.test(a.s.slug), L = hab.L;
+    // Leap toward the open water, away from the near edge.
+    a.dir = a.x < (L.sea + L.w) / 2 ? 1 : -1;
+    Object.assign(a, { mode: "leap", lt: 0, ly: a.y, dur: whale ? 2.2 : 1.4,
+                       lh: a.y - L.water + (whale ? 16 : 26), lvx: a.dir * (whale ? 6 : 34) });
+    return;
+  }
+  if (a.role === "paddle" && a.pause <= 0 && (a.rip = (a.rip || 0) - dt) <= 0) { a.rip = .9; habRipple(a.x, a.y - 8); }
+  if (a.role === "float" && (a.rip = (a.rip || 0) - dt) <= 0) { a.rip = rnd(1.5, 3); habRipple(a.x, hab.L.water + 3); }
+  if (a.peck > 0) a.peck -= dt;
   if (a.role === "fly") {
     a.x += a.vx * a.speed * dt;
     a.dir = Math.sign(a.vx);
@@ -798,7 +894,16 @@ function habStep(a, dt, awake) {
     return;
   }
   if (a.role === "reef") return;
-  if (a.pause > 0) { a.pause -= dt; return; }
+  if (a.pause > 0) {
+    a.pause -= dt;
+    // Standing still: glance the other way now and then; waders stab at fish.
+    if (HAB_LOOKERS.has(a.role) && (a.look -= dt) <= 0) {
+      a.look = rnd(1.2, 3.5);
+      if (a.role === "wade" && Math.random() < .6) { a.peck = .35; habRipple(a.x + a.dir * 12, a.y - 1); }
+      else a.dir = -a.dir;
+    }
+    return;
+  }
   const dx = a.tx - a.x, dy = a.ty - a.y, d = Math.hypot(dx, dy);
   const step = a.speed * dt;
   if (d <= step) {
@@ -811,21 +916,53 @@ function habStep(a, dt, awake) {
   if (Math.abs(dx) > .5 && a.role !== "beach") a.dir = Math.sign(dx);
 }
 
-// Drawn position: [x, feet y] plus the bounce or bob that goes with how it moves.
+// Wingbeat 0..1 (1 = wings down, sprite squashed). Big birds flap in bursts
+// and glide in between; small ones flap all the time.
+function habFlap(a, rate) {
+  if (HAB_GLIDERS.test(a.s.slug) && Math.sin(a.phase * .7 + a.x * .01) < .1) return 0;
+  return (Math.sin(a.phase * rate) + 1) / 2;
+}
+
+// Drawn pose: [x, feet y, x scale, y scale, nose-down tilt] with the bounce,
+// bob, wingbeat or squash that goes with how it moves.
 function habPose(a, awake, roost) {
   if (roost) return roost;
-  let { x, y } = a;
-  if (!awake) return [x, y];
+  let { x, y } = a, sx = 1, sy = 1;
+  const tilt = a.tilt || 0;
+  if (!awake) return [x, y, 1, 1 + Math.sin(a.phase * 1.3) * .03, 0];
   const moving = a.pause <= 0;
   switch (a.role) {
-    case "hop": if (moving) y -= Math.abs(Math.sin(a.odo / 18 * Math.PI)) * 9; break;
-    case "walk": case "shore": case "wade": case "beach": if (moving) y -= Math.floor(a.odo / 3) % 2; break;
-    case "fly": case "soar": y += Math.sin(a.phase * 3) * 2; break;
-    case "flutter": y += Math.sin(a.phase * 9) * 3; x += Math.sin(a.phase * 2.3) * 2; break;
-    case "swim": case "float": case "paddle": y += Math.sin(a.phase * 1.5) * 1.5; break;
-    case "jelly": y += Math.sin(a.phase * .8) * 6; break;
+    case "hop": {
+      if (!moving) { sy = 1 + Math.sin(a.phase * 2.2) * .03; break; }
+      const h = Math.abs(Math.sin(a.odo / 18 * Math.PI));
+      y -= h * 9;
+      // Stretched in the air, squashed on landing and takeoff.
+      if (h < .2) { sy = .86; sx = 1.1; } else { sy = 1 + h * .12; sx = 1 - h * .07; }
+      break;
+    }
+    case "walk": case "shore": case "wade": case "beach":
+      if (moving) { y -= Math.floor(a.odo / 3) % 2; sy = 1 - Math.abs(Math.sin(a.odo * Math.PI / 6)) * .06; sx = 2 - sy; }
+      else sy = 1 + Math.sin(a.phase * 2.2) * .025;
+      if (a.peck > 0) return [x, y, 1, 1, .55];
+      break;
+    case "fly": y += Math.sin(a.phase * 3) * 2; sy = 1 - habFlap(a, HAB_GLIDERS.test(a.s.slug) ? 7 : 13) * .3; break;
+    case "soar": y += Math.sin(a.phase * 3) * 2; sy = Math.sin(a.phase * .45) > .75 ? 1 - habFlap(a, 6) * .3 : 1; break;
+    case "dive":
+      if (a.mode === "dive") sx = .85;
+      else if (a.mode === "rise") sy = 1 - (Math.sin(a.phase * 16) + 1) / 2 * .32;
+      else { y += Math.sin(a.phase * 3) * 2; sy = 1 - habFlap(a, 7) * .3; }
+      break;
+    case "skim": y += Math.sin(a.phase * 2) * .6; sy = 1 - (Math.sin(a.phase * 9) + 1) / 2 * .12; break;
+    case "hover": sy = 1 - Math.abs(Math.sin(a.phase * 40)) * .2; y += Math.sin(a.phase * 5) * 1.5; break;
+    case "flutter": y += Math.sin(a.phase * 9) * 3; x += Math.sin(a.phase * 2.3) * 2;
+      sy = .55 + Math.abs(Math.cos(a.phase * 11)) * .45; break;
+    case "swim":
+      if (a.mode !== "leap") { y += Math.sin(a.phase * 1.5) * 1.5; sx = 1 + Math.sin(a.phase * 4) * .04; }
+      break;
+    case "float": case "paddle": y += Math.sin(a.phase * 1.5) * 1.5; break;
+    case "jelly": y += Math.sin(a.phase * .8) * 6; sy = 1 + Math.sin(a.phase * .8 + 1.6) * .12; sx = 2 - sy; break;
   }
-  return [x, y];
+  return [x, y, sx, sy, tilt];
 }
 
 function habDraw() {
@@ -837,12 +974,14 @@ function habDraw() {
   const c = cv.getContext("2d");
   c.imageSmoothingEnabled = false;
   c.drawImage(hab.bg, 0, 0);
+  habAmbient(c, L, phase);
   let roosting = 0;
   const poses = hab.animals.map((a) => {
     const awake = habAwake(a, phase);
     const roost = !awake && HAB_FLIERS.has(a.role) ? habRoost(roosting++) : null;
-    const [x, y] = habPose(a, awake, roost);
-    return { a, awake, x: Math.round(x), y: Math.round(y), sky: awake && HAB_FLIERS.has(a.role) };
+    const [x, y, sx = 1, sy = 1, tilt = 0] = habPose(a, awake, roost);
+    return { a, awake, x: Math.round(x), y: Math.round(y), sx, sy, tilt, sky: awake && HAB_FLIERS.has(a.role),
+             hidden: awake && a.mode === "under" };
   });
   const sea = poses.filter((p) => HAB_SEA.has(p.a.role) && !p.sky).sort((p, q) => p.y - q.y);
   const land = poses.filter((p) => !HAB_SEA.has(p.a.role) && !p.sky).sort((p, q) => p.y - q.y);
@@ -853,6 +992,7 @@ function habDraw() {
   c.fillRect(L.sea, L.water + 3, L.w - L.sea, HAB_H);
   land.forEach((p) => habSprite(c, p));
   sky.forEach((p) => habSprite(c, p));
+  habFx(c, phase);
   if (phase === "night") { c.fillStyle = "rgba(8,12,40,.42)"; c.fillRect(0, 0, L.w, HAB_H); }
   else if (phase !== "day") { c.fillStyle = "rgba(90,40,80,.12)"; c.fillRect(0, 0, L.w, HAB_H); }
   for (const p of poses) {
@@ -882,22 +1022,80 @@ function habSprite(c, p) {
   const img = habImgs[p.a.s.slug];
   if (!img || !img.complete || !img.naturalWidth) return;
   const { a, x, y } = p;
+  p.box = [x - 16, y - 32, x + 16, y];
+  if (p.hidden) return;
   c.save();
   if (a.role === "paddle") { c.beginPath(); c.rect(0, 0, hab.L.w, y - 8); c.clip(); }
+  // A diving bird disappears into the water as it goes in.
+  if (a.role === "dive" && p.awake && a.mode === "dive") { c.beginPath(); c.rect(0, 0, hab.L.w, habPool(a)[2] + 1); c.clip(); }
   if (a.role === "dangle") {
     c.fillStyle = "rgba(255,255,255,.7)";
     c.fillRect(x, 104, 1, y - 104 - 26);
   }
   if (!p.awake) c.globalAlpha = .85;
-  // Sprites face left; mirror the ones heading right.
-  if (a.dir > 0 && a.role !== "reef") { c.translate(x + 16, y - 32); c.scale(-1, 1); c.drawImage(img, 0, 0); }
-  else c.drawImage(img, x - 16, y - 32);
+  // Fliers and swimmers turn and squash around their middle, the rest around
+  // their feet. Sprites face left; mirror the ones heading right.
+  const mid = p.sky || a.role === "swim" || a.role === "jelly" ? 16 : 0;
+  c.translate(x, y - mid);
+  if (a.dir > 0 && a.role !== "reef") c.scale(-1, 1);
+  if (p.tilt) c.rotate(-p.tilt);
+  if (p.sx !== 1 || p.sy !== 1) c.scale(p.sx, p.sy);
+  c.drawImage(img, -16, mid - 32);
   c.restore();
   if (a.role === "paddle") {
     c.fillStyle = "rgba(255,255,255,.55)";
     c.fillRect(x - 12, y - 8, 4, 1); c.fillRect(x + 6, y - 8, 5, 1);
   }
-  p.box = [x - 16, y - 32, x + 16, y];
+}
+
+// Splash drops, ripple rings and skimmer wakes.
+function habFx(c, phase) {
+  const light = phase === "night" ? "rgba(200,220,255," : "rgba(240,250,255,";
+  for (const f of hab.fx) {
+    const a = Math.max(0, Math.min(1, f.life * 1.4));
+    if (f.kind === "drop") {
+      c.fillStyle = light + a + ")"; c.fillRect(Math.round(f.x), Math.round(f.y), 2, 2);
+    } else if (f.kind === "dot") {
+      c.fillStyle = light + a * .8 + ")"; c.fillRect(Math.round(f.x) - 1, Math.round(f.y), 3, 1);
+    } else {
+      c.fillStyle = light + a * .8 + ")";
+      const r = Math.round(f.r);
+      for (let i = 0; i < 16; i++) {
+        const t = i / 16 * Math.PI * 2;
+        c.fillRect(Math.round(f.x + Math.cos(t) * r * 1.6), Math.round(f.y + Math.sin(t) * r * .45), 1, 1);
+      }
+    }
+  }
+}
+
+function habFxStep(dt) {
+  for (const f of hab.fx) {
+    f.life -= dt;
+    if (f.kind === "drop") { f.vy += 220 * dt; f.x += f.vx * dt; f.y += f.vy * dt; }
+    else if (f.kind === "ring") f.r += 9 * dt;
+  }
+  hab.fx = hab.fx.filter((f) => f.life > 0);
+}
+
+// Things that move without being animals: clouds drifting and light on the sea.
+function habAmbient(c, L, phase) {
+  const t = hab.t;
+  if (phase !== "night") {
+    const col = phase === "day" ? "rgba(255,255,255,.8)" : "rgba(255,225,215,.65)";
+    [[40, 40, 34, 2.2], [L.w * .45, 26, 44, 1.4], [L.w * .7, 58, 30, 3], [L.w * .2, 70, 22, 2.6]].forEach(([x0, y, w, v]) => {
+      const x = Math.round(((x0 + t * v) % (L.w + 2 * w)) - w);
+      pxEllipse(c, x, y, Math.round(w / 2), 5, col);
+      pxEllipse(c, Math.round(x + w * .2), y - 4, Math.round(w / 4), 4, col);
+    });
+  }
+  // Glints that slide along the waves and fade in and out.
+  for (let i = 0; i < 14; i++) {
+    const a = Math.sin(t * 1.3 + i * 2.1);
+    if (a < .2) continue;
+    const span = L.w - L.sea, x = L.sea + ((i * 37 + t * (4 + i % 3 * 2)) % span), y = L.water + 6 + (i * 23) % 92;
+    c.fillStyle = phase === "night" ? `rgba(160,190,255,${a * .5})` : `rgba(220,245,255,${a * .8})`;
+    c.fillRect(Math.round(x), y, 3 + i % 3, 1);
+  }
 }
 
 function habBubble(poses) {
@@ -946,7 +1144,9 @@ function habLoop(now) {
   const dt = hab.last ? Math.min((now - hab.last) / 1000, .1) : 0;
   hab.last = now;
   const phase = habPhase();
+  hab.t += dt;
   hab.animals.forEach((a) => habStep(a, dt, habAwake(a, phase)));
+  habFxStep(dt);
   habDraw();
 }
 
@@ -984,11 +1184,6 @@ function habBackground(L, phase) {
   } else {
     const low = phase !== "day";
     pxEllipse(c, low ? 60 : L.w - 70, low ? 130 : 36, 11, 11, low ? "#ffb35c" : "#ffe680");
-    c.fillStyle = "rgba(255,255,255,.85)";
-    for (const [x, y, w] of [[40, 40, 34], [L.w * .45, 26, 44], [L.w * .7, 58, 30]]) {
-      pxEllipse(c, Math.round(x), y, Math.round(w / 2), 5, "rgba(255,255,255,.8)");
-      pxEllipse(c, Math.round(x + w * .2), y - 4, Math.round(w / 4), 4, "rgba(255,255,255,.8)");
-    }
   }
   const dim = (col) => (night ? mix(col, "#0b1330", .55) : phase === "day" ? col : mix(col, "#5b3f6e", .2));
   // Sea behind the beach, with a light line along the top.
