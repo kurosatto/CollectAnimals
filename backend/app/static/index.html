@@ -152,7 +152,7 @@
   /* Field Guide: small sprite tiles so lots fit on a phone screen. */
   .guide { grid-template-columns:repeat(auto-fill,minmax(64px,1fr)); gap:5px; }
   .guide .tile { padding:5px 4px; font-size:.72rem; text-align:center; line-height:1.2; }
-  .guide .tile .sprite { width:100%; height:auto; aspect-ratio:1; max-width:56px; margin:2px auto; display:block; }
+  .guide .tile .sprite { width:100%; height:auto; aspect-ratio:1; max-width:64px; margin:2px auto; display:block; }
   .guide .tile .num { font-size:.62rem; }
   .guide .tile .name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .guide .tile .sci, .guide .tile .rarity { display:none; }
@@ -205,7 +205,7 @@
   .set-head { display:flex; justify-content:space-between; gap:8px; font-weight:600; }
   .set .desc { font-size:.8rem; color:var(--muted); }
   .set-sprites { display:flex; flex-wrap:wrap; gap:2px; }
-  .set-sprites img { width:32px; height:32px; image-rendering:pixelated; cursor:pointer; }
+  .set-sprites img { width:40px; height:40px; image-rendering:pixelated; cursor:pointer; }
   .set-sprites img.missing { opacity:.4; }
   .score { margin-top:12px; border:1px solid var(--line); border-radius:10px; padding:10px 12px; max-width:320px; }
   .score-head { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
@@ -1155,7 +1155,10 @@ function habSprite(c, p) {
   const { a, x, y } = p, sheet = habSheets[a.s.slug];
   const framed = p.anim && sheet && sheet.complete && sheet.naturalWidth;
   const img = framed ? habTinted(sheet, `${a.s.slug}@anim`, p.phase) : habTinted(raw, a.s.slug, p.phase);
-  p.box = [x - 16, y - 32, x + 16, y];
+  // Frame size from the image (40 px: a 32 px drawing with room for wings, tails
+  // and antlers), feet on its bottom row.
+  const F = framed ? sheet.naturalWidth / habAnimIdx.frames : raw.naturalWidth;
+  p.box = [x - F / 2, y - F, x + F / 2, y];
   if (p.hidden) return;
   if (!p.sky && !p.roost && !HAB_NO_SHADOW.has(a.role)) {
     const gy = a.role === "hop" && p.awake ? Math.round(a.y) : y;
@@ -1182,8 +1185,8 @@ function habSprite(c, p) {
   if (a.dir > 0 && a.role !== "reef") c.scale(-1, 1);
   if (p.tilt) c.rotate(-p.tilt);
   if (p.sx !== 1 || p.sy !== 1) c.scale(p.sx, p.sy);
-  if (framed) c.drawImage(img, p.anim[1] * 32, habAnimIdx.rows.indexOf(p.anim[0]) * 32, 32, 32, -16, mid - 32, 32, 32);
-  else c.drawImage(img, -16, mid - 32);
+  if (framed) c.drawImage(img, p.anim[1] * F, habAnimIdx.rows.indexOf(p.anim[0]) * F, F, F, -F / 2, mid - F, F, F);
+  else c.drawImage(img, -F / 2, mid - F);
   c.restore();
   if (a.role === "paddle") {
     c.fillStyle = "rgba(255,255,255,.55)";
