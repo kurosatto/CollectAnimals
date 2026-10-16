@@ -691,6 +691,12 @@ const HAB_H = 270;
 const hab = { w: 0, L: null, animals: [], peek: false, picked: null, pickedUntil: 0, last: 0, bg: null, bgKey: "", t: 0,
               fx: [] };
 const habImgs = {};
+// Animation sheets (species/sprites/anim): a row of four frames for each pose, and
+// an index of the poses each species really draws. Without them the scene falls
+// back to the single sprite, squashed and bobbed.
+const habSheets = {};
+let habAnimIdx = null;
+fetch("/sprites/anim/index.json").then((r) => (r.ok ? r.json() : null)).then((j) => { habAnimIdx = j; }).catch(() => {});
 const habStill = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const HAB_ROLES = [
   [/pelican|royal_tern|kingfisher|osprey/, "dive"],
@@ -800,6 +806,7 @@ function habitatSet(entries) {
     a.speed = habSpeed(a);
     habSpawn(a);
     if (!habImgs[a.s.slug]) { habImgs[a.s.slug] = new Image(); habImgs[a.s.slug].src = spriteUrl(a.s.slug, true); }
+    if (!habSheets[a.s.slug]) { habSheets[a.s.slug] = new Image(); habSheets[a.s.slug].src = `/sprites/anim/${a.s.slug}.png`; }
     return a;
   });
   habNote();
@@ -1005,6 +1012,33 @@ function habPose(a, awake, roost) {
   return [x, y, sx, sy, tilt];
 }
 
+// Which pose of the animation sheet to show, and which of its four frames:
+// [pose, frame], or null when the species has no sheet.
+function habAnim(a, awake, roost) {
+  const acts = habAnimIdx && habAnimIdx.acts[a.s.slug];
+  if (!acts) return null;
+  const has = (k) => acts.includes(k);
+  const cyc = (t) => ((Math.floor(t) % 4) + 4) % 4;
+  if (!awake || roost) return ["sleep", cyc(a.phase * 1.2)];
+  switch (a.role) {
+    case "walk": case "shore": case "wade": case "beach":
+      return a.pause > 0 || a.peck > 0 || !has("walk") ? ["idle", 0] : ["walk", cyc(a.odo / 3)];
+    case "hop":
+      return a.pause > 0 || !has("walk") ? ["idle", 0] : ["walk", cyc((a.odo % 18) / 18 * 4)];
+    case "fly": case "soar": case "dive": case "skim": case "hover": case "flutter": {
+      if (!has("fly")) return ["idle", 0];
+      if (a.role === "dive" && a.mode === "dive") return ["fly", 3];
+      const glider = HAB_GLIDERS.test(a.s.slug);
+      if (glider && Math.sin(a.phase * .7 + a.x * .01) < .1) return ["fly", 0];  // gliding, wings level
+      const rate = { hover: 24, flutter: 10, skim: 5 }[a.role] || (glider ? 6 : 12);
+      return ["fly", cyc(a.phase * rate / (2 * Math.PI) * 4)];
+    }
+    case "swim": case "paddle": case "float": case "jelly":
+      return has("swim") ? ["swim", cyc(a.phase * 2.5)] : ["idle", 0];
+  }
+  return ["idle", 0];
+}
+
 function habDraw() {
   const cv = $("hab-canvas");
   if (!hab.L || !cv) return;
@@ -1019,8 +1053,12 @@ function habDraw() {
   const poses = hab.animals.map((a) => {
     const awake = habAwake(a, phase);
     const roost = !awake && HAB_FLIERS.has(a.role) ? habRoost(roosting++) : null;
-    const [x, y, sx = 1, sy = 1, tilt = 0] = habPose(a, awake, roost);
-    return { a, awake, phase, roost: !!roost, x: Math.round(x), y: Math.round(y), sx, sy, tilt,
+    let [x, y, sx = 1, sy = 1, tilt = 0] = habPose(a, awake, roost);
+    const anim = habAnim(a, awake, roost);
+    // The frames already beat the wings, step the legs and breathe, so drop the
+    // squash that stood in for them (hops and jellies keep theirs).
+    if (anim && anim[0] !== "idle" && a.role !== "hop" && a.role !== "jelly" && a.mode !== "rise") sx = sy = 1;
+    return { a, awake, phase, anim, roost: !!roost, x: Math.round(x), y: Math.round(y), sx, sy, tilt,
              sky: awake && HAB_FLIERS.has(a.role), hidden: awake && a.mode === "under" };
   });
   const sea = poses.filter((p) => HAB_SEA.has(p.a.role) && !p.sky).sort((p, q) => p.y - q.y);
@@ -1063,7 +1101,9 @@ const HAB_NO_SHADOW = new Set(["swim", "jelly", "reef", "float", "paddle", "wade
 function habSprite(c, p) {
   const raw = habImgs[p.a.s.slug];
   if (!raw || !raw.complete || !raw.naturalWidth) return;
-  const { a, x, y } = p, img = habTinted(raw, a.s.slug, p.phase);
+  const { a, x, y } = p, sheet = habSheets[a.s.slug];
+  const framed = p.anim && sheet && sheet.complete && sheet.naturalWidth;
+  const img = framed ? habTinted(sheet, `${a.s.slug}@anim`, p.phase) : habTinted(raw, a.s.slug, p.phase);
   p.box = [x - 16, y - 32, x + 16, y];
   if (p.hidden) return;
   if (!p.sky && !p.roost && !HAB_NO_SHADOW.has(a.role)) {
@@ -1083,7 +1123,7 @@ function habSprite(c, p) {
     c.fillStyle = "rgba(255,255,255,.7)";
     c.fillRect(x, 104, 1, y - 104 - 26);
   }
-  if (!p.awake) c.globalAlpha = .85;
+  if (!p.awake && !framed) c.globalAlpha = .85;
   // Fliers and swimmers turn and squash around their middle, the rest around
   // their feet. Sprites face left; mirror the ones heading right.
   const mid = p.sky || a.role === "swim" || a.role === "jelly" ? 16 : 0;
@@ -1091,7 +1131,8 @@ function habSprite(c, p) {
   if (a.dir > 0 && a.role !== "reef") c.scale(-1, 1);
   if (p.tilt) c.rotate(-p.tilt);
   if (p.sx !== 1 || p.sy !== 1) c.scale(p.sx, p.sy);
-  c.drawImage(img, -16, mid - 32);
+  if (framed) c.drawImage(img, p.anim[1] * 32, habAnimIdx.rows.indexOf(p.anim[0]) * 32, 32, 32, -16, mid - 32, 32, 32);
+  else c.drawImage(img, -16, mid - 32);
   c.restore();
   if (a.role === "paddle") {
     c.fillStyle = "rgba(255,255,255,.55)";

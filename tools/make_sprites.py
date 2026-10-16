@@ -3,6 +3,11 @@
     python tools/make_sprites.py            # writes species/sprites/*.png
     python tools/make_sprites.py --sheet docs/sprites.png   # plus a preview sheet
     python tools/make_sprites.py --state NC --sheet nc.png  # sheet for one state's list
+    python tools/make_sprites.py --anim-sheet anim.png     # preview of every animation
+
+Each species also gets an animation sheet, species/sprites/anim/<slug>.png: one row
+per pose (idle, walk, fly, swim, sleep) of four 32x32 frames. anim/index.json lists
+the poses each species really draws; the others repeat its idle row.
 
 Species come from every list in species/states.json; one sprite per slug is shared
 by all states.
@@ -26,7 +31,7 @@ import species_nc  # noqa: E402,F401
 from archetypes import (BLACK, NOSE, PINK, WHITE, beetle_top, bee, bird, butterfly,  # noqa: E402
                         dragonfly, duck, frog, goose, hummingbird, lizard, mammal, owl, pelican,
                         mantis, pinniped, quad, S, snake, sprite, star, turtle, vulture, wader, whale)
-from pixel import Sprite, mix, silhouette  # noqa: E402
+from pixel import ACTS, FRAMES, Sprite, mix, silhouette  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 STATES_JSON = ROOT / "species" / "states.json"
@@ -946,6 +951,20 @@ def draw(slug) -> Image.Image:
     return s.render()
 
 
+def animate(slug) -> tuple[Image.Image, list[str]]:
+    """The animation sheet (a row of frames per pose) and the poses really drawn."""
+    out = Image.new("RGBA", (32 * FRAMES, 32 * len(ACTS)), (0, 0, 0, 0))
+    probe = Sprite()
+    S[slug](probe)
+    acts = [a for a in ACTS if a in probe.acts]
+    for row, act in enumerate(ACTS):
+        for f in range(FRAMES):
+            s = Sprite(act if act in acts else "idle", f if act in acts else 0)
+            S[slug](s)
+            out.alpha_composite(s.render(), (32 * f, 32 * row))
+    return out, acts
+
+
 def sheet(rows, scale=4, cols=10, silhouettes=False):
     cell = 32 * scale + 8
     n = len(rows)
@@ -968,6 +987,7 @@ def main():
     ap.add_argument("--out", type=Path, default=OUT)
     ap.add_argument("--sheet", type=Path, help="also write a preview sheet PNG here")
     ap.add_argument("--state", help="only this state's species (e.g. NC)")
+    ap.add_argument("--anim-sheet", type=Path, help="also write a preview of every animation here")
     args = ap.parse_args()
 
     rows = load_species(args.state)
@@ -978,10 +998,32 @@ def main():
     # (or a list branch can land later) without the art going missing.
     slugs = list(S) if not args.state else [r["slug"] for r in rows]
     args.out.mkdir(parents=True, exist_ok=True)
+    anim_dir = args.out / "anim"
+    anim_dir.mkdir(exist_ok=True)
+    index_path = anim_dir / "index.json"
+    index = json.loads(index_path.read_text(encoding="utf-8"))["acts"] if index_path.exists() else {}
+    anims = {}
     for slug in slugs:
         img = draw(slug)
         img.save(args.out / f"{slug}.png", optimize=True)
         silhouette(img).save(args.out / f"{slug}_silhouette.png", optimize=True)
+        anims[slug], index[slug] = animate(slug)
+        anims[slug].save(anim_dir / f"{slug}.png", optimize=True)
+    index_path.write_text(json.dumps({"frames": FRAMES, "rows": list(ACTS), "acts": dict(sorted(index.items()))},
+                                     indent=1) + "\n", encoding="utf-8")
+    if args.anim_sheet:
+        scale, cols = 3, 2
+        cell_w, cell_h = 32 * FRAMES * scale + 10, 32 * len(ACTS) * scale + 18
+        lines = (len(slugs) + cols - 1) // cols
+        prev = Image.new("RGBA", (cols * cell_w, lines * cell_h), (246, 244, 238, 255))
+        d = ImageDraw.Draw(prev)
+        for i, slug in enumerate(slugs):
+            x, y = (i % cols) * cell_w + 4, (i // cols) * cell_h + 4
+            big = anims[slug].resize((anims[slug].width * scale, anims[slug].height * scale), Image.NEAREST)
+            prev.alpha_composite(big, (x, y + 12))
+            d.text((x, y), f"{slug}: {', '.join(index[slug])}", fill=(60, 60, 60, 255))
+        args.anim_sheet.parent.mkdir(parents=True, exist_ok=True)
+        prev.save(args.anim_sheet, optimize=True)
     if not args.state:
         with open(args.out / "credits.csv", "w", newline="", encoding="utf-8") as f:
             w = csv.writer(f)

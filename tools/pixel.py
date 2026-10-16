@@ -87,14 +87,90 @@ def _seg_dist(x0, y0, x1, y1):
     return np.hypot(_XS - (x0 + t * dx), _YS - (y0 + t * dy))
 
 
+# Animation: every body plan can draw itself in these poses, 4 frames each.
+ACTS = ("idle", "walk", "fly", "swim", "sleep")
+FRAMES = 4
+
+
 class Sprite:
-    def __init__(self):
+    def __init__(self, act: str = "idle", f: int = 0):
         self.col = np.zeros((N, N, 3), np.int32)
         self.reg = np.zeros((N, N), np.int32)
         self.shaded: dict[int, bool] = {}
         self.edged: set[int] = set()
         self.n = 0
         self.last = np.zeros((N, N), bool)
+        # The pose being drawn, and the poses this body plan really draws (the rest
+        # fall back to idle). Eyes are found as they're drawn so sleep can close them.
+        self.act, self.f = act, f
+        self.acts = {"idle", "sleep"}
+        self.eye_px = np.zeros((N, N), bool)
+        self.eye_boxes: list[tuple[int, int, int, int]] = []
+
+    def wave(self, off: float = 0.0) -> float:
+        """Goes 0, 1, 0, -1 over the four frames (shifted by off, in cycles)."""
+        return math.sin((self.f / FRAMES + off) * 2 * math.pi)
+
+    def can(self, *acts):
+        """Declare poses this body plan draws."""
+        self.acts.update(acts)
+
+    def shift(self, dx: int, dy: int):
+        """Move everything drawn so far."""
+        self.col = np.roll(np.roll(self.col, dy, axis=0), dx, axis=1)
+        self.reg = np.roll(np.roll(self.reg, dy, axis=0), dx, axis=1)
+        self.eye_px = np.roll(np.roll(self.eye_px, dy, axis=0), dx, axis=1)
+        self.eye_boxes = [(x0 + dx, y0 + dy, x1 + dx, y1 + dy) for x0, y0, x1, y1 in self.eye_boxes]
+        for a in (self.col, self.reg, self.eye_px):
+            if dy > 0:
+                a[:dy] = 0
+            elif dy < 0:
+                a[dy:] = 0
+            if dx > 0:
+                a[:, :dx] = 0
+            elif dx < 0:
+                a[:, dx:] = 0
+
+    def eye_box(self, x0, y0, x1, y1, mirror=False):
+        """Mark a big eye (x0..x1, y0..y1 inclusive) to be closed when asleep."""
+        self.eye_boxes.append((x0, y0, x1, y1))
+        if mirror:
+            self.eye_boxes.append((N - 1 - x1, y0, N - 1 - x0, y1))
+
+    def _close_eyes(self):
+        """Asleep: paint over each eye with the face around it and draw a closed lid."""
+        boxes = list(self.eye_boxes)
+        seen = np.zeros((N, N), bool)
+        for y, x in zip(*np.where(self.eye_px)):
+            if seen[y, x] or any(x0 <= x <= x1 and y0 <= y <= y1 for x0, y0, x1, y1 in boxes):
+                continue
+            stack, pts = [(y, x)], []
+            while stack:  # one cluster of eye pixels = one eye
+                cy, cx = stack.pop()
+                if 0 <= cy < N and 0 <= cx < N and self.eye_px[cy, cx] and not seen[cy, cx]:
+                    seen[cy, cx] = True
+                    pts.append((cy, cx))
+                    stack += [(cy + 1, cx), (cy - 1, cx), (cy, cx + 1), (cy, cx - 1)]
+            ys, xs = zip(*pts)
+            boxes.append((min(xs), min(ys), max(xs), max(ys)))
+        for x0, y0, x1, y1 in boxes:
+            x0, y0, x1, y1 = max(x0, 0), max(y0, 0), min(x1, N - 1), min(y1, N - 1)
+            sx, sy = (x0 + x1) // 2, y0 - 1
+            if sy < 0 or self.reg[sy, sx] == 0 or self.eye_px[sy, sx]:
+                sx, sy = x0 - 1, (y0 + y1) // 2
+            if sx < 0 or self.reg[sy, sx] == 0:
+                continue
+            self.col[y0:y1 + 1, x0:x1 + 1] = self.col[sy, sx]
+            self.reg[y0:y1 + 1, x0:x1 + 1] = self.reg[sy, sx]
+            lid = np.zeros((N, N), bool)
+            ly = y1 if y1 - y0 < 2 else (y0 + y1 + 1) // 2
+            lid[ly, x0:x1 + 1] = True
+            if x1 - x0 >= 3:
+                lid[ly - 1, x0], lid[ly - 1, x1], lid[ly, x0], lid[ly, x1] = True, True, False, False
+            self.n += 1
+            self.col[lid] = np.array(mix(tuple(self.col[sy, sx]), OUTLINE_INK, 0.75))
+            self.reg[lid] = self.n
+            self.shaded[self.n] = False
 
     # -- masks -----------------------------------------------------------------
     @staticmethod
@@ -176,8 +252,14 @@ class Sprite:
         if clip is not None:
             mask = mask & clip
         self.n += 1
-        self.col[mask] = rgb(color)
+        c = rgb(color)
+        self.col[mask] = c
         self.reg[mask] = self.n
+        # small near-black dots are eyes (pupils); anything drawn on top later isn't
+        if not shade and sum(c) < 100 and 0 < mask.sum() <= 12:
+            self.eye_px |= mask
+        else:
+            self.eye_px &= ~mask
         self.shaded[self.n] = shade
         if edge:
             self.edged.add(self.n)
@@ -231,6 +313,8 @@ class Sprite:
 
     # -- output ----------------------------------------------------------------
     def render(self):
+        if self.act == "sleep":
+            self._close_eyes()
         col = self.col.astype(np.float32)
         filled = self.reg > 0
         for r in range(1, self.n + 1):
