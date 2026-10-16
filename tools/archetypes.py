@@ -120,6 +120,142 @@ def _ears(s: Sprite, kind, fur, inner):
         s.ellipse(6.7, 9, 1.5, 0.8, inner, rot=-25, mirror=True, shade=False)
 
 
+# Proportions for the side-view walkers: body (cx, cy, rx, ry), leg radius, front and
+# back leg x, where the legs start, the neck (from, to, radius), the head (cx, cy, rx, ry)
+# and the snout (from, tip, (radius at the head, radius at the tip)).
+BUILDS = {
+    "deer":  dict(body=(19, 17.5, 7.5, 4.4), leg=0.9, fx=13.5, bx=23.5, top=19, neck=((13.5, 15), (9.5, 9.5), 2.1),
+                  head=(8.5, 8.5, 3.4, 3.0), snout=((6.5, 10), (2.6, 11), (1.7, 1.2))),
+    "sheep": dict(body=(19, 18.5, 8.2, 5.4), leg=1.2, fx=13.5, bx=24, top=21, neck=((13, 16), (10, 12), 2.6),
+                  head=(8.5, 11, 3.6, 3.4), snout=((6.5, 12.5), (3.6, 13.5), (1.9, 1.5))),
+    "dog":   dict(body=(18, 19.5, 8, 4.2), leg=1.05, fx=12, bx=23.5, top=21, neck=((12, 18), (9.5, 14), 2.7),
+                  head=(9, 12.5, 4.1, 3.6), snout=((6.5, 13.8), (1.8, 15), (1.8, 0.9))),
+    "cat":   dict(body=(19, 21, 8.2, 4.2), leg=1.2, fx=13, bx=24.5, top=23, neck=((13, 20), (10.5, 17), 2.8),
+                  head=(9, 15.5, 4.7, 4.3), snout=((6, 17), (4.2, 17.3), (1.7, 1.4))),
+    "bear":  dict(body=(19, 19.5, 9.5, 6.4), leg=2.2, fx=12.5, bx=25, top=22, neck=((12.5, 18), (10, 17.5), 4.0),
+                  head=(8, 17.5, 4.6, 4.2), snout=((5, 19), (2.4, 19.6), (2.0, 1.5))),
+    "low":   dict(body=(19.5, 21.5, 8.5, 4.8), leg=1.3, fx=13.5, bx=25, top=24, neck=((13.5, 21), (11, 20.5), 3.2),
+                  head=(8.5, 20.5, 4.1, 3.6), snout=((6, 21.8), (1.8, 23), (1.8, 0.8))),
+}
+
+
+def quad(s: Sprite, fur, light=WHITE, *, build="dog", ears="point", ear_in=PINK, tail="bushy",
+         tail_col=None, tail_tip=None, nose=NOSE, muzzle=None, head=None, legs=None, feet=None,
+         belly=True, eye_col=EYE, blush=True, markings=None, behind=None, front=None):
+    """Side view of a four-legged animal walking left. `build` sets the proportions;
+    behind, markings and front are called with (s, build dict) to add patterns, horns
+    and antlers at the right places."""
+    b = BUILDS[build]
+    head = head or fur
+    legs = legs or fur
+    tail_col = tail_col or fur
+    muzzle = muzzle or light
+    far = lambda c: mix(c, "#1a1420", 0.28)  # noqa: E731  (the legs and ear on the far side)
+    bx, by, brx, bry = b["body"]
+    hx, hy, hrx, hry = b["head"]
+    ground = 30.5
+    if behind:
+        behind(s, b)
+
+    for x, back in ((b["fx"] + 2.2, False), (b["bx"] + 1.6, True)):
+        _leg(s, x, b["top"], ground, b["leg"], far(legs), back, build, far(feet) if feet else None)
+    _tail(s, tail, bx + brx - 1, by - bry * 0.3, tail_col, tail_tip)
+    ear_x = hx + (0.8 if build == "bear" else 2.6)
+    _side_ear(s, ears, ear_x - 1, hy - hry + 0.6, far(head), None)
+
+    for x, back in ((b["fx"], False), (b["bx"], True)):
+        _leg(s, x, b["top"], ground, b["leg"], legs, back, build, feet)
+    body = s.ellipse(bx, by, brx, bry, fur)
+    if build == "bear":
+        s.ellipse(bx - 3.5, by - bry + 1.5, 4.5, 2.6, fur)  # shoulder hump
+    if belly:
+        # a pale underside, left unshaded so it doesn't read as a stripe
+        s.fill(s.m_ellipse(bx - 0.5, by + bry * 0.95, brx * 0.8, bry * 0.5) & body, light, shade=False)
+    (nx0, ny0), (nx1, ny1), nr = b["neck"]
+    s.path([(nx0, ny0), (nx1, ny1)], nr, fur)
+    if belly and build in ("dog", "sheep"):
+        s.paint(s.m_path([(nx0 - 1.2, ny0 + 1.5), (nx1 - 1.5, ny1 + 1.8)], nr * 0.55), light, within=s.last)
+
+    hm = s.ellipse(hx, hy, hrx, hry, head, edge=True)
+    (sx0, sy0), (sx1, sy1), (sr0, sr1) = b["snout"]
+    sm = s.path([(sx0, sy0), (sx1, sy1)], (sr0, sr1), head)
+    jaw = s.m_path([(sx0, sy0 + sr0 * 0.6), (sx1 + 0.5, sy1 + sr1 * 0.5)], (sr0 * 0.6, sr1 * 0.55))
+    s.paint(jaw | s.m_ellipse(hx - 1, hy + hry * 0.7, hrx * 0.6, hry * 0.35), muzzle, within=sm | hm)
+    if markings:
+        markings(s, b)
+    _side_ear(s, ears, ear_x, hy - hry + 0.8, head, ear_in)
+    ny = round(sy1 - sr1 + 0.3)
+    s.px([(round(sx1 - sr1 + 0.4), ny), (round(sx1 - sr1 + 1.4), ny)], nose)
+    ex, ey = round(hx - hrx * 0.45), round(hy - hry * 0.45)
+    s.px([(ex, ey), (ex + 1, ey), (ex, ey + 1), (ex + 1, ey + 1)], eye_col)
+    s.px([(ex, ey)], "#ffffff")
+    if blush:
+        s.px([(ex + 1, ey + 2), (ex + 2, ey + 2)], "#f59aa8")
+    if front:
+        front(s, b)
+
+
+def _leg(s: Sprite, x, top, ground, r, col, back, build, feet):
+    if back and build in ("deer", "dog", "cat", "sheep"):
+        # back legs bend at the hock
+        pts = [(x, top - 1), (x + 1.4, top + (ground - top) * 0.45), (x + 0.4, ground - 0.8)]
+    else:
+        pts = [(x, top - 1), (x - 0.2, ground - 0.8)]
+    m = s.path(pts, (r * 1.35, r * 0.9) if build != "bear" else r, col)
+    if feet:
+        s.paint(s.m_ellipse(pts[-1][0] - 0.3, ground - 0.9, r + 0.6, 1.3), feet, within=m)
+    if build in ("bear", "low", "cat"):
+        s.ellipse(pts[-1][0] - 0.8, ground - 0.9, r + 0.9, 1.0, feet or col)
+
+
+def _side_ear(s: Sprite, kind, x, y, fur, inner):
+    shade = inner is not None
+    if kind in ("point", "big", "tuft"):
+        h = {"point": 4.2, "big": 5.6, "tuft": 4.4}[kind]
+        s.poly([(x - 2, y + 1.5), (x + 0.6, y - h), (x + 2.2, y + 1.2)], fur, shade=shade)
+        if inner:
+            s.poly([(x - 0.8, y + 0.8), (x + 0.5, y - h + 2), (x + 1.2, y + 0.8)], inner, shade=False)
+        if kind == "tuft":
+            s.px([(round(x + 0.6), round(y - h - 1)), (round(x + 0.6), round(y - h - 2))], BLACK)
+    elif kind in ("round", "small"):
+        r = 2.2 if kind == "round" else 1.6
+        s.ellipse(x, y - 0.5, r, r, fur, shade=shade)
+        if inner:
+            s.ellipse(x - 0.2, y - 0.3, r * 0.5, r * 0.5, inner, shade=False)
+    elif kind in ("mule", "side"):
+        rx, ry = (4.2, 2.2) if kind == "mule" else (3.0, 1.6)
+        s.ellipse(x + 1.5, y + 0.5, rx, ry, fur, rot=-35, shade=shade)
+        if inner:
+            s.ellipse(x + 1.7, y + 0.4, rx * 0.6, ry * 0.45, inner, rot=-35, shade=False)
+
+
+def _tail(s: Sprite, kind, x, y, col, tip):
+    if kind == "bushy":
+        m = s.path([(x - 1, y + 1), (x + 3, y + 2.5), (x + 4.8, y + 6), (x + 4.4, y + 9)], (1.6, 2.5), col)
+        if tip:
+            s.paint(s.m_ellipse(x + 4.6, y + 9.4, 2.4, 2.0), tip, within=m)
+    elif kind == "long":
+        m = s.path([(x - 1, y + 1), (x + 3, y + 2), (x + 5, y - 2), (x + 4.4, y - 6)], (1.2, 1.0), col)
+        if tip:
+            s.paint(s.m_ellipse(x + 4.4, y - 6, 1.6, 2.0), tip, within=m)
+    elif kind == "short":
+        m = s.ellipse(x + 1.2, y + 0.5, 1.8, 1.3, col, rot=-30)
+        if tip:
+            s.paint(s.m_ellipse(x + 2.4, y - 0.2, 0.9, 0.9), tip, within=m)
+    elif kind == "cotton":
+        s.ellipse(x + 1, y + 0.5, 1.6, 1.8, col)
+        if tip:
+            s.paint(s.m_ellipse(x + 0.6, y + 1.6, 1.4, 1.0), tip, within=s.last)
+    elif kind == "ringed":
+        m = s.path([(x - 1, y + 2), (x + 3, y + 3), (x + 5, y + 6), (x + 5.4, y + 10)], (2.0, 1.6), col)
+        for k in (2.5, 5.5, 8.5):
+            s.paint(s.m_poly([(x, y + k), (x + 8, y + k - 1.5), (x + 8, y + k + 0.2), (x, y + k + 1.7)]), tip or BLACK, within=m)
+    elif kind == "skunk":
+        m = s.path([(x - 1, y + 2), (x + 2, y - 2), (x + 3.4, y - 8), (x + 1.4, y - 13)], (2.8, 3.6), col)
+        s.paint(s.m_path([(x + 0.4, y - 1), (x + 1.8, y - 7), (x + 0.6, y - 12)], (0.9, 1.6)), tip or WHITE, within=m)
+    elif kind == "rat":
+        s.path([(x - 1, y + 2), (x + 3, y + 4), (x + 5.5, y + 3), (x + 6.5, y)], (1.1, 0.5), col)
+
 def pinniped(s: Sprite, fur, light, *, spots=None, ears=False, proboscis=None, whisker=None,
              flipper=None, belly=True):
     """Seal / sea lion sitting up, front view."""
