@@ -137,18 +137,36 @@ object Online {
 
     // --- Captures ---------------------------------------------------------------------
 
-    /** Uploads a photo for the server to identify, as the website's capture form does. */
-    suspend fun capture(photo: Bitmap, lat: Double?, lon: Double?): JSONObject = withContext(Dispatchers.IO) {
+    /**
+     * Uploads a photo for the server to identify, as the website's capture form does.
+     * The shrunk photo has no EXIF, so what the original said ([meta]) goes along;
+     * [lat]/[lon] is where the phone is now, used only if the photo has no place and is
+     * recent. [savePlace] false keeps no place at all.
+     */
+    suspend fun capture(photo: Bitmap, lat: Double?, lon: Double?, meta: PhotoMeta? = null,
+                        savePlace: Boolean = true): JSONObject = withContext(Dispatchers.IO) {
         val boundary = "----captureanimals${System.nanoTime()}"
         val out = ByteArrayOutputStream()
         fun part(name: String, value: String) = out.write(
             "--$boundary\r\nContent-Disposition: form-data; name=\"$name\"\r\n\r\n$value\r\n".toByteArray())
         if (lat != null && lon != null) { part("latitude", lat.toString()); part("longitude", lon.toString()) }
+        if (meta?.latitude != null && meta.longitude != null) {
+            part("photo_latitude", meta.latitude.toString()); part("photo_longitude", meta.longitude.toString())
+        }
+        meta?.takenAt?.let { part("photo_taken_at", it.toString()) }
+        if (!savePlace) part("save_place", "false")
         out.write(("--$boundary\r\nContent-Disposition: form-data; name=\"photo\"; filename=\"photo.jpg\"\r\n" +
             "Content-Type: image/jpeg\r\n\r\n").toByteArray())
         jpeg(ImageLoader.thumbnail(photo, 1600), out)
         out.write("\r\n--$boundary--\r\n".toByteArray())
         JSONObject(request("POST", "/captures", out.toByteArray(), "multipart/form-data; boundary=$boundary"))
+    }
+
+    /** Fixes when ([takenAt], local time) and where ([place], or null for none) a photo was taken. */
+    suspend fun whereWhen(captureId: Int, takenAt: java.time.LocalDateTime, place: Pair<Double, Double>?): JSONObject {
+        val body = JSONObject().put("taken_at", takenAt.withNano(0).toString())
+        place?.let { body.put("latitude", it.first).put("longitude", it.second) }
+        return JSONObject(call("PUT", "/captures/$captureId/where-when", body))
     }
 
     suspend fun pick(captureId: Int, label: String): JSONObject =
@@ -276,7 +294,8 @@ data class OnlinePhoto(
     val commonName: String?,
     val rarity: String,
     val category: String,
-    val caughtAt: Long,
+    // When the photo was taken (its date), shown under it.
+    val takenOn: Long,
     val place: String?,
     val likeCount: Int,
     val likedByMe: Boolean,
@@ -286,17 +305,25 @@ data class OnlinePhoto(
     // The photo's own 1-5 stars and points (null until it's scored).
     val stars: Int? = null,
     val score: Int? = null,
+    // Only on your own photos: the exact time and place, to show and fix.
+    val whereWhen: WhereWhen? = null,
 ) {
     companion object {
         fun parse(o: JSONObject): OnlinePhoto {
             val s = o.getJSONObject("species")
             return OnlinePhoto(o.getInt("id"), o.optStringOrNull("url"), o.getString("username"),
                 s.optStringOrNull("slug"), s.optStringOrNull("common_name"), s.getString("rarity"),
-                s.getString("category"), Online.parseTime(o.optStringOrNull("caught_at")), o.optStringOrNull("place"),
+                s.getString("category"), takenOn(o), o.optStringOrNull("place"),
                 o.optInt("like_count"), o.optBoolean("liked_by_me"), o.optInt("comment_count"),
                 o.optBoolean("is_mine"), o.optBoolean("by_friend"), o.optIntOrNull("stars"),
-                o.optIntOrNull("score"))
+                o.optIntOrNull("score"), WhereWhen.parse(o.optJSONObject("where_when")))
         }
+
+        /** Midday on the photo's date (so it shows the same day in any zone), else the upload time. */
+        fun takenOn(o: JSONObject): Long = o.optStringOrNull("taken_on")?.let {
+            runCatching { java.time.LocalDate.parse(it).atTime(12, 0).atZone(java.time.ZoneId.systemDefault())
+                .toInstant().toEpochMilli() }.getOrNull()
+        } ?: Online.parseTime(o.optStringOrNull("caught_at"))
 
         fun list(a: JSONArray) = List(a.length()) { parse(a.getJSONObject(it)) }
     }
