@@ -31,7 +31,19 @@ data class CaptureResult(
     val picked: Boolean = false,
     // The server's capture id when signed in (picks go to the server too).
     val captureId: Int? = null,
+    // Signed in: the photo's stars and points, and the field notes it ticked for the bond.
+    val score: PhotoScore? = null,
+    val bondUp: List<String> = emptyList(),
 )
+
+/**
+ * The states a player can switch to: their home state, the ones they chose to
+ * unlock (here or on the website), and any state they've captured in. The rest
+ * show 🔒 in the 📍 menu, as on the website.
+ */
+fun UiState.unlockedStates(): Set<String> =
+    unlocked + stateCode + account?.unlockedStates.orEmpty() +
+        states.filter { st -> st.species.any { it.slug in collection } }.map { it.code }
 
 data class UiState(
     // The model with the chosen state's species list, and that state's Field Guide.
@@ -43,6 +55,8 @@ data class UiState(
     val allSpecies: List<Species> = emptyList(),
     // First launch: ask which state the player is in, like the website's sign-up.
     val needsStatePick: Boolean = false,
+    // States the player chose to unlock on this phone; see [unlockedStates].
+    val unlocked: Set<String> = emptySet(),
     val collection: Map<String, Badge> = emptyMap(),
     val busy: Boolean = false,
     val result: CaptureResult? = null,
@@ -53,6 +67,11 @@ data class UiState(
     val server: String? = null,
     val accountBusy: Boolean = false,
     val accountError: String? = null,
+    // species/sets.json; each state shows its own sets (works offline too).
+    val sets: SetCatalog = SetCatalog(emptyList()),
+    // Signed in: this week's challenges and the buddy (both live on the server).
+    val week: Week? = null,
+    val buddy: Buddy? = null,
 )
 
 class GameViewModel(app: Application) : AndroidViewModel(app) {
@@ -76,11 +95,13 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                        States.load { name -> runCatching { text(name) }.getOrNull() },
                        store.load())
             }
+            val sets = withContext(Dispatchers.IO) { SetCatalog.parse(runCatching { text("sets.json") }.getOrNull()) }
             model = base
             val (default, list) = states
             val saved = prefs.getString("state", null)?.takeIf { code -> list.any { it.code == code } }
+            val unlocked = prefs.getStringSet("unlocked", emptySet()).orEmpty()
             _state.update {
-                it.copy(states = list, collection = collection, needsStatePick = saved == null,
+                it.copy(states = list, collection = collection, needsStatePick = saved == null, sets = sets, unlocked = unlocked,
                     allSpecies = list.flatMap { s -> s.species }.distinctBy { s -> s.slug })
             }
             select(saved ?: default)
@@ -105,7 +126,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 refreshCollection()
             } catch (e: Online.ApiError) {
                 // Signed out by the server (401): back to the badges saved on this phone.
-                if (!Online.signedIn) _state.update { it.copy(account = null, collection = store.load()) }
+                if (!Online.signedIn) _state.update { it.copy(account = null, collection = store.load(), week = null, buddy = null) }
             }
         }
     }
@@ -114,6 +135,22 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         if (!Online.signedIn || _state.value.account == null) return
         val c = Online.collection(_state.value.stateCode)
         _state.update { it.copy(collection = c) }
+        // Extras: the game works without them if the server can't send them.
+        val week = runCatching { Online.challenges() }.getOrNull()
+        val buddy = runCatching { Online.buddy() }.getOrNull()
+        _state.update { it.copy(week = week, buddy = buddy) }
+    }
+
+    /** "Make my buddy" on a captured animal's page. */
+    fun setBuddy(slug: String) {
+        viewModelScope.launch {
+            try {
+                val b = Online.setBuddy(slug)
+                _state.update { it.copy(buddy = b) }
+            } catch (e: Exception) {
+                _state.update { it.copy(error = e.message) }
+            }
+        }
     }
 
     fun signIn(ident: String, password: String) = account { Online.login(ident.trim(), password) }
@@ -144,7 +181,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     /** Back to playing offline, with the badges saved on this phone. */
     fun signOut() {
         Online.logout()
-        _state.update { it.copy(account = null, collection = store.load(), result = null) }
+        _state.update { it.copy(account = null, collection = store.load(), result = null, week = null, buddy = null) }
     }
 
     fun setServer(url: String?) {
@@ -172,13 +209,15 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     /** The player's state: its 100 species, Field Guide and parks. Badges carry over. */
     fun chooseState(code: String) {
-        prefs.edit().putString("state", code).apply()
-        _state.update { it.copy(needsStatePick = false, result = null) }
+        val unlocked = _state.value.unlocked + code
+        prefs.edit().putString("state", code).putStringSet("unlocked", unlocked).apply()
+        _state.update { it.copy(needsStatePick = false, result = null, unlocked = unlocked) }
         select(code)
         if (_state.value.account != null) viewModelScope.launch {
             runCatching {
                 Online.setState(code)
-                _state.update { it.copy(account = it.account?.copy(state = code)) }
+                _state.update { it.copy(account = it.account?.let { a -> a.copy(state = code,
+                    unlockedStates = (a.unlockedStates + code).distinct()) }) }
                 refreshCollection()
             }
         }
@@ -247,6 +286,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             },
             picked = prev != null,
             captureId = r.getInt("capture_id"),
+            score = PhotoScore.parse(r.optJSONObject("score")),
+            bondUp = r.optJSONArray("bond_up")?.let { a -> List(a.length()) { a.getString(it) } }.orEmpty(),
         )
     }
 

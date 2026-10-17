@@ -230,8 +230,9 @@ def test_dex_entry(client, fake):
     # Before catching: size, weight and map are hints; name and fun fact are locked.
     r = client.get("/species/coyote/dex").json()
     assert r["species"]["common_name"] is None and r["fun_fact"] is None
-    # Tips can name the animal, so they wait too; active time and parks are hints.
-    assert r["where_to_find"] is None and r["spotting_tip"] is None
+    # Tips show before the capture, with the name masked out; active time and parks are hints.
+    assert r["where_to_find"] and r["spotting_tip"]
+    assert "coyote" not in (r["where_to_find"] + r["spotting_tip"]).lower()
     assert r["size"] and r["weight"] and r["active_time"]
     assert r["range"]["cells"] == [[10, 20, 5]] and r["range"]["grid"]["step"] == 0.25
 
@@ -345,7 +346,7 @@ def test_hotspots(client, fake):
 
     r = client.get("/species/coyote/dex").json()
     assert r["hotspots"] == ["Big Park", "Small Park"]
-    assert r["active_time"] and r["spotting_tip"] is None
+    assert r["active_time"] and r["spotting_tip"] and "coyote" not in r["spotting_tip"].lower()
 
 
 def test_login_rate_limit(client):
@@ -597,3 +598,38 @@ def test_activity_from_active_time():
     assert dex.activity("raccoon", "CA") == "night"
     assert dex.activity("coyote", "CA") == "any"
     assert dex.activity("western_fence_lizard", "CA") == "day"
+
+
+def test_dex_for_animal_from_another_state(client):
+    # Red wolf is only on North Carolina's list; opened from California it gets NC's entry.
+    nc = client.get("/species/red_wolf/dex?state=NC").json()
+    ca = client.get("/species/red_wolf/dex?state=CA").json()
+    assert nc["state"] == "NC" and ca["state"] == "NC"
+    assert ca["range"] == nc["range"] and ca["season"] == nc["season"] and ca["species"]["number"] == nc["species"]["number"]
+    assert client.get("/species/coyote/dex?state=CA").json()["state"] == "CA"
+
+
+def test_mask_name():
+    from app import dex
+    m = dex.mask_name
+    assert m("Look for a bobcat; bobcats sit still.", "Bobcat") == "Look for a ???; ??? sit still."
+    assert m("Regular black bear sightings at Big Bear Lake", "American Black Bear") == \
+        "Regular ??? sightings at Big ??? Lake"
+    assert m("Take a whale-watching trip", "Humpback Whale") == "Take a ???-watching trip"
+    assert m("Ursus americanus lives here", "American Black Bear", "Ursus americanus") == "??? lives here"
+    assert m("", "Bobcat") == "" and m(None, "Bobcat") is None
+
+
+def test_states_unlock_by_choice(client, fake):
+    h = signup(client)
+    me = client.get("/me", headers=h).json()
+    assert me["state"] == "CA" and me["unlocked_states"] == ["CA"]
+    r = client.patch("/me", json={"state": "NC"}, headers=h).json()
+    assert r["state"] == "NC" and r["unlocked_states"] == ["CA", "NC"]
+    r = client.patch("/me", json={"state": "CA"}, headers=h).json()
+    assert r["state"] == "CA" and r["unlocked_states"] == ["CA", "NC"]   # stays unlocked
+    # Players keep every state they've captured in (coyote is on both lists).
+    old = signup(client, "bob")
+    fake.next = [Prediction("coyote", 0.93)]
+    upload(client, old)
+    assert client.get("/me", headers=old).json()["unlocked_states"] == ["CA", "NC"]

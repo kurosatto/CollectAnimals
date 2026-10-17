@@ -169,9 +169,25 @@ object Online {
         }
     }
 
-    /** A friend's Field Guide, in the friend's own state (friends only). */
-    suspend fun friendGuide(username: String): FriendGuide =
-        FriendGuide.parse(username, JSONObject(call("GET", "/users/${q(username)}/collection")))
+    /** A friend's Field Guide: their primary state, or [state] when given. */
+    suspend fun friendGuide(username: String, state: String? = null): FriendGuide =
+        FriendGuide.parse(username, JSONObject(call("GET", "/users/${q(username)}/collection" +
+            (state?.let { "?state=${q(it)}" } ?: ""))))
+
+    // --- Challenges, bonds, buddy ------------------------------------------------------
+
+    suspend fun challenges(): Week = Week.parse(JSONObject(call("GET", "/me/challenges")))
+
+    /** Bond and field notes for one captured animal, or null when it isn't captured. */
+    suspend fun bond(slug: String): Bond? =
+        JSONObject(call("GET", "/me/bonds?species=${q(slug)}")).getJSONArray("bonds").optJSONObject(0)?.let { Bond.parse(it) }
+
+    /** The buddy, or null before the first capture. */
+    suspend fun buddy(): Buddy? = call("GET", "/me/buddy").trim().takeIf { it != "null" }?.let { Buddy.parse(JSONObject(it)) }
+
+    suspend fun setBuddy(slug: String): Buddy? =
+        call("PUT", "/me/buddy", JSONObject().put("species", slug)).trim().takeIf { it != "null" }
+            ?.let { Buddy.parse(JSONObject(it)) }
 
     // --- Photos, feed, likes -----------------------------------------------------------
 
@@ -241,10 +257,12 @@ object Online {
 fun JSONObject.optStringOrNull(key: String): String? = if (isNull(key) || !has(key)) null else getString(key)
 fun JSONObject.optIntOrNull(key: String): Int? = if (isNull(key) || !has(key)) null else getInt(key)
 
-data class Account(val username: String, val email: String, val state: String, val showInFeed: Boolean) {
+data class Account(val username: String, val email: String, val state: String, val showInFeed: Boolean,
+                   val unlockedStates: List<String> = emptyList()) {
     companion object {
         fun parse(o: JSONObject) = Account(o.getString("username"), o.getString("email"), o.getString("state"),
-            o.isNull("show_in_feed") || o.optBoolean("show_in_feed", true))
+            o.isNull("show_in_feed") || o.optBoolean("show_in_feed", true),
+            o.optJSONArray("unlocked_states")?.let { a -> List(a.length()) { a.getString(it) } } ?: emptyList())
     }
 }
 
@@ -264,6 +282,8 @@ data class OnlinePhoto(
     val commentCount: Int,
     val isMine: Boolean,
     val byFriend: Boolean,
+    // The photo's own 1-5 stars (null for photos from before scoring).
+    val stars: Int? = null,
 ) {
     companion object {
         fun parse(o: JSONObject): OnlinePhoto {
@@ -272,7 +292,7 @@ data class OnlinePhoto(
                 s.optStringOrNull("slug"), s.optStringOrNull("common_name"), s.getString("rarity"),
                 s.getString("category"), Online.parseTime(o.optStringOrNull("caught_at")), o.optStringOrNull("place"),
                 o.optInt("like_count"), o.optBoolean("liked_by_me"), o.optInt("comment_count"),
-                o.optBoolean("is_mine"), o.optBoolean("by_friend"))
+                o.optBoolean("is_mine"), o.optBoolean("by_friend"), o.optIntOrNull("stars"))
         }
 
         fun list(a: JSONArray) = List(a.length()) { parse(a.getJSONObject(it)) }
@@ -304,23 +324,35 @@ data class Friends(val friends: List<FriendEntry>, val incoming: List<FriendEntr
 
 /** One animal on a friend's Field Guide. Names stay "???" until you or a friend captured it. */
 data class GuideEntry(val number: Int, val slug: String?, val commonName: String?, val rarity: String,
-                      val category: String, val caught: Boolean, val youCaught: Boolean) {
+                      val category: String, val caught: Boolean, val youCaught: Boolean,
+                      val activity: String? = null) {
     companion object {
         fun parse(o: JSONObject): GuideEntry {
             val s = o.getJSONObject("species")
             return GuideEntry(s.getInt("number"), s.optStringOrNull("slug"), s.optStringOrNull("common_name"),
-                s.getString("rarity"), s.getString("category"), o.getBoolean("caught"), o.optBoolean("you_caught"))
+                s.getString("rarity"), s.getString("category"), o.getBoolean("caught"), o.optBoolean("you_caught"),
+                o.optStringOrNull("activity"))
         }
     }
 }
 
+/** A state a friend has captured animals in; their primary location is always one. */
+data class GuidePlace(val state: String, val name: String, val caught: Int)
+
 data class FriendGuide(val username: String, val state: String, val caught: Int, val total: Int,
-                       val entries: List<GuideEntry>) {
+                       val entries: List<GuideEntry>, val primaryState: String, val places: List<GuidePlace>) {
     companion object {
         fun parse(username: String, o: JSONObject): FriendGuide {
             val a = o.getJSONArray("entries")
-            return FriendGuide(o.optString("username").ifEmpty { username }, o.getString("state"),
-                o.getInt("caught"), o.getInt("total"), List(a.length()) { GuideEntry.parse(a.getJSONObject(it)) })
+            val p = o.optJSONArray("places") ?: JSONArray()
+            val state = o.getString("state")
+            val primary = o.optStringOrNull("primary_state") ?: state
+            val places = List(p.length()) { p.getJSONObject(it) }
+                .map { GuidePlace(it.getString("state"), it.getString("name"), it.getInt("caught")) }
+                .sortedByDescending { it.state == primary }
+            return FriendGuide(o.optString("username").ifEmpty { username }, state,
+                o.getInt("caught"), o.getInt("total"), List(a.length()) { GuideEntry.parse(a.getJSONObject(it)) },
+                primary, places)
         }
     }
 }

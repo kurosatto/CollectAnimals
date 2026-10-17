@@ -31,6 +31,8 @@ class UserOut(BaseModel):
     created_at: datetime
     show_in_feed: bool | None = True
     is_private: bool | None = False
+    # The states this player can switch to; the rest show locked until they choose one.
+    unlocked_states: list[str] = []
 
 
 class SettingsIn(BaseModel):
@@ -66,6 +68,8 @@ class SpeciesOut(BaseModel):
 
 class DexOut(BaseModel):
     species: SpeciesOut
+    # The state this entry is for: the one asked for, or one that lists the animal.
+    state: str = ""
     size: str | None = None
     weight: str | None = None
     fun_fact: str | None = None
@@ -174,6 +178,12 @@ class CollectionEntry(BaseModel):
     bond: int = 0
 
 
+class PlaceOut(BaseModel):
+    state: str
+    name: str
+    caught: int
+
+
 class CollectionOut(BaseModel):
     state: str
     # Whose Field Guide this is.
@@ -181,6 +191,10 @@ class CollectionOut(BaseModel):
     caught: int
     total: int
     entries: list[CollectionEntry]
+    # On a friend's Field Guide: the state they play in, and the states they've
+    # captured animals in (primary first is up to the client).
+    primary_state: str | None = None
+    places: list[PlaceOut] = []
 
 
 class PhotoOut(BaseModel):
@@ -283,6 +297,8 @@ class ProfileOut(BaseModel):
     # self | friends | requested (you asked them) | incoming (they asked you) | none
     friendship: str
     is_bot: bool = False
+    # Their primary location: the state they play in.
+    state: str = ""
     # Private players show their photos only to themselves and friends.
     is_private: bool = False
     caught: int

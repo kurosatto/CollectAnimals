@@ -3,20 +3,15 @@ package com.captureanimals.app
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
@@ -33,16 +28,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import kotlin.math.hypot
-import kotlin.math.min
 
 /**
  * Parks where many of the 100 can be spotted (species/hotspots.json), matching the
@@ -76,12 +64,10 @@ fun HotspotsScreen(info: ModelInfo, dex: FieldGuide, collection: Map<String, Bad
         Text("Parks where you can spot lots of the 100. Tap a park to see which ones.",
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
 
-        HotspotsMap(dex, parks, selectedId, me, Modifier.fillMaxWidth()) { selectedId = it }
-        if (me == null) {
-            TextButton(onClick = {
+        ParksMap(dex, parks, selectedId, me, Modifier.fillMaxWidth(),
+            onLocate = {
                 if (hasLocationPermission(context)) me = lastLocation(context) else askLocation.launch(LOCATION_PERMISSIONS)
-            }) { Text("📍 Show where I am") }
-        }
+            }) { selectedId = it }
 
         selected?.let { park ->
             val caught = park.species.count { it.slug in collection }
@@ -121,57 +107,6 @@ fun HotspotsScreen(info: ModelInfo, dex: FieldGuide, collection: Map<String, Bad
                     Text("${park.species.size}", fontWeight = FontWeight.Bold)
                 }
             }
-        }
-    }
-}
-
-/** State outline with a pin per park; bigger pins have more species. Tap a pin to select it. */
-@Composable
-private fun HotspotsMap(dex: FieldGuide, parks: List<Park>, selectedId: String?, me: Pair<Double, Double>?,
-                       modifier: Modifier,
-                       onSelect: (String) -> Unit) {
-    val frame = remember(dex) { StateFrame(dex.outline) }
-    val land = MaterialTheme.colorScheme.surfaceVariant
-    val sea = MaterialTheme.colorScheme.surface
-    val border = MaterialTheme.colorScheme.outline
-    val pin = MaterialTheme.colorScheme.primary
-    val pinOn = MaterialTheme.colorScheme.tertiary
-
-    // Same sizing as the web map: 5 + min(7, species / 6), in dp.
-    fun radiusDp(p: Park) = 5f + min(7f, p.species.size / 6f)
-
-    Canvas(
-        modifier.aspectRatio(frame.aspect).clip(RoundedCornerShape(16.dp)).background(sea)
-            .pointerInput(parks) {
-                detectTapGestures { tap ->
-                    val w = size.width.toFloat()
-                    val h = size.height.toFloat()
-                    val hit = parks.minByOrNull { p ->
-                        hypot(frame.x(p.lon, w) - tap.x, frame.y(p.lat, h) - tap.y)
-                    }
-                    if (hit != null) {
-                        val d = hypot(frame.x(hit.lon, w) - tap.x, frame.y(hit.lat, h) - tap.y)
-                        // Generous touch target: pins are small, fingers aren't.
-                        if (d <= (radiusDp(hit) + 14f) * density) onSelect(hit.id)
-                    }
-                }
-            },
-    ) {
-        val path = frame.outlinePath(dex.outline, size)
-        drawPath(path, land)
-        drawPath(path, border, style = Stroke(width = 1.5.dp.toPx()))
-        // Draw the selected pin last so it sits on top of its neighbors.
-        for (p in parks.sortedBy { it.id == selectedId }) {
-            val c = Offset(frame.x(p.lon, size.width), frame.y(p.lat, size.height))
-            val r = radiusDp(p).dp.toPx()
-            val on = p.id == selectedId
-            drawCircle((if (on) pinOn else pin).copy(alpha = if (on) 1f else 0.75f), r, c)
-            drawCircle(sea, r, c, style = Stroke(width = 1.5.dp.toPx()))
-        }
-        if (me != null) {
-            val c = Offset(frame.x(me.second, size.width), frame.y(me.first, size.height))
-            drawCircle(Color.White, 8.dp.toPx(), c)
-            drawCircle(Color(0xFF2A7DE1), 5.5.dp.toPx(), c)
         }
     }
 }

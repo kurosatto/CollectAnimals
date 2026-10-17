@@ -1,0 +1,84 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- The app's parks map: the same zoomable Leaflet map as the website's Parks tab,
+     framed to the state with everything outside it dimmed. Street tiles need a
+     connection; offline it still shows the state outline and the parks.
+     ParksMap.kt loads it and calls setMap() / setMe(); taps come back via AndroidParks. -->
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+<style>
+  :root { --bg:#f4f3ee; --land:#e4ecd6; --accent:#2f6f4f; --pin:#c78a1e; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#141a14; --land:#263326; --accent:#7fc59a; --pin:#e0a100; } }
+  html, body, #map { margin:0; padding:0; height:100%; background:var(--bg); }
+  #map { background:var(--land); border-radius:12px; }
+  .locate { width:34px; height:34px; background:#fff; font-size:1rem; padding:0; border:none; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<script src="vendor/leaflet/leaflet.js"></script>
+<script>
+const bridge = window.AndroidParks;
+const css = getComputedStyle(document.documentElement);
+const color = (name, fallback) => css.getPropertyValue(name).trim() || fallback;
+const map = L.map("map", { zoomSnap: 0.1, maxBoundsViscosity: 1, attributionControl: true });
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 17,
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(map);
+const locate = L.control({ position: "topleft" });
+locate.onAdd = () => {
+  const b = L.DomUtil.create("button", "leaflet-bar locate");
+  b.type = "button"; b.title = "Show where I am"; b.textContent = "📍";
+  L.DomEvent.disableClickPropagation(b);
+  b.onclick = () => bridge && bridge.locate();
+  return b;
+};
+locate.addTo(map);
+let outline = null, pins = L.layerGroup().addTo(map), me = null, framedFor = "", last = null;
+
+// data: { key, rings: [[lon, lat, lon, lat, ...]], bounds: {west, east, south, north},
+//         parks: [{id, name, lat, lon, n}], selected }
+function setMap(data) {
+  last = data;
+  if (data.key !== framedFor && document.body.clientHeight > 0) {
+    if (outline) outline.forEach((l) => l.remove());
+    const holes = data.rings.map((r) => { const out = []; for (let i = 0; i + 1 < r.length; i += 2) out.push([r[i + 1], r[i]]); return out; });
+    outline = [
+      L.polygon([[[-89, -360], [-89, 360], [89, 360], [89, -360]], ...holes], { interactive: false, stroke: false,
+        fillColor: color("--bg", "#f4f3ee"), fillOpacity: 0.85 }).addTo(map),
+      L.polygon(holes, { interactive: false, fill: false, weight: 2, color: color("--accent", "#2f6f4f") }).addTo(map),
+    ];
+    const b = data.bounds, state = L.latLngBounds([[b.south, b.west], [b.north, b.east]]);
+    map.invalidateSize();
+    map.setMinZoom(0);
+    map.setMinZoom(map.getBoundsZoom(state));
+    map.setMaxBounds(state.pad(0.15));
+    map.fitBounds(state);
+    framedFor = data.key;
+  }
+  pins.clearLayers();
+  data.parks.forEach((p) => {
+    const on = p.id === data.selected;
+    L.circleMarker([p.lat, p.lon], { radius: 5 + Math.min(6, p.n / 10), weight: on ? 3 : 1.5, color: "#fff",
+      fillColor: on ? color("--accent", "#2f6f4f") : color("--pin", "#c78a1e"), fillOpacity: 0.9 })
+      .bindTooltip(`${p.name}: ${p.n} species`)
+      .on("click", () => bridge && bridge.select(p.id)).addTo(pins);
+  });
+}
+
+// "You are here", and zoom in on it when it's inside the state.
+function setMe(lat, lon, zoomIn) {
+  if (me) me.remove();
+  me = L.circleMarker([lat, lon], { radius: 7, weight: 3, color: "#fff", fillColor: "#2a7de1", fillOpacity: 1 })
+    .bindTooltip("You are here").addTo(map);
+  if (zoomIn && map.options.maxBounds && map.options.maxBounds.contains([lat, lon]))
+    map.setView([lat, lon], Math.max(map.getZoom(), 9));
+}
+
+// Re-frame once the WebView has its real size.
+window.addEventListener("resize", () => { map.invalidateSize(); if (last) { framedFor = ""; setMap(last); } });
+if (bridge) bridge.ready();
+</script>
+</body>
+</html>

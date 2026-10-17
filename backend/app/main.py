@@ -25,7 +25,7 @@ from .classifier import OTHER_LABEL, Prediction
 from .config import settings
 from .db import Base, SessionLocal, add_missing_columns, engine, get_db
 from .models import AlbumPhoto, Badge, Capture, Friendship, IdFeedback, PhotoLike, Species, StateSpecies, User
-from .schemas import (BondNoteOut, BondOut, BondsOut, BuddyIn, BuddyOut, CaptureOut, ChallengeOut, ChallengesOut, ChoiceOut, ScoreOut, ScorePart, SetOut, SetSpecies, SetsOut, CollectionEntry, CollectionOut, DexOut, HotspotOut, HotspotSpecies,
+from .schemas import (BondNoteOut, BondOut, BondsOut, BuddyIn, BuddyOut, CaptureOut, ChallengeOut, ChallengesOut, ChoiceOut, ScoreOut, ScorePart, SetOut, SetSpecies, SetsOut, CollectionEntry, CollectionOut, DexOut, PlaceOut, HotspotOut, HotspotSpecies,
                       PickIn, PredictionOut, RegisterIn, SpeciesMatch, SpeciesOut, StateOut, TokenOut, UserOut, UserUpdate)
 from .social import find_species, friend_ids, revealed_species_ids, species_out, user_named
 from .storage import get_storage
@@ -139,6 +139,12 @@ def index():
     return FileResponse(STATIC_DIR / "index.html")
 
 
+@app.get("/habitat.js", include_in_schema=False)
+def habitat_js():
+    """The habitat scene, shared with the Android app."""
+    return FileResponse(STATIC_DIR / "habitat.js", media_type="text/javascript")
+
+
 @app.get("/sprites/silhouette/{number}.png", include_in_schema=False)
 def silhouette_by_number(number: int, db: Session = Depends(get_db)):
     """The silhouette for a species that's still hidden, by Dex number, so the
@@ -228,17 +234,38 @@ def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get
     return TokenOut(access_token=create_token(user.id))
 
 
+def unlocked_states(db: Session, user: User) -> list[str]:
+    """A player starts with only their home state and unlocks others by choosing
+    them. States they've already captured in stay unlocked (players from before
+    unlocking existed keep what they had)."""
+    have = {user.state, *filter(None, (user.extra_states or "").split(","))}
+    have |= set(db.scalars(select(StateSpecies.state).join(Badge, Badge.species_id == StateSpecies.species_id)
+                           .where(Badge.user_id == user.id)).all())
+    return [s.code for s in st.all_states() if s.code in have]
+
+
+def user_out(db: Session, user: User) -> UserOut:
+    out = UserOut.model_validate(user)
+    out.unlocked_states = unlocked_states(db, user)
+    return out
+
+
 @app.get("/me", response_model=UserOut)
-def me(user: User = Depends(current_user)):
-    return user
+def me(user: User = Depends(current_user), db: Session = Depends(get_db)):
+    return user_out(db, user)
 
 
 @app.patch("/me", response_model=UserOut)
 def update_me(body: UserUpdate, user: User = Depends(current_user), db: Session = Depends(get_db)):
-    """Change the player's state; their Dex, Hotspots and maps follow it."""
-    user.state = state_or_404(body.state).code
+    """Change the player's state; their Dex, Hotspots and maps follow it. Moving
+    to a state unlocks it (the apps ask first)."""
+    code = state_or_404(body.state).code
+    unlocked = unlocked_states(db, user)
+    if code not in unlocked:
+        user.extra_states = ",".join([*unlocked, code])
+    user.state = code
     db.commit()
-    return user
+    return user_out(db, user)
 
 
 @app.get("/states", response_model=list[StateOut])
@@ -299,21 +326,29 @@ def state_outline(state: str):
 @app.get("/species/{key}/dex", response_model=DexOut)
 def get_dex_entry(key: str, state: str | None = Query(None), user: User | None = Depends(optional_user),
                   db: Session = Depends(get_db)):
-    """Size, weight, active time, season, hotspot parks, the sighting map and
-    safety advice show even while the name is hidden. The where-to-find and
-    spotting tips can name the animal, so they wait until it's revealed, and so
-    does the fun fact (your own capture or a friend's reveals it)."""
+    """Size, weight, active time, season, hotspot parks, the sighting map,
+    safety advice and the where-to-find and spotting tips show even while the
+    name is hidden (with the name masked out of the tips). The fun fact waits
+    until the animal is revealed (your own capture or a friend's reveals it)."""
     code = state_or_404(state).code
     s, m = _species_in(key, code, db)
+    # An animal that isn't on this state's list (one opened from the feed or a
+    # friend's photo) gets the entry of a state that lists it; `state` says which.
+    if m is None:
+        m = db.scalars(select(StateSpecies).where(StateSpecies.species_id == s.id)
+                       .order_by(StateSpecies.state)).first()
+        code = m.state
     d = dex.details(s.slug, code)
     revealed = s.id in revealed_species_ids(db, user)
     caught = user is not None and db.scalar(select(Badge.id).where(
         Badge.user_id == user.id, Badge.species_id == s.id)) is not None
-    return DexOut(species=species_out(s, revealed, m), size=d.get("size"), weight=d.get("weight"),
+    def tip(text: str | None) -> str | None:
+        return text if revealed else dex.mask_name(text, s.common_name, s.scientific_name)
+    return DexOut(species=species_out(s, revealed, m), state=code, size=d.get("size"), weight=d.get("weight"),
                   fun_fact=d.get("fun_fact") if revealed else None,
-                  where_to_find=d.get("where_to_find") if revealed else None,
+                  where_to_find=tip(d.get("where_to_find")),
                   active_time=d.get("active_time"),
-                  spotting_tip=d.get("spotting_tip") if revealed else None,
+                  spotting_tip=tip(d.get("spotting_tip")),
                   safety=d.get("safety") or "none", safe_distance=d.get("safe_distance") or None,
                   safety_note=d.get("safety_note") or None,
                   hotspots=dex.hotspots_for(s.slug, code), range=dex.range_for(s.slug, code),
@@ -680,15 +715,25 @@ def my_collection(state: str | None = Query(None), user: User = Depends(current_
 
 
 @app.get("/users/{username}/collection", response_model=CollectionOut)
-def user_collection(username: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
-    """A friend's Field Guide, for their own state. Friends only: anyone else sees
-    just what the profile shows."""
+def user_collection(username: str, state: str | None = Query(None), user: User = Depends(current_user),
+                    db: Session = Depends(get_db)):
+    """A friend's Field Guide: their primary state (the one they play in) unless
+    ?state= picks another. `places` lists their primary state plus every state
+    where they've captured something on that state's list. Friends only: anyone
+    else sees just what the profile shows."""
     owner = user_named(db, username)
     if not owner:
         raise HTTPException(404, "No such user")
     if owner.id != user.id and owner.id not in friend_ids(db, user.id):
         raise HTTPException(403, "Only friends can see each other's Field Guide")
-    return _collection(db, owner, user, state_or_404(owner.state))
+    out = _collection(db, owner, user, state_or_404(state or owner.state))
+    caught = dict(db.execute(
+        select(StateSpecies.state, func.count()).join(Badge, Badge.species_id == StateSpecies.species_id)
+        .where(Badge.user_id == owner.id).group_by(StateSpecies.state)).all())
+    out.primary_state = owner.state
+    out.places = [PlaceOut(state=s.code, name=s.name, caught=caught.get(s.code, 0))
+                  for s in st.all_states() if s.code == owner.state or caught.get(s.code)]
+    return out
 
 
 def _collection(db: Session, owner: User, viewer: User, st_: st.State) -> CollectionOut:

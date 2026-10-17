@@ -125,7 +125,15 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel()) 
     if (info != null && dex != null && entry != null) {
         Scaffold { padding ->
             Box(Modifier.padding(padding)) {
-                DexEntryScreen(info.dexNumber(entry.slug), entry, state.collection[entry.slug], dex) { dexSlug = null }
+                // Another state's animal gets that state's sighting map, tips and parks.
+                val entryDex = if (info.species.any { it.slug == entry.slug }) dex
+                    else state.states.firstOrNull { st -> st.species.any { it.slug == entry.slug } }?.fieldGuide ?: dex
+                val badge = state.collection[entry.slug]
+                DexEntryScreen(info.dexNumber(entry.slug), entry, badge, entryDex, bond = {
+                    if (state.account != null && badge != null) {
+                        BondPanel(entry.slug, state.buddy?.takeIf { it.chosen }?.bond?.slug, vm::setBuddy)
+                    }
+                }) { dexSlug = null }
             }
         }
         return
@@ -140,7 +148,7 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel()) 
     Scaffold(topBar = {
         Column {
             TopAppBar(title = { Text(if (tab == 0) "Capture Animals" else TABS[tab].title) }, actions = {
-                if (state.states.size > 1) StateMenu(state.states, state.stateCode, vm::chooseState)
+                if (state.states.size > 1) StateMenu(state.states, state.stateCode, state.unlockedStates(), vm::chooseState)
                 TextButton(onClick = { showAccount = true }) {
                     Text(state.account?.let { "👤 ${it.username}" } ?: "Log in", maxLines = 1,
                         overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 120.dp))
@@ -175,7 +183,12 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel()) 
                 TABS[tab].key == "social" -> SocialScreen(state, social, onSignIn = { showAccount = true }) { dexSlug = it }
                 TABS[tab].key == "gallery" && state.account != null ->
                     OnlinePhotosScreen(social, onOpenDex = { dexSlug = it }, onDeleted = vm::reloadCollection)
-                TABS[tab].key == "collection" -> CollectionScreen(info, dex, state.collection) { dexSlug = it }
+                TABS[tab].key == "collection" -> {
+                    val sets = remember(state.sets, info, dex, state.stateCode) {
+                        state.sets.forState(state.stateCode, info.species.map { it.slug }.toSet()) { dex?.details?.get(it)?.safety }
+                    }
+                    CollectionScreen(info, dex, state.stateCode, state.collection, state.buddy, sets) { dexSlug = it }
+                }
                 TABS[tab].key == "gallery" -> GalleryScreen(state.allSpecies, state.collection, onOpenDex = { dexSlug = it },
                     onDelete = vm::deleteCatch)
                 dex != null -> HotspotsScreen(info, dex, state.collection, onOpenDex = { dexSlug = it })
@@ -186,15 +199,28 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel()) 
 
 /** "📍 NC" in the top bar; switching changes the Field Guide, parks and which animals count. */
 @Composable
-private fun StateMenu(states: List<StateInfo>, current: String, onPick: (String) -> Unit) {
+private fun StateMenu(states: List<StateInfo>, current: String, unlocked: Set<String>, onPick: (String) -> Unit) {
     var open by remember { mutableStateOf(false) }
+    // A locked state asks first: players unlock new states by choice.
+    var unlocking by remember { mutableStateOf<StateInfo?>(null) }
     Box {
         TextButton(onClick = { open = true }) { Text("📍 $current") }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             states.forEach { s ->
-                DropdownMenuItem(text = { Text(s.name) }, onClick = { open = false; onPick(s.code) })
+                val locked = s.code !in unlocked
+                DropdownMenuItem(text = { Text((if (locked) "🔒 " else "") + s.name) }, onClick = {
+                    open = false
+                    if (locked) unlocking = s else onPick(s.code)
+                })
             }
         }
+    }
+    unlocking?.let { s ->
+        AlertDialog(onDismissRequest = { unlocking = null },
+            title = { Text("Unlock ${s.name}?") },
+            text = { Text("Its Field Guide, parks and challenges will open, and your captures will count there while it's your state.") },
+            confirmButton = { TextButton(onClick = { unlocking = null; onPick(s.code) }) { Text("Unlock") } },
+            dismissButton = { TextButton(onClick = { unlocking = null }) { Text("Not now") } })
     }
 }
 
@@ -284,6 +310,7 @@ fun CatchScreen(state: UiState, onCapture: (Uri, Pair<Double, Double>?) -> Unit,
         }
         state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         state.result?.let { ResultCard(it, state.info?.species.orEmpty(), onDismiss, onPick, onOpenDex) }
+        if (state.account != null) state.week?.let { ChallengesCard(it) }
     }
 }
 
@@ -305,6 +332,7 @@ fun ResultCard(r: CaptureResult, stateSpecies: List<Species>, onDismiss: () -> U
                 RarityTag(r.species.rarity)
             }
             Text(r.message, style = MaterialTheme.typography.bodyLarge)
+            r.score?.let { ScoreBox(it, r.bondUp) }
             Text("Top guesses", style = MaterialTheme.typography.labelLarge)
             r.guesses.forEach { g ->
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -379,7 +407,11 @@ fun RarityTag(rarity: String) {
 private val SECTIONS = listOf("Captured", "Not captured yet", null)
 
 @Composable
-fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, collection: Map<String, Badge>, onOpen: (String) -> Unit) {
+fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, stateCode: String, collection: Map<String, Badge>,
+                     buddy: Buddy?, sets: List<SetDef>, onOpen: (String) -> Unit) {
+    // The live habitat sits above the list, as on the website; one WebView for the screen.
+    val habitat = rememberHabitatView()
+    val animals = remember(info, dex, collection) { habitatAnimals(info, dex, collection) }
     val categories = remember(info) { listOf("all") + info.species.map { it.category }.distinct() }
     var category by rememberSaveable { mutableStateOf("all") }
     val month = remember { java.util.Calendar.getInstance().get(java.util.Calendar.MONTH) + 1 }
@@ -396,6 +428,10 @@ fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, collection: Map<String, 
     LazyVerticalGrid(columns = GridCells.Adaptive(72.dp), modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(8.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        if (buddy != null) item(span = { GridItemSpan(maxLineSpan) }, key = "buddy") { BuddyCard(buddy, onOpen) }
+        item(span = { GridItemSpan(maxLineSpan) }, key = "habitat") {
+            Habitat(habitat, animals, stateCode, Modifier.padding(bottom = 4.dp), onOpen = onOpen)
+        }
         item(span = { GridItemSpan(maxLineSpan) }) {
             Row(Modifier.horizontalScrollCompat(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 categories.forEach { c ->
@@ -422,6 +458,15 @@ fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, collection: Map<String, 
                 items(tier, key = { it.slug }) { s ->
                     SpeciesTile(info.dexNumber(s.slug), s, collection[s.slug]) { onOpen(s.slug) }
                 }
+            }
+        }
+        // Sets, as on the website: themed groups to complete, under the list.
+        if (sets.isNotEmpty()) item(span = { GridItemSpan(maxLineSpan) }, key = "sets") {
+            Column(Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Sets", style = MaterialTheme.typography.titleMedium)
+                Text("Themed groups to complete. Each finished set is a badge on your profile.",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                sets.forEach { SetCard(it, collection, onOpen) }
             }
         }
     }
