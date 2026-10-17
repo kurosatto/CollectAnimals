@@ -177,6 +177,17 @@ answer on 11% of photos, so it ships in float32. `PreprocessTest` checks the
 Kotlin resize/crop against PIL/torchvision; `ClassifierTest` runs the real
 model through it when `data/images` is present.
 
+### New versions
+
+`release.json` holds the release version for the web app and the Android app. Bump it only
+for a major update; smaller changes reach the website silently on the next page load.
+
+- Website: open pages notice the new version and show "Capture Animals X is here. Tap to update".
+- Android: the next APK build takes the version from `release.json` (versionCode is
+  major×10000 + minor×100 + patch). Copy it to the folder in `ANDROID_APK_DIR` as
+  `CaptureAnimals-<version>.apk`; phones on an older version are offered the download from
+  `/app/android/...`, once per version.
+
 ### Release build for Google Play
 
 Play takes a signed app bundle (`.aab`). Make an upload key once and keep it

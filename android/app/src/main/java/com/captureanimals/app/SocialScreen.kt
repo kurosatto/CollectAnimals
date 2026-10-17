@@ -62,6 +62,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
@@ -346,6 +347,8 @@ fun AccountDialog(state: UiState, vm: GameViewModel, onDismiss: () -> Unit) {
             }
             HorizontalDivider()
             Text(if (state.server != null) "Game server: online" else "Game server: can't be found right now",
+                style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.outline)
+            Text("App version ${BuildConfigCompat.version(LocalContext.current)}",
                 style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.outline)
             if (editServer) {
                 OutlinedTextField(serverText, { serverText = it }, singleLine = true, modifier = Modifier.fillMaxWidth(),

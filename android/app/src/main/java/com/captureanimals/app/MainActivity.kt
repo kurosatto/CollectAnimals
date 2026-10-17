@@ -2,6 +2,7 @@ package com.captureanimals.app
 
 import android.Manifest
 import android.graphics.BitmapFactory
+import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -132,6 +133,22 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
             social.checkRequests()
             kotlinx.coroutines.delay(60_000)
         }
+    }
+    // A newer app version (a major update) on the game server: offer it once per version.
+    var update by remember { mutableStateOf<Updates.Available?>(null) }
+    LaunchedEffect(state.server) { if (state.server != null) update = Updates.check(context) }
+    update?.let { u ->
+        AlertDialog(onDismissRequest = { update = null },
+            title = { Text("A new version is available") },
+            text = { Text("Capture Animals ${u.version} is out (you have ${BuildConfigCompat.version(context)}). " +
+                "Download it, then open the file to install it over this one. Your captures stay.") },
+            confirmButton = {
+                Button(onClick = {
+                    update = null
+                    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(u.url))) }
+                }) { Text("Download") }
+            },
+            dismissButton = { TextButton(onClick = { Updates.skip(context, u.version); update = null }) { Text("Later") } })
     }
     val requests = socialState.friends?.incoming?.size ?: 0
     if (showAccount) AccountDialog(state, vm) { showAccount = false }
