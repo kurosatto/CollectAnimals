@@ -19,6 +19,9 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(100))
     # Two-letter code from species/states.json; picks the Dex, Hotspots and maps.
     state: Mapped[str] = mapped_column(String(2), default="CA", server_default="CA")
+    # Other states the player chose to unlock, comma-separated ("NC,CA"). Their
+    # home state and any state they've captured in count as unlocked too.
+    extra_states: Mapped[str | None] = mapped_column(String(64), nullable=True)
     # Whether new catches appear in everyone's news feed (None = default, yes).
     show_in_feed: Mapped[bool | None] = mapped_column(nullable=True, default=True)
     # Built-in "bot friends" new players can add; requests to them are accepted at once.

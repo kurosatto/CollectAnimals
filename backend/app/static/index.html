@@ -829,14 +829,32 @@ async function useState(code) {
   try { OUTLINE = (await api(`/map/${myState.code}`)).rings || []; } catch {}
 }
 
+// Players start with their home state; other states show 🔒 until they choose
+// to unlock one.
+let unlocked = [];
+function markLocked(list) {
+  unlocked = list || unlocked;
+  for (const o of $("my-state").options) {
+    const st = states.find((x) => x.code === o.value);
+    if (st) o.textContent = (unlocked.includes(st.code) ? "" : "🔒 ") + st.name;
+  }
+}
+
 $("my-state").onchange = async () => {
+  const code = $("my-state").value, st = states.find((x) => x.code === code) || { name: code };
+  if (!unlocked.includes(code) && !confirm(`Unlock ${st.name}? Its Field Guide, parks and challenges will open, ` +
+      `and your captures will count there while it's your state.`)) {
+    $("my-state").value = myState.code;
+    return;
+  }
   try {
-    await api("/me", { method: "PATCH", headers: { "Content-Type": "application/json" },
-                       body: JSON.stringify({ state: $("my-state").value }) });
+    const me = await api("/me", { method: "PATCH", headers: { "Content-Type": "application/json" },
+                       body: JSON.stringify({ state: code }) });
+    markLocked(me.unlocked_states);
     hotSelected = null;
-    await useState($("my-state").value);
+    await useState(code);
     loadCollection();
-  } catch (err) { alert(err.message); }
+  } catch (err) { $("my-state").value = myState.code; alert(err.message); }
 };
 
 // Outlines of other states, for a Field Guide entry from a state that isn't yours.
@@ -1600,6 +1618,7 @@ async function render() {
       $("username").textContent = me.username;
       $("share-feed").checked = me.show_in_feed !== false;
       await useState(me.state);
+      markLocked(me.unlocked_states);
       loadCollection(); loadFriends(); loadFeed(); botWelcome(me.username);
     } catch {}
   }

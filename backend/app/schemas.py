@@ -31,6 +31,8 @@ class UserOut(BaseModel):
     created_at: datetime
     show_in_feed: bool | None = True
     is_private: bool | None = False
+    # The states this player can switch to; the rest show locked until they choose one.
+    unlocked_states: list[str] = []
 
 
 class SettingsIn(BaseModel):

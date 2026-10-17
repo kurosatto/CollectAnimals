@@ -618,3 +618,18 @@ def test_mask_name():
     assert m("Take a whale-watching trip", "Humpback Whale") == "Take a ???-watching trip"
     assert m("Ursus americanus lives here", "American Black Bear", "Ursus americanus") == "??? lives here"
     assert m("", "Bobcat") == "" and m(None, "Bobcat") is None
+
+
+def test_states_unlock_by_choice(client, fake):
+    h = signup(client)
+    me = client.get("/me", headers=h).json()
+    assert me["state"] == "CA" and me["unlocked_states"] == ["CA"]
+    r = client.patch("/me", json={"state": "NC"}, headers=h).json()
+    assert r["state"] == "NC" and r["unlocked_states"] == ["CA", "NC"]
+    r = client.patch("/me", json={"state": "CA"}, headers=h).json()
+    assert r["state"] == "CA" and r["unlocked_states"] == ["CA", "NC"]   # stays unlocked
+    # Players keep every state they've captured in (coyote is on both lists).
+    old = signup(client, "bob")
+    fake.next = [Prediction("coyote", 0.93)]
+    upload(client, old)
+    assert client.get("/me", headers=old).json()["unlocked_states"] == ["CA", "NC"]
