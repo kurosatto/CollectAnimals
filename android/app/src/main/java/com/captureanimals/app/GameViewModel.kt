@@ -41,9 +41,7 @@ data class CaptureResult(
  * unlock (here or on the website), and any state they've captured in. The rest
  * show 🔒 in the 📍 menu, as on the website.
  */
-fun UiState.unlockedStates(): Set<String> =
-    unlocked + stateCode + account?.unlockedStates.orEmpty() +
-        states.filter { st -> st.species.any { it.slug in collection } }.map { it.code }
+fun UiState.unlockedStates(): Set<String> = unlocked + stateCode + account?.unlockedStates.orEmpty()
 
 data class UiState(
     // The model with the chosen state's species list, and that state's Field Guide.
@@ -90,18 +88,17 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val assets = getApplication<Application>().assets
             fun text(name: String) = assets.open(name).bufferedReader().use { it.readText() }
-            val (base, states, collection) = withContext(Dispatchers.IO) {
-                Triple(ModelInfo.parse(text("model.json")),
-                       States.load { name -> runCatching { text(name) }.getOrNull() },
-                       store.load())
+            val (base, states) = withContext(Dispatchers.IO) {
+                ModelInfo.parse(text("model.json")) to States.load { name -> runCatching { text(name) }.getOrNull() }
             }
             val sets = withContext(Dispatchers.IO) { SetCatalog.parse(runCatching { text("sets.json") }.getOrNull()) }
             model = base
             val (default, list) = states
             val saved = prefs.getString("state", null)?.takeIf { code -> list.any { it.code == code } }
             val unlocked = prefs.getStringSet("unlocked", emptySet()).orEmpty()
+            withContext(Dispatchers.IO) { store.migrate(saved ?: default) }
             _state.update {
-                it.copy(states = list, collection = collection, needsStatePick = saved == null, sets = sets, unlocked = unlocked,
+                it.copy(states = list, needsStatePick = saved == null, sets = sets, unlocked = unlocked,
                     allSpecies = list.flatMap { s -> s.species }.distinctBy { s -> s.slug })
             }
             select(saved ?: default)
@@ -126,7 +123,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 refreshCollection()
             } catch (e: Online.ApiError) {
                 // Signed out by the server (401): back to the badges saved on this phone.
-                if (!Online.signedIn) _state.update { it.copy(account = null, collection = store.load(), week = null, buddy = null) }
+                if (!Online.signedIn) _state.update { it.copy(account = null, collection = store.load(it.stateCode), week = null, buddy = null) }
             }
         }
     }
@@ -181,7 +178,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     /** Back to playing offline, with the badges saved on this phone. */
     fun signOut() {
         Online.logout()
-        _state.update { it.copy(account = null, collection = store.load(), result = null, week = null, buddy = null) }
+        _state.update { it.copy(account = null, collection = store.load(it.stateCode), result = null, week = null, buddy = null) }
     }
 
     fun setServer(url: String?) {
@@ -204,10 +201,12 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     private fun select(code: String) {
         val base = model ?: return
         val st = _state.value.states.firstOrNull { it.code == code } ?: return
-        _state.update { it.copy(stateCode = st.code, info = base.withSpecies(st.species), fieldGuide = st.fieldGuide) }
+        // Offline, the phone keeps each state's catches apart; signed in, they come from the server.
+        _state.update { it.copy(stateCode = st.code, info = base.withSpecies(st.species), fieldGuide = st.fieldGuide,
+            collection = if (it.account == null) store.load(st.code) else it.collection) }
     }
 
-    /** The player's state: its 100 species, Field Guide and parks. Badges carry over. */
+    /** The player's state: its 100 species, Field Guide and parks. Captures count only in the state they were made in. */
     fun chooseState(code: String) {
         val unlocked = _state.value.unlocked + code
         prefs.edit().putString("state", code).putStringSet("unlocked", unlocked).apply()
@@ -308,7 +307,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         if (matched) {
             val thumb = ImageLoader.thumbnail(bitmap, 512)
             val (updated, isNew) = withContext(Dispatchers.IO) {
-                store.addCatch(_state.value.collection, species!!.slug, thumb)
+                store.addCatch(_state.value.stateCode, _state.value.collection, species!!.slug, thumb)
             }
             newBadge = isNew
             _state.update { it.copy(collection = updated) }
@@ -358,10 +357,10 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             var newBadge = false
             withContext(Dispatchers.IO) {
                 if (r.matched && r.species != null && r.species.slug != slug) {
-                    collection = store.removeCatch(collection, r.species.slug)
+                    collection = store.removeCatch(_state.value.stateCode, collection, r.species.slug)
                 }
                 if (species != null && r.species?.slug != species.slug) {
-                    val (updated, isNew) = store.addCatch(collection, species.slug, ImageLoader.thumbnail(r.photo, 512))
+                    val (updated, isNew) = store.addCatch(_state.value.stateCode, collection, species.slug, ImageLoader.thumbnail(r.photo, 512))
                     collection = updated
                     newBadge = isNew
                 }
@@ -381,7 +380,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     /** "Delete photo": removes the photo and the catch, as on the website. */
     fun deleteCatch(slug: String) {
         viewModelScope.launch {
-            val updated = withContext(Dispatchers.IO) { store.forget(_state.value.collection, slug) }
+            val updated = withContext(Dispatchers.IO) { store.forget(_state.value.stateCode, _state.value.collection, slug) }
             _state.update { it.copy(collection = updated) }
         }
     }

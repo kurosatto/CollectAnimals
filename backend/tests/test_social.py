@@ -527,8 +527,8 @@ def test_friend_field_guide_uses_their_state(client, fake):
     by = {e["species"]["slug"]: e for e in g["entries"] if e["species"]["revealed"]}
     bear = by["american_black_bear"]
     assert bear["caught"] and not bear["you_caught"] and bear["photo_url"]
-    coyote = by["coyote"]                  # ana's own capture: named, but not nina's
-    assert not coyote["caught"] and coyote["you_caught"]
+    coyote = by["coyote"]                  # ana's California capture: named, but not caught here
+    assert not coyote["caught"] and not coyote["you_caught"]
     assert "bobcat" not in by              # zed is nobody's friend, so it stays "???"
     assert sum(not e["species"]["revealed"] for e in g["entries"]) == g["total"] - 2
     # Friendship works both ways, in the viewer's own state.
@@ -543,6 +543,11 @@ def test_friend_field_guide_places(client, fake):
     assert g["primary_state"] == "NC"
     assert [p["state"] for p in g["places"]] == ["NC"]      # primary state is always a place
     catch(client, fake, nina, "american_black_bear")         # on both state lists
+    g = client.get("/users/nina/collection", headers=ana).json()
+    assert [(p["state"], p["caught"]) for p in g["places"]] == [("NC", 1)]   # counts only where captured
+    client.patch("/me", json={"state": "CA"}, headers=nina)
+    catch(client, fake, nina, "american_black_bear")
+    client.patch("/me", json={"state": "NC"}, headers=nina)
     g = client.get("/users/nina/collection", headers=ana).json()
     places = {p["state"]: p for p in g["places"]}
     assert places["NC"]["caught"] == 1 and places["CA"]["caught"] == 1 and places["CA"]["name"]
