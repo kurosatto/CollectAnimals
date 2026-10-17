@@ -190,7 +190,7 @@
   .set-sprites img.missing { opacity:.4; }
   .score { margin-top:12px; border:1px solid var(--line); border-radius:10px; padding:10px 12px; max-width:320px; }
   .score-head { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
-  .score-stars { color:var(--legendary); font-size:1.4rem; letter-spacing:2px; }
+  .score-stars { color:var(--legendary); font-size:1.3rem; letter-spacing:1px; }
   .score-total { font-weight:700; font-size:1.1rem; }
   .score-parts { display:grid; grid-template-columns:1fr auto; gap:2px 12px; margin-top:6px; font-size:.85rem; color:var(--muted); }
   .score-parts span:nth-child(even) { text-align:right; font-variant-numeric:tabular-nums; }
@@ -466,7 +466,7 @@ $("upload-form").onsubmit = async (e) => {
 };
 
 // Photo score: stars for the photo itself, points with the bonuses added.
-const stars = (n) => "★".repeat(n) + "☆".repeat(3 - n);
+const stars = (n) => "★".repeat(n) + "☆".repeat(5 - n);
 function scoreCard(sc) {
   const box = el("div", "score");
   const head = el("div", "score-head");

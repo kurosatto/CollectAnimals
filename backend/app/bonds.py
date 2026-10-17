@@ -2,7 +2,7 @@
 
 Every captured species has up to six field notes, small observation goals met
 by photographing it again in a new situation: on another day, at another time
-of day, somewhere else, in another season, or in a 3-star photo. Each note is a
+of day, somewhere else, in another season, or in a 4-star photo. Each note is a
 heart; the hearts are the bond.
 
 Repeats only count when something is new, so a burst of photos in one sitting
@@ -25,6 +25,8 @@ TIMES_GOAL = 2
 PLACES_GOAL = 2
 SEASONS_GOAL = 2
 PLACE_KM = 1.0
+# The "Great shot" note: a photo with at least this many stars (of 5).
+GREAT_SHOT_STARS = 4
 
 TITLES = ["Met", "Familiar", "Regular", "Friend", "Good friend", "Lifelong friend"]
 
@@ -35,7 +37,7 @@ NOTES = [
     ("times", "Early and late", f"Photograph it at {TIMES_GOAL} times of day (morning, midday, evening, night)"),
     ("places", "New ground", f"Photograph it in {PLACES_GOAL} places at least {PLACE_KM:g} km apart"),
     ("seasons", "Through the seasons", f"Photograph it in {SEASONS_GOAL} different seasons"),
-    ("star", "Great shot", "Take a 3-star photo of it"),
+    ("star", "Great shot", f"Take a {GREAT_SHOT_STARS}-star photo of it"),
 ]
 NOTE_TITLES = {n[0]: n[1] for n in NOTES}
 GOALS = {"first": 1, "days": DAYS_GOAL, "times": TIMES_GOAL, "places": PLACES_GOAL,
@@ -116,7 +118,7 @@ def notes(sightings: list[Sighting]) -> list[Note]:
         "times": len({time_of_day(s.local) for s in sightings}),
         "places": _places(sightings),
         "seasons": len({season(s.local) for s in sightings}),
-        "star": 1 if any((s.stars or 0) >= 3 for s in sightings) else 0,
+        "star": 1 if any((s.stars or 0) >= GREAT_SHOT_STARS for s in sightings) else 0,
     }
     return [Note(i, title, hint, min(progress[i], GOALS[i]), GOALS[i]) for i, title, hint in NOTES]
 
@@ -161,7 +163,7 @@ def buddy_line(mood_: str, ns: list[Note], suggestion: str | None = None) -> str
         "times": "I'd love a photo of me at a different time of day.",
         "places": "Let's look for me somewhere new, at least a kilometer away.",
         "seasons": "Visit me again in another season.",
-        "star": "Try for a 3-star photo of me. Steady hands, good light.",
+        "star": f"Try for a {GREAT_SHOT_STARS}-star photo of me. Steady hands, good light.",
         "first": "Let's go outside!",
     }[todo.id]
     return f"{opener} {ask}"
