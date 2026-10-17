@@ -173,7 +173,6 @@
   .guide .section { grid-column:1 / -1; margin:16px 0 0; font-weight:700; font-size:.95rem;
                    border-bottom:1px solid var(--line); padding-bottom:3px; }
   .guide .section:first-child { margin-top:0; }
-  .guide .divider { grid-column:1 / -1; border-top:1px dashed var(--line); margin:12px 0 0; }
   .status.mine { color:var(--accent); }
   .status.friend { color:var(--muted); }
   .sprite.shadow { opacity:.55; }
@@ -649,13 +648,13 @@ async function loadCollection() {
 
 // The Field Guide grid: yours, or a friend's (`owner`, shown in their own state).
 function fillGuide(grid, entries, owner = null) {
-  // Captured first, then the rest: animals seen this month before ones that aren't
-  // around this time of year (split by a plain line, no label). Inside each group,
-  // common to legendary; the numbers keep the full Field Guide order.
+  // Captured first, then the rest. Inside each group, common to legendary with each
+  // rarity heading once; among the ones not captured yet, animals seen this month
+  // come before ones that aren't around this time of year. The numbers keep the
+  // full Field Guide order.
   const GROUPS = [
     ["Captured", (e) => e.caught],
-    ["Not captured yet", (e) => !e.caught && e.in_season !== false],
-    [null, (e) => !e.caught && e.in_season === false],
+    ["Not captured yet", (e) => !e.caught],
   ];
   // A friend's guide shows only what they've captured (numbers still follow the full list).
   if (owner) {
@@ -663,13 +662,11 @@ function fillGuide(grid, entries, owner = null) {
     if (!entries.some((e) => e.caught)) grid.append(el("p", "muted", `${owner.username} hasn't captured any animals yet.`));
   }
   const numbered = entries.map((e, i) => [e, i]);
-  let uncaughtShown = false;
+  const rank = ([e]) => RARITY_ORDER.indexOf(e.species.rarity) * 2 + (e.in_season === false ? 1 : 0);
   for (const [title, keep] of GROUPS) {
-    const list = numbered.filter(([e]) => keep(e));
+    const list = numbered.filter(([e]) => keep(e)).sort((a, b) => rank(a) - rank(b));
     if (!list.length) continue;
-    if (title) grid.append(el("div", "section", title));
-    else grid.append(el("div", uncaughtShown ? "divider" : "section", uncaughtShown ? "" : "Not captured yet"));
-    if (title === "Not captured yet") uncaughtShown = true;
+    grid.append(el("div", "section", title));
     let tier = null;
     list.forEach(([e, i]) => addTile(grid, e, i, tier !== e.species.rarity && (tier = e.species.rarity), owner));
   }

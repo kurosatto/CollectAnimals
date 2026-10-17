@@ -413,7 +413,7 @@ fun RarityTag(rarity: String) {
 
 /** Field Guide groups, like the website: captured, then the rest with animals seen this
  *  month before ones not around this time of year (split by a plain line, no label). */
-private val SECTIONS = listOf("Captured", "Not captured yet", null)
+private val SECTIONS = listOf("Captured", "Not captured yet")
 
 @Composable
 fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, stateCode: String, collection: Map<String, Badge>,
@@ -425,14 +425,9 @@ fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, stateCode: String, colle
     var category by rememberSaveable { mutableStateOf("all") }
     val month = remember { java.util.Calendar.getInstance().get(java.util.Calendar.MONTH) + 1 }
     val shown = info.dexOrder.filter { category == "all" || it.category == category }
-    // dexOrder is already common to legendary, so each section keeps that order.
-    val sections = shown.groupBy { s ->
-        when {
-            s.slug in collection -> 0
-            dex?.inSeason(s.slug, month) != false -> 1
-            else -> 2
-        }
-    }
+    // dexOrder is already common to legendary, so each section keeps that order
+    // and shows each rarity heading once.
+    val sections = shown.groupBy { s -> if (s.slug in collection) 0 else 1 }
 
     LazyVerticalGrid(columns = GridCells.Adaptive(72.dp), modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(8.dp),
@@ -451,11 +446,9 @@ fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, stateCode: String, colle
         }
         SECTIONS.forEachIndexed { i, title ->
             val list = sections[i] ?: return@forEachIndexed
-            // The last group only gets the heading when nothing is in season.
-            val heading = title ?: "Not captured yet".takeIf { sections[1] == null }
             item(span = { GridItemSpan(maxLineSpan) }, key = "section-$i") {
                 Column(Modifier.padding(top = 12.dp)) {
-                    if (heading != null) Text(heading, style = MaterialTheme.typography.titleMedium)
+                    Text(title, style = MaterialTheme.typography.titleMedium)
                     HorizontalDivider()
                 }
             }
@@ -464,7 +457,8 @@ fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, stateCode: String, colle
                     Text(rarity.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.labelMedium,
                         color = rarityColor(rarity), modifier = Modifier.padding(top = 4.dp))
                 }
-                items(tier, key = { it.slug }) { s ->
+                // Within a rarity, animals around this month come first.
+                items(tier.sortedBy { dex?.inSeason(it.slug, month) == false }, key = { it.slug }) { s ->
                     SpeciesTile(info.dexNumber(s.slug), s, collection[s.slug]) { onOpen(s.slug) }
                 }
             }
