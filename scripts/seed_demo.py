@@ -26,6 +26,8 @@ from pathlib import Path
 import requests
 
 CATCHES = {"trailblazer": 3, "tidepooler": 3, "birdnerd": 6}  # per state
+# Each bot's primary location: where its profile and live habitat open for friends.
+HOME = {"trailblazer": "NC", "tidepooler": "CA", "birdnerd": "CA"}
 PLAYERS = {  # name: {state: species to try in order; later ones are spares}
     "trailblazer": {"CA": ["mule_deer", "elk", "california_ground_squirrel", "bighorn_sheep", "black_tailed_jackrabbit"],
                     "NC": ["white_tailed_deer", "elk", "eastern_gray_squirrel", "eastern_cottontail", "groundhog"]},
@@ -145,7 +147,8 @@ def main():
                 else:
                     print(f"{name}: couldn't get {slug}, trying the next one")
             print(f"{name}: {len(owned & set(slugs))}/{CATCHES[name]} in {state}")
-        requests.patch(f"{args.url}/me", json={"state": "CA"}, headers=h)
+        # Seeding switches states to capture; leave the bot in its home state.
+        requests.patch(f"{args.url}/me", json={"state": HOME[name]}, headers=h)
     if args.db:
         with sqlite3.connect(args.db) as con:
             cols = {r[1] for r in con.execute("PRAGMA table_info(users)")}
