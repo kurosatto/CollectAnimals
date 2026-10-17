@@ -703,3 +703,24 @@ def test_installable_web_app(client):
 
     page = client.get("/").text
     assert 'rel="manifest"' in page and "/sw.js" in page
+
+
+def test_release_version_and_android_download(client, tmp_path, monkeypatch):
+    """release.json's version reaches the page and /app/version; the newest APK is offered."""
+    from app.config import settings
+    from app.main import release_version
+
+    v = release_version()
+    assert v != "dev"
+    assert f'<span id="version-num">{v}</span>' in client.get("/").text
+    assert client.get("/app/version").json() == {"version": v, "android": None}
+
+    for name in ("CaptureAnimals-0.9.0.apk", "CaptureAnimals-0.10.1.apk", "notes.txt"):
+        (tmp_path / name).write_bytes(b"apk")
+    monkeypatch.setattr(settings, "android_apk_dir", tmp_path)
+    assert client.get("/app/version").json()["android"] == {
+        "version": "0.10.1", "url": "/app/android/CaptureAnimals-0.10.1.apk"}
+    r = client.get("/app/android/CaptureAnimals-0.10.1.apk")
+    assert r.status_code == 200 and r.headers["content-type"] == "application/vnd.android.package-archive"
+    assert client.get("/app/android/CaptureAnimals-0.9.0.apk").status_code == 404
+    assert client.get("/app/android/notes.txt").status_code == 404

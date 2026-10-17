@@ -6,6 +6,8 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+val releaseVersion: String = (groovy.json.JsonSlurper().parse(rootProject.file("../release.json")) as Map<*, *>)["version"] as String
+
 android {
     namespace = "com.captureanimals.app"
     compileSdk = 36
@@ -15,8 +17,11 @@ android {
         applicationId = "com.captureanimals.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 10
-        versionName = "0.8.2"
+        // The release version lives in release.json at the repo root, shared with the web app
+        // (bumped by hand for major updates). 0.9.0 -> versionCode 900, so it always increases.
+        versionName = releaseVersion
+        versionCode = releaseVersion.split(".").map(String::toInt)
+            .let { (major, minor, patch) -> major * 10_000 + minor * 100 + patch }
         // Phones are arm64; leaving out other ABIs keeps the APK ~15 MB smaller.
         ndk { abiFilters += listOf("arm64-v8a") }
     }
