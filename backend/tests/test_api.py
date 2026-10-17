@@ -508,8 +508,8 @@ def test_player_picks_the_animal_when_model_is_unsure(client, fake):
     assert col["caught"] == 1
     assert next(e for e in col["entries"] if e["species"]["slug"] == "gray_fox")["caught"]
 
-    # Only animals on the player's state list can be picked, and only by the photo's owner.
-    bad = client.post(f"/captures/{r['capture_id']}/pick", json={"label": "black_bear_nope"}, headers=h)
+    # Only the model's suggestions can be picked, and only by the photo's owner.
+    bad = client.post(f"/captures/{r['capture_id']}/pick", json={"label": "mountain_lion"}, headers=h)
     assert bad.status_code == 400
     other = client.post(f"/captures/{r['capture_id']}/pick", json={"label": "bobcat"},
                         headers=signup(client, "bob"))
@@ -536,7 +536,7 @@ def test_player_corrects_a_wrong_match(client, fake):
     assert client.get("/me/collection", headers=h).json()["caught"] == 0
 
 
-def test_none_of_these_then_search_the_state_list(client, fake):
+def test_corrections_are_kept_for_retraining(client, fake):
     from app.db import SessionLocal
     from app.models import IdFeedback
 
@@ -545,28 +545,22 @@ def test_none_of_these_then_search_the_state_list(client, fake):
     r = upload(client, h).json()
     assert r["matched"]
 
-    # "None of these" > search: names only the matches, from the player's state.
-    assert client.get("/species-search?q=a", headers=h).status_code == 422
-    found = client.get("/species-search?q=bobc", headers=h).json()
-    assert [f["slug"] for f in found] == ["bobcat"] and found[0]["common_name"] == "Bobcat"
-    assert client.get("/species-search?q=lynx rufus", headers=h).json()[0]["slug"] == "bobcat"
-    assert client.get("/species-search?q=bobc").status_code == 401
+    # There's no typed search: animals the model didn't suggest can't be picked.
+    assert client.post(f"/captures/{r['capture_id']}/pick", json={"label": "bobcat"}, headers=h).status_code == 400
+    assert client.get("/species-search?q=bobc", headers=h).status_code == 404
 
-    # An animal the model never suggested can be picked from the list.
-    p = client.post(f"/captures/{r['capture_id']}/pick", json={"label": "bobcat"}, headers=h).json()
-    assert p["matched"] and p["species"]["slug"] == "bobcat" and p["new_badge"]
-    caught = [e["species"]["slug"] for e in client.get("/me/collection", headers=h).json()["entries"] if e["caught"]]
-    assert caught == ["bobcat"]
+    client.post(f"/captures/{r['capture_id']}/pick", json={"label": "gray_fox"}, headers=h)
     with SessionLocal() as db:
         fb = db.query(IdFeedback).filter_by(capture_id=r["capture_id"]).one()
         assert (fb.predicted_label, fb.rejected_labels, fb.chosen_label, fb.source) == \
-            ("coyote", "coyote,gray_fox", "bobcat", "list")
+            ("coyote", "coyote", "gray_fox", "guesses")
 
-    # Skipping instead keeps one row per photo, now with no animal.
-    client.post(f"/captures/{r['capture_id']}/pick", json={"label": "none"}, headers=h)
+    # "None of these" keeps one row per photo, now with no animal.
+    n = client.post(f"/captures/{r['capture_id']}/pick", json={"label": "none"}, headers=h).json()
+    assert not n["matched"]
     with SessionLocal() as db:
         fb = db.query(IdFeedback).filter_by(capture_id=r["capture_id"]).one()
-        assert (fb.chosen_label, fb.source) == (None, "none")
+        assert (fb.rejected_labels, fb.chosen_label, fb.source) == ("coyote,gray_fox", None, "none")
 
     # Going back to the model's own guess isn't a correction.
     client.post(f"/captures/{r['capture_id']}/pick", json={"label": "coyote"}, headers=h)

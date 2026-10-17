@@ -315,14 +315,13 @@ fun CatchScreen(state: UiState, onCapture: (Uri, Pair<Double, Double>?) -> Unit,
             Text("Identifying…", style = MaterialTheme.typography.bodyMedium)
         }
         state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        state.result?.let { ResultCard(it, state.info?.species.orEmpty(), onDismiss, onPick, onOpenDex) }
+        state.result?.let { ResultCard(it, onDismiss, onPick, onOpenDex) }
         if (state.account != null) state.week?.let { ChallengesCard(it) }
     }
 }
 
 @Composable
-fun ResultCard(r: CaptureResult, stateSpecies: List<Species>, onDismiss: () -> Unit, onPick: (String?) -> Unit,
-               onOpenDex: (String) -> Unit) {
+fun ResultCard(r: CaptureResult, onDismiss: () -> Unit, onPick: (String?) -> Unit, onOpenDex: (String) -> Unit) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Image(r.photo.asImageBitmap(), contentDescription = "Your photo",
@@ -346,7 +345,7 @@ fun ResultCard(r: CaptureResult, stateSpecies: List<Species>, onDismiss: () -> U
                     Text("${(g.probability * 100).toInt()}%")
                 }
             }
-            if (!r.picked) PickPanel(r, stateSpecies, onPick)
+            if (!r.picked) PickPanel(r, onPick)
             Row(Modifier.align(Alignment.End)) {
                 if (r.matched && r.species != null) {
                     TextButton(onClick = { onOpenDex(r.species.slug) }) { Text("Field Guide entry") }
@@ -359,44 +358,22 @@ fun ResultCard(r: CaptureResult, stateSpecies: List<Species>, onDismiss: () -> U
 
 /**
  * "Wrong animal?": the player picks one of the model's other guesses, or says
- * "None of these" and searches the state's list (or skips the photo). We trust them.
+ * "None of these" and the photo doesn't count for any animal. We trust them.
  */
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
-fun PickPanel(r: CaptureResult, stateSpecies: List<Species>, onPick: (String?) -> Unit) {
+fun PickPanel(r: CaptureResult, onPick: (String?) -> Unit) {
     val guesses = r.choices.filter { !(r.matched && it.label == r.species?.slug) }
-    var searching by remember(r) { mutableStateOf(guesses.isEmpty()) }
-    var query by remember(r) { mutableStateOf("") }
+    if (!r.matched && guesses.isEmpty()) return
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(when {
-            r.matched -> "Wrong animal?"
-            guesses.isNotEmpty() -> "Know what it is?"
-            else -> "Know what it is? Find it below."
-        }, style = MaterialTheme.typography.labelLarge)
-        if (guesses.isNotEmpty()) {
-            androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                guesses.forEach { c ->
-                    OutlinedButton(onClick = { onPick(c.label) }) {
-                        Text("${c.name} · ${(c.probability * 100).toInt()}%")
-                    }
+        Text(if (r.matched) "Wrong animal?" else "Know what it is?", style = MaterialTheme.typography.labelLarge)
+        androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            guesses.forEach { c ->
+                OutlinedButton(onClick = { onPick(c.label) }) {
+                    Text("${c.name} · ${(c.probability * 100).toInt()}%")
                 }
-                if (!searching) TextButton(onClick = { searching = true }) { Text("None of these") }
             }
-        }
-        if (searching) {
-            androidx.compose.material3.OutlinedTextField(query, { query = it }, singleLine = true,
-                placeholder = { Text("Type the animal's name") }, modifier = Modifier.fillMaxWidth())
-            val hits = remember(query, stateSpecies) { searchSpecies(stateSpecies, query) }
-            if (query.trim().length >= 2 && hits.isEmpty()) {
-                Text("No animal on your state's list matches \"${query.trim()}\".",
-                    style = MaterialTheme.typography.bodyMedium)
-            }
-            androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                hits.forEach { s -> OutlinedButton(onClick = { onPick(s.slug) }) { Text(s.commonName) } }
-            }
-            TextButton(onClick = { onPick(null) }) {
-                Text(if (r.matched) "Skip: don't capture it" else "Skip this photo")
-            }
+            TextButton(onClick = { onPick(null) }) { Text("None of these") }
         }
     }
 }
