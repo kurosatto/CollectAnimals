@@ -311,11 +311,17 @@ def get_dex_entry(key: str, state: str | None = Query(None), user: User | None =
     does the fun fact (your own capture or a friend's reveals it)."""
     code = state_or_404(state).code
     s, m = _species_in(key, code, db)
+    # An animal that isn't on this state's list (one opened from the feed or a
+    # friend's photo) gets the entry of a state that lists it; `state` says which.
+    if m is None:
+        m = db.scalars(select(StateSpecies).where(StateSpecies.species_id == s.id)
+                       .order_by(StateSpecies.state)).first()
+        code = m.state
     d = dex.details(s.slug, code)
     revealed = s.id in revealed_species_ids(db, user)
     caught = user is not None and db.scalar(select(Badge.id).where(
         Badge.user_id == user.id, Badge.species_id == s.id)) is not None
-    return DexOut(species=species_out(s, revealed, m), size=d.get("size"), weight=d.get("weight"),
+    return DexOut(species=species_out(s, revealed, m), state=code, size=d.get("size"), weight=d.get("weight"),
                   fun_fact=d.get("fun_fact") if revealed else None,
                   where_to_find=d.get("where_to_find") if revealed else None,
                   active_time=d.get("active_time"),

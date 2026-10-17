@@ -597,3 +597,12 @@ def test_activity_from_active_time():
     assert dex.activity("raccoon", "CA") == "night"
     assert dex.activity("coyote", "CA") == "any"
     assert dex.activity("western_fence_lizard", "CA") == "day"
+
+
+def test_dex_for_animal_from_another_state(client):
+    # Red wolf is only on North Carolina's list; opened from California it gets NC's entry.
+    nc = client.get("/species/red_wolf/dex?state=NC").json()
+    ca = client.get("/species/red_wolf/dex?state=CA").json()
+    assert nc["state"] == "NC" and ca["state"] == "NC"
+    assert ca["range"] == nc["range"] and ca["season"] == nc["season"] and ca["species"]["number"] == nc["species"]["number"]
+    assert client.get("/species/coyote/dex?state=CA").json()["state"] == "CA"
