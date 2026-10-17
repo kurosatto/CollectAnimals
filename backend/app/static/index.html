@@ -35,8 +35,6 @@
   .pick .none { border-style:dashed; }
   .pick-panel { margin-top:10px; }
   .pick-panel > p { margin:0; }
-  .pick-search { margin-top:10px; display:grid; gap:8px; }
-  .pick-search .ghost { justify-self:start; }
   .tile { cursor:pointer; }
   .tile:hover { border-color:var(--accent); }
   .hidden, .off { display:none !important; }
@@ -460,7 +458,8 @@ $("upload-form").onsubmit = async (e) => {
       .map((x) => `${x.common_name || (x.label === "other" ? "not on the list" : "???")} ${(x.probability * 100).toFixed(0)}%`).join(", ");
     box.append(h, p);
     if (r.score) box.append(scoreCard(r.score));
-    box.append(pickPanel(r, box));
+    const pp = pickPanel(r, box);
+    if (pp) box.append(pp);
     if (r.matched && !r.album_photo_id) keepWhich(r.species, r.capture_id, file, box, r.score && r.score.total);
     loadCollection(); loadFeed();
   } catch (err) { box.textContent = err.message; }
@@ -516,15 +515,16 @@ async function keepWhich(species, captureId, file, box, newScore) {
   if (old.like_count) wrap.append(el("p", "muted", `Your album photo has ${old.like_count} like${old.like_count > 1 ? "s" : ""}. They reset if you switch.`));
 }
 
-// "Wrong animal?": the player picks from the model's other guesses, or says
-// "None of these" and searches their state's list (or skips). We trust them.
+// "Wrong animal?": the player picks one of the model's other guesses, or says
+// "None of these" and the photo doesn't count for any animal. We trust them.
 function pickPanel(r, box) {
-  const wrap = el("div", "pick-panel");
   const guesses = (r.choices || []).filter((c) => !(r.matched && r.species && c.slug === r.species.slug));
-  wrap.append(el("p", "muted", r.matched ? "Wrong animal?" : guesses.length ? "Know what it is?" : "Know what it is? Find it below."));
+  if (!r.matched && !guesses.length) return null;
+  const wrap = el("div", "pick-panel");
+  wrap.append(el("p", "muted", r.matched ? "Wrong animal?" : "Know what it is?"));
   const list = el("div", "pick");
   const choose = async (label, b) => {
-    wrap.querySelectorAll("button, input").forEach((x) => { x.disabled = true; });
+    list.querySelectorAll("button").forEach((x) => { x.disabled = true; });
     try {
       const res = await api(`/captures/${r.capture_id}/pick`, { method: "POST",
         headers: { "Content-Type": "application/json" }, body: JSON.stringify({ label }) });
@@ -539,7 +539,7 @@ function pickPanel(r, box) {
       loadCollection(); loadFeed();
     } catch (err) {
       b.textContent = err.message;
-      wrap.querySelectorAll("button, input").forEach((x) => { x.disabled = false; });
+      list.querySelectorAll("button").forEach((x) => { x.disabled = false; });
     }
   };
   for (const c of guesses) {
@@ -548,39 +548,11 @@ function pickPanel(r, box) {
     b.onclick = () => choose(c.slug, b);
     list.append(b);
   }
-  // "None of these": search the state's list by name, or skip this photo.
-  const search = el("div", "pick-search" + (guesses.length ? " hidden" : ""));
-  const q = el("input");
-  q.type = "search"; q.placeholder = "Type the animal's name"; q.autocomplete = "off";
-  const found = el("div", "pick");
-  const skip = el("button", "ghost", r.matched ? "Skip: don't capture it" : "Skip this photo");
-  skip.type = "button";
-  skip.onclick = () => choose("none", skip);
-  let seq = 0;
-  q.oninput = async () => {
-    const text = q.value.trim(), mine = ++seq;
-    if (text.length < 2) { found.textContent = ""; return; }
-    let hits = [];
-    try { hits = await api(`/species-search?q=${encodeURIComponent(text)}`); } catch {}
-    if (mine !== seq) return;
-    found.textContent = "";
-    if (!hits.length) found.append(el("span", "muted", `No animal on your state's list matches "${text}".`));
-    for (const s of hits) {
-      const b = el("button", "", s.common_name);
-      b.type = "button"; b.title = s.scientific_name;
-      b.onclick = () => choose(s.slug, b);
-      found.append(b);
-    }
-  };
-  search.append(q, found, skip);
-  if (guesses.length) {
-    const none = el("button", "none", "None of these");
-    none.type = "button";
-    none.onclick = () => { none.remove(); search.classList.remove("hidden"); q.focus(); };
-    list.append(none);
-    wrap.append(list);
-  }
-  wrap.append(search);
+  const none = el("button", "none", "None of these");
+  none.type = "button";
+  none.onclick = () => choose("none", none);
+  list.append(none);
+  wrap.append(list);
   return wrap;
 }
 

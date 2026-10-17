@@ -109,7 +109,7 @@ class IdFeedback(Base):
     predicted_label: Mapped[str] = mapped_column(String(64))
     rejected_labels: Mapped[str] = mapped_column(String(400))
     # The player's answer, and where it came from: "guesses" (one of the model's
-    # other guesses), "list" (searched the state's list) or "none" (skipped).
+    # other guesses) or "none" ("none of these", not captured).
     chosen_label: Mapped[str | None] = mapped_column(String(64), nullable=True)
     source: Mapped[str] = mapped_column(String(16))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

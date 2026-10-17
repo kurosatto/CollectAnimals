@@ -26,7 +26,7 @@ from .config import settings
 from .db import Base, SessionLocal, add_missing_columns, engine, get_db
 from .models import AlbumPhoto, Badge, Capture, Friendship, IdFeedback, PhotoLike, Species, StateSpecies, User
 from .schemas import (BondNoteOut, BondOut, BondsOut, BuddyIn, BuddyOut, CaptureOut, ChallengeOut, ChallengesOut, ChoiceOut, ScoreOut, ScorePart, SetOut, SetSpecies, SetsOut, CollectionEntry, CollectionOut, DexOut, PlaceOut, HotspotOut, HotspotSpecies,
-                      PickIn, PredictionOut, RegisterIn, SpeciesMatch, SpeciesOut, StateOut, TokenOut, UserOut, UserUpdate)
+                      PickIn, PredictionOut, RegisterIn, SpeciesOut, StateOut, TokenOut, UserOut, UserUpdate)
 from .social import find_species, friend_ids, revealed_species_ids, species_out, user_named
 from .storage import get_storage
 
@@ -592,10 +592,9 @@ def _unassign_capture(db: Session, capture: Capture) -> None:
 @app.post("/captures/{capture_id}/pick", response_model=CaptureOut)
 def pick_capture_species(capture_id: int, body: PickIn, user: User = Depends(current_user),
                          db: Session = Depends(get_db)):
-    """'Wrong animal?': the player names the animal themselves, from the model's
-    top guesses or (after "None of these") any animal on their state's list, or
-    skips with "none". We trust their pick and award the badge, and keep the
-    correction so it can help retrain the model."""
+    """'Wrong animal?': the player names the animal themselves from the model's
+    top guesses, or says "none" of them. We trust their pick and award the badge,
+    and keep the correction so it can help retrain the model."""
     capture = db.get(Capture, capture_id)
     if capture is None or capture.user_id != user.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Capture not found")
@@ -610,11 +609,12 @@ def pick_capture_species(capture_id: int, body: PickIn, user: User = Depends(cur
                           new_badge=False, message="Okay, this photo doesn't count for any animal.",
                           top_predictions=[])
 
+    if capture.top_labels is not None and body.label not in guesses:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Pick one of the suggested animals")
     species = db.scalar(select(Species).where(Species.slug == body.label))
-    m = state_member(db, user.state, species.id) if species else None
-    # One of the model's guesses, or any animal on the player's state list.
-    if species is None or (m is None and body.label not in guesses):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Pick an animal from your state's list")
+    if species is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Unknown species")
+    m = state_member(db, user.state, species.id)
 
     name = m.common_name if m else species.common_name
     new_badge = False
@@ -655,7 +655,7 @@ def _record_feedback(db: Session, capture: Capture, user: User, guesses: list[st
         if row:
             db.delete(row)
         return
-    source = "none" if chosen is None else "guesses" if chosen in guesses else "list"
+    source = "none" if chosen is None else "guesses"
     if row is None:
         row = IdFeedback(capture_id=capture.id, user_id=user.id)
         db.add(row)
@@ -664,22 +664,6 @@ def _record_feedback(db: Session, capture: Capture, user: User, guesses: list[st
     row.rejected_labels = ",".join(g for g in guesses if g != chosen) or capture.predicted_label
     row.chosen_label = chosen
     row.source = source
-
-
-@app.get("/species-search", response_model=list[SpeciesMatch])
-def search_species(q: str = Query(..., min_length=2, max_length=60), user: User = Depends(current_user),
-                   db: Session = Depends(get_db)):
-    """"None of these" > search: animals on the player's state list whose common or
-    scientific name contains q. Only matches are named, so the Field Guide's
-    undiscovered animals stay mostly a surprise."""
-    needle = q.strip().lower()
-    out = []
-    for m in state_species(db, (st.get(user.state) or st.get(None)).code):
-        if needle in m.common_name.lower() or needle in m.species.scientific_name.lower():
-            out.append(SpeciesMatch(slug=m.species.slug, common_name=m.common_name,
-                                    scientific_name=m.species.scientific_name, number=m.species.id))
-    out.sort(key=lambda x: not x.common_name.lower().startswith(needle))
-    return out[:10]
 
 
 def _rescore_picked(db: Session, capture: Capture, species: Species, m: StateSpecies | None,
