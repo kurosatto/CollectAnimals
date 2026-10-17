@@ -502,7 +502,7 @@ private fun FriendRow(u: FriendEntry, onOpen: ((String) -> Unit)?, actions: @Com
 
 private val RARITY_ORDER = listOf("common", "uncommon", "rare", "legendary")
 
-/** The friend's Field Guide in their own state: Captured, then Not captured yet. */
+/** The friend's Field Guide in their own state: the animals they've captured. */
 @Composable
 fun FriendGuideDialog(s: SocialState, social: SocialViewModel, game: UiState) {
     val who = s.guideFor ?: return
@@ -525,8 +525,12 @@ fun FriendGuideDialog(s: SocialState, social: SocialViewModel, game: UiState) {
                             .mapIndexed { i, e -> i + 1 to e.value }
                         LazyVerticalGrid(columns = GridCells.Adaptive(72.dp), modifier = Modifier.weight(1f, fill = false),
                             horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            for ((title, list) in listOf("Captured" to numbered.filter { it.second.caught },
-                                                         "Not captured yet" to numbered.filter { !it.second.caught })) {
+                            // Only the animals they've captured; numbers follow the full Field Guide.
+                            val captured = numbered.filter { it.second.caught }
+                            if (captured.isEmpty()) item(span = { GridItemSpan(maxLineSpan) }) {
+                                Text("$who hasn't captured any animals yet.", color = MaterialTheme.colorScheme.outline)
+                            }
+                            for ((title, list) in listOf("Captured" to captured)) {
                                 if (list.isEmpty()) continue
                                 item(key = "h-$title", span = { GridItemSpan(maxLineSpan) }) {
                                     Text(title, style = MaterialTheme.typography.titleSmall,
