@@ -100,6 +100,24 @@
   .comments form input { flex:1 1 120px; width:0; min-width:0; padding:6px 8px; }
   .comments form button { padding:6px 10px; }
   .feed-entry .comments { padding:0 6px 8px 82px; }
+  .photo img, .feed-item img { cursor:zoom-in; }
+  /* Full-screen photo: the picture fills the screen, likes and comments sit beside it
+     (below it on phones). */
+  dialog#viewer { width:100vw; height:100dvh; max-width:none; max-height:none; margin:0; border:none; border-radius:0;
+                  background:#000; color:#fff; }
+  #viewer .wrap { display:grid; grid-template-columns:minmax(0,1fr) 340px; height:100%; }
+  #viewer .pic { position:relative; min-height:0; display:grid; place-items:center; }
+  #viewer .pic img { max-width:100%; max-height:100%; object-fit:contain; display:block; }
+  #viewer .shut { position:absolute; top:max(8px, env(safe-area-inset-top)); right:8px; background:rgba(0,0,0,.55);
+               color:#fff; border:none; font-size:1.6rem; line-height:1; width:40px; height:40px; border-radius:50%; padding:0; }
+  #viewer .side { background:var(--card); color:var(--ink); padding:14px 16px calc(14px + env(safe-area-inset-bottom));
+                  overflow-y:auto; display:grid; align-content:start; gap:6px; font-size:.9rem; }
+  #viewer .side h3 { margin:0; font-size:1.1rem; }
+  #viewer .side .pts { color:var(--legendary); font-weight:600; }
+  @media (max-width:760px) {
+    #viewer .wrap { grid-template-columns:1fr; grid-template-rows:minmax(0,1fr) auto; }
+    #viewer .side { max-height:45dvh; }
+  }
   .like.on { border-color:#c0392b; color:#c0392b; }
   .seg { display:flex; gap:6px; flex-wrap:wrap; margin-top:12px; }
   .seg button { background:none; color:var(--ink); border:1px solid var(--line); padding:4px 10px; font-size:.85rem; }
@@ -369,6 +387,10 @@
 </div>
 <div class="dex-photos" id="dex-photos"></div>
 </dialog>
+<dialog id="viewer"><div class="wrap">
+  <div class="pic"><img id="viewer-img" alt=""><button class="shut" id="viewer-close" aria-label="Close">×</button></div>
+  <div class="side" id="viewer-side"></div>
+</div></dialog>
 <dialog id="album"><div class="dex">
   <div class="dex-head">
     <div><h2 id="album-title"></h2><div class="muted" id="album-sub"></div></div>
@@ -996,9 +1018,45 @@ function photoCard(p, { showSpecies = false, onChange } = {}) {
     };
     meta.append(del);
   }
+  // Tap the photo to see it full screen; the like count here catches up when it closes.
+  img.onclick = () => openViewer(p, () => meta.querySelector(".reacts")?.replaceWith(reactions(p, meta, onChange)));
   card.append(img, meta);
   return card;
 }
+
+// One photo full screen, at the size it's stored (up to 1600 px), with its likes and
+// comments. Only photos the server already sends a url for get here, so private
+// players and unrevealed animals stay hidden exactly as in the feed and galleries.
+let viewerClosed = null;
+function openViewer(p, onClose) {
+  const v = $("viewer"), side = $("viewer-side"), img = $("viewer-img");
+  img.src = p.url;
+  img.alt = p.species.common_name || "Animal photo";
+  side.innerHTML = "";
+  const name = el("h3", "", p.species.common_name || "Animal photo");
+  if (p.species.rarity) name.style.color = `var(--${p.species.rarity})`;
+  const by = el("div");
+  const when = p.taken_on ? fmtDate(p.taken_on) : p.caught_at ? ago(p.caught_at) : null;
+  by.append(p.is_mine ? el("strong", "", "You") : userLink(p.username),
+            el("span", "muted", [""].concat([p.place, when].filter(Boolean)).join(" · ")));
+  side.append(name, by);
+  if (p.score != null) side.append(el("div", "pts", `${stars(p.stars)} ${p.score.toLocaleString()} pts`));
+  const row = reactions(p, side);
+  side.append(row);
+  // Comments start open: they're half of why you'd open the photo.
+  row.lastChild.click();
+  viewerClosed = onClose || null;
+  if (!v.open) v.showModal();
+}
+$("viewer-close").onclick = () => $("viewer").close();
+$("viewer").addEventListener("close", () => {
+  $("viewer-img").removeAttribute("src");
+  const done = viewerClosed; viewerClosed = null; done?.();
+});
+// Tapping the dark area around the photo closes it, and so does opening someone's profile.
+$("viewer").addEventListener("click", (e) => {
+  if (e.target.classList.contains("pic") || e.target.closest(".user")) $("viewer").close();
+}, true);
 
 // Like and comment buttons for any photo you can see, friend's or stranger's.
 // The comment list opens inside host.
@@ -1294,7 +1352,15 @@ function ago(iso) {
 function feedItem(p) {
   const s = p.species;
   const row = el("div", "feed-item");
-  if (p.url) { const img = el("img"); img.src = p.url; img.alt = s.common_name || ""; img.loading = "lazy"; row.append(img); }
+  if (p.url) {
+    const img = el("img"); img.src = p.url; img.alt = s.common_name || ""; img.loading = "lazy";
+    // The photo opens full screen; the rest of the row opens the Field Guide entry.
+    img.onclick = (e) => {
+      e.stopPropagation();
+      openViewer(p, () => entry.querySelector(".reacts")?.replaceWith(reactions(p, entry)));
+    };
+    row.append(img);
+  }
   else row.append(el("div", "mystery", "?"));
   const what = el("div", "what");
   const line = el("div");
