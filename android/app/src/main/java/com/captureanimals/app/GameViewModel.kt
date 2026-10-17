@@ -36,6 +36,15 @@ data class CaptureResult(
     val bondUp: List<String> = emptyList(),
 )
 
+/**
+ * The states a player can switch to: their home state, the ones they chose to
+ * unlock (here or on the website), and any state they've captured in. The rest
+ * show 🔒 in the 📍 menu, as on the website.
+ */
+fun UiState.unlockedStates(): Set<String> =
+    unlocked + stateCode + account?.unlockedStates.orEmpty() +
+        states.filter { st -> st.species.any { it.slug in collection } }.map { it.code }
+
 data class UiState(
     // The model with the chosen state's species list, and that state's Field Guide.
     val info: ModelInfo? = null,
@@ -46,6 +55,8 @@ data class UiState(
     val allSpecies: List<Species> = emptyList(),
     // First launch: ask which state the player is in, like the website's sign-up.
     val needsStatePick: Boolean = false,
+    // States the player chose to unlock on this phone; see [unlockedStates].
+    val unlocked: Set<String> = emptySet(),
     val collection: Map<String, Badge> = emptyMap(),
     val busy: Boolean = false,
     val result: CaptureResult? = null,
@@ -88,8 +99,9 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             model = base
             val (default, list) = states
             val saved = prefs.getString("state", null)?.takeIf { code -> list.any { it.code == code } }
+            val unlocked = prefs.getStringSet("unlocked", emptySet()).orEmpty()
             _state.update {
-                it.copy(states = list, collection = collection, needsStatePick = saved == null, sets = sets,
+                it.copy(states = list, collection = collection, needsStatePick = saved == null, sets = sets, unlocked = unlocked,
                     allSpecies = list.flatMap { s -> s.species }.distinctBy { s -> s.slug })
             }
             select(saved ?: default)
@@ -197,13 +209,15 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     /** The player's state: its 100 species, Field Guide and parks. Badges carry over. */
     fun chooseState(code: String) {
-        prefs.edit().putString("state", code).apply()
-        _state.update { it.copy(needsStatePick = false, result = null) }
+        val unlocked = _state.value.unlocked + code
+        prefs.edit().putString("state", code).putStringSet("unlocked", unlocked).apply()
+        _state.update { it.copy(needsStatePick = false, result = null, unlocked = unlocked) }
         select(code)
         if (_state.value.account != null) viewModelScope.launch {
             runCatching {
                 Online.setState(code)
-                _state.update { it.copy(account = it.account?.copy(state = code)) }
+                _state.update { it.copy(account = it.account?.let { a -> a.copy(state = code,
+                    unlockedStates = (a.unlockedStates + code).distinct()) }) }
                 refreshCollection()
             }
         }

@@ -234,17 +234,38 @@ def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get
     return TokenOut(access_token=create_token(user.id))
 
 
+def unlocked_states(db: Session, user: User) -> list[str]:
+    """A player starts with only their home state and unlocks others by choosing
+    them. States they've already captured in stay unlocked (players from before
+    unlocking existed keep what they had)."""
+    have = {user.state, *filter(None, (user.extra_states or "").split(","))}
+    have |= set(db.scalars(select(StateSpecies.state).join(Badge, Badge.species_id == StateSpecies.species_id)
+                           .where(Badge.user_id == user.id)).all())
+    return [s.code for s in st.all_states() if s.code in have]
+
+
+def user_out(db: Session, user: User) -> UserOut:
+    out = UserOut.model_validate(user)
+    out.unlocked_states = unlocked_states(db, user)
+    return out
+
+
 @app.get("/me", response_model=UserOut)
-def me(user: User = Depends(current_user)):
-    return user
+def me(user: User = Depends(current_user), db: Session = Depends(get_db)):
+    return user_out(db, user)
 
 
 @app.patch("/me", response_model=UserOut)
 def update_me(body: UserUpdate, user: User = Depends(current_user), db: Session = Depends(get_db)):
-    """Change the player's state; their Dex, Hotspots and maps follow it."""
-    user.state = state_or_404(body.state).code
+    """Change the player's state; their Dex, Hotspots and maps follow it. Moving
+    to a state unlocks it (the apps ask first)."""
+    code = state_or_404(body.state).code
+    unlocked = unlocked_states(db, user)
+    if code not in unlocked:
+        user.extra_states = ",".join([*unlocked, code])
+    user.state = code
     db.commit()
-    return user
+    return user_out(db, user)
 
 
 @app.get("/states", response_model=list[StateOut])

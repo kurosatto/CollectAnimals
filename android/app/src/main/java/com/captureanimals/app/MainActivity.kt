@@ -148,7 +148,7 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel()) 
     Scaffold(topBar = {
         Column {
             TopAppBar(title = { Text(if (tab == 0) "Capture Animals" else TABS[tab].title) }, actions = {
-                if (state.states.size > 1) StateMenu(state.states, state.stateCode, vm::chooseState)
+                if (state.states.size > 1) StateMenu(state.states, state.stateCode, state.unlockedStates(), vm::chooseState)
                 TextButton(onClick = { showAccount = true }) {
                     Text(state.account?.let { "👤 ${it.username}" } ?: "Log in", maxLines = 1,
                         overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 120.dp))
@@ -199,15 +199,28 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel()) 
 
 /** "📍 NC" in the top bar; switching changes the Field Guide, parks and which animals count. */
 @Composable
-private fun StateMenu(states: List<StateInfo>, current: String, onPick: (String) -> Unit) {
+private fun StateMenu(states: List<StateInfo>, current: String, unlocked: Set<String>, onPick: (String) -> Unit) {
     var open by remember { mutableStateOf(false) }
+    // A locked state asks first: players unlock new states by choice.
+    var unlocking by remember { mutableStateOf<StateInfo?>(null) }
     Box {
         TextButton(onClick = { open = true }) { Text("📍 $current") }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             states.forEach { s ->
-                DropdownMenuItem(text = { Text(s.name) }, onClick = { open = false; onPick(s.code) })
+                val locked = s.code !in unlocked
+                DropdownMenuItem(text = { Text((if (locked) "🔒 " else "") + s.name) }, onClick = {
+                    open = false
+                    if (locked) unlocking = s else onPick(s.code)
+                })
             }
         }
+    }
+    unlocking?.let { s ->
+        AlertDialog(onDismissRequest = { unlocking = null },
+            title = { Text("Unlock ${s.name}?") },
+            text = { Text("Its Field Guide, parks and challenges will open, and your captures will count there while it's your state.") },
+            confirmButton = { TextButton(onClick = { unlocking = null; onPick(s.code) }) { Text("Unlock") } },
+            dismissButton = { TextButton(onClick = { unlocking = null }) { Text("Not now") } })
     }
 }
 

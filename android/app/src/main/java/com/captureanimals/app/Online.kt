@@ -257,10 +257,12 @@ object Online {
 fun JSONObject.optStringOrNull(key: String): String? = if (isNull(key) || !has(key)) null else getString(key)
 fun JSONObject.optIntOrNull(key: String): Int? = if (isNull(key) || !has(key)) null else getInt(key)
 
-data class Account(val username: String, val email: String, val state: String, val showInFeed: Boolean) {
+data class Account(val username: String, val email: String, val state: String, val showInFeed: Boolean,
+                   val unlockedStates: List<String> = emptyList()) {
     companion object {
         fun parse(o: JSONObject) = Account(o.getString("username"), o.getString("email"), o.getString("state"),
-            o.isNull("show_in_feed") || o.optBoolean("show_in_feed", true))
+            o.isNull("show_in_feed") || o.optBoolean("show_in_feed", true),
+            o.optJSONArray("unlocked_states")?.let { a -> List(a.length()) { a.getString(it) } } ?: emptyList())
     }
 }
 
