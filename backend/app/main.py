@@ -139,6 +139,12 @@ def index():
     return FileResponse(STATIC_DIR / "index.html")
 
 
+@app.get("/habitat.js", include_in_schema=False)
+def habitat_js():
+    """The habitat scene, shared with the Android app."""
+    return FileResponse(STATIC_DIR / "habitat.js", media_type="text/javascript")
+
+
 @app.get("/sprites/silhouette/{number}.png", include_in_schema=False)
 def silhouette_by_number(number: int, db: Session = Depends(get_db)):
     """The silhouette for a species that's still hidden, by Dex number, so the

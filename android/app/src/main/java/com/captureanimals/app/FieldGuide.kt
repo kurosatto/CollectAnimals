@@ -100,6 +100,21 @@ class FieldGuide(val details: Map<String, SpeciesDetails>, val ranges: RangeGrid
         }
     }
 
+    /** When the animal is up and about for the habitat scene: "day", "night" or "any",
+     *  as the website's dex.activity(): from active_time, else from night sightings. */
+    fun activity(slug: String): String {
+        val text = details[slug]?.activeTime.orEmpty().lowercase().split(";").first().trim()
+        if (text.isNotEmpty()) {
+            if (text.startsWith("night") || text.startsWith("dusk")) return "night"
+            if (listOf("night", "dawn", "dusk", "all day", "any time").any { it in text }) return "any"
+            return "day"
+        }
+        val share = seasons[slug]?.nightShare
+        val avg = avgNightShare
+        val ratio = if (share != null && avg != null && avg > 0) share / avg else null
+        return if (ratio != null && ratio >= 3) "night" else "day"
+    }
+
     /** Names of the parks with the most sightings of this species (as the web's hotspots_for). */
     fun hotspotsFor(slug: String, limit: Int = 3): List<String> =
         parks.mapNotNull { p -> p.species.firstOrNull { it.slug == slug }?.let { it.observations to p.name } }

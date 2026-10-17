@@ -51,6 +51,17 @@ class FieldGuideTest {
     }
 
     @Test
+    fun habitatActivityMatchesTheWeb() {
+        // Same answers as backend dex.activity() for California.
+        val dir = File("../../species")
+        val dex = FieldGuide.parse(File(dir, "details.csv").readText(), File(dir, "ranges.json").readText(),
+            File(dir, "california_outline.json").readText(), null, File(dir, "seasons.json").readText())
+        val expected = mapOf("great_horned_owl" to "night", "coyote" to "any", "western_fence_lizard" to "day",
+            "raccoon" to "night", "annas_hummingbird" to "any", "striped_skunk" to "night", "mule_deer" to "any")
+        expected.forEach { (slug, activity) -> assertEquals(slug, activity, dex.activity(slug)) }
+    }
+
+    @Test
     fun seasonsMatchTheWeb() {
         val dir = File("../../species")
         val dex = FieldGuide.parse(File(dir, "details.csv").readText(), File(dir, "ranges.json").readText(),
