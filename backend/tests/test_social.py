@@ -528,3 +528,19 @@ def test_friend_field_guide_uses_their_state(client, fake):
     # Friendship works both ways, in the viewer's own state.
     back = client.get("/users/ana/collection", headers=nina).json()
     assert back["state"] == "CA" and back["caught"] == 1
+
+
+def test_friend_field_guide_places(client, fake):
+    ana, nina = signup(client, "ana"), signup(client, "nina", state="NC")
+    befriend(client, ana, nina, "nina", "ana")
+    g = client.get("/users/nina/collection", headers=ana).json()
+    assert g["primary_state"] == "NC"
+    assert [p["state"] for p in g["places"]] == ["NC"]      # primary state is always a place
+    catch(client, fake, nina, "american_black_bear")         # on both state lists
+    g = client.get("/users/nina/collection", headers=ana).json()
+    places = {p["state"]: p for p in g["places"]}
+    assert places["NC"]["caught"] == 1 and places["CA"]["caught"] == 1 and places["CA"]["name"]
+    ca = client.get("/users/nina/collection?state=CA", headers=ana).json()
+    assert client.get("/users/nina", headers=ana).json()["state"] == "NC"
+    assert ca["state"] == "CA" and ca["primary_state"] == "NC" and ca["caught"] == 1
+    assert client.get("/users/nina/collection?state=ZZ", headers=ana).status_code == 404
