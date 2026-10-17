@@ -78,6 +78,16 @@ def add_state_column() -> None:
             conn.execute(text("ALTER TABLE users ADD COLUMN state VARCHAR(2) NOT NULL DEFAULT 'CA'"))
 
 
+def restar_scores() -> None:
+    """Stars went from 1-3 to 1-5: work them out again from each saved score's parts."""
+    with SessionLocal() as db:
+        for c in db.scalars(select(Capture).where(Capture.score_parts.is_not(None))):
+            stars = scoring.stars_for(json.loads(c.score_parts))
+            if c.score_stars != stars:
+                c.score_stars = stars
+        db.commit()
+
+
 def state_or_404(code: str | None) -> st.State:
     state = st.get(code)
     if state is None:
@@ -100,6 +110,7 @@ async def lifespan(app: FastAPI):
     Base.metadata.create_all(engine)
     add_missing_columns()
     add_state_column()
+    restar_scores()
     get_storage()
     st.load(settings.states_json)
     with SessionLocal() as db:

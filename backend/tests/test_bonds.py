@@ -28,8 +28,9 @@ def test_each_note():
     assert "places" not in done(bonds.notes([base, S(2026, 10, 16, 9, 37.001, -122.0)]))
     assert "places" in done(bonds.notes([base, S(2026, 10, 16, 9, 37.02, -122.0)]))
     assert "seasons" in done(bonds.notes([base, S(2027, 1, 5, 9)]))
-    assert "star" in done(bonds.notes([S(2026, 10, 16, 9, stars=3)]))
-    all_six = [base, S(2026, 10, 17, 18, 37.05, -122.0, 3), S(2027, 1, 5, 9)]
+    assert "star" in done(bonds.notes([S(2026, 10, 16, 9, stars=4)]))
+    assert "star" not in done(bonds.notes([S(2026, 10, 16, 9, stars=3)]))
+    all_six = [base, S(2026, 10, 17, 18, 37.05, -122.0, 4), S(2027, 1, 5, 9)]
     assert bonds.level(bonds.notes(all_six)) == 6 and bonds.title(6) == "Lifelong friend"
 
 

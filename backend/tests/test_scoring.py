@@ -44,7 +44,9 @@ def test_score_parts_stars_and_bonuses():
     labels = dict(s.parts)
     assert labels["Clarity"] == scoring.CLARITY_MAX and labels["Framing"] == scoring.FRAMING_MAX
     assert labels["Rare animal"] == 250 and labels["New species"] == 200
-    assert s.stars == 3 and s.total == sum(labels.values())
+    # Mostly white, so lighting is poor: 4 stars, but golden hour light makes it 5.
+    assert s.stars == 4 and s.total == sum(labels.values())
+    assert scoring.score_photo(CenterOnly(0.95), busy_photo(), "coyote", allowed, sun=3.0).stars == 5
 
     # Off-center animal: framing drops, no bonus for a common repeat.
     s = scoring.score_photo(CenterOnly(0.2), busy_photo(), "coyote", allowed)
@@ -117,3 +119,13 @@ def test_soft_background():
     assert scoring.soft_background(portrait)
     assert not scoring.soft_background(crisp)  # sharp all over
     assert not scoring.soft_background(blurred)  # blurry all over
+
+
+def test_five_star_cutoffs():
+    def photo(points, *bonus):
+        return [("Clarity", points), ("Rare animal", 250), ("New species", 200)] + [(b, 100) for b in bonus]
+    assert [scoring.stars_for(photo(p)) for p in (1000, 950, 900, 700, 500, 200)] == [5, 5, 4, 3, 2, 1]
+    # Rarity and new species don't add stars; good light and a soft background do.
+    assert scoring.stars_for(photo(900, "Golden hour")) == 5
+    # Scores saved before lighting existed (three parts out of 1000) still work.
+    assert scoring.stars_for([["Clarity", 400], ["Sharpness", 300], ["Framing", 280]]) == 5

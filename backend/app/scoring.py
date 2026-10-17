@@ -1,8 +1,10 @@
 """Photo score for a capture, in the spirit of an arcade photo game: points for
 how clearly the model recognizes the animal, how sharp the photo is, how well
 it's framed and how well it's lit, plus bonuses for rare animals, new species,
-golden-hour light and a soft (out of focus) background. Stars (1-3) come
-from the total before bonuses, so a sharp photo of a pigeon can still get 3.
+golden-hour light and a soft (out of focus) background. Stars (1-5) come from
+the photo itself: the photo points plus the golden hour and soft background
+bonuses, but not rarity or new species, so a great photo of a pigeon can still
+get 5.
 
 Nothing here rewards getting close. Framing compares the model's confidence on
 the middle of the photo with the whole photo, so a cropped or zoomed shot
@@ -35,8 +37,13 @@ GOLDEN_HOUR_ELEVATION = (-4.0, 8.0)
 # Night animals are hard to light well, so they never drop below this share of
 # the lighting points.
 NIGHT_LIGHTING_FLOOR = 0.6
-# Stars from the photo points (clarity + sharpness + framing + lighting, out of 1000).
-STAR_CUTOFFS = (850, 600)
+# Stars (5, 4, 3, 2) from the photo points (clarity + sharpness + framing +
+# lighting, out of 1000) plus the golden hour and soft background bonuses.
+# A flawless photo gets 5 on its own; a very good one needs good light or a
+# soft background to get there.
+STAR_CUTOFFS = (950, 800, 650, 450)
+MAX_STARS = 5
+STAR_PARTS = {"Clarity", "Sharpness", "Framing", "Lighting", "Golden hour", "Soft background"}
 
 # Sharpness: how much edge detail a slight blur removes. A blurry photo hardly
 # changes (ratio near 1); a crisp one loses a lot. Rough cutoffs, to be tuned
@@ -67,6 +74,13 @@ def sharpness(image: Image.Image) -> float:
     soft = _edge_energy(gray.filter(ImageFilter.GaussianBlur(1.5)))
     ratio = sharp / max(soft, 1e-6)
     return min(1.0, max(0.0, (ratio - SHARP_LOW) / (SHARP_HIGH - SHARP_LOW)))
+
+
+def stars_for(parts: list[tuple[str, int]] | list[list]) -> int:
+    """1-5 stars from a score's parts (also works on scores saved before the
+    lighting and bonus parts existed)."""
+    points = sum(pts for label, pts in parts if label in STAR_PARTS)
+    return next((MAX_STARS - i for i, cut in enumerate(STAR_CUTOFFS) if points >= cut), 1)
 
 
 def lighting(image: Image.Image) -> float:
@@ -181,8 +195,6 @@ def score_photo(model: Classifier, image: Image.Image, slug: str, allowed: set[s
         light = max(light, NIGHT_LIGHTING_FLOOR)
     lit = round(LIGHTING_MAX * light)
     parts = [("Clarity", clarity), ("Sharpness", sharp), ("Framing", framing), ("Lighting", lit)]
-    photo = clarity + sharp + framing + lit
-    stars = 3 if photo >= STAR_CUTOFFS[0] else 2 if photo >= STAR_CUTOFFS[1] else 1
     if RARITY_BONUS.get(rarity):
         parts.append((f"{rarity.capitalize()} animal", RARITY_BONUS[rarity]))
     if new_species:
@@ -191,4 +203,4 @@ def score_photo(model: Classifier, image: Image.Image, slug: str, allowed: set[s
         parts.append(("Golden hour", GOLDEN_HOUR_BONUS))
     if soft_background(image):
         parts.append(("Soft background", SOFT_BACKGROUND_BONUS))
-    return Score(total=sum(p for _, p in parts), stars=stars, parts=parts)
+    return Score(total=sum(p for _, p in parts), stars=stars_for(parts), parts=parts)
