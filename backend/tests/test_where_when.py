@@ -64,7 +64,7 @@ def test_owner_edits_time_and_place(client, fake):
     ww = e.json()["where_when"]
     assert (ww["taken_at"], ww["time_source"], ww["place_source"]) == ("2026-01-10T07:15:00", "edited", "edited")
     assert ww["place"] == "near Santa Cruz"
-    assert e.json()["score"]["total"] > 0 and e.json()["bond"] >= 1
+    assert e.json()["score"] == r["score"] and e.json()["bond"] >= 1
     # The album photo shows the new date and place, and the owner sees the details.
     p = client.get("/me/album", headers=h).json()["photos"][0]
     assert p["taken_on"] == "2026-01-10" and p["place"] == "near Santa Cruz"
@@ -102,20 +102,36 @@ def test_edit_rules(client, fake):
     assert client.get("/feed", headers=other).json()["photos"][0].get("where_when") is None
 
 
-def test_editing_the_time_moves_the_golden_hour_bonus(client, fake):
+def test_editing_time_and_place_leaves_the_score_alone(client, fake):
     h = signup(client)
-    cid = post(client, fake, h)["capture_id"]
+    r = post(client, fake, h)
+    cid = r["capture_id"]
     place = {"latitude": 36.9741, "longitude": -122.0308}
-    labels = lambda r: {p["label"] for p in r.json()["score"]["parts"]}  # noqa: E731
-    noon = client.put(f"/captures/{cid}/where-when", headers=h, json={"taken_at": "2026-01-10T12:30:00", **place})
-    assert "Golden hour" not in labels(noon)
-    # Sunrise in Santa Cruz on Jan 10 is about 7:20.
-    dawn = client.put(f"/captures/{cid}/where-when", headers=h, json={"taken_at": "2026-01-10T07:30:00", **place})
-    assert "Golden hour" in labels(dawn)
-    assert dawn.json()["score"]["total"] == noon.json()["score"]["total"] + 100
+    for at in ("2026-01-10T12:30:00", "2026-01-10T07:30:00"):
+        e = client.put(f"/captures/{cid}/where-when", headers=h, json={"taken_at": at, **place}).json()
+        assert e["score"] == r["score"]
 
 
 def test_turning_off_saving_the_place_drops_the_photos_gps_too(client, fake):
     h = signup(client)
     ww = post(client, fake, h, _exif(37.5, -122.5), save_place="false")["where_when"]
     assert ww["latitude"] is None and ww["place_source"] is None
+
+
+def test_saved_golden_hour_bonuses_are_taken_back(client, fake):
+    import json
+    from app.db import SessionLocal
+    from app.main import restar_scores
+    from app.models import Capture
+    h = signup(client)
+    cid = post(client, fake, h)["capture_id"]
+    with SessionLocal() as db:
+        c = db.get(Capture, cid)
+        before = c.score
+        c.score_parts = json.dumps(json.loads(c.score_parts) + [["Golden hour", 100]])
+        c.score += 100
+        db.commit()
+    restar_scores()
+    with SessionLocal() as db:
+        c = db.get(Capture, cid)
+        assert c.score == before and "Golden hour" not in c.score_parts

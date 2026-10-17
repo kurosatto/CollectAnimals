@@ -82,10 +82,16 @@ def add_state_column() -> None:
 
 
 def restar_scores() -> None:
-    """Stars went from 1-3 to 1-5: work them out again from each saved score's parts."""
+    """Stars went from 1-3 to 1-5, and the golden-hour bonus was dropped (the time
+    and place can be edited, so they don't count): work each saved score out again
+    from its parts."""
     with SessionLocal() as db:
         for c in db.scalars(select(Capture).where(Capture.score_parts.is_not(None))):
-            stars = scoring.stars_for(json.loads(c.score_parts))
+            parts = json.loads(c.score_parts)
+            kept = [p for p in parts if p[0] not in scoring.RETIRED_PARTS]
+            if len(kept) != len(parts):
+                c.score_parts, c.score = json.dumps(kept), sum(pts for _, pts in kept)
+            stars = scoring.stars_for(kept)
             if c.score_stars != stars:
                 c.score_stars = stars
         db.commit()
@@ -615,31 +621,10 @@ def _score_capture(model, capture: Capture, slug: str, rarity: str, image: Image
     safety = dex.details(slug, state_code).get("safety") or "none"
     sc = scoring.score_photo(model, image, slug, allowed, confidence=confidence, rarity=rarity,
                              safety=safety, new_species=new_badge,
-                             activity=dex.activity(slug, state_code),
-                             sun=_sun_at_capture(capture, state_code))
+                             activity=dex.activity(slug, state_code))
     capture.score, capture.score_stars, capture.score_parts = sc.total, sc.stars, sc.to_json()
     return score_out(capture)
 
-
-def _sun_at_capture(capture: Capture, state_code: str) -> float | None:
-    """The sun's elevation when and where the photo was taken: the photo's EXIF
-    time (the phone's local time), else the upload time (UTC), at the photo's
-    location, else the middle of the state."""
-    state = st.get(state_code)
-    if state is None:
-        return None
-    if capture.taken_at is not None:
-        when = scoring.to_utc(capture.taken_at, state.utc_offset)
-    else:
-        when = capture.created_at or datetime.now(timezone.utc)
-        if when.tzinfo is None:
-            when = when.replace(tzinfo=timezone.utc)
-    if capture.latitude is not None and capture.longitude is not None:
-        lat, lon = capture.latitude, capture.longitude
-    else:
-        b = state.bounds
-        lat, lon = (b["south"] + b["north"]) / 2, (b["west"] + b["east"]) / 2
-    return scoring.sun_elevation(when, lat, lon)
 
 
 def score_old_photos(db: Session, model, pause: float = 0.0) -> int:
@@ -660,8 +645,7 @@ def score_old_photos(db: Session, model, pause: float = 0.0) -> int:
 
 
 def _rescore(db: Session, model, c: Capture) -> bool:
-    """Score a saved capture again for the species it counts as (e.g. after its
-    time or place changed, which moves the golden-hour bonus). False if the
+    """Score a saved capture again for the species it counts as. False if the
     photo is gone."""
     data = get_storage().get(c.image_path) if c.image_path else None
     if data is None or model is None or c.species_id is None:
@@ -803,8 +787,8 @@ def set_where_when(capture_id: int, body: WhereWhenIn, user: User = Depends(curr
                    db: Session = Depends(get_db)):
     """The player fixes when and where they took a photo (the photo's metadata
     can be missing or wrong). The place must be in the state the capture counts
-    in and the time no later than the upload. The photo score, field notes and
-    place name follow."""
+    in and the time no later than the upload. Field notes and the place name
+    follow; the photo score doesn't depend on either."""
     capture = db.get(Capture, capture_id)
     if capture is None or capture.user_id != user.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Capture not found")
@@ -833,8 +817,6 @@ def set_where_when(capture_id: int, body: WhereWhenIn, user: User = Depends(curr
                                        and abs(old_place[1] - new_place[1]) < 1e-5):
         capture.latitude, capture.longitude = new_place
         capture.place_source = "edited" if new_place[0] is not None else None
-    if capture.species_id is not None and db.is_modified(capture):
-        _rescore(db, clf.get_classifier(), capture)
     db.commit()
 
     bond, bond_up = None, []

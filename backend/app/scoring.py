@@ -1,10 +1,12 @@
 """Photo score for a capture, in the spirit of an arcade photo game: points for
 how clearly the model recognizes the animal, how sharp the photo is, how well
-it's framed and how well it's lit, plus bonuses for rare animals, new species,
-golden-hour light and a soft (out of focus) background. Stars (1-5) come from
-the photo itself: the photo points plus the golden hour and soft background
-bonuses, but not rarity or new species, so a great photo of a pigeon can still
-get 5.
+it's framed and how well it's lit, plus bonuses for rare animals, new species
+and a soft (out of focus) background. Stars (1-5) come from the photo itself:
+the photo points plus the soft background bonus, but not rarity or new species,
+so a great photo of a pigeon can still get 5.
+
+Nothing here depends on when or where the photo was taken: players can edit
+those, so they must not move the score.
 
 Nothing here rewards getting close. Framing compares the model's confidence on
 the middle of the photo with the whole photo, so a cropped or zoomed shot
@@ -30,20 +32,18 @@ FRAMING_MAX = 250
 LIGHTING_MAX = 150
 RARITY_BONUS = {"common": 0, "uncommon": 100, "rare": 250, "legendary": 500}
 NEW_SPECIES_BONUS = 200
-GOLDEN_HOUR_BONUS = 100
 SOFT_BACKGROUND_BONUS = 75
-# Golden hour: the sun between a little below and a little above the horizon.
-GOLDEN_HOUR_ELEVATION = (-4.0, 8.0)
 # Night animals are hard to light well, so they never drop below this share of
 # the lighting points.
 NIGHT_LIGHTING_FLOOR = 0.6
 # Stars (5, 4, 3, 2) from the photo points (clarity + sharpness + framing +
-# lighting, out of 1000) plus the golden hour and soft background bonuses.
-# A flawless photo gets 5 on its own; a very good one needs good light or a
-# soft background to get there.
+# lighting, out of 1000) plus the soft background bonus. A flawless photo gets
+# 5 on its own; a very good one needs a soft background to get there.
 STAR_CUTOFFS = (950, 800, 650, 450)
 MAX_STARS = 5
-STAR_PARTS = {"Clarity", "Sharpness", "Framing", "Lighting", "Golden hour", "Soft background"}
+STAR_PARTS = {"Clarity", "Sharpness", "Framing", "Lighting", "Soft background"}
+# Bonus parts that are no longer given; removed from saved scores at startup.
+RETIRED_PARTS = {"Golden hour"}
 
 # Sharpness: how much edge detail a slight blur removes. A blurry photo hardly
 # changes (ratio near 1); a crisp one loses a lot. Rough cutoffs, to be tuned
@@ -129,14 +129,6 @@ def _us_dst(local: datetime) -> bool:
     return nth_sunday(3, 2) <= naive < nth_sunday(11, 1)
 
 
-def to_utc(when: datetime, std_offset: int) -> datetime:
-    """A photo time in UTC. EXIF times have no zone: they're the phone's local
-    time, taken to be the state's (standard offset + US daylight saving)."""
-    if when.tzinfo is not None:
-        return when.astimezone(timezone.utc)
-    offset = std_offset + (1 if _us_dst(when) else 0)
-    return (when - timedelta(hours=offset)).replace(tzinfo=timezone.utc)
-
 
 def to_local(when: datetime, std_offset: int) -> datetime:
     """A UTC time as the state's wall clock time (no zone), with US daylight saving."""
@@ -144,22 +136,6 @@ def to_local(when: datetime, std_offset: int) -> datetime:
     local = (when.astimezone(timezone.utc) + timedelta(hours=std_offset)).replace(tzinfo=None)
     return local + timedelta(hours=1) if _us_dst(local) else local
 
-
-def sun_elevation(when: datetime, lat: float, lon: float) -> float:
-    """Degrees of the sun above the horizon (NOAA's approximate formula, good
-    to well under a degree). `when` must be timezone aware."""
-    t = when.astimezone(timezone.utc)
-    hour = t.hour + t.minute / 60 + t.second / 3600
-    g = 2 * math.pi / 365 * (t.timetuple().tm_yday - 1 + (hour - 12) / 24)
-    eqtime = 229.18 * (0.000075 + 0.001868 * math.cos(g) - 0.032077 * math.sin(g)
-                       - 0.014615 * math.cos(2 * g) - 0.040849 * math.sin(2 * g))
-    decl = (0.006918 - 0.399912 * math.cos(g) + 0.070257 * math.sin(g) - 0.006758 * math.cos(2 * g)
-            + 0.000907 * math.sin(2 * g) - 0.002697 * math.cos(3 * g) + 0.00148 * math.sin(3 * g))
-    solar_minutes = hour * 60 + eqtime + 4 * lon
-    ha = math.radians(solar_minutes / 4 - 180)
-    phi = math.radians(lat)
-    cos_zenith = math.sin(phi) * math.sin(decl) + math.cos(phi) * math.cos(decl) * math.cos(ha)
-    return 90 - math.degrees(math.acos(max(-1.0, min(1.0, cos_zenith))))
 
 
 def center_crop(image: Image.Image, share: float = 0.6) -> Image.Image:
@@ -178,12 +154,10 @@ def species_probability(model: Classifier, image: Image.Image, slug: str, allowe
 
 def score_photo(model: Classifier, image: Image.Image, slug: str, allowed: set[str], *,
                 confidence: float | None = None, rarity: str = "common", safety: str = "none",
-                new_species: bool = False, activity: str = "day",
-                sun: float | None = None) -> Score:
+                new_species: bool = False, activity: str = "day") -> Score:
     """confidence: the model's (state-restricted) probability for this species on
     the whole photo, when the caller already has it. activity: "day", "night" or
-    "any" (dex.activity). sun: the sun's elevation in degrees when and where the
-    photo was taken, if known."""
+    "any" (dex.activity)."""
     if confidence is None:
         confidence = species_probability(model, image, slug, allowed)
     # Clarity: full points from 95% sure, none at 30% or less.
@@ -206,8 +180,6 @@ def score_photo(model: Classifier, image: Image.Image, slug: str, allowed: set[s
         parts.append((f"{rarity.capitalize()} animal", RARITY_BONUS[rarity]))
     if new_species:
         parts.append(("New species", NEW_SPECIES_BONUS))
-    if sun is not None and GOLDEN_HOUR_ELEVATION[0] <= sun <= GOLDEN_HOUR_ELEVATION[1]:
-        parts.append(("Golden hour", GOLDEN_HOUR_BONUS))
     if soft_background(image):
         parts.append(("Soft background", SOFT_BACKGROUND_BONUS))
     return Score(total=sum(p for _, p in parts), stars=stars_for(parts), parts=parts)
