@@ -175,7 +175,7 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel()) 
                 TABS[tab].key == "social" -> SocialScreen(state, social, onSignIn = { showAccount = true }) { dexSlug = it }
                 TABS[tab].key == "gallery" && state.account != null ->
                     OnlinePhotosScreen(social, onOpenDex = { dexSlug = it }, onDeleted = vm::reloadCollection)
-                TABS[tab].key == "collection" -> CollectionScreen(info, dex, state.collection) { dexSlug = it }
+                TABS[tab].key == "collection" -> CollectionScreen(info, dex, state.stateCode, state.collection) { dexSlug = it }
                 TABS[tab].key == "gallery" -> GalleryScreen(state.allSpecies, state.collection, onOpenDex = { dexSlug = it },
                     onDelete = vm::deleteCatch)
                 dex != null -> HotspotsScreen(info, dex, state.collection, onOpenDex = { dexSlug = it })
@@ -379,7 +379,11 @@ fun RarityTag(rarity: String) {
 private val SECTIONS = listOf("Captured", "Not captured yet", null)
 
 @Composable
-fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, collection: Map<String, Badge>, onOpen: (String) -> Unit) {
+fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, stateCode: String, collection: Map<String, Badge>,
+                     onOpen: (String) -> Unit) {
+    // The live habitat sits above the list, as on the website; one WebView for the screen.
+    val habitat = rememberHabitatView()
+    val animals = remember(info, dex, collection) { habitatAnimals(info, dex, collection) }
     val categories = remember(info) { listOf("all") + info.species.map { it.category }.distinct() }
     var category by rememberSaveable { mutableStateOf("all") }
     val month = remember { java.util.Calendar.getInstance().get(java.util.Calendar.MONTH) + 1 }
@@ -396,6 +400,9 @@ fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, collection: Map<String, 
     LazyVerticalGrid(columns = GridCells.Adaptive(72.dp), modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(8.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        item(span = { GridItemSpan(maxLineSpan) }, key = "habitat") {
+            Habitat(habitat, animals, stateCode, Modifier.padding(bottom = 4.dp), onOpen = onOpen)
+        }
         item(span = { GridItemSpan(maxLineSpan) }) {
             Row(Modifier.horizontalScrollCompat(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 categories.forEach { c ->

@@ -55,8 +55,9 @@ android {
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true }
     // Field Guide data (details.csv, ranges.json, california_outline.json) is shared with
-    // the web app, so it's packaged straight from species/ rather than copied.
-    sourceSets { getByName("main") { assets.srcDir("../../species") } }
+    // the web app, so it's packaged straight from species/ rather than copied. The same
+    // goes for the website's habitat scene and Leaflet (backend/app/static).
+    sourceSets { getByName("main") { assets.srcDirs("../../species", "../../backend/app/static") } }
     // The model is read straight from the APK; compressing 60 MB of floats gains little.
     androidResources { noCompress += "onnx" }
     testOptions { unitTests.isReturnDefaultValues = true }
