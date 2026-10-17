@@ -116,7 +116,7 @@ async def lifespan(app: FastAPI):
     with SessionLocal() as db:
         seed_species(db, st.all_states())
     dex.load(settings.details_csv, st.all_states())
-    places.load(settings.places_json)
+    places.load(st.all_states())
     goals.load(settings.sets_json)
     if clf.get_classifier() is None:
         clf.load_classifier(settings.model_path)

@@ -75,7 +75,8 @@ Without a trained model the API still runs; captures report that no model is loa
   mammal" with no photo. Players can turn off "Show my catches in this feed"
   (`PATCH /me/settings`).
 - **Locations others see** (`backend/app/places.py`): a hotspot park name,
-  "near <town>" (`species/ca_places.json`) or a region, never exact GPS.
+  "near <town>" (each state's places file in `species/states.json`) or a
+  region of the state the photo was taken in, never exact GPS.
   Common and uncommon animals also get coordinates rounded to about 10 km
   (about 100 m for friends). Rare animals get only a park or "around <town>",
   and legendary ones only a region, for everyone but you.

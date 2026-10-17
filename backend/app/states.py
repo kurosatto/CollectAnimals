@@ -28,6 +28,8 @@ class State:
     seasons: Path | None = None
     # Hours from UTC (standard time), for "this month" in the state.
     utc_offset: int = 0
+    # Towns and regions for place names ("near Asheville"); optional.
+    places: Path | None = None
 
 
 _states: dict[str, State] = {}
@@ -45,7 +47,8 @@ def load(states_json: Path) -> None:
             dex_csv=root / s["dex"] if s.get("dex") else None,
             outline=root / s["outline"], ranges=root / s["ranges"], hotspots=root / s["hotspots"],
             bounds=s["bounds"], seasons=root / s["seasons"] if s.get("seasons") else None,
-            utc_offset=s.get("utc_offset", 0))
+            utc_offset=s.get("utc_offset", 0),
+            places=root / s["places"] if s.get("places") else None)
     default_code = data.get("default", next(iter(_states)))
 
 
