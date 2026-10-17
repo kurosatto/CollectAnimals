@@ -684,3 +684,22 @@ def test_old_captures_get_a_state(client, fake):
         assert fill_capture_states(db) == 2
         a, b = db.query(Capture).order_by(Capture.id).all()
         assert (a.state, b.state) == ("CA", "NC")      # no location: the player's home state
+
+
+def test_installable_web_app(client):
+    """The manifest, service worker and icons that make the web app installable."""
+    r = client.get("/manifest.webmanifest")
+    assert r.status_code == 200 and r.headers["content-type"].startswith("application/manifest+json")
+    m = r.json()
+    assert m["name"] == "Capture Animals" and m["start_url"] == "/" and m["display"] == "standalone"
+    for icon in m["icons"]:
+        assert client.get(icon["src"]).status_code == 200, icon["src"]
+    assert {"192x192", "512x512"} <= {i["sizes"] for i in m["icons"]}
+
+    sw = client.get("/sw.js")
+    assert sw.status_code == 200 and "javascript" in sw.headers["content-type"]
+    assert sw.headers["cache-control"] == "no-cache"
+    assert client.get("/icons/apple-touch-icon.png").status_code == 200
+
+    page = client.get("/").text
+    assert 'rel="manifest"' in page and "/sw.js" in page
