@@ -1,6 +1,6 @@
 """Fill a running server with the demo "bot friends" and their catches.
 
-Each bot captures a few animals in each state (birdnerd a handful of birds) by uploading real photos from the
+Each bot captures a few animals in each state (birdnerd three birds) by uploading real photos from the
 training set (data/images/<slug>/) through the normal API, so the model really
 identifies each one (or, like a player, picks the right one from the model's
 top guesses). One set of bots serves every state: every new player starts as
@@ -25,7 +25,7 @@ from pathlib import Path
 
 import requests
 
-CATCHES = {"trailblazer": 3, "tidepooler": 3, "birdnerd": 6}  # per state
+CATCHES = {"trailblazer": 2, "tidepooler": 2, "birdnerd": 3}  # per state
 PLAYERS = {  # name: {state: species to try in order; later ones are spares}
     "trailblazer": {"CA": ["mule_deer", "elk", "california_ground_squirrel", "bighorn_sheep", "black_tailed_jackrabbit"],
                     "NC": ["white_tailed_deer", "elk", "eastern_gray_squirrel", "eastern_cottontail", "groundhog"]},
