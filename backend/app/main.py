@@ -143,6 +143,23 @@ def index():
     return FileResponse(STATIC_DIR / "index.html")
 
 
+app.mount("/icons", StaticFiles(directory=STATIC_DIR / "icons"), name="icons")
+
+
+@app.get("/manifest.webmanifest", include_in_schema=False)
+def manifest():
+    """Web app manifest: lets phones install the web app to the home screen."""
+    return FileResponse(STATIC_DIR / "manifest.webmanifest", media_type="application/manifest+json")
+
+
+@app.get("/sw.js", include_in_schema=False)
+def service_worker():
+    """Offline support. Served from the root so it covers the whole app; never cached by
+    the browser, so a new version is picked up on the next visit."""
+    return FileResponse(STATIC_DIR / "sw.js", media_type="text/javascript",
+                        headers={"Cache-Control": "no-cache"})
+
+
 @app.get("/habitat.js", include_in_schema=False)
 def habitat_js():
     """The habitat scene, shared with the Android app."""

@@ -4,6 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Capture Animals</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#2f7d4f">
+<meta name="description" content="Photograph wild animals and capture them in your Field Guide.">
+<link rel="icon" type="image/png" href="/icons/favicon-32.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Capture Animals">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <style>
   :root { --bg:#f6f4ee; --card:#fff; --ink:#1d2a22; --muted:#6b7a70; --accent:#2f7d4f; --line:#e3e0d6;
           --common:#7a8a80; --uncommon:#2f7d4f; --rare:#2d5fa8; --legendary:#b7791f; }
@@ -13,6 +22,8 @@
   body { margin:0; font-family:system-ui,sans-serif; background:var(--bg); color:var(--ink); }
   main { max-width:960px; margin:0 auto; padding:16px; }
   header { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+  .head-right { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:4px 12px; }
+  #offline { font-size:.85rem; padding:2px 8px; border-radius:999px; background:var(--line); }
   #who label { display:inline-flex; align-items:center; gap:4px; white-space:nowrap; }
   #who:not(.hidden) { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:4px 12px; }
   h1 { font-size:1.5rem; margin:.5rem 0; }
@@ -262,9 +273,13 @@
 <main>
   <header>
     <h1>Capture Animals <span class="muted" style="font-size:1rem" id="state-name">California</span></h1>
+    <div class="head-right">
+    <span id="offline" class="hidden" title="No connection: your Field Guide and habitat still work, new captures need the internet">Offline</span>
+    <button class="link hidden" id="install">Install app</button>
     <div id="who" class="hidden"><button class="link" id="username"></button>
       <label title="Your primary location: your Field Guide, Parks and maps follow it, and friends see it first">📍 <select id="my-state" aria-label="Primary location"></select></label>
       <button class="link" id="logout">Log out</button></div>
+    </div>
   </header>
 
 <nav id="tabs" class="hidden">
@@ -424,6 +439,7 @@ function setToken(t) {
   token = t;
   knownRequests = null;
   try { t ? localStorage.setItem("token", t) : localStorage.removeItem("token"); } catch {}
+  if (!t) forgetOfflineData();
   render();
 }
 
@@ -1785,6 +1801,37 @@ async function render() {
     } catch {}
   }
 }
+// Progressive web app: offline support (sw.js) and an "Install app" button.
+function forgetOfflineData() {
+  // Saved game data belongs to whoever was logged in; drop it on log out.
+  navigator.serviceWorker?.controller?.postMessage("logout");
+  if (window.caches) caches.delete("api-v1").catch(() => {});
+}
+if ("serviceWorker" in navigator && window.isSecureContext) {
+  addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
+}
+const showOffline = () => $("offline").classList.toggle("hidden", navigator.onLine);
+addEventListener("online", showOffline); addEventListener("offline", showOffline); showOffline();
+const installed = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+let installPrompt = null;
+addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault(); installPrompt = e; $("install").classList.remove("hidden");
+});
+addEventListener("appinstalled", () => { installPrompt = null; $("install").classList.add("hidden"); });
+// iPhone and iPad Safari have no install prompt; the button explains the Share menu instead.
+const iosSafari = /iP(hone|ad|od)/.test(navigator.userAgent) && !/CriOS|FxiOS|EdgiOS/.test(navigator.userAgent);
+if (iosSafari && !installed()) $("install").classList.remove("hidden");
+$("install").onclick = async () => {
+  if (installPrompt) {
+    installPrompt.prompt();
+    await installPrompt.userChoice;
+    installPrompt = null;  // one use; the browser offers it again later if declined
+    $("install").classList.add("hidden");
+  } else if (iosSafari) {
+    alert("To install Capture Animals, tap the Share button, then \"Add to Home Screen\".");
+  }
+};
+
 habInit();
 loadStates().then(render);
 </script>
