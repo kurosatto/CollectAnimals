@@ -1,7 +1,9 @@
 package com.captureanimals.app
 
+import android.Manifest
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -36,6 +38,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -57,6 +61,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -85,10 +90,13 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        FriendAlerts.schedule(this)
+        // A friend request notification opens the Friends tab.
+        val openTab = intent?.getStringExtra(FriendAlerts.EXTRA_TAB)
         setContent {
             MaterialTheme(colorScheme = if (isSystemInDarkTheme()) darkColorScheme(primary = Forest80)
                                         else lightColorScheme(primary = Forest40)) {
-                App()
+                App(openTab = openTab)
             }
         }
     }
@@ -106,12 +114,26 @@ fun rarityColor(rarity: String): Color = when (rarity) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel()) {
+fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), openTab: String? = null) {
     val state by vm.state.collectAsStateWithLifecycle()
-    var tabChoice by rememberSaveable { mutableIntStateOf(0) }
+    val socialState by social.state.collectAsStateWithLifecycle()
+    var tabChoice by rememberSaveable { mutableIntStateOf(TABS.indexOfFirst { it.key == openTab }.coerceAtLeast(0)) }
     var showAccount by rememberSaveable { mutableStateOf(false) }
-    // A different player (or none) sees nothing of the last one's feed and album.
-    androidx.compose.runtime.LaunchedEffect(state.account?.username) { social.clear() }
+    // Android 13+ asks before showing notifications; ask once a player has signed in.
+    val askNotify = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    val context = LocalContext.current
+    // A different player (or none) sees nothing of the last one's feed and album. While
+    // the app is open, friend requests are checked every minute for the tab's badge.
+    LaunchedEffect(state.account?.username) {
+        social.clear()
+        if (state.account == null) return@LaunchedEffect
+        if (Build.VERSION.SDK_INT >= 33 && !FriendAlerts.canNotify(context)) askNotify.launch(Manifest.permission.POST_NOTIFICATIONS)
+        while (true) {
+            social.checkRequests()
+            kotlinx.coroutines.delay(60_000)
+        }
+    }
+    val requests = socialState.friends?.incoming?.size ?: 0
     if (showAccount) AccountDialog(state, vm) { showAccount = false }
     var dexSlug by rememberSaveable { mutableStateOf<String?>(null) }
     val info = state.info
@@ -173,7 +195,11 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel()) 
                 if (t.key == "hotspots" && dex?.parks.isNullOrEmpty()) return@forEachIndexed
                 // Six tabs: one line of small text each, so "Field Guide" doesn't wrap.
                 NavigationBarItem(selected = tab == i, onClick = { tabChoice = i },
-                    icon = { TabIcon(t.icon, Modifier.size(28.dp)) },
+                    icon = {
+                        BadgedBox(badge = { if (t.key == "social" && requests > 0) Badge { Text("$requests") } }) {
+                            TabIcon(t.icon, Modifier.size(28.dp))
+                        }
+                    },
                     label = { Text(t.title, maxLines = 1, softWrap = false, fontSize = 11.sp) })
             }
         }
