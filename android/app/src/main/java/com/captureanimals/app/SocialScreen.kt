@@ -7,6 +7,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -85,6 +95,8 @@ data class SocialState(
     val commentsFor: OnlinePhoto? = null,
     val comments: List<PhotoComment>? = null,
     val commentError: String? = null,
+    // The photo open full screen (its comments load into the fields above).
+    val viewing: OnlinePhoto? = null,
     // The friend whose Field Guide is open, and the guide once loaded.
     val guideFor: String? = null,
     val guide: FriendGuide? = null,
@@ -125,7 +137,8 @@ class SocialViewModel(app: Application) : AndroidViewModel(app) {
         fun swap(list: List<OnlinePhoto>) = list.map {
             if (it.id == p.id) it.copy(likedByMe = on, likeCount = it.likeCount + if (on) 1 else -1) else it
         }
-        _state.update { it.copy(feed = swap(it.feed), album = it.album?.let(::swap)) }
+        _state.update { it.copy(feed = swap(it.feed), album = it.album?.let(::swap),
+            viewing = it.viewing?.let { v -> swap(listOf(v)).first() }) }
         viewModelScope.launch {
             runCatching { Online.like(p.id, on) }.onFailure { e -> _state.update { it.copy(message = e.message) } }
         }
@@ -133,7 +146,8 @@ class SocialViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun setCommentCount(photoId: Int, n: Int) {
         fun swap(list: List<OnlinePhoto>) = list.map { if (it.id == photoId) it.copy(commentCount = n) else it }
-        _state.update { it.copy(feed = swap(it.feed), album = it.album?.let(::swap)) }
+        _state.update { it.copy(feed = swap(it.feed), album = it.album?.let(::swap),
+            viewing = it.viewing?.let { v -> swap(listOf(v)).first() }) }
     }
 
     fun openComments(p: OnlinePhoto) {
@@ -146,6 +160,16 @@ class SocialViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun closeComments() = _state.update { it.copy(commentsFor = null, comments = null, commentError = null) }
+
+    /** Full screen, with its likes and comments. */
+    fun openPhoto(p: OnlinePhoto) {
+        _state.update { it.copy(viewing = p) }
+        openComments(p)
+    }
+    fun closePhoto() {
+        _state.update { it.copy(viewing = null) }
+        closeComments()
+    }
 
     fun postComment(text: String, done: () -> Unit) {
         val p = _state.value.commentsFor ?: return
@@ -329,6 +353,7 @@ fun SocialScreen(state: UiState, social: SocialViewModel, section: String, onSig
         if (section == "feed") FeedSection(s, social, state, onOpenDex) else FriendsSection(s, social)
     }
     CommentsDialog(s, social)
+    PhotoViewer(s, social)
     FriendGuideDialog(s, social, state, onOpenDex)
 }
 
@@ -336,42 +361,97 @@ fun SocialScreen(state: UiState, social: SocialViewModel, section: String, onSig
 @Composable
 fun CommentsDialog(s: SocialState, social: SocialViewModel) {
     val p = s.commentsFor ?: return
-    var text by rememberSaveable(p.id) { mutableStateOf("") }
+    if (s.viewing != null) return  // the full-screen photo shows them itself
     AlertDialog(onDismissRequest = social::closeComments,
         confirmButton = { TextButton(onClick = social::closeComments) { Text("Close") } },
         title = { Text("Comments · ${p.commonName ?: "photo"} by ${if (p.isMine) "you" else p.username}",
             maxLines = 2, overflow = TextOverflow.Ellipsis) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                val cs = s.comments
-                Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    when {
-                        cs == null -> CircularProgressIndicator(Modifier.size(24.dp))
-                        cs.isEmpty() -> Text("No comments yet. Say something nice!", color = MaterialTheme.colorScheme.outline)
-                        else -> cs.forEach { c ->
-                            Row(verticalAlignment = Alignment.Top) {
-                                Column(Modifier.weight(1f)) {
-                                    Text(if (c.isMine) "You" else c.username, fontWeight = FontWeight.Bold,
-                                        style = MaterialTheme.typography.bodySmall)
-                                    Text(c.body, style = MaterialTheme.typography.bodyMedium)
-                                }
-                                if (c.canDelete) TextButton(onClick = { social.deleteComment(c) },
-                                    contentPadding = PaddingValues(0.dp)) { Text("Delete") }
-                            }
+        text = { Comments(s, social, p) })
+}
+
+@Composable
+private fun Comments(s: SocialState, social: SocialViewModel, p: OnlinePhoto) {
+    var text by rememberSaveable(p.id) { mutableStateOf("") }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        val cs = s.comments
+        Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            when {
+                cs == null -> CircularProgressIndicator(Modifier.size(24.dp))
+                cs.isEmpty() -> Text("No comments yet. Say something nice!", color = MaterialTheme.colorScheme.outline)
+                else -> cs.forEach { c ->
+                    Row(verticalAlignment = Alignment.Top) {
+                        Column(Modifier.weight(1f)) {
+                            Text(if (c.isMine) "You" else c.username, fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.bodySmall)
+                            Text(c.body, style = MaterialTheme.typography.bodyMedium)
                         }
-                    }
-                }
-                s.commentError?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(text, { if (it.length <= 300) text = it }, Modifier.weight(1f),
-                        placeholder = { Text("Add a comment") }, maxLines = 3)
-                    Button(enabled = text.isNotBlank(), onClick = { social.postComment(text.trim()) { text = "" } }) {
-                        Text("Post")
+                        if (c.canDelete) TextButton(onClick = { social.deleteComment(c) },
+                            contentPadding = PaddingValues(0.dp)) { Text("Delete") }
                     }
                 }
             }
-        })
+        }
+        s.commentError?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedTextField(text, { if (it.length <= 300) text = it }, Modifier.weight(1f),
+                placeholder = { Text("Add a comment") }, maxLines = 3)
+            Button(enabled = text.isNotBlank(), onClick = { social.postComment(text.trim()) { text = "" } }) {
+                Text("Post")
+            }
+        }
+    }
+}
+
+/**
+ * One photo full screen at the size the server keeps (up to 1600 px), pinch to zoom, with
+ * its likes and comments underneath. Only photos the server sent a url for can open, so
+ * private players and animals you haven't unlocked stay hidden as in the feed.
+ */
+@Composable
+fun PhotoViewer(s: SocialState, social: SocialViewModel) {
+    val p = s.viewing ?: return
+    Dialog(onDismissRequest = social::closePhoto, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Column(Modifier.fillMaxSize().background(Color.Black).imePadding()) {
+            Box(Modifier.weight(1f).fillMaxWidth().clipToBounds(), Alignment.Center) {
+                var scale by remember(p.id) { mutableFloatStateOf(1f) }
+                var offset by remember(p.id) { mutableStateOf(Offset.Zero) }
+                val zoom = rememberTransformableState { z, pan, _ ->
+                    scale = (scale * z).coerceIn(1f, 5f)
+                    offset = if (scale == 1f) Offset.Zero else offset + pan * scale
+                }
+                val bmp by produceState<Bitmap?>(null, p.url) { value = p.url?.let { Online.image(it, 1600) } }
+                bmp?.let {
+                    Image(it.asImageBitmap(), contentDescription = p.commonName, contentScale = ContentScale.Fit,
+                        modifier = Modifier.fillMaxSize().transformable(zoom)
+                            .graphicsLayer(scaleX = scale, scaleY = scale, translationX = offset.x, translationY = offset.y))
+                } ?: CircularProgressIndicator()
+                TextButton(onClick = social::closePhoto, modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)
+                    .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(50))) {
+                    Text("✕", color = Color.White, style = MaterialTheme.typography.titleLarge)
+                }
+            }
+            Surface(Modifier.fillMaxWidth().heightIn(max = 360.dp)) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(p.commonName ?: "Photo", fontWeight = FontWeight.Bold, color = rarityColor(p.rarity),
+                                style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            p.stars?.let { Stars(it) }
+                            Text(listOfNotNull(if (p.isMine) "You" else p.username, p.place, dateOf(p.caughtAt)).joinToString(" · "),
+                                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline,
+                                maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        }
+                        TextButton(onClick = { social.toggleLike(p) }, enabled = !p.isMine) {
+                            Text((if (p.likedByMe) "♥ " else "♡ ") + p.likeCount)
+                        }
+                    }
+                    HorizontalDivider()
+                    Comments(s, social, p)
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -406,7 +486,7 @@ private fun FeedCard(p: OnlinePhoto, social: SocialViewModel, onOpenDex: (String
             if (p.url != null) {
                 RemoteImage(p.url, p.commonName, Modifier.fillMaxWidth().aspectRatio(4f / 3f)
                     .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
-                    .clickable(enabled = p.slug != null) { p.slug?.let(onOpenDex) })
+                    .clickable { social.openPhoto(p) })
             } else {
                 // Animals you haven't unlocked stay hidden, as on the website.
                 Box(Modifier.fillMaxWidth().height(120.dp).background(MaterialTheme.colorScheme.surfaceVariant),
@@ -417,8 +497,10 @@ private fun FeedCard(p: OnlinePhoto, social: SocialViewModel, onOpenDex: (String
             }
             Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
+                    // The photo opens full screen; the name opens the Field Guide entry.
                     Text(p.commonName ?: "A ${p.rarity} ${p.category}", fontWeight = FontWeight.Bold,
-                        color = rarityColor(p.rarity), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        color = rarityColor(p.rarity), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.clickable(enabled = p.slug != null) { p.slug?.let(onOpenDex) })
                     if (p.url != null) p.stars?.let { Stars(it) }
                     Text(listOfNotNull(if (p.isMine) "You" else p.username, p.place, dateOf(p.caughtAt)).joinToString(" · "),
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline,
@@ -615,10 +697,11 @@ fun OnlinePhotosScreen(social: SocialViewModel, onOpenDex: (String) -> Unit, onD
                 Column {
                     RemoteImage(p.url, p.commonName, Modifier.fillMaxWidth().aspectRatio(1f)
                         .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
-                        .clickable { p.slug?.let(onOpenDex) }, maxSide = 512)
+                        .clickable { social.openPhoto(p) }, maxSide = 512)
                     Column(Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
                         Text(p.commonName ?: "", style = MaterialTheme.typography.titleSmall, maxLines = 1,
-                            overflow = TextOverflow.Ellipsis, color = rarityColor(p.rarity))
+                            overflow = TextOverflow.Ellipsis, color = rarityColor(p.rarity),
+                            modifier = Modifier.clickable { p.slug?.let(onOpenDex) })
                         p.stars?.let { Stars(it) }
                         Text(dateOf(p.caughtAt) + if (p.likeCount > 0) " · ♥ ${p.likeCount}" else "",
                             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
@@ -635,6 +718,7 @@ fun OnlinePhotosScreen(social: SocialViewModel, onOpenDex: (String) -> Unit, onD
         }
     }
     CommentsDialog(s, social)
+    PhotoViewer(s, social)
     confirm?.let { p ->
         AlertDialog(
             onDismissRequest = { confirm = null },
