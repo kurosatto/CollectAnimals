@@ -141,8 +141,15 @@
   nav#tabs button.on .ic { opacity:1; transform:translateY(-1px); }
   nav#tabs button { white-space:nowrap; }
   nav#tabs button.on { color:var(--accent); font-weight:600; }
+  nav#tabs button { position:relative; }
+  nav#tabs .badge { position:absolute; top:3px; left:calc(50% + 6px); min-width:18px; padding:0 5px; border-radius:9px;
+                    background:#d2423a; color:#fff; font-size:.7rem; font-weight:700; line-height:18px; }
+  #toast { position:fixed; left:50%; top:12px; transform:translateX(-50%); z-index:20; max-width:calc(100% - 32px);
+           background:var(--card); color:var(--ink); border:1px solid var(--line); border-radius:12px;
+           padding:10px 14px; box-shadow:0 4px 16px rgba(0,0,0,.15); cursor:pointer; }
   body.authed main { padding-bottom:84px; }
   @media (min-width:720px) {
+    nav#tabs .badge { position:static; }
     nav#tabs { position:sticky; top:0; bottom:auto; margin:12px 0 0; border:1px solid var(--line);
                border-radius:12px; }
     nav#tabs button { grid-auto-flow:column; justify-content:center; gap:6px; font-size:.95rem; padding:10px; }
@@ -341,10 +348,12 @@
         <button type="submit">Add friend</button>
       </form>
       <p id="friend-msg" class="muted"></p>
+      <button id="notify-on" class="ghost hidden">🔔 Notify me about friend requests</button>
       <div id="friend-lists"></div>
     </div>
   </section>
 </main>
+<div id="toast" class="hidden"></div>
 <dialog id="dex"><div class="dex">
   <div class="dex-head">
     <img class="sprite dex-sprite" id="dex-sprite" alt="">
@@ -406,6 +415,7 @@ async function api(path, opts = {}) {
 
 function setToken(t) {
   token = t;
+  knownRequests = null;
   try { t ? localStorage.setItem("token", t) : localStorage.removeItem("token"); } catch {}
   render();
 }
@@ -1417,6 +1427,7 @@ $("share-feed").onchange = async (e) => {
 
 async function loadFriends() {
   const f = await api("/friends");
+  friendAlerts(f);
   const box = $("friend-lists");
   box.innerHTML = "";
   const section = (title, people, actions) => {
@@ -1457,6 +1468,55 @@ async function loadFriends() {
   section("Bot friends to add 🤖", bots, [["Add", "", (u) => api("/friends/requests", { method: "POST",
     headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: u }) })]]);
 }
+
+// --- friend request alerts ---------------------------------------------------
+// The Friends tab shows how many requests are waiting. Requests that arrive while the
+// site is open pop up a note, and a browser notification too once the player allows it.
+let knownRequests = null;  // usernames of requests already shown; null until the first load
+
+function friendAlerts(f) {
+  const names = f.incoming.map((p) => p.username);
+  const btn = document.querySelector('#tabs button[data-tab="friends"]');
+  btn.querySelector(".badge")?.remove();
+  if (names.length) btn.append(el("span", "badge", String(names.length)));
+  document.title = (names.length ? `(${names.length}) ` : "") + "Capture Animals";
+  const fresh = knownRequests ? names.filter((n) => !knownRequests.has(n)) : [];
+  knownRequests = new Set(names);
+  if (fresh.length) requestAlert(fresh);
+  $("notify-on").classList.toggle("hidden", !("Notification" in window) || Notification.permission !== "default");
+}
+
+function requestAlert(names) {
+  const text = names.length === 1 ? `👋 ${names[0]} sent you a friend request`
+    : `👋 ${names.length} new friend requests`;
+  const toast = $("toast");
+  toast.textContent = text;
+  toast.classList.remove("hidden");
+  toast.onclick = () => { toast.classList.add("hidden"); showTab("friends"); };
+  clearTimeout(requestAlert.timer);
+  requestAlert.timer = setTimeout(() => toast.classList.add("hidden"), 8000);
+  if (document.hidden && "Notification" in window && Notification.permission === "granted") {
+    const n = new Notification("Capture Animals", { body: text.slice(3), icon: "/sprites/ui_tab_friends.png",
+                                                    tag: "friend-requests" });
+    n.onclick = () => { window.focus(); showTab("friends"); n.close(); };
+  }
+}
+
+$("notify-on").onclick = async () => {
+  await Notification.requestPermission().catch(() => {});
+  $("notify-on").classList.add("hidden");
+};
+
+// Check for new requests every minute; the list itself only redraws when something changed.
+setInterval(async () => {
+  if (!token) return;
+  try {
+    const f = await api("/friends");
+    const before = knownRequests;
+    friendAlerts(f);
+    if (before && f.incoming.some((p) => !before.has(p.username))) loadFriends();
+  } catch {}
+}, 60_000);
 
 // New players start with the example bots as friends; say so plainly, once.
 async function botWelcome(username) {

@@ -198,11 +198,18 @@ class SocialViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun loadFriends() = run {
-        val f = Online.friends()
-        val s = runCatching { Online.suggestions() }.getOrDefault(emptyList())
-        _state.update { it.copy(friends = f, suggestions = s) }
+    fun loadFriends() = run { reloadFriends() }
+
+    /** Refreshes friend requests for the Friends tab's badge, without a spinner or errors. */
+    fun checkRequests() {
+        if (!Online.signedIn) return
+        viewModelScope.launch {
+            runCatching { Online.friends() }.onSuccess { f -> _state.update { it.copy(friends = f) }; seen(f) }
+        }
     }
+
+    // Requests shown in the app don't need a phone notification later.
+    private fun seen(f: Friends) = FriendAlerts.markSeen(getApplication<Application>(), f)
 
     fun addFriend(username: String) = run {
         val status = Online.addFriend(username.trim())
@@ -217,6 +224,7 @@ class SocialViewModel(app: Application) : AndroidViewModel(app) {
 
     private suspend fun reloadFriends() {
         val f = Online.friends()
+        seen(f)
         val s = runCatching { Online.suggestions() }.getOrDefault(emptyList())
         _state.update { it.copy(friends = f, suggestions = s) }
     }

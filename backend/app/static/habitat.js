@@ -44,7 +44,9 @@ const HAB_ROLES = [
 const HAB_DEFAULT_ROLE = { bird: "fly", amphibian: "shore", marine: "swim", fish: "paddle" };
 const HAB_FLIERS = new Set(["fly", "soar", "hover", "flutter", "dive", "skim"]);
 // Big birds glide between bursts of slow wingbeats.
-const HAB_GLIDERS = /pelican|gull|heron|egret|goose|swan|vulture|condor|eagle|osprey|hawk|ibis|tern|skimmer/;
+const HAB_GLIDERS = /pelican|gull|heron|egret|goose|swan|vulture|condor|eagle|osprey|hawk|ibis|(^|_)tern|skimmer/;
+// Sea birds rest and sleep on the sea stack (or the lighthouse) instead of the tree.
+const HAB_SEABIRDS = /gull|pelican|royal_tern|oystercatcher|black_skimmer|osprey|cormorant/;
 // Ground animals that look around while they stand still.
 const HAB_LOOKERS = new Set(["walk", "hop", "shore", "wade", "beach"]);
 const HAB_SEA = new Set(["swim", "jelly", "reef"]);
@@ -161,6 +163,50 @@ function habNote() {
   $("hab-peek").textContent = hab.peek ? "Back to now" : night || phase === "dusk" ? "☀️ Peek at daytime" : "🌙 Peek at night";
 }
 
+// Birds out on the landmark are far away, so they're drawn smaller.
+const HAB_PERCH_SCALE = .72;
+// Spots on the state's coastal landmark where sea birds stand: [x, feet y].
+// California's sea stack: two on the flat top, one on the ledge, one on the
+// small rock beside it. North Carolina's lighthouse: the gallery and the base.
+function habPerches(L, state) {
+  if (state === "CA") {
+    const sx = L.w - Math.round(L.w * .1), top = L.water - 44;
+    return [[sx - 7, top], [sx + 6, top], [sx + 17, top + 17], [sx - 27, L.water - 6]];
+  }
+  if (state === "NC") {
+    const lx = L.sea - 12, topY = L.water - 58;
+    return [[lx - 4, topY - 1], [lx + 5, topY - 1], [lx - 6, L.water], [lx + 6, L.water]];
+  }
+  return [];
+}
+
+// A free perch for this bird (keeping the one it has), or null.
+function habPerchFor(a) {
+  const spots = habPerches(hab.L, habState());
+  hab.perched = hab.perched || {};
+  for (const [i, who] of Object.entries(hab.perched)) if (!hab.animals.includes(who) || who.perch !== +i) delete hab.perched[i];
+  if (a.perch !== undefined && hab.perched[a.perch] === a && spots[a.perch]) return a.perch;
+  const free = spots.findIndex((_, i) => !hab.perched[i]);
+  if (free < 0) return null;
+  hab.perched[free] = a;
+  return (a.perch = free);
+}
+function habLeavePerch(a) {
+  if (a.perch !== undefined && hab.perched && hab.perched[a.perch] === a) delete hab.perched[a.perch];
+  delete a.perch;
+}
+
+// Where a sleeping animal rests, or null if it sleeps where it is: sea birds on
+// the coastal landmark while there's room, other fliers in the tree.
+function habRestSpot(a, awake, counter) {
+  if (awake) return null;
+  if (HAB_SEABIRDS.test(a.s.slug)) {
+    const i = habPerchFor(a);
+    if (i !== null) return [...habPerches(hab.L, habState())[i], HAB_PERCH_SCALE, HAB_PERCH_SCALE];
+  }
+  return HAB_FLIERS.has(a.role) ? habRoost(counter.n++) : null;
+}
+
 // Sleeping fliers roost in the tree, then on the grass under it.
 function habRoost(i) {
   const t = hab.L.tree;
@@ -224,8 +270,51 @@ function habLeap(a, dt) {
   if (k >= 1) { a.mode = null; a.tilt = 0; a.leapIn = rnd(5, 12); a.pause = rnd(.5, 2); [a.tx, a.ty] = habSpot(a); }
 }
 
+// Awake sea birds: now and then fly to a free perch, rest there looking about,
+// then take off again. Returns true while it's handling the bird.
+function habPerchStep(a, dt) {
+  // Woke up on the perch it slept on: stay a moment before flying off.
+  if (a.perch !== undefined && a.mode !== "toPerch" && a.mode !== "perched") {
+    const spot = habPerches(hab.L, habState())[a.perch];
+    if (spot) { [a.x, a.y] = spot; a.mode = "perched"; a.rest = rnd(2, 6); a.look = rnd(1, 3); }
+  }
+  if (a.mode === "toPerch" || a.mode === "perched") {
+    const spot = a.perch !== undefined && habPerches(hab.L, habState())[a.perch];
+    if (!spot) { a.mode = a.role === "dive" ? "fly" : null; habLeavePerch(a); return false; }
+    if (a.mode === "toPerch") {
+      const dx = spot[0] - a.x, dy = spot[1] - a.y, d = Math.hypot(dx, dy), step = Math.max(a.speed, 26) * dt;
+      a.tilt = 0;
+      if (d <= step) { [a.x, a.y] = spot; a.mode = "perched"; a.rest = rnd(5, 11); a.look = rnd(1, 3); }
+      else { a.x += dx / d * step; a.y += dy / d * step; a.dir = Math.sign(dx) || a.dir; }
+      return true;
+    }
+    a.rest -= dt;
+    if ((a.look -= dt) <= 0) { a.look = rnd(1.2, 3.5); a.dir = -a.dir; }
+    if (a.rest <= 0) {  // take off
+      habLeavePerch(a);
+      a.mode = a.role === "dive" ? "fly" : null;
+      a.vx = a.dir || pick(-1, 1);
+      a.cy = a.role === "dive" ? habSpot(a)[1] : a.cy;
+      a.perchIn = rnd(14, 30);
+      if (a.role === "dive") a.diveIn = rnd(3, 8);
+    }
+    return a.mode === "perched";
+  }
+  if (a.mode === "dive" || a.mode === "under" || a.mode === "rise") return false;
+  if (a.perchIn === undefined) a.perchIn = rnd(6, 20);
+  if ((a.perchIn -= dt) <= 0) {
+    a.perchIn = rnd(8, 16);
+    if (habPerchFor(a) !== null) { a.mode = "toPerch"; return true; }
+  }
+  return false;
+}
+
 function habStep(a, dt, awake) {
   a.phase += dt;
+  if (awake && HAB_SEABIRDS.test(a.s.slug) && HAB_FLIERS.has(a.role) && habPerchStep(a, dt)) return;
+  if (!awake && (a.mode === "toPerch" || a.mode === "perched")) a.mode = a.role === "dive" ? "fly" : null;
+  // Awake birds that don't fly to perches (oystercatchers wading) give theirs up.
+  if (awake && a.perch !== undefined && !HAB_FLIERS.has(a.role)) habLeavePerch(a);
   if (!awake) {
     // Fell asleep mid-leap: settle back in the water.
     if (a.mode === "leap") { a.y = a.ly; a.mode = null; a.tilt = 0; a.leapIn = rnd(5, 12); }
@@ -300,6 +389,7 @@ function habFlap(a, rate) {
 // bob, wingbeat or squash that goes with how it moves.
 function habPose(a, awake, roost) {
   if (roost) return roost;
+  if (awake && a.mode === "perched") return [a.x, a.y, HAB_PERCH_SCALE, HAB_PERCH_SCALE, 0];
   let { x, y } = a, sx = 1, sy = 1;
   const tilt = a.tilt || 0;
   if (!awake) return [x, y, 1, 1 + Math.sin(a.phase * 1.3) * .03, 0];
@@ -346,6 +436,8 @@ function habAnim(a, awake, roost) {
   const has = (k) => acts.includes(k);
   const cyc = (t) => ((Math.floor(t) % 4) + 4) % 4;
   if (!awake || roost) return ["sleep", cyc(a.phase * 1.2)];
+  if (a.mode === "perched") return ["idle", 0];
+  if (a.mode === "toPerch") return has("fly") ? ["fly", cyc(a.phase * 9 / (2 * Math.PI) * 4)] : ["idle", 0];
   switch (a.role) {
     case "walk": case "shore": case "wade": case "beach":
       return a.pause > 0 || a.peck > 0 || !has("walk") ? ["idle", 0] : ["walk", cyc(a.odo / 3)];
@@ -375,17 +467,18 @@ function habDraw() {
   c.imageSmoothingEnabled = false;
   c.drawImage(hab.bg, 0, 0);
   habAmbient(c, L, phase);
-  let roosting = 0;
+  const roosting = { n: 0 };
   const poses = hab.animals.map((a) => {
     const awake = habAwake(a, phase);
-    const roost = !awake && HAB_FLIERS.has(a.role) ? habRoost(roosting++) : null;
+    const roost = habRestSpot(a, awake, roosting);
     let [x, y, sx = 1, sy = 1, tilt = 0] = habPose(a, awake, roost);
     const anim = habAnim(a, awake, roost);
     // The frames already beat the wings, step the legs and breathe, so drop the
     // squash that stood in for them (hops and jellies keep theirs).
-    if (anim && anim[0] !== "idle" && a.role !== "hop" && a.role !== "jelly" && a.mode !== "rise") sx = sy = 1;
-    return { a, awake, phase, anim, roost: !!roost, x: Math.round(x), y: Math.round(y), sx, sy, tilt,
-             sky: awake && HAB_FLIERS.has(a.role), hidden: awake && a.mode === "under" };
+    if (anim && anim[0] !== "idle" && a.role !== "hop" && a.role !== "jelly" && a.mode !== "rise" && !(roost && roost[2])) sx = sy = 1;
+    const perched = awake && a.mode === "perched";
+    return { a, awake, phase, anim, roost: !!roost || perched, x: Math.round(x), y: Math.round(y), sx, sy, tilt,
+             sky: awake && HAB_FLIERS.has(a.role) && !perched, hidden: awake && a.mode === "under" };
   });
   const sea = poses.filter((p) => HAB_SEA.has(p.a.role) && !p.sky).sort((p, q) => p.y - q.y);
   const land = poses.filter((p) => !HAB_SEA.has(p.a.role) && !p.sky).sort((p, q) => p.y - q.y);
@@ -514,10 +607,10 @@ function habTap(ev) {
   const x = (ev.clientX - r.left) / r.width * hab.L.w, y = (ev.clientY - r.top) / r.height * HAB_H;
   const phase = habPhase();
   // Front-most first: fliers, then the land and sea animals nearest the bottom.
-  let roosting = 0;
+  const roosting = { n: 0 };
   const hits = hab.animals.map((a) => {
     const awake = habAwake(a, phase);
-    const roost = !awake && HAB_FLIERS.has(a.role) ? habRoost(roosting++) : null;
+    const roost = habRestSpot(a, awake, roosting);
     const [px, py] = habPose(a, awake, roost);
     return { a, awake, px, py, z: (awake && HAB_FLIERS.has(a.role) ? 1000 : 0) + py };
   }).filter((h) => Math.abs(x - h.px) <= 18 && y >= h.py - 34 && y <= h.py + 4).sort((p, q) => q.z - p.z);
@@ -924,19 +1017,63 @@ function habBackground(L, phase, state) {
   }
   // State extras on the shore and in the sea.
   if (state === "CA") {
-    // A sea stack off the coast: layered rock, white tops where birds rest, surf around it.
-    const st = pxLayer(W, H), sx = W - Math.round(W * .1), rk = P("#4f463f", "#6a5f55", "#857868", "#a39582");
-    for (let y = L.water - 30; y < L.water + 3; y++) {
-      const k = (y - L.water + 30) / 33, hw = Math.round(6 + k * 9 + Math.sin(y * .7) * 1.2);
-      for (let dx = -hw; dx <= hw; dx++) {
-        const v = .78 - (dx + hw) / (2 * hw + 1) * .75 + ((y % 6 === 0) ? -.2 : 0) + (hash2(sx + dx, y >> 1, 8) - .5) * .25;
-        st.set(sx + dx, y, ramp(rk, v, sx + dx, y));
+    // A sea stack off the coast, like the ones along Big Sur: layered sandstone
+    // stepping out in ledges, an arch worn through its foot, a flat top streaked
+    // white where the sea birds stand, a smaller rock beside it and surf at the base.
+    const st = pxLayer(W, H), sx = W - Math.round(W * .1), top = L.water - 44, base = L.water + 3;
+    const rk = P("#3e3630", "#56493f", "#6f6052", "#8a7a68", "#a6957f");
+    const wet = P("#22201f", "#2f2c29", "#3d3934"), guano = P("#cfcabd", "#ece8dc", "#fbfaf4");
+    const halfW = (y) => {
+      const band = Math.floor((y - top) / 8), k = (y - top) / (base - top);
+      const left = 11 + band * 1.6 + k * 3 + Math.sin(y * .45) * .8;
+      // the right side juts out into a ledge partway down
+      const right = 10 + band * 1.2 + k * 2 + (y >= top + 17 ? 6 : 0) + Math.sin(y * .6 + 1) * .7;
+      return [Math.round(left), Math.round(right)];
+    };
+    const inArch = (x, y) => ((x - (sx - 3)) / 5) ** 2 + ((y - base) / 12) ** 2 < 1;
+    for (let y = top; y <= base; y++) {
+      const [hl, hr] = halfW(y), ledge = (y - top) % 8 === 0 || y === top + 17, under = (y - top) % 8 === 7 || y === top + 18;
+      for (let dx = -hl; dx <= hr; dx++) {
+        const x = sx + dx;
+        // round off the top corners
+        if (y - top < 2 && (dx < -hl + 2 - (y - top) || dx > hr - 2 + (y - top))) continue;
+        if (inArch(x, y)) continue;
+        const across = (dx + hl) / (hl + hr + 1);
+        let v = .85 - across * .75 + (ledge ? .2 : 0) - (under ? .25 : 0) + (fbm(x / 3, y / 2, 11) - .5) * .35;
+        // cracks running down the rock
+        if (hash2(Math.round(x / 2), y >> 3, 12) > .86 && hash2(x, 3, 13) > .5) v -= .3;
+        st.set(x, y, y >= L.water - 1 ? ramp(wet, v, x, y) : ramp(rk, v, x, y));
       }
     }
-    for (let dx = -5; dx <= 4; dx++) st.set(sx + dx, L.water - 30, P("#f4f1e8"));
-    st.onto(img, P("#2c2622"));
-    const foam = P("#e9f6ff");
-    for (let dx = -20; dx <= 20; dx++) if (Math.abs(dx) > 14 && hash2(dx, 9) > .3) img.set(sx + dx, L.water + 3, foam);
+    // White streaks where the birds stand: the top, the ledge, dribbling down.
+    const [htl, htr] = halfW(top);
+    for (let dx = -htl + 1; dx <= htr - 1; dx++) {
+      st.set(sx + dx, top, ramp(guano, .9, sx + dx, top));
+      if (hash2(dx, 4, 14) > .45) st.set(sx + dx, top + 1, ramp(guano, .5, sx + dx, top + 1));
+      if (hash2(dx, 5, 15) > .72) for (let k = 2, n = 2 + Math.floor(hash2(dx, 6, 16) * 6); k < n; k++) st.set(sx + dx, top + k, guano[k % 2]);
+    }
+    const [, hrL] = halfW(top + 17);
+    for (let dx = hrL - 6; dx <= hrL; dx++) {
+      st.set(sx + dx, top + 17, guano[2]);
+      if (hash2(dx, 7, 17) > .55) for (let k = 1; k < 2 + Math.floor(hash2(dx, 8, 18) * 4); k++) st.set(sx + dx, top + 17 + k, guano[0]);
+    }
+    // A tuft of ice plant clinging to the top corner.
+    for (const [dx, dy] of [[-htl + 1, -1], [-htl + 2, -1], [-htl + 2, -2], [-htl + 3, -1], [-htl, 0]]) st.set(sx + dx, top + dy, P("#5e8a3a"));
+    st.set(sx - htl + 2, top - 2, P("#e86aa8"));
+    // The smaller rock beside it.
+    pxBlob(st, sx - 27, L.water + 2, 7, 8, rk, { flat: true, rough: .45, grain: 2, seed: 21 });
+    for (let dx = -31; dx <= -23; dx++) if (hash2(dx, 9, 19) > .35) st.set(sx + dx, L.water - 6 + (Math.abs(dx + 27) > 3 ? 1 : 0), guano[1]);
+    st.onto(img, P("#1e1a17"));
+    // Surf breaking white around the base and through the arch.
+    const foam = P("#e9f6ff"), foam2 = P("#bfe2f5");
+    for (let dx = -38; dx <= 30; dx++) {
+      const [hl, hr] = halfW(base);
+      const out = dx < -hl - 1 || dx > hr + 1;
+      if (out && Math.abs(dx + 27) > 8 && hash2(dx, 9) > .25) img.set(sx + dx, L.water + 3, foam);
+      if (out && hash2(dx, 10) > .55) img.set(sx + dx, L.water + 4, foam2);
+      if (hash2(dx, 11) > .6 && Math.abs(dx) < 34) img.set(sx + dx + 2, L.water + 6, foam2);
+    }
+    for (let dx = -7; dx <= -1; dx++) if (hash2(dx, 12) > .3) img.set(sx + dx, L.water + 2, foam);
   } else if (state === "NC") {
     // Dunes with sea oats on the beach.
     const dune = pxLayer(W, H), ds = P("#d9c28c", "#e9d6a4", "#f5e7c0");
