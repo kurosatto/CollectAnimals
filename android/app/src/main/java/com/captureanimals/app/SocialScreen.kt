@@ -427,7 +427,7 @@ private fun FeedCard(p: OnlinePhoto, social: SocialViewModel, onOpenDex: (String
                 Column(Modifier.weight(1f)) {
                     Text(p.commonName ?: "A ${p.rarity} ${p.category}", fontWeight = FontWeight.Bold,
                         color = rarityColor(p.rarity), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    if (p.url != null) p.stars?.let { Stars(it) }
+                    if (p.url != null) p.stars?.let { Stars(it, points = p.score) }
                     Text(listOfNotNull(if (p.isMine) "You" else p.username, p.place, dateOf(p.caughtAt)).joinToString(" · "),
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline,
                         maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -586,9 +586,12 @@ private fun GuideTile(n: Int, e: GuideEntry) {
         }
         Text(e.commonName ?: "???", style = MaterialTheme.typography.labelSmall, maxLines = 1,
             overflow = TextOverflow.Ellipsis, color = if (e.caught) rarityColor(e.rarity) else MaterialTheme.colorScheme.outline)
-        Text(when { e.caught -> "✓"; e.youCaught -> "You have it"; else -> " " },
+        // Captured: their album photo's stars, once it's scored.
+        val photoStars = e.photoStars?.takeIf { e.caught }
+        Text(when { photoStars != null -> stars(photoStars); e.caught -> "✓"; e.youCaught -> "You have it"; else -> " " },
             style = MaterialTheme.typography.labelSmall, maxLines = 1,
-            color = if (e.caught) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline)
+            color = when { photoStars != null -> Gold; e.caught -> MaterialTheme.colorScheme.primary
+                           else -> MaterialTheme.colorScheme.outline })
     }
 }
 
@@ -627,7 +630,7 @@ fun OnlinePhotosScreen(social: SocialViewModel, onOpenDex: (String) -> Unit, onD
                     Column(Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
                         Text(p.commonName ?: "", style = MaterialTheme.typography.titleSmall, maxLines = 1,
                             overflow = TextOverflow.Ellipsis, color = rarityColor(p.rarity))
-                        p.stars?.let { Stars(it) }
+                        p.stars?.let { Stars(it, points = p.score) }
                         Text(dateOf(p.caughtAt) + if (p.likeCount > 0) " · ♥ ${p.likeCount}" else "",
                             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
                         Row {

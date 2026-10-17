@@ -6,6 +6,7 @@ _tmp = tempfile.mkdtemp()
 os.environ["DATABASE_URL"] = f"sqlite:///{_tmp}/test.db"
 os.environ["UPLOAD_DIR"] = f"{_tmp}/uploads"
 os.environ["MODEL_PATH"] = f"{_tmp}/missing.pt"
+os.environ["SCORE_OLD_PHOTOS"] = "0"  # tests call score_old_photos directly
 os.environ["SECRET_KEY"] = "test-secret-key-that-is-at-least-32-bytes"
 
 import pytest  # noqa: E402
@@ -627,3 +628,33 @@ def test_states_unlock_by_choice(client, fake):
     fake.next = [Prediction("coyote", 0.93)]
     upload(client, old)
     assert client.get("/me", headers=old).json()["unlocked_states"] == ["CA", "NC"]
+
+
+def test_older_photos_get_scored(client, fake):
+    from app.db import SessionLocal
+    from app.main import score_old_photos
+    from app.models import Capture
+
+    h = signup(client)
+    fake.next = [Prediction("coyote", 0.93), Prediction("gray_fox", 0.04)]
+    first = upload(client, h).json()
+    upload(client, h)
+    # As if both were taken before photo scores (or before lighting was judged).
+    with SessionLocal() as db:
+        caps = db.query(Capture).order_by(Capture.id).all()
+        caps[0].score = caps[0].score_stars = caps[0].score_parts = None
+        caps[1].score_parts = '[["Clarity", 400], ["Sharpness", 300], ["Framing", 300]]'
+        db.commit()
+        assert score_old_photos(db, fake) == 2
+        assert score_old_photos(db, fake) == 0  # nothing left to do
+        db.expire_all()
+        caps = db.query(Capture).order_by(Capture.id).all()
+        assert all("Lighting" in c.score_parts for c in caps)
+        # Only the first capture of the species earns the new-species bonus.
+        assert "New species" in caps[0].score_parts and "New species" not in caps[1].score_parts
+        assert caps[0].score == first["score"]["total"]
+
+    # The album photo's stars show on the Field Guide entry too.
+    coyote = next(e for e in client.get("/me/collection", headers=h).json()["entries"]
+                  if e["species"]["slug"] == "coyote")
+    assert coyote["photo_stars"] == caps[0].score_stars and coyote["photo_score"] == caps[0].score

@@ -195,6 +195,7 @@
   .set-sprites img.missing { opacity:.4; }
   .score { margin-top:12px; border:1px solid var(--line); border-radius:10px; padding:10px 12px; max-width:320px; }
   .score-head { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+  .tile-stars { color:var(--legendary); font-size:.75rem; letter-spacing:0; }
   .score-stars { color:var(--legendary); font-size:1.3rem; letter-spacing:1px; }
   .score-total { font-weight:700; font-size:1.1rem; }
   .score-parts { display:grid; grid-template-columns:1fr auto; gap:2px 12px; margin-top:6px; font-size:.85rem; color:var(--muted); }
@@ -689,7 +690,11 @@ function addTile(grid, e, i, tier, owner = null) {
   const st = t.querySelector(".status");
   if (owner) {
     // A friend's guide: ✓ is theirs; also say when you have one they don't.
-    if (e.caught) { st.textContent = "✓"; st.classList.add("mine"); t.title = `Captured by ${owner.username}`; }
+    if (e.caught) {
+      st.textContent = e.photo_stars ? stars(e.photo_stars) : "✓";
+      st.classList.add(e.photo_stars ? "tile-stars" : "mine");
+      t.title = `Captured by ${owner.username}` + (e.photo_score != null ? `: ${e.photo_score.toLocaleString()} pts photo` : "");
+    }
     else if (e.you_caught) { st.textContent = "You have it"; st.classList.add("friend"); t.title = `${owner.username} hasn't captured it yet`; }
     t.onclick = () => openDex(s.number, i + 1, e.you_caught, owner.state);
     grid.append(t);
@@ -697,7 +702,9 @@ function addTile(grid, e, i, tier, owner = null) {
   }
   if (state === "mine") {
     st.append(heartsEl(e.bond || 1));
-    t.title = `Captured. Bond: ${BOND_TITLES[(e.bond || 1) - 1]}`;
+    if (e.photo_stars) st.append(el("div", "tile-stars", stars(e.photo_stars)));
+    t.title = `Captured. Bond: ${BOND_TITLES[(e.bond || 1) - 1]}` +
+      (e.photo_score != null ? `. Album photo: ${e.photo_score.toLocaleString()} pts` : "");
   }
   else if (state === "friend") {
     st.textContent = `👥 ${e.friends_caught}`;
