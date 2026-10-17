@@ -237,6 +237,12 @@ def test_place_names(client):
     assert places.place_name(37.7694, -122.4862) == "Golden Gate Park & Presidio"
     assert places.place_name(36.9741, -122.0308) == "near Santa Cruz"
     assert places.place_name(41.0, -121.0).startswith("in ")
+    # Each state names its own towns and regions; none fall back to California's.
+    assert places.place_name(35.73, -81.34) == "near Hickory"
+    assert places.place_name(35.25, -76.2) == "in the Outer Banks"
+    assert places.region(34.8, -116.0) == "the California deserts"
+    assert places.region(35.6, -82.5) == "the Blue Ridge Mountains"
+    assert places.region(40.7, -74.0) == "another state"
 
 
 def test_local_feed(client, fake):
