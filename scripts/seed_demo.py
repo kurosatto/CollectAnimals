@@ -25,7 +25,7 @@ from pathlib import Path
 
 import requests
 
-CATCHES = {"trailblazer": 3, "tidepooler": 3, "birdnerd": 6}  # per state
+CATCHES = {"trailblazer": 2, "tidepooler": 2, "birdnerd": 3}  # per state
 PLAYERS = {  # name: {state: species to try in order; later ones are spares}
     "trailblazer": {"CA": ["mule_deer", "elk", "california_ground_squirrel", "bighorn_sheep", "black_tailed_jackrabbit"],
                     "NC": ["white_tailed_deer", "elk", "eastern_gray_squirrel", "eastern_cottontail", "groundhog"]},
