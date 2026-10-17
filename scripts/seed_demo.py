@@ -25,7 +25,7 @@ from pathlib import Path
 
 import requests
 
-CATCHES = {"trailblazer": 3, "tidepooler": 3, "birdnerd": 6}  # per state
+CATCHES = {"trailblazer": 2, "tidepooler": 2, "birdnerd": 3}  # per state
 # Each bot's primary location: where its profile and live habitat open for friends.
 HOME = {"trailblazer": "NC", "tidepooler": "CA", "birdnerd": "CA"}
 PLAYERS = {  # name: {state: species to try in order; later ones are spares}
