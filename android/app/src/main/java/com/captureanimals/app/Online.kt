@@ -169,10 +169,9 @@ object Online {
         }
     }
 
-    /** A friend's Field Guide: their primary state, or [state] when given. */
-    suspend fun friendGuide(username: String, state: String? = null): FriendGuide =
-        FriendGuide.parse(username, JSONObject(call("GET", "/users/${q(username)}/collection" +
-            (state?.let { "?state=${q(it)}" } ?: ""))))
+    /** A friend's Field Guide, for the state they play in now. */
+    suspend fun friendGuide(username: String): FriendGuide =
+        FriendGuide.parse(username, JSONObject(call("GET", "/users/${q(username)}/collection")))
 
     // --- Challenges, bonds, buddy ------------------------------------------------------
 
@@ -336,23 +335,13 @@ data class GuideEntry(val number: Int, val slug: String?, val commonName: String
     }
 }
 
-/** A state a friend has captured animals in; their primary location is always one. */
-data class GuidePlace(val state: String, val name: String, val caught: Int)
-
 data class FriendGuide(val username: String, val state: String, val caught: Int, val total: Int,
-                       val entries: List<GuideEntry>, val primaryState: String, val places: List<GuidePlace>) {
+                       val entries: List<GuideEntry>) {
     companion object {
         fun parse(username: String, o: JSONObject): FriendGuide {
             val a = o.getJSONArray("entries")
-            val p = o.optJSONArray("places") ?: JSONArray()
-            val state = o.getString("state")
-            val primary = o.optStringOrNull("primary_state") ?: state
-            val places = List(p.length()) { p.getJSONObject(it) }
-                .map { GuidePlace(it.getString("state"), it.getString("name"), it.getInt("caught")) }
-                .sortedByDescending { it.state == primary }
-            return FriendGuide(o.optString("username").ifEmpty { username }, state,
-                o.getInt("caught"), o.getInt("total"), List(a.length()) { GuideEntry.parse(a.getJSONObject(it)) },
-                primary, places)
+            return FriendGuide(o.optString("username").ifEmpty { username }, o.getString("state"),
+                o.getInt("caught"), o.getInt("total"), List(a.length()) { GuideEntry.parse(a.getJSONObject(it)) })
         }
     }
 }
