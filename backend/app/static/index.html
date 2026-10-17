@@ -233,7 +233,7 @@
   <header>
     <h1>Capture Animals <span class="muted" style="font-size:1rem" id="state-name">California</span></h1>
     <div id="who" class="hidden"><button class="link" id="username"></button>
-      <label title="Your state: the Field Guide, Parks and maps follow it">📍 <select id="my-state"></select></label>
+      <label title="Your primary location: your Field Guide, Parks and maps follow it, and friends see it first">📍 <select id="my-state" aria-label="Primary location"></select></label>
       <button class="link" id="logout">Log out</button></div>
   </header>
 
@@ -1141,7 +1141,9 @@ async function openProfile(username) {
   catch (err) { $("album-sub").textContent = err.message; return; }
   const joined = new Date(u.joined).toLocaleDateString(undefined, { month: "short", year: "numeric" });
   $("album-title").textContent = (u.friendship === "self" ? `${u.username} (you)` : u.username) + (u.is_bot ? " 🤖" : "");
-  $("album-sub").textContent = `${u.caught} / ${u.total} captured · ♥ ${u.likes_received} · joined ${joined}`;
+  const home = (states.find((x) => x.code === u.state) || {}).name || u.state;
+  $("album-sub").textContent = (home ? `📍 ${home} · ` : "") +
+    `${u.caught} / ${u.total} captured · ♥ ${u.likes_received} · joined ${joined}`;
 
   const act = el("div", "profile-actions");
   const friendBtn = (label, cls, fn) => {
@@ -1163,25 +1165,39 @@ async function openProfile(username) {
   if (act.childNodes.length) box.append(act);
 
   const sec = (title) => { const h = el("h3", "", title); box.append(h); return h; };
-  // Friends see each other's whole Field Guide, in the owner's own state; it comes
-  // first so it's what you see when you open a friend.
+  // Friends see each other's whole Field Guide. It opens on the owner's primary
+  // state, with a tab for every other state they've captured animals in, and
+  // comes first so it's what you see when you open a friend.
   if (u.friendship === "friends" || u.friendship === "self") {
-    try {
-      const g = await api(`/users/${name}/collection`);
-      const stName = (states.find((x) => x.code === g.state) || {}).name || g.state;
-      sec(`Field Guide · ${stName} · ${g.caught}/${g.total}`);
-      const sorted = [...g.entries].sort((a, b) => dexSort(a.species, b.species));
-      sorted.forEach((e, i) => { e.num = i + 1; });
-      // A friend's live habitat: their animals, in their state's scenery.
-      if (u.friendship === "friends") {
-        const slot = el("div", "visit");
-        box.append(slot);
-        habVisit(u.username, g.state, sorted, slot);
-      }
-      const guide = el("div", "grid guide");
-      fillGuide(guide, sorted, { username: u.username, state: g.state });
-      box.append(guide);
-    } catch (err) { box.append(el("p", "muted", err.message)); }
+    const head = sec("Field Guide"), tabs = el("div", "seg places"), slot = el("div", "visit"),
+      guide = el("div", "grid guide");
+    box.append(tabs, slot, guide);
+    const show = async (code) => {
+      try {
+        const g = await api(`/users/${name}/collection` + (code ? `?state=${code}` : ""));
+        if (!box.contains(guide)) return;   // another profile opened meanwhile
+        const stName = (c) => (states.find((x) => x.code === c) || {}).name || c;
+        head.textContent = `Field Guide · ${stName(g.state)} · ${g.caught}/${g.total}`;
+        const primary = g.places.filter((p) => p.state === g.primary_state);
+        const places = [...primary, ...g.places.filter((p) => p.state !== g.primary_state)];
+        tabs.innerHTML = "";
+        tabs.hidden = places.length < 2;
+        places.forEach((p) => {
+          const t = el("button", p.state === g.state ? "on" : "",
+            (p.state === g.primary_state ? "📍 " : "") + `${p.name} · ${p.caught}`);
+          t.title = p.state === g.primary_state ? `${u.username}'s primary location` : `Captures in ${p.name}`;
+          t.onclick = () => { if (p.state !== g.state) show(p.state); };
+          tabs.append(t);
+        });
+        const sorted = [...g.entries].sort((a, b) => dexSort(a.species, b.species));
+        sorted.forEach((e, i) => { e.num = i + 1; });
+        // A friend's live habitat: their animals, in that state's scenery.
+        if (u.friendship === "friends") habVisit(u.username, g.state, sorted, slot);
+        guide.innerHTML = "";
+        fillGuide(guide, sorted, { username: u.username, state: g.state });
+      } catch (err) { guide.innerHTML = ""; guide.append(el("p", "muted", err.message)); }
+    };
+    await show(null);
   }
 
   sec("Rarity");

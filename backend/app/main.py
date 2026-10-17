@@ -25,7 +25,7 @@ from .classifier import OTHER_LABEL, Prediction
 from .config import settings
 from .db import Base, SessionLocal, add_missing_columns, engine, get_db
 from .models import AlbumPhoto, Badge, Capture, Friendship, IdFeedback, PhotoLike, Species, StateSpecies, User
-from .schemas import (BondNoteOut, BondOut, BondsOut, BuddyIn, BuddyOut, CaptureOut, ChallengeOut, ChallengesOut, ChoiceOut, ScoreOut, ScorePart, SetOut, SetSpecies, SetsOut, CollectionEntry, CollectionOut, DexOut, HotspotOut, HotspotSpecies,
+from .schemas import (BondNoteOut, BondOut, BondsOut, BuddyIn, BuddyOut, CaptureOut, ChallengeOut, ChallengesOut, ChoiceOut, ScoreOut, ScorePart, SetOut, SetSpecies, SetsOut, CollectionEntry, CollectionOut, DexOut, PlaceOut, HotspotOut, HotspotSpecies,
                       PickIn, PredictionOut, RegisterIn, SpeciesMatch, SpeciesOut, StateOut, TokenOut, UserOut, UserUpdate)
 from .social import find_species, friend_ids, revealed_species_ids, species_out, user_named
 from .storage import get_storage
@@ -686,15 +686,25 @@ def my_collection(state: str | None = Query(None), user: User = Depends(current_
 
 
 @app.get("/users/{username}/collection", response_model=CollectionOut)
-def user_collection(username: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
-    """A friend's Field Guide, for their own state. Friends only: anyone else sees
-    just what the profile shows."""
+def user_collection(username: str, state: str | None = Query(None), user: User = Depends(current_user),
+                    db: Session = Depends(get_db)):
+    """A friend's Field Guide: their primary state (the one they play in) unless
+    ?state= picks another. `places` lists their primary state plus every state
+    where they've captured something on that state's list. Friends only: anyone
+    else sees just what the profile shows."""
     owner = user_named(db, username)
     if not owner:
         raise HTTPException(404, "No such user")
     if owner.id != user.id and owner.id not in friend_ids(db, user.id):
         raise HTTPException(403, "Only friends can see each other's Field Guide")
-    return _collection(db, owner, user, state_or_404(owner.state))
+    out = _collection(db, owner, user, state_or_404(state or owner.state))
+    caught = dict(db.execute(
+        select(StateSpecies.state, func.count()).join(Badge, Badge.species_id == StateSpecies.species_id)
+        .where(Badge.user_id == owner.id).group_by(StateSpecies.state)).all())
+    out.primary_state = owner.state
+    out.places = [PlaceOut(state=s.code, name=s.name, caught=caught.get(s.code, 0))
+                  for s in st.all_states() if s.code == owner.state or caught.get(s.code)]
+    return out
 
 
 def _collection(db: Session, owner: User, viewer: User, st_: st.State) -> CollectionOut:
