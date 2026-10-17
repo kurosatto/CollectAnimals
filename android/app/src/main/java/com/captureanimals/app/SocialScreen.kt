@@ -332,7 +332,7 @@ fun SocialScreen(state: UiState, social: SocialViewModel, onSignIn: () -> Unit, 
         if (section == "feed") FeedSection(s, social, state, onOpenDex) else FriendsSection(s, social)
     }
     CommentsDialog(s, social)
-    FriendGuideDialog(s, social, state)
+    FriendGuideDialog(s, social, state, onOpenDex)
 }
 
 /** Comments on one photo. Anyone who can see the photo can join in, friends or not. */
@@ -422,6 +422,7 @@ private fun FeedCard(p: OnlinePhoto, social: SocialViewModel, onOpenDex: (String
                 Column(Modifier.weight(1f)) {
                     Text(p.commonName ?: "A ${p.rarity} ${p.category}", fontWeight = FontWeight.Bold,
                         color = rarityColor(p.rarity), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    if (p.url != null) p.stars?.let { Stars(it) }
                     Text(listOfNotNull(if (p.isMine) "You" else p.username, p.place, dateOf(p.caughtAt)).joinToString(" · "),
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline,
                         maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -508,9 +509,11 @@ private val RARITY_ORDER = listOf("common", "uncommon", "rare", "legendary")
 /** The friend's Field Guide: the animals they've captured, on their primary state first,
  *  with a chip for each other state they've captured animals in. */
 @Composable
-fun FriendGuideDialog(s: SocialState, social: SocialViewModel, game: UiState) {
+fun FriendGuideDialog(s: SocialState, social: SocialViewModel, game: UiState, onOpenDex: (String) -> Unit) {
     val who = s.guideFor ?: return
     val g = s.guide
+    // Their live habitat, in their state's scenery, as on the website's profile.
+    val habitat = rememberHabitatView()
     // A plain Dialog, not AlertDialog: AlertDialog measures intrinsics, which lazy grids can't do.
     Dialog(onDismissRequest = social::closeGuide) {
         Surface(shape = RoundedCornerShape(20.dp), tonalElevation = 6.dp) {
@@ -536,6 +539,14 @@ fun FriendGuideDialog(s: SocialState, social: SocialViewModel, game: UiState) {
                             horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             // Only the animals they've captured; numbers follow the full Field Guide.
                             val captured = numbered.filter { it.second.caught }
+                            val animals = captured.mapNotNull { (n, e) ->
+                                e.slug?.let { HabitatAnimal(n, it, e.commonName ?: "", e.category, e.rarity, e.activity ?: "day") }
+                            }
+                            if (animals.isNotEmpty()) item(span = { GridItemSpan(maxLineSpan) }, key = "habitat") {
+                                Habitat(habitat, animals, g.state, visitor = who) { slug ->
+                                    social.closeGuide(); onOpenDex(slug)
+                                }
+                            }
                             if (captured.isEmpty()) item(span = { GridItemSpan(maxLineSpan) }) {
                                 Text("$who hasn't captured any animals yet.", color = MaterialTheme.colorScheme.outline)
                             }
@@ -611,6 +622,7 @@ fun OnlinePhotosScreen(social: SocialViewModel, onOpenDex: (String) -> Unit, onD
                     Column(Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
                         Text(p.commonName ?: "", style = MaterialTheme.typography.titleSmall, maxLines = 1,
                             overflow = TextOverflow.Ellipsis, color = rarityColor(p.rarity))
+                        p.stars?.let { Stars(it) }
                         Text(dateOf(p.caughtAt) + if (p.likeCount > 0) " · ♥ ${p.likeCount}" else "",
                             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
                         Row {
