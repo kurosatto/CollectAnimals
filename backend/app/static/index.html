@@ -666,6 +666,11 @@ function fillGuide(grid, entries, owner = null) {
     ["Not captured yet", (e) => !e.caught && e.in_season !== false],
     [null, (e) => !e.caught && e.in_season === false],
   ];
+  // A friend's guide shows only what they've captured (numbers still follow the full list).
+  if (owner) {
+    GROUPS.length = 1;
+    if (!entries.some((e) => e.caught)) grid.append(el("p", "muted", `${owner.username} hasn't captured any animals yet.`));
+  }
   const numbered = entries.map((e, i) => [e, i]);
   let uncaughtShown = false;
   for (const [title, keep] of GROUPS) {
