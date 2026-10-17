@@ -171,8 +171,10 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel()) 
         NavigationBar {
             TABS.forEachIndexed { i, t ->
                 if (t.key == "hotspots" && dex?.parks.isNullOrEmpty()) return@forEachIndexed
+                // Six tabs: one line of small text each, so "Field Guide" doesn't wrap.
                 NavigationBarItem(selected = tab == i, onClick = { tabChoice = i },
-                    icon = { TabIcon(t.icon, Modifier.size(28.dp)) }, label = { Text(t.title) })
+                    icon = { TabIcon(t.icon, Modifier.size(28.dp)) },
+                    label = { Text(t.title, maxLines = 1, softWrap = false, fontSize = 11.sp) })
             }
         }
     }) { padding ->
@@ -180,7 +182,10 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel()) 
             when {
                 info == null -> CircularProgressIndicator(Modifier.align(Alignment.Center))
                 TABS[tab].key == "catch" -> CatchScreen(state, vm::capture, vm::dismissResult, vm::pick) { dexSlug = it }
-                TABS[tab].key == "social" -> SocialScreen(state, social, onSignIn = { showAccount = true }) { dexSlug = it }
+                TABS[tab].key == "feed" ->
+                    SocialScreen(state, social, "feed", onSignIn = { showAccount = true }) { dexSlug = it }
+                TABS[tab].key == "social" ->
+                    SocialScreen(state, social, "friends", onSignIn = { showAccount = true }) { dexSlug = it }
                 TABS[tab].key == "gallery" && state.account != null ->
                     OnlinePhotosScreen(social, onOpenDex = { dexSlug = it }, onDeleted = vm::reloadCollection)
                 TABS[tab].key == "collection" -> {
@@ -246,8 +251,9 @@ private val TABS = listOf(
     AppTab("catch", "Capture", "ui_tab_capture"),
     AppTab("collection", "Field Guide", "ui_tab_guide"),
     AppTab("gallery", "Photos", "ui_tab_photos"),
-    AppTab("social", "Friends", "ui_tab_friends"),
+    AppTab("feed", "Feed", "ui_tab_feed"),
     AppTab("hotspots", "Parks", "ui_tab_parks"),
+    AppTab("social", "Friends", "ui_tab_friends"),
 )
 
 @Composable
