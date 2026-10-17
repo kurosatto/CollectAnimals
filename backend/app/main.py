@@ -701,22 +701,21 @@ def my_collection(state: str | None = Query(None), user: User = Depends(current_
 @app.get("/users/{username}/collection", response_model=CollectionOut)
 def user_collection(username: str, state: str | None = Query(None), user: User = Depends(current_user),
                     db: Session = Depends(get_db)):
-    """A friend's Field Guide: their primary state (the one they play in) unless
-    ?state= picks another. `places` lists their primary state plus every state
-    where they've captured something on that state's list. Friends only: anyone
-    else sees just what the profile shows."""
+    """A friend's Field Guide, in the state they play in now (or ?state=). Only
+    that state is listed in `places`: a profile shows one state's guide, not a
+    tab for every state that shares an animal they've captured. Friends only:
+    anyone else sees just what the profile shows."""
     owner = user_named(db, username)
     if not owner:
         raise HTTPException(404, "No such user")
     if owner.id != user.id and owner.id not in friend_ids(db, user.id):
         raise HTTPException(403, "Only friends can see each other's Field Guide")
-    out = _collection(db, owner, user, state_or_404(state or owner.state))
-    caught = dict(db.execute(
-        select(StateSpecies.state, func.count()).join(Badge, Badge.species_id == StateSpecies.species_id)
-        .where(Badge.user_id == owner.id).group_by(StateSpecies.state)).all())
-    out.primary_state = owner.state
-    out.places = [PlaceOut(state=s.code, name=s.name, caught=caught.get(s.code, 0))
-                  for s in st.all_states() if s.code == owner.state or caught.get(s.code)]
+    home = state_or_404(owner.state)
+    out = _collection(db, owner, user, state_or_404(state) if state else home)
+    out.primary_state = home.code
+    # Older apps draw a tab per place; one place means no tabs.
+    caught = out.caught if out.state == home.code else _collection(db, owner, user, home).caught
+    out.places = [PlaceOut(state=home.code, name=home.name, caught=caught)]
     return out
 
 

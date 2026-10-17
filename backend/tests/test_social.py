@@ -536,7 +536,7 @@ def test_friend_field_guide_uses_their_state(client, fake):
     assert back["state"] == "CA" and back["caught"] == 1
 
 
-def test_friend_field_guide_places(client, fake):
+def test_friend_field_guide_only_current_state(client, fake):
     ana, nina = signup(client, "ana"), signup(client, "nina", state="NC")
     befriend(client, ana, nina, "nina", "ana")
     g = client.get("/users/nina/collection", headers=ana).json()
@@ -544,8 +544,9 @@ def test_friend_field_guide_places(client, fake):
     assert [p["state"] for p in g["places"]] == ["NC"]      # primary state is always a place
     catch(client, fake, nina, "american_black_bear")         # on both state lists
     g = client.get("/users/nina/collection", headers=ana).json()
-    places = {p["state"]: p for p in g["places"]}
-    assert places["NC"]["caught"] == 1 and places["CA"]["caught"] == 1 and places["CA"]["name"]
+    # The bear is on California's list too, but the guide stays in Nina's state.
+    assert g["state"] == "NC" and g["caught"] == 1
+    assert g["places"] == [{"state": "NC", "name": "North Carolina", "caught": 1}]
     ca = client.get("/users/nina/collection?state=CA", headers=ana).json()
     assert client.get("/users/nina", headers=ana).json()["state"] == "NC"
     assert ca["state"] == "CA" and ca["primary_state"] == "NC" and ca["caught"] == 1
