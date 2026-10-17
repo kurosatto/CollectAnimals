@@ -112,6 +112,14 @@
   .comments form button { padding:6px 10px; }
   .feed-entry .comments { padding:0 6px 8px 82px; }
   .photo img, .feed-item img { cursor:zoom-in; }
+  .ww { display:grid; gap:2px; margin-top:8px; font-size:.9rem; }
+  .ww button.link { justify-self:start; font-size:.85rem; }
+  .ww-edit { display:grid; gap:8px; margin-top:8px; }
+  .ww-edit label { display:grid; gap:4px; font-size:.85rem; }
+  .ww-edit .row { display:flex; flex-wrap:wrap; gap:6px; }
+  .ww-edit .row button.ghost { background:none; color:var(--ink); border:1px solid var(--line); padding:6px 10px; }
+  .ww-map { height:220px; border-radius:10px; overflow:hidden; z-index:0; }
+  .ww-err { color:#c0392b; font-size:.85rem; }
   /* Full-screen photo: the picture fills the screen, likes and comments sit beside it
      (below it on phones). */
   dialog#viewer { width:100vw; height:100dvh; max-width:none; max-height:none; margin:0; border:none; border-radius:0;
@@ -500,6 +508,7 @@ $("upload-form").onsubmit = async (e) => {
   box.textContent = "Identifying…";
   const pos = await here();
   if (pos) { fd.append("latitude", pos.latitude); fd.append("longitude", pos.longitude); }
+  if (!$("use-location").checked) fd.append("save_place", "false");
   try {
     const r = await api("/captures", { method: "POST", body: fd });
     r.file = file;
@@ -512,6 +521,11 @@ $("upload-form").onsubmit = async (e) => {
     p.textContent = "Top guesses: " + r.top_predictions
       .map((x) => `${x.common_name || (x.label === "other" ? "not on the list" : "???")} ${(x.probability * 100).toFixed(0)}%`).join(", ");
     box.append(h, p);
+    if (r.where_when) box.append(whereWhen(r.where_when, (res) => {
+      if (res.score) box.querySelector(".score")?.replaceWith(scoreCard(res.score));
+      if (res.bond_up?.length) box.querySelector(".ww").append(el("div", "", `Field notes ✓ ${res.bond_up.join(", ")}`));
+      loadCollection(); loadMyPhotos(); loadFeed();
+    }));
     if (r.score) box.append(scoreCard(r.score));
     const pp = pickPanel(r, box);
     if (pp) box.append(pp);
@@ -529,6 +543,112 @@ function scoreCard(sc) {
   const rows = el("div", "score-parts");
   for (const part of sc.parts) rows.append(el("span", "", part.label), el("span", "", `+${part.points}`));
   box.append(head, rows);
+  return box;
+}
+
+// When and where a photo was taken: from the photo's metadata first, else the phone's
+// location (recent photos only) and the upload time. The owner can fix either: the
+// time can't be after the upload, and the place has to be in their state.
+const WW_SOURCE = { photo: "from the photo", device: "from your phone", upload: "upload time", edited: "edited by you" };
+const fmtWhen = (iso) => new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+const localNow = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); };
+let parksFor = {};
+function whereWhen(ww, onSaved) {
+  const box = el("div", "ww");
+  const show = () => {
+    box.innerHTML = "";
+    const t = el("div", "", `📅 ${fmtWhen(ww.taken_at)}`);
+    t.append(el("span", "muted", ` · ${WW_SOURCE[ww.time_source] || ""}`));
+    const p = el("div", "", ww.place ? `📍 ${ww.place}` : "📍 No place saved");
+    if (ww.place && WW_SOURCE[ww.place_source]) p.append(el("span", "muted", ` · ${WW_SOURCE[ww.place_source]}`));
+    const edit = el("button", "link", "Edit time and place");
+    edit.type = "button";
+    edit.onclick = openEditor;
+    box.append(t, p, edit);
+  };
+  const openEditor = async () => {
+    box.innerHTML = "";
+    const form = el("div", "ww-edit");
+    const whenL = el("label", "", "When you took it");
+    const when = el("input");
+    when.type = "datetime-local"; when.value = ww.taken_at.slice(0, 16); when.max = localNow();
+    whenL.append(when);
+    let pin = ww.latitude != null ? [ww.latitude, ww.longitude] : null;
+    const where = el("div", "muted");
+    const parkSel = el("select");
+    parkSel.append(new Option(`Parks in ${myState.name}…`, ""));
+    const mapBox = el("div", "ww-map");
+    const row = el("div", "row");
+    const btn = (label, fn) => { const b = el("button", "ghost", label); b.type = "button"; b.onclick = fn; row.append(b); return b; };
+    let map = null, marker = null;
+    const setPin = (p, label) => {
+      pin = p;
+      where.textContent = p ? (label ? `📍 ${label}` : `📍 ${p[0].toFixed(4)}, ${p[1].toFixed(4)}`) : "📍 No place";
+      if (!map) return;
+      if (p) {
+        if (marker) marker.setLatLng(p); else {
+          marker = L.marker(p, { draggable: true }).addTo(map);
+          marker.on("dragend", () => { const ll = marker.getLatLng(); setPin([ll.lat, ll.lng]); });
+        }
+        map.setView(p, Math.max(map.getZoom() || 0, 11));
+      } else if (marker) { marker.remove(); marker = null; }
+    };
+    btn("Where I am now", (e) => {
+      if (!navigator.geolocation) return;
+      e.target.disabled = true;
+      navigator.geolocation.getCurrentPosition((g) => { e.target.disabled = false; setPin([g.coords.latitude, g.coords.longitude]); },
+        () => { e.target.disabled = false; err.textContent = "Couldn't get your location."; }, { timeout: 8000 });
+    });
+    btn("No place", () => { parkSel.value = ""; setPin(null); });
+    const err = el("div", "ww-err");
+    const actions = el("div", "row");
+    const save = el("button", "", "Save"); save.type = "button";
+    const cancel = el("button", "ghost", "Cancel"); cancel.type = "button";
+    cancel.onclick = show;
+    actions.append(save, cancel);
+    form.append(whenL, el("div", "", "Where you took it"), where, parkSel, row);
+    if (window.L) form.append(mapBox, el("div", "muted", "Tap the map to move the pin."));
+    form.append(err, actions);
+    box.append(form);
+    setPin(pin, ww.place);
+    if (window.L) {
+      map = L.map(mapBox, { scrollWheelZoom: false });
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 17,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(map);
+      const b = myState.bounds;
+      map.fitBounds([[b.south, b.west], [b.north, b.east]]);
+      map.on("click", (e) => { parkSel.value = ""; setPin([e.latlng.lat, e.latlng.lng]); });
+      setPin(pin, ww.place);
+      setTimeout(() => map.invalidateSize(), 50);
+    }
+    try {
+      parksFor[myState.code] ||= await api(`/hotspots?state=${myState.code}`);
+      for (const h of [...parksFor[myState.code]].sort((a, b) => a.name.localeCompare(b.name)))
+        parkSel.append(new Option(h.name, `${h.lat},${h.lon}`));
+    } catch {}
+    parkSel.onchange = () => {
+      if (!parkSel.value) return;
+      setPin(parkSel.value.split(",").map(Number), parkSel.selectedOptions[0].textContent);
+    };
+    save.onclick = async () => {
+      err.textContent = "";
+      if (!when.value) { err.textContent = "Pick a date and time."; return; }
+      save.disabled = true;
+      try {
+        // Untouched minutes keep the photo's own seconds, so the time isn't marked as edited.
+        const body = { taken_at: when.value === ww.taken_at.slice(0, 16) ? ww.taken_at
+                       : when.value.length === 16 ? when.value + ":00" : when.value };
+        if (pin) { body.latitude = +pin[0].toFixed(6); body.longitude = +pin[1].toFixed(6); }
+        const res = await api(`/captures/${ww.capture_id}/where-when`, { method: "PUT",
+          headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+        ww = res.where_when;
+        if (map) map.remove();
+        show();
+        onSaved?.(res);
+      } catch (e) { err.textContent = e.message; save.disabled = false; }
+    };
+  };
+  show();
   return box;
 }
 
@@ -1057,6 +1177,16 @@ function openViewer(p, onClose) {
             el("span", "muted", [""].concat([p.place, when].filter(Boolean)).join(" · ")));
   side.append(name, by);
   if (p.score != null) side.append(el("div", "pts", `${stars(p.stars)} ${p.score.toLocaleString()} pts`));
+  if (p.is_mine && p.where_when) side.append(whereWhen(p.where_when, (res) => {
+    const ww = p.where_when = res.where_when;
+    p.taken_on = ww.taken_at.slice(0, 10);
+    p.place = ww.place;
+    p.latitude = ww.latitude != null ? +ww.latitude.toFixed(3) : null;
+    p.longitude = ww.longitude != null ? +ww.longitude.toFixed(3) : null;
+    if (res.score) { p.score = res.score.total; p.stars = res.score.stars; }
+    openViewer(p, viewerClosed);
+    loadCollection(); loadMyPhotos(); loadFeed();
+  }));
   const row = reactions(p, side);
   side.append(row);
   // Comments start open: they're half of why you'd open the photo.

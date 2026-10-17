@@ -81,6 +81,41 @@ def place_name(lat: float, lon: float, town_km: float = 25, prefix: str = "near"
     return f"{prefix} {town}" if town and dist <= town_km else f"in {region(lat, lon)}"
 
 
+_outlines: dict[str, list] = {}
+# The outlines are coarse (1:50m), so a beach or an island just off them still counts.
+_COAST_KM = 5
+
+
+def in_state(state, lat: float, lon: float) -> bool:
+    """Whether a point is inside the state's outline, or just off its edge."""
+    rings = _outlines.get(state.code)
+    if rings is None:
+        rings = json.loads(state.outline.read_text(encoding="utf-8"))["rings"] if state.outline.exists() else []
+        _outlines[state.code] = rings
+    b = state.bounds
+    if not (b["south"] - _MARGIN <= lat <= b["north"] + _MARGIN and b["west"] - _MARGIN <= lon <= b["east"] + _MARGIN):
+        return False
+    if not rings:
+        return True
+    inside = False
+    for ring in rings:
+        for (x1, y1), (x2, y2) in zip(ring, ring[1:] + ring[:1]):
+            if (y1 > lat) != (y2 > lat) and lon < x1 + (lat - y1) * (x2 - x1) / (y2 - y1):
+                inside = not inside
+    if inside:
+        return True
+    # Distance to the outline, on a flat projection (fine at a few km).
+    kx = 111.32 * math.cos(math.radians(lat))
+    for ring in rings:
+        for (x1, y1), (x2, y2) in zip(ring, ring[1:] + ring[:1]):
+            ax, ay, bx, by = (x1 - lon) * kx, (y1 - lat) * 110.57, (x2 - lon) * kx, (y2 - lat) * 110.57
+            dx, dy = bx - ax, by - ay
+            t = max(0.0, min(1.0, -(ax * dx + ay * dy) / (dx * dx + dy * dy))) if dx or dy else 0.0
+            if math.hypot(ax + t * dx, ay + t * dy) <= _COAST_KM:
+                return True
+    return False
+
+
 # Smallest radius for the "near me" feed, so it can't be narrowed down to a house.
 MIN_RADIUS_KM = 10
 

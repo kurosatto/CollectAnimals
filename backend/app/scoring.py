@@ -138,6 +138,13 @@ def to_utc(when: datetime, std_offset: int) -> datetime:
     return (when - timedelta(hours=offset)).replace(tzinfo=timezone.utc)
 
 
+def to_local(when: datetime, std_offset: int) -> datetime:
+    """A UTC time as the state's wall clock time (no zone), with US daylight saving."""
+    when = when if when.tzinfo else when.replace(tzinfo=timezone.utc)
+    local = (when.astimezone(timezone.utc) + timedelta(hours=std_offset)).replace(tzinfo=None)
+    return local + timedelta(hours=1) if _us_dst(local) else local
+
+
 def sun_elevation(when: datetime, lat: float, lon: float) -> float:
     """Degrees of the sun above the horizon (NOAA's approximate formula, good
     to well under a degree). `when` must be timezone aware."""
