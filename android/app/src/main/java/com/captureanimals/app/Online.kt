@@ -231,14 +231,15 @@ object Online {
         override fun sizeOf(key: String, value: Bitmap) = value.byteCount
     }
 
-    suspend fun image(path: String, maxSide: Int = 800): Bitmap? = images.get(path) ?: withContext(Dispatchers.IO) {
+    /** Cached per size, so the full-screen copy doesn't replace the thumbnail or vice versa. */
+    suspend fun image(path: String, maxSide: Int = 800): Bitmap? = images.get("$maxSide $path") ?: withContext(Dispatchers.IO) {
         runCatching {
             val c = URL(absolute(path)).openConnection() as HttpURLConnection
             token?.let { c.setRequestProperty("Authorization", "Bearer $it") }
             c.connectTimeout = 15_000; c.readTimeout = 30_000
             val bytes = c.inputStream.use { it.readBytes() }
             val b = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return@runCatching null
-            ImageLoader.thumbnail(b, maxSide).also { images.put(path, it) }
+            ImageLoader.thumbnail(b, maxSide).also { images.put("$maxSide $path", it) }
         }.getOrNull()
     }
 
