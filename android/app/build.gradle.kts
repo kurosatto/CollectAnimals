@@ -15,8 +15,8 @@ android {
         applicationId = "com.captureanimals.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 9
-        versionName = "0.8.1"
+        versionCode = 10
+        versionName = "0.8.2"
         // Phones are arm64; leaving out other ABIs keeps the APK ~15 MB smaller.
         ndk { abiFilters += listOf("arm64-v8a") }
     }
@@ -73,6 +73,8 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
     implementation("androidx.exifinterface:exifinterface:1.3.7")
+    // Checks for friend requests in the background (see FriendAlerts.kt).
+    implementation("androidx.work:work-runtime-ktx:2.10.0")
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.22.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
