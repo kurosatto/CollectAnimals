@@ -102,7 +102,7 @@ fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: FieldGuide,
                 Column(Modifier.padding(16.dp)) {
                     Text("Fun fact", style = MaterialTheme.typography.labelLarge, color = rarityColor(s.rarity))
                     // Same as the web page: the fact is the reward for catching it.
-                    Text(if (badge != null) details.funFact else "🔒 Capture one to unlock its fun fact.",
+                    Text(if (badge != null) details.funFact else "🔒",
                         style = MaterialTheme.typography.bodyLarge)
                 }
             }
