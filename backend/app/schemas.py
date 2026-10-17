@@ -66,6 +66,8 @@ class SpeciesOut(BaseModel):
 
 class DexOut(BaseModel):
     species: SpeciesOut
+    # The state this entry is for: the one asked for, or one that lists the animal.
+    state: str = ""
     size: str | None = None
     weight: str | None = None
     fun_fact: str | None = None

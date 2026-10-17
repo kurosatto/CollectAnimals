@@ -125,8 +125,11 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel()) 
     if (info != null && dex != null && entry != null) {
         Scaffold { padding ->
             Box(Modifier.padding(padding)) {
+                // Another state's animal gets that state's sighting map, tips and parks.
+                val entryDex = if (info.species.any { it.slug == entry.slug }) dex
+                    else state.states.firstOrNull { st -> st.species.any { it.slug == entry.slug } }?.fieldGuide ?: dex
                 val badge = state.collection[entry.slug]
-                DexEntryScreen(info.dexNumber(entry.slug), entry, badge, dex, bond = {
+                DexEntryScreen(info.dexNumber(entry.slug), entry, badge, entryDex, bond = {
                     if (state.account != null && badge != null) {
                         BondPanel(entry.slug, state.buddy?.takeIf { it.chosen }?.bond?.slug, vm::setBuddy)
                     }

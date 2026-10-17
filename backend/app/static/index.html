@@ -839,22 +839,38 @@ $("my-state").onchange = async () => {
   } catch (err) { alert(err.message); }
 };
 
-function rangeSvg(range) {
-  const w = px(myState.bounds.east, 0)[0], h = px(0, myState.bounds.south)[1];
-  const land = OUTLINE.map((ring) => "M" + ring.map(([lon, lat]) =>
-    px(lon, lat).map((v) => v.toFixed(1)).join(",")).join("L") + "Z").join("");
+// Outlines of other states, for a Field Guide entry from a state that isn't yours.
+const outlines = {};
+async function stateMap(code) {
+  const st = states.find((x) => x.code === code);
+  if (!st || st.code === myState.code) return null;
+  if (!(code in outlines)) {
+    try { outlines[code] = (await api(`/map/${code}`)).rings || []; } catch { outlines[code] = []; }
+  }
+  const b = st.bounds, k = Math.cos((b.south + b.north) / 2 * Math.PI / 180);
+  const scale = 430 / ((b.east - b.west) * k);
+  const map = { lon0: b.west, lat1: b.north, kx: scale * k, ky: scale };
+  return { st, outline: outlines[code], map, px: (lon, lat) => [(lon - map.lon0) * map.kx, (map.lat1 - lat) * map.ky] };
+}
+
+// A sighting map, on your state's outline unless `other` (from stateMap) says otherwise.
+function rangeSvg(range, other = null) {
+  const { st, outline, map, px: to } = other || { st: myState, outline: OUTLINE, map: MAP, px };
+  const w = to(st.bounds.east, 0)[0], h = to(0, st.bounds.south)[1];
+  const land = outline.map((ring) => "M" + ring.map(([lon, lat]) =>
+    to(lon, lat).map((v) => v.toFixed(1)).join(",")).join("L") + "Z").join("");
   let cells = "";
   if (range) {
     const { lon0, lat0, step } = range.grid;
     const max = Math.max(...range.cells.map((c) => c[2]));
     for (const [col, row, n] of range.cells) {
-      const [x, y] = px(lon0 + col * step, lat0 + (row + 1) * step);
+      const [x, y] = to(lon0 + col * step, lat0 + (row + 1) * step);
       const op = (0.25 + 0.75 * Math.log1p(n) / Math.log1p(max)).toFixed(2);
-      cells += `<rect class="cell" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(step * MAP.kx).toFixed(1)}"
-        height="${(step * MAP.ky).toFixed(1)}" opacity="${op}"/>`;
+      cells += `<rect class="cell" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(step * map.kx).toFixed(1)}"
+        height="${(step * map.ky).toFixed(1)}" opacity="${op}"/>`;
     }
   }
-  return `<svg viewBox="0 0 ${w.toFixed(0)} ${h.toFixed(0)}" role="img" aria-label="Map of ${myState.name} sightings">
+  return `<svg viewBox="0 0 ${w.toFixed(0)} ${h.toFixed(0)}" role="img" aria-label="Map of ${st.name} sightings">
     <path class="land" d="${land}"/>${cells}</svg>`;
 }
 
@@ -911,8 +927,9 @@ async function openDex(key, num, caught, stateCode = myState.code) {
     : `An unknown ${s.category}. Capture it, or have a friend capture it, to learn its name.`;
   $("dex-rarity").textContent = s.rarity;
   $("dex-rarity").style.color = `var(--${s.rarity})`;
-  $("dex-map").innerHTML = rangeSvg(d.range);
-  $("dex-map-note").textContent = d.range ? "Where it's been seen (iNaturalist)" : "Sighting map coming soon";
+  $("dex-map").innerHTML = rangeSvg(d.range, await stateMap(d.state));
+  const where = d.state && d.state !== myState.code ? ` in ${(states.find((x) => x.code === d.state) || {}).name || d.state}` : "";
+  $("dex-map-note").textContent = d.range ? `Where it's been seen${where} (iNaturalist)` : "Sighting map coming soon";
   $("dex-where").textContent = d.where_to_find ? "📍 " + d.where_to_find : "";
   const dist = d.safe_distance ? ` Stay at least ${d.safe_distance} away.` : "";
   $("dex-safety").textContent = d.safety === "none" ? "" :
