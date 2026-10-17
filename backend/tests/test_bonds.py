@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 from app import bonds
+from app import states
 from app.classifier import Prediction
 from app.db import SessionLocal
 from app.models import Capture
@@ -52,10 +53,12 @@ def test_bonds_buddy_api(client, fake):
     fake.next = [Prediction("coyote", 0.95)]
     r = upload(client, h).json()
     assert r["bond"] == 1 and r["bond_up"] == []
-    # A second photo "taken" on another day and time of day.
+    # A second photo "taken" on another day and time of day. The new upload's time
+    # is now, so date the first one at a time of day that differs from now.
+    now = bonds.local_time(None, datetime.now(timezone.utc), states.get("CA").utc_offset)
     with SessionLocal() as db:
         c = db.get(Capture, r["capture_id"])
-        c.taken_at = datetime(2026, 1, 3, 6)
+        c.taken_at = datetime(2026, 1, 3, 22 if bonds.time_of_day(now) == "morning" else 6)
         db.commit()
     fake.next = [Prediction("coyote", 0.95)]
     r2 = upload(client, h).json()
