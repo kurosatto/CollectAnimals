@@ -85,7 +85,7 @@ def where_when_out(c: Capture, utc_offset: int) -> WhereWhenOut:
     has_place = c.latitude is not None and c.longitude is not None
     taken = c.taken_at.replace(tzinfo=None) if c.taken_at else to_local(c.created_at, utc_offset)
     return WhereWhenOut(
-        capture_id=c.id, taken_at=taken.replace(microsecond=0),
+        capture_id=c.id, state=c.state, taken_at=taken.replace(microsecond=0),
         time_source=c.time_source or ("photo" if c.taken_at else "upload"),
         latitude=round(c.latitude, 5) if has_place else None,
         longitude=round(c.longitude, 5) if has_place else None,
@@ -106,7 +106,8 @@ def photo_out(p: AlbumPhoto, viewer: User, friends: set[int], likes: int, liked:
         latitude=loc.latitude, longitude=loc.longitude, location_precise=loc.precise,
         place=loc.place, like_count=likes, liked_by_me=liked, comment_count=comments, is_mine=mine,
         by_friend=p.user_id in friends, rank=rank, score=c.score, stars=c.score_stars,
-        where_when=where_when_out(c, (states.get(p.user.state) or states.get(None)).utc_offset) if mine else None)
+        where_when=where_when_out(c, (states.get(c.state or p.user.state) or states.get(None)).utc_offset)
+        if mine else None)
 
 
 def _like_info(db: Session, photo_ids: list[int], viewer_id: int) -> tuple[dict[int, int], set[int]]:

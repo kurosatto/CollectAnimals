@@ -667,7 +667,7 @@ def _rescore(db: Session, model, c: Capture) -> bool:
     if data is None or model is None or c.species_id is None:
         return False
     user = db.get(User, c.user_id)
-    state = st.get(user.state) or st.get(None)
+    state = st.get(c.state or user.state) or st.get(None)
     members = {m.species.slug: m for m in state_species(db, state.code)}
     species = db.get(Species, c.species_id)
     m = members.get(species.slug)
@@ -802,12 +802,13 @@ def pick_capture_species(capture_id: int, body: PickIn, user: User = Depends(cur
 def set_where_when(capture_id: int, body: WhereWhenIn, user: User = Depends(current_user),
                    db: Session = Depends(get_db)):
     """The player fixes when and where they took a photo (the photo's metadata
-    can be missing or wrong). The place must be in their state and the time no
-    later than the upload. The photo score, field notes and place name follow."""
+    can be missing or wrong). The place must be in the state the capture counts
+    in and the time no later than the upload. The photo score, field notes and
+    place name follow."""
     capture = db.get(Capture, capture_id)
     if capture is None or capture.user_id != user.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Capture not found")
-    state = st.get(user.state) or st.get(None)
+    state = st.get(capture.state or user.state) or st.get(None)
     taken = (_local(body.taken_at, state) if body.taken_at.tzinfo else body.taken_at).replace(microsecond=0)
     uploaded = _local(capture.created_at or datetime.now(timezone.utc), state)
     # A few minutes' slack for clocks that disagree.

@@ -568,6 +568,8 @@ function whereWhen(ww, onSaved) {
   };
   const openEditor = async () => {
     box.innerHTML = "";
+    // The capture's own state: edited places have to be inside it.
+    const st = states.find((x) => x.code === ww.state) || myState;
     const form = el("div", "ww-edit");
     const whenL = el("label", "", "When you took it");
     const when = el("input");
@@ -576,7 +578,7 @@ function whereWhen(ww, onSaved) {
     let pin = ww.latitude != null ? [ww.latitude, ww.longitude] : null;
     const where = el("div", "muted");
     const parkSel = el("select");
-    parkSel.append(new Option(`Parks in ${myState.name}…`, ""));
+    parkSel.append(new Option(`Parks in ${st.name}…`, ""));
     const mapBox = el("div", "ww-map");
     const row = el("div", "row");
     const btn = (label, fn) => { const b = el("button", "ghost", label); b.type = "button"; b.onclick = fn; row.append(b); return b; };
@@ -615,15 +617,15 @@ function whereWhen(ww, onSaved) {
       map = L.map(mapBox, { scrollWheelZoom: false });
       L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 17,
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(map);
-      const b = myState.bounds;
+      const b = st.bounds;
       map.fitBounds([[b.south, b.west], [b.north, b.east]]);
       map.on("click", (e) => { parkSel.value = ""; setPin([e.latlng.lat, e.latlng.lng]); });
       setPin(pin, ww.place);
       setTimeout(() => map.invalidateSize(), 50);
     }
     try {
-      parksFor[myState.code] ||= await api(`/hotspots?state=${myState.code}`);
-      for (const h of [...parksFor[myState.code]].sort((a, b) => a.name.localeCompare(b.name)))
+      parksFor[st.code] ||= await api(`/hotspots?state=${st.code}`);
+      for (const h of [...parksFor[st.code]].sort((a, b) => a.name.localeCompare(b.name)))
         parkSel.append(new Option(h.name, `${h.lat},${h.lon}`));
     } catch {}
     parkSel.onchange = () => {

@@ -126,6 +126,8 @@ class PickIn(BaseModel):
 class WhereWhenOut(BaseModel):
     """When and where a capture was taken, for its owner (exact place)."""
     capture_id: int
+    # The state it counts in; edited places must be inside it.
+    state: str | None = None
     # Local wall time, no zone (the upload time in the state's time when the photo had none).
     taken_at: datetime
     # "photo" (from its metadata), "upload" (no metadata: the upload time) or "edited".
