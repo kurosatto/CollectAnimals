@@ -162,9 +162,9 @@
   nav#tabs button { position:relative; }
   nav#tabs .badge { position:absolute; top:3px; left:calc(50% + 6px); min-width:18px; padding:0 5px; border-radius:9px;
                     background:#d2423a; color:#fff; font-size:.7rem; font-weight:700; line-height:18px; }
-  #toast { position:fixed; left:50%; top:12px; transform:translateX(-50%); z-index:20; max-width:calc(100% - 32px);
+  #toast { position:fixed; left:50%; top:12px; transform:translateX(-50%); z-index:20; width:max-content; max-width:calc(100% - 32px);
            background:var(--card); color:var(--ink); border:1px solid var(--line); border-radius:12px;
-           padding:10px 14px; box-shadow:0 4px 16px rgba(0,0,0,.15); cursor:pointer; }
+           padding:10px 14px; box-shadow:0 4px 16px rgba(0,0,0,.15); cursor:pointer; white-space:pre-line; }
   body.authed main { padding-bottom:84px; }
   @media (min-width:720px) {
     nav#tabs .badge { position:static; }
@@ -370,7 +370,7 @@
         <button type="submit">Add friend</button>
       </form>
       <p id="friend-msg" class="muted"></p>
-      <button id="notify-on" class="ghost hidden">🔔 Notify me about friend requests</button>
+      <button id="notify-on" class="ghost hidden">🔔 Notify me about friend requests, likes and comments</button>
       <div id="friend-lists"></div>
     </div>
   </section>
@@ -438,6 +438,7 @@ async function api(path, opts = {}) {
 function setToken(t) {
   token = t;
   knownRequests = null;
+  activitySince = null;
   try { t ? localStorage.setItem("token", t) : localStorage.removeItem("token"); } catch {}
   if (!t) forgetOfflineData();
   render();
@@ -470,7 +471,7 @@ $("auth-form").onsubmit = async (e) => {
   } catch (err) { $("auth-error").textContent = err.message; }
 };
 
-$("logout").onclick = () => setToken(null);
+$("logout").onclick = async () => { await pushUnsubscribe(); setToken(null); };
 $("username").onclick = () => openProfile($("username").textContent);
 
 function here() {
@@ -1496,10 +1497,14 @@ async function loadFriends() {
     headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: u }) })]]);
 }
 
-// --- friend request alerts ---------------------------------------------------
-// The Friends tab shows how many requests are waiting. Requests that arrive while the
-// site is open pop up a note, and a browser notification too once the player allows it.
+// --- notifications -------------------------------------------------------------
+// Friend requests, likes and comments on your photos. The Friends tab counts waiting
+// requests, and while the site is open a check every minute pops up a note for anything
+// new. With notifications turned on, the server also pushes them (Web Push, shown by
+// sw.js) so they arrive with the site closed; without push, a hidden tab shows them.
 let knownRequests = null;  // usernames of requests already shown; null until the first load
+let activitySince = null;  // server time of the last likes/comments check
+let pushOn = false;
 
 function friendAlerts(f) {
   const names = f.incoming.map((p) => p.username);
@@ -1509,32 +1514,79 @@ function friendAlerts(f) {
   document.title = (names.length ? `(${names.length}) ` : "") + "Capture Animals";
   const fresh = knownRequests ? names.filter((n) => !knownRequests.has(n)) : [];
   knownRequests = new Set(names);
-  if (fresh.length) requestAlert(fresh);
+  if (fresh.length) alertNote([fresh.length === 1 ? `👋 ${fresh[0]} sent you a friend request`
+    : `👋 ${fresh.length} new friend requests`], "friends");
   $("notify-on").classList.toggle("hidden", !("Notification" in window) || Notification.permission !== "default");
 }
 
-function requestAlert(names) {
-  const text = names.length === 1 ? `👋 ${names[0]} sent you a friend request`
-    : `👋 ${names.length} new friend requests`;
+const others = (n) => n > 0 ? ` and ${n} other${n > 1 ? "s" : ""}` : "";
+
+async function checkActivity() {
+  const a = await api("/me/activity" + (activitySince ? `?since=${encodeURIComponent(activitySince)}` : ""));
+  const first = !activitySince;
+  activitySince = a.now;
+  if (first) return;
+  const lines = [
+    ...a.likes.map((l) => `❤️ ${l.usernames[0]}${others(l.count - 1)} liked your ${l.species} photo`),
+    ...a.comments.map((c) => `💬 ${c.username} on your ${c.species}: ${c.body}`)];
+  if (lines.length) { alertNote(lines, "photos"); loadMyPhotos(); }
+}
+
+function alertNote(lines, tab) {
+  const shown = lines.length > 3 ? [...lines.slice(0, 3), `and ${lines.length - 3} more`] : lines;
   const toast = $("toast");
-  toast.textContent = text;
+  toast.textContent = shown.join("\n");
   toast.classList.remove("hidden");
-  toast.onclick = () => { toast.classList.add("hidden"); showTab("friends"); };
-  clearTimeout(requestAlert.timer);
-  requestAlert.timer = setTimeout(() => toast.classList.add("hidden"), 8000);
-  if (document.hidden && "Notification" in window && Notification.permission === "granted") {
-    const n = new Notification("Capture Animals", { body: text.slice(3), icon: "/sprites/ui_tab_friends.png",
-                                                    tag: "friend-requests" });
-    n.onclick = () => { window.focus(); showTab("friends"); n.close(); };
+  toast.onclick = () => { toast.classList.add("hidden"); showTab(tab); };
+  clearTimeout(alertNote.timer);
+  alertNote.timer = setTimeout(() => toast.classList.add("hidden"), 8000);
+  // Pushed notifications already reach a hidden tab; this covers browsers without push.
+  if (document.hidden && !pushOn && "Notification" in window && Notification.permission === "granted") {
+    const n = new Notification("Capture Animals", { body: shown.join("\n").replace(/^[^\p{L}\s]+ /gmu, ""),
+                                                    icon: "/icons/icon-192.png", tag: tab });
+    n.onclick = () => { window.focus(); showTab(tab); n.close(); };
   }
 }
 
+const keyBytes = (k) => Uint8Array.from(atob(k.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
+
+// Registers this browser for pushes to whoever is logged in.
+async function pushSubscribe() {
+  if (!token || !window.isSecureContext || !("PushManager" in window) || !navigator.serviceWorker) return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      const { key } = await api("/push/key");
+      sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(key) });
+    }
+    const { endpoint, keys } = sub.toJSON();
+    await api("/push/subscribe", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ endpoint, p256dh: keys.p256dh, auth: keys.auth }) });
+    pushOn = true;
+  } catch {}
+}
+
+// Logging out stops this browser's notifications.
+async function pushUnsubscribe() {
+  pushOn = false;
+  try {
+    const reg = await navigator.serviceWorker?.getRegistration();
+    const sub = await reg?.pushManager?.getSubscription();
+    if (!sub) return;
+    await api("/push/unsubscribe", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ endpoint: sub.endpoint }) }).catch(() => {});
+    await sub.unsubscribe();
+  } catch {}
+}
+
 $("notify-on").onclick = async () => {
-  await Notification.requestPermission().catch(() => {});
+  const p = await Notification.requestPermission().catch(() => "default");
   $("notify-on").classList.add("hidden");
+  if (p === "granted") pushSubscribe();
 };
 
-// Check for new requests every minute; the list itself only redraws when something changed.
+// Check every minute; the friends list only redraws when a request arrived.
 setInterval(async () => {
   if (!token) return;
   try {
@@ -1543,6 +1595,7 @@ setInterval(async () => {
     friendAlerts(f);
     if (before && f.incoming.some((p) => !before.has(p.username))) loadFriends();
   } catch {}
+  checkActivity().catch(() => {});
 }, 60_000);
 
 // New players start with the example bots as friends; say so plainly, once.
@@ -1798,6 +1851,8 @@ async function render() {
       await useState(me.state);
       markLocked(me.unlocked_states);
       loadCollection(); loadFriends(); loadFeed(); botWelcome(me.username);
+      checkActivity().catch(() => {});
+      if ("Notification" in window && Notification.permission === "granted") pushSubscribe();
     } catch {}
   }
 }

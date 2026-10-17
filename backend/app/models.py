@@ -194,3 +194,17 @@ class Friendship(Base):
 
     requester: Mapped[User] = relationship(foreign_keys=[requester_id])
     addressee: Mapped[User] = relationship(foreign_keys=[addressee_id])
+
+
+class PushSubscription(Base):
+    """A browser's Web Push address for a player (app/push.py). One per browser;
+    dropped when the push service says it's gone or the player logs out there."""
+
+    __tablename__ = "push_subscriptions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    endpoint: Mapped[str] = mapped_column(String(1000), unique=True)
+    p256dh: Mapped[str] = mapped_column(String(200))
+    auth: Mapped[str] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

@@ -15,8 +15,8 @@ android {
         applicationId = "com.captureanimals.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 10
-        versionName = "0.8.2"
+        versionCode = 11
+        versionName = "0.8.3"
         // Phones are arm64; leaving out other ABIs keeps the APK ~15 MB smaller.
         ndk { abiFilters += listOf("arm64-v8a") }
     }
