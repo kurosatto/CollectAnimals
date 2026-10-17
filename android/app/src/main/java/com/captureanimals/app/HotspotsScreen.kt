@@ -34,8 +34,8 @@ import androidx.compose.ui.unit.dp
 
 /**
  * Parks where many of the 100 can be spotted (species/hotspots.json), matching the
- * web page's Hotspots card: a map with a pin per park, a list sorted by species count,
- * and a detail card whose species chips open their Field Guide pages.
+ * web page's Hotspots card: a map with a pin per park, the top parks ranked by animals
+ * not captured yet and distance (rankParks), and a detail card whose species chips open their Field Guide pages.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -61,7 +61,7 @@ fun HotspotsScreen(info: ModelInfo, dex: FieldGuide, collection: Map<String, Bad
             }
             Text("Hotspots", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         }
-        Text("Parks where you can spot lots of the 100. Tap a park to see which ones.",
+        Text("Parks worth a trip for animals you haven't captured yet. Tap a park to see what lives there.",
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
 
         ParksMap(dex, parks, selectedId, me, Modifier.fillMaxWidth(),
@@ -93,19 +93,38 @@ fun HotspotsScreen(info: ModelInfo, dex: FieldGuide, collection: Map<String, Bad
             }
         }
 
-        parks.forEach { park ->
-            val on = park.id == selectedId
+        val ranked = remember(parks, collection, me) { rankParks(parks, collection.keys, me) }
+        var showAll by rememberSaveable { mutableStateOf(false) }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(if (me != null) "Best parks near you for animals you haven't captured yet."
+                 else "Parks with the most animals you haven't captured yet.",
+                Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
+            if (me == null) TextButton(onClick = {
+                if (hasLocationPermission(context)) me = lastLocation(context) else askLocation.launch(LOCATION_PERMISSIONS)
+            }) { Text("Use my location") }
+        }
+        (if (showAll) ranked else ranked.take(HOTSPOTS_TOP)).forEach { r ->
+            val on = r.park.id == selectedId
             Card(
-                onClick = { selectedId = park.id },
+                onClick = { selectedId = r.park.id },
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor =
                     if (on) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant),
             ) {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text(park.name, Modifier.weight(1f))
-                    Text("${park.species.size}", fontWeight = FontWeight.Bold)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(r.park.name, Modifier.weight(1f))
+                    Text(if (r.fresh == 0) "All captured" else "${r.fresh} new animal${if (r.fresh == 1) "" else "s"}",
+                        fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    r.miles?.let {
+                        Text(formatMiles(it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                    }
                 }
+            }
+        }
+        if (ranked.size > HOTSPOTS_TOP) {
+            TextButton(onClick = { showAll = !showAll }) {
+                Text(if (showAll) "Show fewer" else "Show all ${ranked.size} parks")
             }
         }
     }
