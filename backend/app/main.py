@@ -29,7 +29,8 @@ from .config import settings
 from .db import Base, SessionLocal, add_missing_columns, engine, get_db
 from .models import AlbumPhoto, Badge, Capture, Friendship, IdFeedback, PhotoLike, Species, StateSpecies, User
 from .schemas import (BondNoteOut, BondOut, BondsOut, BuddyIn, BuddyOut, CaptureOut, ChallengeOut, ChallengesOut, ChoiceOut, ScoreOut, ScorePart, SetOut, SetSpecies, SetsOut, CollectionEntry, CollectionOut, DexOut, PlaceOut, HotspotOut, HotspotSpecies,
-                      PickIn, PredictionOut, RegisterIn, SpeciesOut, StateOut, TokenOut, UserOut, UserUpdate)
+                      PickIn, PredictionOut, RegisterIn, SpeciesOut, StateOut, TokenOut, UserOut, UserUpdate,
+                      WhereWhenIn, WhereWhenResult)
 from .social import catches_in, find_species, friend_ids, revealed_species_ids, species_out, user_named
 from .storage import get_storage
 
@@ -82,10 +83,16 @@ def add_state_column() -> None:
 
 
 def restar_scores() -> None:
-    """Stars went from 1-3 to 1-5: work them out again from each saved score's parts."""
+    """Stars went from 1-3 to 1-5, and the golden-hour bonus was dropped (the time
+    and place can be edited, so they don't count): work each saved score out again
+    from its parts."""
     with SessionLocal() as db:
         for c in db.scalars(select(Capture).where(Capture.score_parts.is_not(None))):
-            stars = scoring.stars_for(json.loads(c.score_parts))
+            parts = json.loads(c.score_parts)
+            kept = [p for p in parts if p[0] not in scoring.RETIRED_PARTS]
+            if len(kept) != len(parts):
+                c.score_parts, c.score = json.dumps(kept), sum(pts for _, pts in kept)
+            stars = scoring.stars_for(kept)
             if c.score_stars != stars:
                 c.score_stars = stars
         db.commit()
@@ -497,13 +504,44 @@ def _exif_meta(im: Image.Image) -> tuple[float | None, float | None, datetime | 
     return lat, lon, taken
 
 
+# A phone's location only says where a photo was taken if it was taken just now;
+# an older photo from the gallery gets no place rather than the wrong one.
+DEVICE_PLACE_MAX_AGE = timedelta(hours=3)
+
+
+def _local_now(state: st.State) -> datetime:
+    """The state's wall clock now (no zone), with US daylight saving."""
+    return _local(datetime.now(timezone.utc), state)
+
+
+def _local(when: datetime, state: st.State) -> datetime:
+    return scoring.to_local(when, state.utc_offset)
+
+
+def _parse_local_time(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(value.strip()).replace(tzinfo=None)
+    except ValueError:
+        return None
+
+
 @app.post("/captures", response_model=CaptureOut, status_code=201)
 async def create_capture(photo: UploadFile = File(...),
                          latitude: float | None = Form(None, ge=-90, le=90),
                          longitude: float | None = Form(None, ge=-180, le=180),
+                         photo_latitude: float | None = Form(None, ge=-90, le=90),
+                         photo_longitude: float | None = Form(None, ge=-180, le=180),
+                         photo_taken_at: str | None = Form(None),
+                         save_place: bool = Form(True),
                          user: User = Depends(current_user), db: Session = Depends(get_db)):
-    """Identify a photo. latitude/longitude are where it was taken (the web page
-    sends the phone's location); without them we fall back to the photo's EXIF GPS."""
+    """Identify a photo. When and where it was taken come from the photo's own
+    metadata (EXIF) first. Apps that shrink the photo before uploading (which
+    drops EXIF) send what they read as photo_latitude/photo_longitude/photo_taken_at
+    (local time). Without metadata, latitude/longitude (the phone's location now)
+    are used if the photo is recent, and the upload time stands in for the time.
+    save_place=false (the player turned off saving where) keeps no place at all."""
     model = clf.get_classifier()
     if model is None:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -515,9 +553,23 @@ async def create_capture(photo: UploadFile = File(...),
         raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
                             f"Photo larger than {settings.max_upload_mb} MB")
     raw = _read_image(data)
+    state = st.get(user.state) or st.get(None)
     exif_lat, exif_lon, taken_at = _exif_meta(raw)
-    if latitude is None or longitude is None:
-        latitude, longitude = exif_lat, exif_lon
+    if exif_lat is None and photo_latitude is not None and photo_longitude is not None:
+        exif_lat, exif_lon = photo_latitude, photo_longitude
+    taken_at = taken_at or _parse_local_time(photo_taken_at)
+    now = _local_now(state)
+    if taken_at is not None and not (datetime(1990, 1, 1) <= taken_at <= now + timedelta(days=1)):
+        taken_at = None  # the camera's clock was wrong
+    time_source = "photo" if taken_at is not None else None
+    if not save_place:
+        latitude = longitude = place_source = None
+    elif exif_lat is not None:
+        latitude, longitude, place_source = exif_lat, exif_lon, "photo"
+    elif latitude is not None and longitude is not None and (taken_at is None or now - taken_at <= DEVICE_PLACE_MAX_AGE):
+        place_source = "device"
+    else:
+        latitude = longitude = place_source = None
     # Phone photos are often rotated via EXIF; apply it before classifying.
     image = ImageOps.exif_transpose(raw).convert("RGB")
 
@@ -525,7 +577,6 @@ async def create_capture(photo: UploadFile = File(...),
     # so e.g. a bluebird photo in North Carolina isn't split between the eastern
     # and western bluebird. Five guesses: the first three are shown, all five are
     # offered if the player says the model got it wrong.
-    state = st.get(user.state) or st.get(None)
     members = {m.species.slug: m for m in state_species(db, state.code)}
     preds = restrict(model.predict(image, k=1000), set(members) | {OTHER_LABEL})[:5]
     top = preds[0]
@@ -544,6 +595,7 @@ async def create_capture(photo: UploadFile = File(...),
     capture = Capture(user_id=user.id, species_id=species.id if matched else None,
                       image_path=name, predicted_label=top.label, confidence=top.probability,
                       latitude=latitude, longitude=longitude, taken_at=taken_at, state=state.code,
+                      time_source=time_source, place_source=place_source,
                       top_labels=",".join(p.label for p in preds if p.label in species_by_slug))
     db.add(capture)
     db.flush()
@@ -602,6 +654,7 @@ async def create_capture(photo: UploadFile = File(...),
         score=score,
         bond=bond,
         bond_up=bond_up,
+        where_when=social.where_when_out(capture, state.utc_offset),
     )
 
 
@@ -611,31 +664,10 @@ def _score_capture(model, capture: Capture, slug: str, rarity: str, image: Image
     safety = dex.details(slug, state_code).get("safety") or "none"
     sc = scoring.score_photo(model, image, slug, allowed, confidence=confidence, rarity=rarity,
                              safety=safety, new_species=new_badge,
-                             activity=dex.activity(slug, state_code),
-                             sun=_sun_at_capture(capture, state_code))
+                             activity=dex.activity(slug, state_code))
     capture.score, capture.score_stars, capture.score_parts = sc.total, sc.stars, sc.to_json()
     return score_out(capture)
 
-
-def _sun_at_capture(capture: Capture, state_code: str) -> float | None:
-    """The sun's elevation when and where the photo was taken: the photo's EXIF
-    time (the phone's local time), else the upload time (UTC), at the photo's
-    location, else the middle of the state."""
-    state = st.get(state_code)
-    if state is None:
-        return None
-    if capture.taken_at is not None:
-        when = scoring.to_utc(capture.taken_at, state.utc_offset)
-    else:
-        when = capture.created_at or datetime.now(timezone.utc)
-        if when.tzinfo is None:
-            when = when.replace(tzinfo=timezone.utc)
-    if capture.latitude is not None and capture.longitude is not None:
-        lat, lon = capture.latitude, capture.longitude
-    else:
-        b = state.bounds
-        lat, lon = (b["south"] + b["north"]) / 2, (b["west"] + b["east"]) / 2
-    return scoring.sun_elevation(when, lat, lon)
 
 
 def score_old_photos(db: Session, model, pause: float = 0.0) -> int:
@@ -644,29 +676,37 @@ def score_old_photos(db: Session, model, pause: float = 0.0) -> int:
     (seconds) between photos keeps the machine responsive."""
     stale = [c for c in db.scalars(select(Capture).where(Capture.species_id.is_not(None)).order_by(Capture.id))
              if c.score_parts is None or "Lighting" not in c.score_parts]
-    storage, done = get_storage(), 0
+    done = 0
     for c in stale:
-        data = storage.get(c.image_path) if c.image_path else None
-        if data is None:
+        if not _rescore(db, model, c):
             continue
-        user = db.get(User, c.user_id)
-        state = st.get(user.state) or st.get(None)
-        members = {m.species.slug: m for m in state_species(db, state.code)}
-        species = db.get(Species, c.species_id)
-        m = members.get(species.slug)
-        first = db.scalar(select(Badge.first_capture_id).where(Badge.user_id == c.user_id,
-                                                               Badge.species_id == c.species_id))
-        image = Image.open(io.BytesIO(data)).convert("RGB")
-        # The model's own pick on the whole photo already has its confidence;
-        # a player's pick is scored from scratch.
-        confidence = c.confidence if not c.user_picked and c.predicted_label == species.slug else None
-        _score_capture(model, c, species.slug, m.rarity if m else species.rarity, image, state.code,
-                       set(members), first == c.id, confidence=confidence)
         db.commit()
         done += 1
         if pause:
             time.sleep(pause)
     return done
+
+
+def _rescore(db: Session, model, c: Capture) -> bool:
+    """Score a saved capture again for the species it counts as. False if the
+    photo is gone."""
+    data = get_storage().get(c.image_path) if c.image_path else None
+    if data is None or model is None or c.species_id is None:
+        return False
+    user = db.get(User, c.user_id)
+    state = st.get(c.state or user.state) or st.get(None)
+    members = {m.species.slug: m for m in state_species(db, state.code)}
+    species = db.get(Species, c.species_id)
+    m = members.get(species.slug)
+    first = db.scalar(select(Badge.first_capture_id).where(Badge.user_id == c.user_id,
+                                                           Badge.species_id == c.species_id))
+    image = Image.open(io.BytesIO(data)).convert("RGB")
+    # The model's own pick on the whole photo already has its confidence;
+    # a player's pick is scored from scratch.
+    confidence = c.confidence if not c.user_picked and c.predicted_label == species.slug else None
+    _score_capture(model, c, species.slug, m.rarity if m else species.rarity, image, state.code,
+                   set(members), first == c.id, confidence=confidence)
+    return True
 
 
 def _score_old_photos_in_background() -> None:
@@ -781,7 +821,54 @@ def pick_capture_species(capture_id: int, body: PickIn, user: User = Depends(cur
     return CaptureOut(capture_id=capture.id, matched=True, species=species_out(species, True, m),
                       confidence=capture.confidence, new_badge=new_badge, message=message,
                       top_predictions=[], album_photo_id=album_photo.id if album_photo else None,
-                      score=score_out(capture), bond=bond, bond_up=bond_up)
+                      score=score_out(capture), bond=bond, bond_up=bond_up,
+                      where_when=social.where_when_out(capture, (st.get(user.state) or st.get(None)).utc_offset))
+
+
+@app.put("/captures/{capture_id}/where-when", response_model=WhereWhenResult)
+def set_where_when(capture_id: int, body: WhereWhenIn, user: User = Depends(current_user),
+                   db: Session = Depends(get_db)):
+    """The player fixes when and where they took a photo (the photo's metadata
+    can be missing or wrong). The place must be in the state the capture counts
+    in and the time no later than the upload. Field notes and the place name
+    follow; the photo score doesn't depend on either."""
+    capture = db.get(Capture, capture_id)
+    if capture is None or capture.user_id != user.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Capture not found")
+    state = st.get(capture.state or user.state) or st.get(None)
+    taken = (_local(body.taken_at, state) if body.taken_at.tzinfo else body.taken_at).replace(microsecond=0)
+    uploaded = _local(capture.created_at or datetime.now(timezone.utc), state)
+    # A few minutes' slack for clocks that disagree.
+    if taken > max(uploaded, _local_now(state)) + timedelta(minutes=5):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "That's after the photo was uploaded")
+    if taken < datetime(1990, 1, 1):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "That's too long ago")
+    if (body.latitude is None) != (body.longitude is None):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Give both latitude and longitude, or neither")
+    if body.latitude is not None and not places.in_state(state, body.latitude, body.longitude):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Pick a place in {state.name}")
+
+    before_bond = _sightings(db, user.id, state.utc_offset, capture.species_id).get(capture.species_id, []) \
+        if capture.species_id else []
+    old_time = capture.taken_at.replace(tzinfo=None) if capture.taken_at else uploaded
+    if taken != old_time.replace(microsecond=0):
+        capture.taken_at, capture.time_source = taken, "edited"
+    old_place = (capture.latitude, capture.longitude)
+    new_place = (body.latitude, body.longitude)
+    if old_place != new_place and not (old_place[0] is not None and new_place[0] is not None
+                                       and abs(old_place[0] - new_place[0]) < 1e-5
+                                       and abs(old_place[1] - new_place[1]) < 1e-5):
+        capture.latitude, capture.longitude = new_place
+        capture.place_source = "edited" if new_place[0] is not None else None
+    db.commit()
+
+    bond, bond_up = None, []
+    if capture.species_id is not None:
+        after = _sightings(db, user.id, state.utc_offset, capture.species_id).get(capture.species_id, [])
+        bond = bonds.level(bonds.notes(after))
+        bond_up = bonds.newly_done(before_bond, after)
+    return WhereWhenResult(where_when=social.where_when_out(capture, state.utc_offset), score=score_out(capture),
+                           bond=bond, bond_up=bond_up)
 
 
 def _record_feedback(db: Session, capture: Capture, user: User, guesses: list[str], chosen: str | None) -> None:

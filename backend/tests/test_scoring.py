@@ -44,9 +44,8 @@ def test_score_parts_stars_and_bonuses():
     labels = dict(s.parts)
     assert labels["Clarity"] == scoring.CLARITY_MAX and labels["Framing"] == scoring.FRAMING_MAX
     assert labels["Rare animal"] == 250 and labels["New species"] == 200
-    # Mostly white, so lighting is poor: 4 stars, but golden hour light makes it 5.
+    # Mostly white, so lighting is poor: 4 stars.
     assert s.stars == 4 and s.total == sum(labels.values())
-    assert scoring.score_photo(CenterOnly(0.95), busy_photo(), "coyote", allowed, sun=3.0).stars == 5
 
     # Off-center animal: framing drops, no bonus for a common repeat.
     s = scoring.score_photo(CenterOnly(0.2), busy_photo(), "coyote", allowed)
@@ -82,32 +81,6 @@ def test_night_animals_keep_some_lighting_points():
     assert night["Lighting"] == round(scoring.LIGHTING_MAX * scoring.NIGHT_LIGHTING_FLOOR) > day["Lighting"]
 
 
-def test_to_utc_uses_us_daylight_saving():
-    assert scoring.to_utc(datetime(2026, 7, 1, 19, 0), -8) == datetime(2026, 7, 2, 2, 0, tzinfo=timezone.utc)
-    assert scoring.to_utc(datetime(2026, 1, 15, 19, 0), -8) == datetime(2026, 1, 16, 3, 0, tzinfo=timezone.utc)
-    aware = datetime(2026, 7, 1, 12, 0, tzinfo=timezone.utc)
-    assert scoring.to_utc(aware, -5) == aware
-
-
-def test_sun_elevation_in_los_angeles():
-    la = (34.05, -118.24)
-    # Summer solstice: sunset about 8:08pm PDT, high sun (~79 degrees) near 1pm PDT.
-    sunset = scoring.sun_elevation(datetime(2026, 6, 22, 3, 8, tzinfo=timezone.utc), *la)
-    noon = scoring.sun_elevation(datetime(2026, 6, 21, 20, 0, tzinfo=timezone.utc), *la)
-    midnight = scoring.sun_elevation(datetime(2026, 6, 22, 8, 0, tzinfo=timezone.utc), *la)
-    assert -2 < sunset < 1
-    assert 75 < noon < 80
-    assert midnight < -20
-
-
-def test_golden_hour_bonus():
-    allowed = {"coyote", "gray_fox"}
-    evening = dict(scoring.score_photo(CenterOnly(0.95), busy_photo(), "coyote", allowed, sun=3.0).parts)
-    midday = dict(scoring.score_photo(CenterOnly(0.95), busy_photo(), "coyote", allowed, sun=50.0).parts)
-    unknown = dict(scoring.score_photo(CenterOnly(0.95), busy_photo(), "coyote", allowed).parts)
-    assert evening["Golden hour"] == scoring.GOLDEN_HOUR_BONUS
-    assert "Golden hour" not in midday and "Golden hour" not in unknown
-
 
 def test_soft_background():
     crisp = busy_photo()
@@ -125,7 +98,14 @@ def test_five_star_cutoffs():
     def photo(points, *bonus):
         return [("Clarity", points), ("Rare animal", 250), ("New species", 200)] + [(b, 100) for b in bonus]
     assert [scoring.stars_for(photo(p)) for p in (1000, 950, 900, 700, 500, 200)] == [5, 5, 4, 3, 2, 1]
-    # Rarity and new species don't add stars; good light and a soft background do.
-    assert scoring.stars_for(photo(900, "Golden hour")) == 5
+    # Rarity and new species don't add stars; a soft background does.
+    assert scoring.stars_for(photo(900, "Soft background")) == 5
+    # Retired parts (golden hour) no longer add stars.
+    assert scoring.stars_for(photo(900, "Golden hour")) == 4
     # Scores saved before lighting existed (three parts out of 1000) still work.
     assert scoring.stars_for([["Clarity", 400], ["Sharpness", 300], ["Framing", 280]]) == 5
+
+
+def test_to_local_uses_us_daylight_saving():
+    assert scoring.to_local(datetime(2026, 7, 2, 2, 0, tzinfo=timezone.utc), -8) == datetime(2026, 7, 1, 19, 0)
+    assert scoring.to_local(datetime(2026, 1, 16, 3, 0, tzinfo=timezone.utc), -8) == datetime(2026, 1, 15, 19, 0)
