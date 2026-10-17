@@ -2356,10 +2356,14 @@ async function openProfile(username) {
   box.append(grid);
   if (u.hidden_photos) box.append(el("p", "muted",
     `${u.hidden_photos} more photo${u.hidden_photos > 1 ? "s" : ""} of animals you haven't discovered yet.`));
-  const earned = u.achievements.filter((a) => a.earned).length;
-  sec(`Achievements · ${earned}/${u.achievements.length}`);
+  // Your own profile lists every achievement with progress; anyone else's shows
+  // only the ones they've earned.
+  const mine = u.friendship === "self";
+  const earned = u.achievements.filter((a) => a.earned);
+  sec(mine ? `Achievements · ${earned.length}/${u.achievements.length}` : `Achievements · ${earned.length}`);
   const ach = el("div", "achievements");
-  for (const a of [...u.achievements].sort((x, y) => y.earned - x.earned)) {
+  if (!mine && !earned.length) ach.append(el("p", "muted", `${u.username} hasn't earned any achievements yet.`));
+  for (const a of mine ? [...u.achievements].sort((x, y) => y.earned - x.earned) : earned) {
     const d = el("div", "ach" + (a.earned ? " on" : ""));
     d.title = a.description;
     d.append(el("strong", "", (a.earned ? "🏆 " : "🔒 ") + a.title),
