@@ -309,7 +309,7 @@ def user_profile(username: str, user: User = Depends(current_user), db: Session 
 
     return ProfileOut(
         username=owner.username, joined=owner.created_at, friendship=friendship,
-        is_bot=bool(owner.is_bot), is_private=bool(owner.is_private),
+        is_bot=bool(owner.is_bot), is_private=bool(owner.is_private), state=owner.state,
         caught=len(caught_ids), total=len(members), by_rarity=by_rarity, by_category=by_category,
         likes_received=likes_received,
         achievements=_achievements(len(caught_ids), len(members), by_rarity, by_category, likes_received)

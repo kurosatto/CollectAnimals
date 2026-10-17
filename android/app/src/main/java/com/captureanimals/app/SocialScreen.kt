@@ -6,6 +6,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -196,10 +197,12 @@ class SocialViewModel(app: Application) : AndroidViewModel(app) {
         _state.update { it.copy(friends = f, suggestions = s) }
     }
 
-    fun openGuide(username: String) {
-        _state.update { it.copy(guideFor = username, guide = null, guideError = null) }
+    /** Opens [username]'s Field Guide on their primary state, or on [state] (one of their places). */
+    fun openGuide(username: String, state: String? = null) {
+        // Switching places keeps the open guide on screen until the new one arrives.
+        _state.update { it.copy(guideFor = username, guide = if (state != null) it.guide else null, guideError = null) }
         viewModelScope.launch {
-            runCatching { Online.friendGuide(username) }
+            runCatching { Online.friendGuide(username, state) }
                 .onSuccess { g -> _state.update { if (it.guideFor == username) it.copy(guide = g) else it } }
                 .onFailure { e -> _state.update { it.copy(guideError = e.message) } }
         }
@@ -502,7 +505,8 @@ private fun FriendRow(u: FriendEntry, onOpen: ((String) -> Unit)?, actions: @Com
 
 private val RARITY_ORDER = listOf("common", "uncommon", "rare", "legendary")
 
-/** The friend's Field Guide in their own state: the animals they've captured. */
+/** The friend's Field Guide: the animals they've captured, on their primary state first,
+ *  with a chip for each other state they've captured animals in. */
 @Composable
 fun FriendGuideDialog(s: SocialState, social: SocialViewModel, game: UiState) {
     val who = s.guideFor ?: return
@@ -514,6 +518,11 @@ fun FriendGuideDialog(s: SocialState, social: SocialViewModel, game: UiState) {
                 val stateName = g?.let { gd -> game.states.firstOrNull { it.code == gd.state }?.name ?: gd.state }
                 Text(if (g == null) "$who's Field Guide" else "$who's Field Guide · $stateName · ${g.caught}/${g.total}",
                     style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                if (g != null && g.places.size > 1) Row(Modifier.horizontalScroll(rememberScrollState()).padding(top = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    for (p in g.places) FilterChip(p.state == g.state, { if (p.state != g.state) social.openGuide(who, p.state) },
+                        label = { Text((if (p.state == g.primaryState) "📍 " else "") + "${p.name} · ${p.caught}") })
+                }
                 Spacer(Modifier.height(8.dp))
                 when {
                     s.guideError != null -> Text(s.guideError, color = MaterialTheme.colorScheme.error)
