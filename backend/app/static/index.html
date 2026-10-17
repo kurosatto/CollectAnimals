@@ -67,9 +67,16 @@
   .zoom-map { height:360px; border-radius:10px; overflow:hidden; z-index:0; }
   @media (max-width:640px) { .zoom-map { height:300px; } }
   .locate-btn { width:34px; height:34px; background:#fff; cursor:pointer; font-size:1rem; padding:0; }
-  .hot-list { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
-  .hot-list button { background:var(--bg); color:var(--ink); border:1px solid var(--line); padding:6px 10px; font-size:.85rem; }
-  .hot-list button.on { border-color:var(--accent); color:var(--accent); }
+  .hot-list { display:flex; flex-direction:column; gap:6px; margin-top:12px; }
+  .hot-head { margin:0 0 2px; }
+  .hot-head .linkish { background:none; border:0; padding:0; color:var(--accent); text-decoration:underline; font:inherit; cursor:pointer; }
+  .hot-row { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:12px; align-items:center; text-align:left;
+    background:var(--bg); color:var(--ink); border:1px solid var(--line); padding:10px 12px; font-size:.95rem; }
+  .hot-row.on { border-color:var(--accent); }
+  .hot-row .hot-name { overflow:hidden; text-overflow:ellipsis; }
+  .hot-row .hot-new { font-weight:600; color:var(--accent); }
+  .hot-row .hot-far { min-width:4.5em; text-align:right; font-size:.85rem; }
+  .hot-list > button.ghost { align-self:flex-start; }
   .hot-species { display:flex; flex-wrap:wrap; gap:6px; padding:0; list-style:none; }
   .hot-species li { border:1px solid var(--line); border-radius:999px; padding:3px 10px; font-size:.85rem; cursor:pointer; }
   .hot-species li.caught { border-color:var(--accent); }
@@ -213,6 +220,7 @@
   .set-sprites img.missing { opacity:.4; }
   .score { margin-top:12px; border:1px solid var(--line); border-radius:10px; padding:10px 12px; max-width:320px; }
   .score-head { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+  .tile-stars { color:var(--legendary); font-size:.75rem; letter-spacing:0; }
   .score-stars { color:var(--legendary); font-size:1.3rem; letter-spacing:1px; }
   .score-total { font-weight:700; font-size:1.1rem; }
   .score-parts { display:grid; grid-template-columns:1fr auto; gap:2px 12px; margin-top:6px; font-size:.85rem; color:var(--muted); }
@@ -313,7 +321,7 @@
     </div>
     <div class="card off" id="hotspots-card" data-tab="parks">
       <h2>Hotspots</h2>
-      <p class="muted" style="margin-top:0">Parks where you can spot lots of the 100. Tap a park to see which ones.</p>
+      <p class="muted" style="margin-top:0">Parks worth a trip for animals you haven't captured yet. Tap a park to see what lives there.</p>
       <div class="hot-wrap">
         <div class="dex-map" id="hot-map"></div>
         <div id="hot-detail"><p class="muted">Pick a park on the map or the list.</p></div>
@@ -711,7 +719,11 @@ function addTile(grid, e, i, tier, owner = null) {
   const st = t.querySelector(".status");
   if (owner) {
     // A friend's guide: ✓ is theirs; also say when you have one they don't.
-    if (e.caught) { st.textContent = "✓"; st.classList.add("mine"); t.title = `Captured by ${owner.username}`; }
+    if (e.caught) {
+      st.textContent = e.photo_stars ? stars(e.photo_stars) : "✓";
+      st.classList.add(e.photo_stars ? "tile-stars" : "mine");
+      t.title = `Captured by ${owner.username}` + (e.photo_score != null ? `: ${e.photo_score.toLocaleString()} pts photo` : "");
+    }
     else if (e.you_caught) { st.textContent = "You have it"; st.classList.add("friend"); t.title = `${owner.username} hasn't captured it yet`; }
     t.onclick = () => openDex(s.number, i + 1, e.you_caught, owner.state);
     grid.append(t);
@@ -719,7 +731,9 @@ function addTile(grid, e, i, tier, owner = null) {
   }
   if (state === "mine") {
     st.append(heartsEl(e.bond || 1));
-    t.title = `Captured. Bond: ${BOND_TITLES[(e.bond || 1) - 1]}`;
+    if (e.photo_stars) st.append(el("div", "tile-stars", stars(e.photo_stars)));
+    t.title = `Captured. Bond: ${BOND_TITLES[(e.bond || 1) - 1]}` +
+      (e.photo_score != null ? `. Album photo: ${e.photo_score.toLocaleString()} pts` : "");
   }
   else if (state === "friend") {
     st.textContent = `👥 ${e.friends_caught}`;
@@ -1643,6 +1657,7 @@ async function showMeOnMap() {
   if (meMarker) meMarker.remove();
   meMarker = L.circleMarker([pos.lat, pos.lon], { radius: 7, weight: 3, color: "#fff", fillColor: "#2a7de1",
     fillOpacity: 1 }).bindTooltip("You are here").addTo(hotMap);
+  drawHotList();
   const b = myState.bounds;
   if (pos.lat >= b.south && pos.lat <= b.north && pos.lon >= b.west && pos.lon <= b.east)
     hotMap.setView([pos.lat, pos.lon], Math.max(hotMap.getZoom(), 9));
@@ -1665,16 +1680,68 @@ function drawHotspots() {
   drawHotList();
 }
 
+// The list shows the few parks most worth a trip: the most animals the player
+// hasn't captured yet, weighed against how far away the park is (when we know
+// where they are). "Show all parks" opens the rest.
+const HOT_TOP = 8;
+let hotShowAll = false;
+
+function milesBetween(a, b) {
+  const r = Math.PI / 180, dLat = (b.lat - a.lat) * r, dLon = (b.lon - a.lon) * r;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLon / 2) ** 2;
+  return 3958.8 * 2 * Math.asin(Math.sqrt(h));
+}
+
+// A park twice as far needs about twice as many new animals once past ~40 miles.
+function rankHotspots(pos) {
+  return hotspots.map((h, i) => {
+    const fresh = h.species.filter((s) => !caughtNums.has(s.number)).length;
+    const miles = pos ? milesBetween(pos, h) : null;
+    return { h, i, fresh, miles, score: pos ? fresh / (1 + miles / 40) : fresh };
+  }).sort((a, b) => b.score - a.score || b.h.species.length - a.h.species.length);
+}
+
+function fmtMiles(m) {
+  return m < 1 ? "under 1 mi" : m < 10 ? `${m.toFixed(1)} mi` : `${Math.round(m)} mi`;
+}
+
 function drawHotList() {
   const list = $("hot-list");
   list.innerHTML = "";
-  hotspots.forEach((h, i) => {
+  const ranked = rankHotspots(feedPos);
+  const head = document.createElement("p");
+  head.className = "muted hot-head";
+  head.textContent = feedPos ? "Best parks near you for animals you haven't captured yet."
+    : "Parks with the most animals you haven't captured yet.";
+  if (!feedPos && navigator.geolocation) {
+    const near = document.createElement("button");
+    near.className = "linkish"; near.type = "button"; near.textContent = "Use my location";
+    near.onclick = async () => {
+      if (await myPosition()) { drawHotList(); showMeOnMap(); }
+      else alert("Couldn't get your location. Check that location is allowed for this site.");
+    };
+    head.append(" ", near);
+  }
+  list.append(head);
+  for (const r of hotShowAll ? ranked : ranked.slice(0, HOT_TOP)) {
     const b = document.createElement("button");
-    b.className = hotSelected === i ? "on" : "";
-    b.textContent = `${h.name} · ${h.species.length}`;
-    b.onclick = () => selectHotspot(i);
+    b.type = "button";
+    b.className = "hot-row" + (hotSelected === r.i ? " on" : "");
+    b.innerHTML = `<span class="hot-name"></span><span class="hot-new"></span><span class="hot-far muted"></span>`;
+    b.querySelector(".hot-name").textContent = r.h.name;
+    b.querySelector(".hot-new").textContent = r.fresh ? `${r.fresh} new animal${r.fresh === 1 ? "" : "s"}`
+      : "All captured";
+    b.querySelector(".hot-far").textContent = r.miles == null ? "" : fmtMiles(r.miles);
+    b.onclick = () => selectHotspot(r.i);
     list.append(b);
-  });
+  }
+  if (ranked.length > HOT_TOP) {
+    const more = document.createElement("button");
+    more.className = "ghost"; more.type = "button";
+    more.textContent = hotShowAll ? "Show fewer" : `Show all ${ranked.length} parks`;
+    more.onclick = () => { hotShowAll = !hotShowAll; drawHotList(); };
+    list.append(more);
+  }
 }
 
 function selectHotspot(i) {

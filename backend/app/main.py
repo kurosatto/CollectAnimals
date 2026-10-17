@@ -1,6 +1,8 @@
 import csv
 import io
 import json
+import logging
+import threading
 import time
 import uuid
 from contextlib import asynccontextmanager
@@ -120,6 +122,8 @@ async def lifespan(app: FastAPI):
     goals.load(settings.sets_json)
     if clf.get_classifier() is None:
         clf.load_classifier(settings.model_path)
+    if settings.score_old_photos and clf.get_classifier() is not None:
+        threading.Thread(target=_score_old_photos_in_background, daemon=True).start()
     yield
 
 
@@ -551,6 +555,48 @@ def _sun_at_capture(capture: Capture, state_code: str) -> float | None:
     return scoring.sun_elevation(when, lat, lon)
 
 
+def score_old_photos(db: Session, model, pause: float = 0.0) -> int:
+    """Score photos taken before scoring existed, and re-score ones scored
+    before the lighting part was added. Returns how many were scored. `pause`
+    (seconds) between photos keeps the machine responsive."""
+    stale = [c for c in db.scalars(select(Capture).where(Capture.species_id.is_not(None)).order_by(Capture.id))
+             if c.score_parts is None or "Lighting" not in c.score_parts]
+    storage, done = get_storage(), 0
+    for c in stale:
+        data = storage.get(c.image_path) if c.image_path else None
+        if data is None:
+            continue
+        user = db.get(User, c.user_id)
+        state = st.get(user.state) or st.get(None)
+        members = {m.species.slug: m for m in state_species(db, state.code)}
+        species = db.get(Species, c.species_id)
+        m = members.get(species.slug)
+        first = db.scalar(select(Badge.first_capture_id).where(Badge.user_id == c.user_id,
+                                                               Badge.species_id == c.species_id))
+        image = Image.open(io.BytesIO(data)).convert("RGB")
+        # The model's own pick on the whole photo already has its confidence;
+        # a player's pick is scored from scratch.
+        confidence = c.confidence if not c.user_picked and c.predicted_label == species.slug else None
+        _score_capture(model, c, species.slug, m.rarity if m else species.rarity, image, state.code,
+                       set(members), first == c.id, confidence=confidence)
+        db.commit()
+        done += 1
+        if pause:
+            time.sleep(pause)
+    return done
+
+
+def _score_old_photos_in_background() -> None:
+    """Once per startup, at a gentle pace; a no-op when everything is scored."""
+    try:
+        with SessionLocal() as db:
+            n = score_old_photos(db, clf.get_classifier(), pause=0.5)
+        if n:
+            logging.getLogger(__name__).info("Scored %d older photos", n)
+    except Exception:
+        logging.getLogger(__name__).exception("Scoring older photos failed")
+
+
 def score_out(capture: Capture) -> ScoreOut | None:
     if capture.score is None:
         return None
@@ -733,9 +779,9 @@ def _collection(db: Session, owner: User, viewer: User, st_: st.State) -> Collec
     friends_caught = dict(db.execute(
         select(Badge.species_id, func.count()).where(Badge.user_id.in_(friends))
         .group_by(Badge.species_id)).all()) if friends else {}
-    photos = dict(db.execute(select(AlbumPhoto.species_id, Capture.image_path)
-                             .join(Capture, Capture.id == AlbumPhoto.capture_id)
-                             .where(AlbumPhoto.user_id == owner.id)).all())
+    photos = {sid: (path, score, stars) for sid, path, score, stars in db.execute(
+        select(AlbumPhoto.species_id, Capture.image_path, Capture.score, Capture.score_stars)
+        .join(Capture, Capture.id == AlbumPhoto.capture_id).where(AlbumPhoto.user_id == owner.id))}
     storage = get_storage()
     bond_levels = {sid: bonds.level(bonds.notes(sg)) for sid, sg in _sightings(db, owner.id, st_.utc_offset).items()}
     entries = []
@@ -747,7 +793,9 @@ def _collection(db: Session, owner: User, viewer: User, st_: st.State) -> Collec
             caught=b is not None, capture_count=b.capture_count if b else 0,
             earned_at=b.earned_at if b else None, friends_caught=friends_caught.get(m.species_id, 0),
             you_caught=m.species_id in mine,
-            photo_url=storage.url(photos[m.species_id]) if m.species_id in photos else None,
+            photo_url=storage.url(photos[m.species_id][0]) if m.species_id in photos else None,
+            photo_score=photos[m.species_id][1] if m.species_id in photos else None,
+            photo_stars=photos[m.species_id][2] if m.species_id in photos else None,
             in_season=dex.in_season(m.species.slug, code, month),
             activity=dex.activity(m.species.slug, code) if b else None,
             bond=bond_levels.get(m.species_id, 0) if b else 0))

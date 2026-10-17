@@ -283,8 +283,9 @@ data class OnlinePhoto(
     val commentCount: Int,
     val isMine: Boolean,
     val byFriend: Boolean,
-    // The photo's own 1-5 stars (null for photos from before scoring).
+    // The photo's own 1-5 stars and points (null until it's scored).
     val stars: Int? = null,
+    val score: Int? = null,
 ) {
     companion object {
         fun parse(o: JSONObject): OnlinePhoto {
@@ -293,7 +294,8 @@ data class OnlinePhoto(
                 s.optStringOrNull("slug"), s.optStringOrNull("common_name"), s.getString("rarity"),
                 s.getString("category"), Online.parseTime(o.optStringOrNull("caught_at")), o.optStringOrNull("place"),
                 o.optInt("like_count"), o.optBoolean("liked_by_me"), o.optInt("comment_count"),
-                o.optBoolean("is_mine"), o.optBoolean("by_friend"), o.optIntOrNull("stars"))
+                o.optBoolean("is_mine"), o.optBoolean("by_friend"), o.optIntOrNull("stars"),
+                o.optIntOrNull("score"))
         }
 
         fun list(a: JSONArray) = List(a.length()) { parse(a.getJSONObject(it)) }
@@ -326,13 +328,13 @@ data class Friends(val friends: List<FriendEntry>, val incoming: List<FriendEntr
 /** One animal on a friend's Field Guide. Names stay "???" until you or a friend captured it. */
 data class GuideEntry(val number: Int, val slug: String?, val commonName: String?, val rarity: String,
                       val category: String, val caught: Boolean, val youCaught: Boolean,
-                      val activity: String? = null) {
+                      val activity: String? = null, val photoStars: Int? = null) {
     companion object {
         fun parse(o: JSONObject): GuideEntry {
             val s = o.getJSONObject("species")
             return GuideEntry(s.getInt("number"), s.optStringOrNull("slug"), s.optStringOrNull("common_name"),
                 s.getString("rarity"), s.getString("category"), o.getBoolean("caught"), o.optBoolean("you_caught"),
-                o.optStringOrNull("activity"))
+                o.optStringOrNull("activity"), o.optIntOrNull("photo_stars"))
         }
     }
 }
