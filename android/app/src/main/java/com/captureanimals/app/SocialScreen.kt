@@ -310,7 +310,9 @@ fun AccountDialog(state: UiState, vm: GameViewModel, onDismiss: () -> Unit) {
 // --- Friends tab: news feed + friends -------------------------------------------------------
 
 @Composable
-fun SocialScreen(state: UiState, social: SocialViewModel, onSignIn: () -> Unit, onOpenDex: (String) -> Unit) {
+/** The Feed tab ([section] "feed") or the Friends tab ("friends"), as on the website. */
+fun SocialScreen(state: UiState, social: SocialViewModel, section: String, onSignIn: () -> Unit,
+                 onOpenDex: (String) -> Unit) {
     if (state.account == null) {
         Column(Modifier.fillMaxSize().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically)) {
@@ -320,13 +322,8 @@ fun SocialScreen(state: UiState, social: SocialViewModel, onSignIn: () -> Unit, 
         }
         return
     }
-    var section by rememberSaveable { mutableStateOf("feed") }
     val s by social.state.collectAsStateWithLifecycle()
     Column(Modifier.fillMaxSize()) {
-        Row(Modifier.padding(horizontal = 12.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            FilterChip(section == "feed", { section = "feed" }, label = { Text("News feed") })
-            FilterChip(section == "friends", { section = "friends" }, label = { Text("Friends") })
-        }
         s.message?.let { Text(it, Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outline,
             style = MaterialTheme.typography.bodySmall) }
         if (section == "feed") FeedSection(s, social, state, onOpenDex) else FriendsSection(s, social)
