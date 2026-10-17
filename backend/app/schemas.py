@@ -162,6 +162,9 @@ class CollectionEntry(BaseModel):
     # Whether the viewer has it (differs from `caught` on a friend's Field Guide).
     you_caught: bool = False
     photo_url: str | None = None
+    # The album photo's score and 1-5 stars (None before it's scored).
+    photo_score: int | None = None
+    photo_stars: int | None = None
     # Seen in the state this month in real sightings (or no data to say otherwise).
     in_season: bool = True
     # "day", "night" or "any": when it's awake in the Habitat scene (captured animals only).

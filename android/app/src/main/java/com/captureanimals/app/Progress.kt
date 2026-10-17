@@ -125,14 +125,15 @@ private val MOODS = mapOf("napping" to "napping 💤", "happy" to "happy", "exci
 
 // --- UI ----------------------------------------------------------------------------------
 
-private val Gold = Color(0xFFE0A100)
+val Gold = Color(0xFFE0A100)
 private val Heart = Color(0xFFE0457B)
 
 fun stars(n: Int) = "★".repeat(n.coerceIn(0, 5)) + "☆".repeat(5 - n.coerceIn(0, 5))
 
 @Composable
-fun Stars(n: Int, modifier: Modifier = Modifier) {
-    Text(stars(n), color = Gold, modifier = modifier, style = MaterialTheme.typography.bodyMedium)
+fun Stars(n: Int, modifier: Modifier = Modifier, points: Int? = null) {
+    Text(stars(n) + (points?.let { "  %,d pts".format(it) } ?: ""), color = Gold, modifier = modifier,
+        style = MaterialTheme.typography.bodyMedium)
 }
 
 @Composable

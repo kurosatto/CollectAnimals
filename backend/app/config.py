@@ -46,6 +46,9 @@ class Settings:
     storage_backend: str = field(default_factory=lambda: os.getenv("STORAGE_BACKEND", "local"))
     # A capture only counts if the model is at least this confident.
     match_threshold: float = field(default_factory=lambda: float(os.getenv("MATCH_THRESHOLD", "0.7")))
+    # Score older photos (taken before photo scores, or before lighting was
+    # judged) in the background after startup; SCORE_OLD_PHOTOS=0 turns it off.
+    score_old_photos: bool = field(default_factory=lambda: os.getenv("SCORE_OLD_PHOTOS", "1") not in ("", "0", "false"))
     max_upload_mb: int = field(default_factory=lambda: int(os.getenv("MAX_UPLOAD_MB", "15")))
 
 
