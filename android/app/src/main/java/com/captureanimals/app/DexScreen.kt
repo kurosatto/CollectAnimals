@@ -48,7 +48,8 @@ import kotlin.math.roundToInt
 
 /** Full-page Field Guide entry for one species. */
 @Composable
-fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: FieldGuide, onBack: () -> Unit) {
+fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: FieldGuide,
+                   bond: @Composable () -> Unit = {}, onBack: () -> Unit) {
     BackHandler(onBack = onBack)
     val details = dex.details[s.slug]
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -89,6 +90,7 @@ fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: FieldGuide, onBa
                 DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(badge.firstCaughtAt)),
                 style = MaterialTheme.typography.bodyMedium)
         }
+        bond()
 
         if (details != null) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -100,7 +102,7 @@ fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: FieldGuide, onBa
                 Column(Modifier.padding(16.dp)) {
                     Text("Fun fact", style = MaterialTheme.typography.labelLarge, color = rarityColor(s.rarity))
                     // Same as the web page: the fact is the reward for catching it.
-                    Text(if (badge != null) details.funFact else "🔒 Capture one to unlock its fun fact.",
+                    Text(if (badge != null) details.funFact else "🔒",
                         style = MaterialTheme.typography.bodyLarge)
                 }
             }

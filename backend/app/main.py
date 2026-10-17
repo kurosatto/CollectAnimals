@@ -305,10 +305,10 @@ def state_outline(state: str):
 @app.get("/species/{key}/dex", response_model=DexOut)
 def get_dex_entry(key: str, state: str | None = Query(None), user: User | None = Depends(optional_user),
                   db: Session = Depends(get_db)):
-    """Size, weight, active time, season, hotspot parks, the sighting map and
-    safety advice show even while the name is hidden. The where-to-find and
-    spotting tips can name the animal, so they wait until it's revealed, and so
-    does the fun fact (your own capture or a friend's reveals it)."""
+    """Size, weight, active time, season, hotspot parks, the sighting map,
+    safety advice and the where-to-find and spotting tips show even while the
+    name is hidden (with the name masked out of the tips). The fun fact waits
+    until the animal is revealed (your own capture or a friend's reveals it)."""
     code = state_or_404(state).code
     s, m = _species_in(key, code, db)
     # An animal that isn't on this state's list (one opened from the feed or a
@@ -321,11 +321,13 @@ def get_dex_entry(key: str, state: str | None = Query(None), user: User | None =
     revealed = s.id in revealed_species_ids(db, user)
     caught = user is not None and db.scalar(select(Badge.id).where(
         Badge.user_id == user.id, Badge.species_id == s.id)) is not None
+    def tip(text: str | None) -> str | None:
+        return text if revealed else dex.mask_name(text, s.common_name, s.scientific_name)
     return DexOut(species=species_out(s, revealed, m), state=code, size=d.get("size"), weight=d.get("weight"),
                   fun_fact=d.get("fun_fact") if revealed else None,
-                  where_to_find=d.get("where_to_find") if revealed else None,
+                  where_to_find=tip(d.get("where_to_find")),
                   active_time=d.get("active_time"),
-                  spotting_tip=d.get("spotting_tip") if revealed else None,
+                  spotting_tip=tip(d.get("spotting_tip")),
                   safety=d.get("safety") or "none", safe_distance=d.get("safe_distance") or None,
                   safety_note=d.get("safety_note") or None,
                   hotspots=dex.hotspots_for(s.slug, code), range=dex.range_for(s.slug, code),

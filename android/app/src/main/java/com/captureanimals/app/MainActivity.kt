@@ -128,7 +128,12 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel()) 
                 // Another state's animal gets that state's sighting map, tips and parks.
                 val entryDex = if (info.species.any { it.slug == entry.slug }) dex
                     else state.states.firstOrNull { st -> st.species.any { it.slug == entry.slug } }?.fieldGuide ?: dex
-                DexEntryScreen(info.dexNumber(entry.slug), entry, state.collection[entry.slug], entryDex) { dexSlug = null }
+                val badge = state.collection[entry.slug]
+                DexEntryScreen(info.dexNumber(entry.slug), entry, badge, entryDex, bond = {
+                    if (state.account != null && badge != null) {
+                        BondPanel(entry.slug, state.buddy?.takeIf { it.chosen }?.bond?.slug, vm::setBuddy)
+                    }
+                }) { dexSlug = null }
             }
         }
         return
@@ -178,7 +183,12 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel()) 
                 TABS[tab].key == "social" -> SocialScreen(state, social, onSignIn = { showAccount = true }) { dexSlug = it }
                 TABS[tab].key == "gallery" && state.account != null ->
                     OnlinePhotosScreen(social, onOpenDex = { dexSlug = it }, onDeleted = vm::reloadCollection)
-                TABS[tab].key == "collection" -> CollectionScreen(info, dex, state.stateCode, state.collection) { dexSlug = it }
+                TABS[tab].key == "collection" -> {
+                    val sets = remember(state.sets, info, dex, state.stateCode) {
+                        state.sets.forState(state.stateCode, info.species.map { it.slug }.toSet()) { dex?.details?.get(it)?.safety }
+                    }
+                    CollectionScreen(info, dex, state.stateCode, state.collection, state.buddy, sets) { dexSlug = it }
+                }
                 TABS[tab].key == "gallery" -> GalleryScreen(state.allSpecies, state.collection, onOpenDex = { dexSlug = it },
                     onDelete = vm::deleteCatch)
                 dex != null -> HotspotsScreen(info, dex, state.collection, onOpenDex = { dexSlug = it })
@@ -287,6 +297,7 @@ fun CatchScreen(state: UiState, onCapture: (Uri, Pair<Double, Double>?) -> Unit,
         }
         state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         state.result?.let { ResultCard(it, state.info?.species.orEmpty(), onDismiss, onPick, onOpenDex) }
+        if (state.account != null) state.week?.let { ChallengesCard(it) }
     }
 }
 
@@ -308,6 +319,7 @@ fun ResultCard(r: CaptureResult, stateSpecies: List<Species>, onDismiss: () -> U
                 RarityTag(r.species.rarity)
             }
             Text(r.message, style = MaterialTheme.typography.bodyLarge)
+            r.score?.let { ScoreBox(it, r.bondUp) }
             Text("Top guesses", style = MaterialTheme.typography.labelLarge)
             r.guesses.forEach { g ->
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -383,7 +395,7 @@ private val SECTIONS = listOf("Captured", "Not captured yet", null)
 
 @Composable
 fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, stateCode: String, collection: Map<String, Badge>,
-                     onOpen: (String) -> Unit) {
+                     buddy: Buddy?, sets: List<SetDef>, onOpen: (String) -> Unit) {
     // The live habitat sits above the list, as on the website; one WebView for the screen.
     val habitat = rememberHabitatView()
     val animals = remember(info, dex, collection) { habitatAnimals(info, dex, collection) }
@@ -403,6 +415,7 @@ fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, stateCode: String, colle
     LazyVerticalGrid(columns = GridCells.Adaptive(72.dp), modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(8.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        if (buddy != null) item(span = { GridItemSpan(maxLineSpan) }, key = "buddy") { BuddyCard(buddy, onOpen) }
         item(span = { GridItemSpan(maxLineSpan) }, key = "habitat") {
             Habitat(habitat, animals, stateCode, Modifier.padding(bottom = 4.dp), onOpen = onOpen)
         }
@@ -432,6 +445,15 @@ fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, stateCode: String, colle
                 items(tier, key = { it.slug }) { s ->
                     SpeciesTile(info.dexNumber(s.slug), s, collection[s.slug]) { onOpen(s.slug) }
                 }
+            }
+        }
+        // Sets, as on the website: themed groups to complete, under the list.
+        if (sets.isNotEmpty()) item(span = { GridItemSpan(maxLineSpan) }, key = "sets") {
+            Column(Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Sets", style = MaterialTheme.typography.titleMedium)
+                Text("Themed groups to complete. Each finished set is a badge on your profile.",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                sets.forEach { SetCard(it, collection, onOpen) }
             }
         }
     }

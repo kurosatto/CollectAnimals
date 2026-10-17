@@ -230,8 +230,9 @@ def test_dex_entry(client, fake):
     # Before catching: size, weight and map are hints; name and fun fact are locked.
     r = client.get("/species/coyote/dex").json()
     assert r["species"]["common_name"] is None and r["fun_fact"] is None
-    # Tips can name the animal, so they wait too; active time and parks are hints.
-    assert r["where_to_find"] is None and r["spotting_tip"] is None
+    # Tips show before the capture, with the name masked out; active time and parks are hints.
+    assert r["where_to_find"] and r["spotting_tip"]
+    assert "coyote" not in (r["where_to_find"] + r["spotting_tip"]).lower()
     assert r["size"] and r["weight"] and r["active_time"]
     assert r["range"]["cells"] == [[10, 20, 5]] and r["range"]["grid"]["step"] == 0.25
 
@@ -345,7 +346,7 @@ def test_hotspots(client, fake):
 
     r = client.get("/species/coyote/dex").json()
     assert r["hotspots"] == ["Big Park", "Small Park"]
-    assert r["active_time"] and r["spotting_tip"] is None
+    assert r["active_time"] and r["spotting_tip"] and "coyote" not in r["spotting_tip"].lower()
 
 
 def test_login_rate_limit(client):
@@ -606,3 +607,14 @@ def test_dex_for_animal_from_another_state(client):
     assert nc["state"] == "NC" and ca["state"] == "NC"
     assert ca["range"] == nc["range"] and ca["season"] == nc["season"] and ca["species"]["number"] == nc["species"]["number"]
     assert client.get("/species/coyote/dex?state=CA").json()["state"] == "CA"
+
+
+def test_mask_name():
+    from app import dex
+    m = dex.mask_name
+    assert m("Look for a bobcat; bobcats sit still.", "Bobcat") == "Look for a ???; ??? sit still."
+    assert m("Regular black bear sightings at Big Bear Lake", "American Black Bear") == \
+        "Regular ??? sightings at Big ??? Lake"
+    assert m("Take a whale-watching trip", "Humpback Whale") == "Take a ???-watching trip"
+    assert m("Ursus americanus lives here", "American Black Bear", "Ursus americanus") == "??? lives here"
+    assert m("", "Bobcat") == "" and m(None, "Bobcat") is None

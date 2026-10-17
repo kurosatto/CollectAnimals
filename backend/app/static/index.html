@@ -939,7 +939,7 @@ async function openDex(key, num, caught, stateCode = myState.code) {
   $("dex-hotspots").textContent = d.hotspots.length ? d.hotspots.join(", ") : "—";
   $("dex-size").textContent = d.size || "Unknown";
   $("dex-weight").textContent = d.weight || "Unknown";
-  $("dex-fact").textContent = d.fun_fact || "🔒 Capture one, or have a friend capture one, to unlock its fun fact.";
+  $("dex-fact").textContent = d.fun_fact || "🔒";
   drawSeason(d.season);
   showBond(d.captured && stateCode === myState.code ? s.number : null);
   gallery = { species: s, scope: "all", sort: "top" };

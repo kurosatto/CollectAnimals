@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import csv
 import json
+import re
 from pathlib import Path
 
 from .states import State
@@ -148,3 +149,16 @@ def range_for(slug: str, state: str) -> dict | None:
     if not r or slug not in r.get("species", {}):
         return None
     return {"grid": r["grid"], "cells": r["species"][slug]}
+
+
+
+def mask_name(text: str | None, common_name: str, scientific_name: str = "") -> str | None:
+    """Hide which animal a tip is about while its name isn't revealed: the common
+    name, its shorter endings ("Black Bear", "Bear") and the scientific name
+    become "???", the same mark the Field Guide uses for hidden names."""
+    if not text:
+        return text
+    words = common_name.replace("-", " ").split()
+    names = {common_name, scientific_name, *(" ".join(words[i:]) for i in range(len(words)))}
+    alts = "|".join(re.escape(n).replace(r"\ ", r"[\s-]+") for n in sorted(filter(None, names), key=len, reverse=True))
+    return re.sub(rf"\b(?:{alts})(?:e?s)?\b", "???", text, flags=re.IGNORECASE)
