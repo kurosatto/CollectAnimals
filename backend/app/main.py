@@ -2,6 +2,7 @@ import csv
 import io
 import json
 import logging
+import re
 import threading
 import time
 import uuid
@@ -10,7 +11,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, UploadFile, status
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
 from PIL import Image, ImageOps, UnidentifiedImageError
@@ -161,9 +162,51 @@ app.include_router(notices.router)
 app.mount("/vendor", StaticFiles(directory=STATIC_DIR / "vendor"), name="vendor")
 
 
+def release_version() -> str:
+    """The version in release.json, re-read so a bump shows without a restart."""
+    try:
+        return json.loads(settings.release_json.read_text(encoding="utf-8"))["version"]
+    except (OSError, ValueError, KeyError):
+        return "dev"
+
+
+APK_NAME = re.compile(r"CaptureAnimals-(\d+(?:\.\d+)*)\.apk")
+
+
+def _version_key(v: str) -> tuple[int, ...]:
+    return tuple(int(p) for p in v.split("."))
+
+
+def latest_apk() -> tuple[str, Path] | None:
+    """The newest CaptureAnimals-<version>.apk in ANDROID_APK_DIR, if any."""
+    d = settings.android_apk_dir
+    if not d or not d.is_dir():
+        return None
+    found = [(m.group(1), p) for p in d.iterdir() if (m := APK_NAME.fullmatch(p.name)) and p.is_file()]
+    return max(found, key=lambda f: _version_key(f[0])) if found else None
+
+
 @app.get("/", include_in_schema=False)
 def index():
-    return FileResponse(STATIC_DIR / "index.html")
+    # The page carries the release it was served with, to notice when a newer one is out.
+    html = (STATIC_DIR / "index.html").read_text(encoding="utf-8")
+    return HTMLResponse(html.replace("__RELEASE_VERSION__", release_version()))
+
+
+@app.get("/app/version")
+def app_version():
+    """The current release, and the Android APK to download if one is published here."""
+    apk = latest_apk()
+    return {"version": release_version(),
+            "android": {"version": apk[0], "url": f"/app/android/{apk[1].name}"} if apk else None}
+
+
+@app.get("/app/android/{name}", include_in_schema=False)
+def android_apk(name: str):
+    apk = latest_apk()
+    if not apk or apk[1].name != name:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No such app version")
+    return FileResponse(apk[1], media_type="application/vnd.android.package-archive", filename=name)
 
 
 app.mount("/icons", StaticFiles(directory=STATIC_DIR / "icons"), name="icons")

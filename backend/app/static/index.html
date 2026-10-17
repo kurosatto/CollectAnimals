@@ -23,6 +23,8 @@
   main { max-width:960px; margin:0 auto; padding:16px; }
   header { display:flex; justify-content:space-between; align-items:center; gap:12px; }
   .head-right { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:4px 12px; }
+  #update { display:flex; width:100%; justify-content:center; gap:8px; margin:8px 0 0; border-radius:10px; }
+  #version { text-align:center; font-size:.8rem; margin:24px 0 8px; }
   #offline { font-size:.85rem; padding:2px 8px; border-radius:999px; background:var(--line); }
   #who label { display:inline-flex; align-items:center; gap:4px; white-space:nowrap; }
   #who:not(.hidden) { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:4px 12px; }
@@ -271,6 +273,7 @@
 </head>
 <body>
 <main>
+  <button id="update" class="hidden"></button>
   <header>
     <h1>Capture Animals <span class="muted" style="font-size:1rem" id="state-name">California</span></h1>
     <div class="head-right">
@@ -374,6 +377,7 @@
       <div id="friend-lists"></div>
     </div>
   </section>
+  <p id="version" class="muted">Capture Animals <span id="version-num">__RELEASE_VERSION__</span></p>
 </main>
 <div id="toast" class="hidden"></div>
 <dialog id="dex"><div class="dex">
@@ -1886,6 +1890,26 @@ $("install").onclick = async () => {
     alert("To install Capture Animals, tap the Share button, then \"Add to Home Screen\".");
   }
 };
+
+// A new release (release.json bumped for a major update) gets a notice; smaller changes
+// arrive silently, since the page is always fetched fresh when online.
+const RELEASE = $("version-num").textContent;
+async function checkRelease() {
+  if (!navigator.onLine || RELEASE.startsWith("__")) return;
+  let v;
+  try { v = await (await fetch("/app/version", { cache: "no-store" })).json(); } catch { return; }
+  if (!v.version || v.version === RELEASE) return;
+  $("update").textContent = `✨ Capture Animals ${v.version} is here. Tap to update`;
+  $("update").classList.remove("hidden");
+}
+$("update").onclick = async () => {
+  $("update").disabled = true;
+  try { await (await navigator.serviceWorker?.getRegistration())?.update(); } catch {}
+  location.reload();
+};
+checkRelease();
+setInterval(checkRelease, 30 * 60_000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) checkRelease(); });
 
 habInit();
 loadStates().then(render);
