@@ -130,6 +130,26 @@ def ensure_album_photo(db: Session, capture: Capture) -> AlbumPhoto | None:
     return photo
 
 
+# --- captures per state ------------------------------------------------------
+
+def catches_in(db: Session, user_id: int, state: str) -> dict[int, tuple[int, datetime]]:
+    """What a player has captured in one state: species id -> (how many times,
+    first capture). Captures count only in the state they were made in."""
+    return {sid: (n, first) for sid, n, first in db.execute(
+        select(Capture.species_id, func.count(), func.min(Capture.created_at))
+        .where(Capture.user_id == user_id, Capture.state == state, Capture.species_id.is_not(None))
+        .group_by(Capture.species_id))}
+
+
+def caught_counts(db: Session, users: list[User]) -> dict[int, int]:
+    """How many species each player has captured in their own state."""
+    out: dict[int, int] = {}
+    for u in users:
+        out[u.id] = db.scalar(select(func.count(func.distinct(Capture.species_id))).where(
+            Capture.user_id == u.id, Capture.state == u.state, Capture.species_id.is_not(None))) or 0
+    return out
+
+
 # --- albums -----------------------------------------------------------------
 
 def _album(db: Session, owner: User, viewer: User) -> AlbumOut:
@@ -288,8 +308,7 @@ def user_profile(username: str, user: User = Depends(current_user), db: Session 
     # Counted against the owner's state list, with that state's rarities.
     members = db.scalars(select(StateSpecies).where(StateSpecies.state == owner.state)
                          .order_by(StateSpecies.position)).all()
-    all_caught = set(db.scalars(select(Badge.species_id).where(Badge.user_id == owner.id)))
-    caught_ids = {m.species_id for m in members} & all_caught
+    caught_ids = {m.species_id for m in members} & set(catches_in(db, owner.id, owner.state))
     by_rarity = {r: Tally(caught=0, total=0) for r in RARITIES}
     by_category: dict[str, Tally] = {}
     for m in members:
@@ -566,8 +585,7 @@ def list_friends(user: User = Depends(current_user), db: Session = Depends(get_d
     rows = db.scalars(select(Friendship).where(or_(Friendship.requester_id == user.id,
                                                    Friendship.addressee_id == user.id))).all()
     ids = {f.requester_id if f.addressee_id == user.id else f.addressee_id for f in rows}
-    caught = dict(db.execute(select(Badge.user_id, func.count()).where(Badge.user_id.in_(ids))
-                             .group_by(Badge.user_id)).all()) if ids else {}
+    caught = caught_counts(db, [f.requester if f.addressee_id == user.id else f.addressee for f in rows])
     out = FriendsOut(friends=[], incoming=[], outgoing=[])
     for f in sorted(rows, key=lambda f: f.created_at):
         other = f.requester if f.addressee_id == user.id else f.addressee
@@ -612,8 +630,7 @@ def friend_suggestions(user: User = Depends(current_user), db: Session = Depends
             or_(Friendship.requester_id == user.id, Friendship.addressee_id == user.id)))}
     bots = db.scalars(select(User).where(User.is_bot, User.id != user.id,
                                          User.id.not_in(linked)).order_by(User.username)).all()
-    caught = dict(db.execute(select(Badge.user_id, func.count()).where(
-        Badge.user_id.in_([b.id for b in bots])).group_by(Badge.user_id)).all()) if bots else {}
+    caught = caught_counts(db, list(bots))
     return [SuggestionOut(username=b.username, caught=caught.get(b.id, 0), is_bot=True) for b in bots]
 
 

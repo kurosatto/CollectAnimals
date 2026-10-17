@@ -29,7 +29,7 @@ from .db import Base, SessionLocal, add_missing_columns, engine, get_db
 from .models import AlbumPhoto, Badge, Capture, Friendship, IdFeedback, PhotoLike, Species, StateSpecies, User
 from .schemas import (BondNoteOut, BondOut, BondsOut, BuddyIn, BuddyOut, CaptureOut, ChallengeOut, ChallengesOut, ChoiceOut, ScoreOut, ScorePart, SetOut, SetSpecies, SetsOut, CollectionEntry, CollectionOut, DexOut, PlaceOut, HotspotOut, HotspotSpecies,
                       PickIn, PredictionOut, RegisterIn, SpeciesOut, StateOut, TokenOut, UserOut, UserUpdate)
-from .social import find_species, friend_ids, revealed_species_ids, species_out, user_named
+from .social import catches_in, find_species, friend_ids, revealed_species_ids, species_out, user_named
 from .storage import get_storage
 
 STATIC_DIR = Path(__file__).parent / "static"
@@ -90,6 +90,27 @@ def restar_scores() -> None:
         db.commit()
 
 
+def fill_capture_states(db: Session) -> int:
+    """Captures from before they recorded their state: put each in the state its
+    location falls in (if that state lists the animal), else the player's home
+    state, else the first state that lists it. Returns how many were filled."""
+    lists: dict[int, list[str]] = {}
+    for m in db.scalars(select(StateSpecies)):
+        lists.setdefault(m.species_id, []).append(m.state)
+    done = 0
+    for c in db.scalars(select(Capture).where(Capture.state.is_(None), Capture.species_id.is_not(None))):
+        options = lists.get(c.species_id, [])
+        home = db.get(User, c.user_id).state
+        where = [s.code for s in st.all_states() if c.latitude is not None and c.longitude is not None
+                 and s.bounds["south"] <= c.latitude <= s.bounds["north"]
+                 and s.bounds["west"] <= c.longitude <= s.bounds["east"]]
+        c.state = next((code for code in where if code in options), None) or \
+            (home if home in options else (options[0] if options else home))
+        done += 1
+    db.commit()
+    return done
+
+
 def state_or_404(code: str | None) -> st.State:
     state = st.get(code)
     if state is None:
@@ -117,6 +138,7 @@ async def lifespan(app: FastAPI):
     st.load(settings.states_json)
     with SessionLocal() as db:
         seed_species(db, st.all_states())
+        fill_capture_states(db)
     dex.load(settings.details_csv, st.all_states())
     places.load(st.all_states())
     goals.load(settings.sets_json)
@@ -260,8 +282,8 @@ def unlocked_states(db: Session, user: User) -> list[str]:
     them. States they've already captured in stay unlocked (players from before
     unlocking existed keep what they had)."""
     have = {user.state, *filter(None, (user.extra_states or "").split(","))}
-    have |= set(db.scalars(select(StateSpecies.state).join(Badge, Badge.species_id == StateSpecies.species_id)
-                           .where(Badge.user_id == user.id)).all())
+    have |= set(db.scalars(select(Capture.state).where(Capture.user_id == user.id, Capture.species_id.is_not(None),
+                                                       Capture.state.is_not(None)).distinct()))
     return [s.code for s in st.all_states() if s.code in have]
 
 
@@ -361,8 +383,8 @@ def get_dex_entry(key: str, state: str | None = Query(None), user: User | None =
         code = m.state
     d = dex.details(s.slug, code)
     revealed = s.id in revealed_species_ids(db, user)
-    caught = user is not None and db.scalar(select(Badge.id).where(
-        Badge.user_id == user.id, Badge.species_id == s.id)) is not None
+    caught = user is not None and db.scalar(select(Capture.id).where(
+        Capture.user_id == user.id, Capture.species_id == s.id, Capture.state == code).limit(1)) is not None
     def tip(text: str | None) -> str | None:
         return text if revealed else dex.mask_name(text, s.common_name, s.scientific_name)
     return DexOut(species=species_out(s, revealed, m), state=code, size=d.get("size"), weight=d.get("weight"),
@@ -478,7 +500,7 @@ async def create_capture(photo: UploadFile = File(...),
 
     capture = Capture(user_id=user.id, species_id=species.id if matched else None,
                       image_path=name, predicted_label=top.label, confidence=top.probability,
-                      latitude=latitude, longitude=longitude, taken_at=taken_at,
+                      latitude=latitude, longitude=longitude, taken_at=taken_at, state=state.code,
                       top_labels=",".join(p.label for p in preds if p.label in species_by_slug))
     db.add(capture)
     db.flush()
@@ -491,7 +513,8 @@ async def create_capture(photo: UploadFile = File(...),
             badge.capture_count += 1
         else:
             db.add(Badge(user_id=user.id, species_id=species.id, first_capture_id=capture.id))
-            new_badge = True
+        # New for this state's Field Guide: captures elsewhere don't count here.
+        new_badge = _first_in_state(db, capture)
     album_photo = social.ensure_album_photo(db, capture) if matched else None
     score = (_score_capture(model, capture, top.label, members[top.label].rarity, image, state.code,
                             set(members), new_badge, confidence=top.probability) if matched else None)
@@ -622,6 +645,13 @@ def score_out(capture: Capture) -> ScoreOut | None:
                     parts=[ScorePart(label=label, points=pts) for label, pts in parts])
 
 
+def _first_in_state(db: Session, capture: Capture) -> bool:
+    """Whether this is the player's first capture of its animal in its state."""
+    return db.scalar(select(Capture.id).where(
+        Capture.user_id == capture.user_id, Capture.species_id == capture.species_id,
+        Capture.state == capture.state, Capture.id != capture.id).limit(1)) is None
+
+
 def _unassign_capture(db: Session, capture: Capture) -> None:
     """Take back the badge and album photo a capture earned, e.g. when the
     player says the model named the wrong animal."""
@@ -686,12 +716,13 @@ def pick_capture_species(capture_id: int, body: PickIn, user: User = Depends(cur
         _unassign_capture(db, capture)
         capture.species_id = species.id
         capture.user_picked = True
+        capture.state = capture.state or user.state
         badge = db.scalar(select(Badge).where(Badge.user_id == user.id, Badge.species_id == species.id))
         if badge:
             badge.capture_count += 1
         else:
             db.add(Badge(user_id=user.id, species_id=species.id, first_capture_id=capture.id))
-            new_badge = True
+        new_badge = _first_in_state(db, capture)
         album_photo = social.ensure_album_photo(db, capture)
         _rescore_picked(db, capture, species, m, user, new_badge)
     _record_feedback(db, capture, user, guesses, species.slug)
@@ -756,8 +787,9 @@ def restrict(preds: list[Prediction], allowed: set[str]) -> list[Prediction]:
 @app.get("/me/collection", response_model=CollectionOut)
 def my_collection(state: str | None = Query(None), user: User = Depends(current_user),
                   db: Session = Depends(get_db)):
-    """The player's Field Guide for their state (or ?state=). Badges are per
-    species, so a coyote captured in California also counts in North Carolina."""
+    """The player's Field Guide for their state (or ?state=). Captures count only
+    in the state they were made in: a coyote captured in California has to be
+    captured again to count in North Carolina."""
     return _collection(db, user, user, state_or_404(state or user.state))
 
 
@@ -775,8 +807,8 @@ def user_collection(username: str, state: str | None = Query(None), user: User =
         raise HTTPException(403, "Only friends can see each other's Field Guide")
     out = _collection(db, owner, user, state_or_404(state or owner.state))
     caught = dict(db.execute(
-        select(StateSpecies.state, func.count()).join(Badge, Badge.species_id == StateSpecies.species_id)
-        .where(Badge.user_id == owner.id).group_by(StateSpecies.state)).all())
+        select(Capture.state, func.count(func.distinct(Capture.species_id)))
+        .where(Capture.user_id == owner.id, Capture.species_id.is_not(None)).group_by(Capture.state)).all())
     out.primary_state = owner.state
     out.places = [PlaceOut(state=s.code, name=s.name, caught=caught.get(s.code, 0))
                   for s in st.all_states() if s.code == owner.state or caught.get(s.code)]
@@ -789,9 +821,12 @@ def _collection(db: Session, owner: User, viewer: User, st_: st.State) -> Collec
     friends_caught counts the viewer's friends, and you_caught the viewer."""
     code = st_.code
     month = (datetime.now(timezone.utc) + timedelta(hours=st_.utc_offset)).month
-    badges = {b.species_id: b for b in db.scalars(select(Badge).where(Badge.user_id == owner.id))}
-    mine = badges if owner.id == viewer.id else {
-        b.species_id: b for b in db.scalars(select(Badge).where(Badge.user_id == viewer.id))}
+    # Captured here (counts and dates) vs. anywhere (which reveals names).
+    here = catches_in(db, owner.id, code)
+    mine_here = here if owner.id == viewer.id else catches_in(db, viewer.id, code)
+    owner_any = set(db.scalars(select(Badge.species_id).where(Badge.user_id == owner.id)))
+    mine = owner_any if owner.id == viewer.id else set(
+        db.scalars(select(Badge.species_id).where(Badge.user_id == viewer.id)))
     friends = friend_ids(db, viewer.id)
     friends_caught = dict(db.execute(
         select(Badge.species_id, func.count()).where(Badge.user_id.in_(friends))
@@ -803,13 +838,13 @@ def _collection(db: Session, owner: User, viewer: User, st_: st.State) -> Collec
     bond_levels = {sid: bonds.level(bonds.notes(sg)) for sid, sg in _sightings(db, owner.id, st_.utc_offset).items()}
     entries = []
     for m in state_species(db, code):
-        b = badges.get(m.species_id)
-        revealed = b is not None or m.species_id in mine or friends_caught.get(m.species_id, 0) > 0
+        b = here.get(m.species_id)
+        revealed = m.species_id in owner_any or m.species_id in mine or friends_caught.get(m.species_id, 0) > 0
         entries.append(CollectionEntry(
             species=species_out(m.species, revealed, m),
-            caught=b is not None, capture_count=b.capture_count if b else 0,
-            earned_at=b.earned_at if b else None, friends_caught=friends_caught.get(m.species_id, 0),
-            you_caught=m.species_id in mine,
+            caught=b is not None, capture_count=b[0] if b else 0,
+            earned_at=b[1] if b else None, friends_caught=friends_caught.get(m.species_id, 0),
+            you_caught=m.species_id in mine_here,
             photo_url=storage.url(photos[m.species_id][0]) if m.species_id in photos else None,
             photo_score=photos[m.species_id][1] if m.species_id in photos else None,
             photo_stars=photos[m.species_id][2] if m.species_id in photos else None,
@@ -830,7 +865,7 @@ def my_sets(state: str | None = Query(None), user: User = Depends(current_user),
     how many of each the player has captured. Hidden names stay hidden."""
     code = state_or_404(state or user.state).code
     members = {m.species.slug: m for m in state_species(db, code)}
-    caught = set(db.scalars(select(Badge.species_id).where(Badge.user_id == user.id)))
+    caught = set(catches_in(db, user.id, code))
     revealed = revealed_species_ids(db, user)
     out = []
     for s in goals.sets_for(code, set(members)):
@@ -854,10 +889,11 @@ def my_challenges(user: User = Depends(current_user), db: Session = Depends(get_
     sets = goals.sets_for(state.code, {m.species.slug for m in members.values()})
     challenges = goals.challenges_for(state.code, start, categories, sets)
 
-    new_ids = {b.species_id for b in db.scalars(select(Badge).where(Badge.user_id == user.id))
-               if start <= _aware(b.earned_at) < end}
+    new_ids = {sid for sid, (_, first) in catches_in(db, user.id, state.code).items()
+               if start <= _aware(first) < end}
     week = []
-    for c in db.scalars(select(Capture).where(Capture.user_id == user.id, Capture.species_id.is_not(None))):
+    for c in db.scalars(select(Capture).where(Capture.user_id == user.id, Capture.species_id.is_not(None),
+                                              Capture.state == state.code)):
         m = members.get(c.species_id)
         if m and start <= _aware(c.created_at) < end:
             week.append(goals.WeekCapture(m.species.slug, m.species.category, m.rarity,
@@ -926,7 +962,7 @@ def _buddy_suggestion(db: Session, user: User, state: st.State, buddy: Species) 
     """An animal around this month that the player hasn't captured, preferring
     the buddy's own kind. Hidden names stay hidden. Never a dangerous one."""
     month = (datetime.now(timezone.utc) + timedelta(hours=state.utc_offset)).month
-    caught = set(db.scalars(select(Badge.species_id).where(Badge.user_id == user.id)))
+    caught = set(catches_in(db, user.id, state.code))
     revealed = revealed_species_ids(db, user)
     options = [m for m in state_species(db, state.code)
                if m.species_id not in caught and dex.in_season(m.species.slug, state.code, month)

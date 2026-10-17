@@ -78,6 +78,10 @@ class Capture(Base):
     longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     taken_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    # The state the player was playing in: a capture counts only in that state's
+    # Field Guide (a coyote captured in California must be captured again in
+    # North Carolina).
+    state: Mapped[str | None] = mapped_column(String(2), nullable=True, index=True)
     # The model's top guesses (comma-separated slugs, best first): the animals a
     # player may pick from when they say the model got it wrong.
     top_labels: Mapped[str | None] = mapped_column(String(400), nullable=True)

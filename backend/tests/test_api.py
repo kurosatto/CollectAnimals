@@ -402,7 +402,7 @@ def test_species_per_state(client):
     assert client.get("/species", params={"state": "TX"}).status_code == 404
 
 
-def test_change_state_and_shared_badges(client, fake):
+def test_change_state_and_captures_per_state(client, fake):
     h = signup(client)
     fake.next = [Prediction("coyote", 0.95)]
     assert upload(client, h).json()["new_badge"]
@@ -410,9 +410,17 @@ def test_change_state_and_shared_badges(client, fake):
     r = client.patch("/me", headers=h, json={"state": "NC"})
     assert r.status_code == 200 and r.json()["state"] == "NC"
     col = client.get("/me/collection", headers=h).json()
-    assert col["state"] == "NC" and col["total"] == 100 and col["caught"] == 1  # coyote counts here too
+    # A California coyote doesn't count in North Carolina: capture it again there.
+    assert col["state"] == "NC" and col["total"] == 100 and col["caught"] == 0
+    coyote = next(e for e in col["entries"] if e["species"]["slug"] == "coyote")
+    assert not coyote["caught"] and coyote["species"]["revealed"]    # its name stays known
+    assert not client.get("/species/coyote/dex?state=NC", headers=h).json()["captured"]
+    fake.next = [Prediction("coyote", 0.95)]
+    assert upload(client, h).json()["new_badge"]                     # new for North Carolina
+    assert client.get("/me/collection", headers=h).json()["caught"] == 1
     ca = client.get("/me/collection", headers=h, params={"state": "CA"}).json()
     assert ca["state"] == "CA" and ca["caught"] == 1
+    assert next(e for e in ca["entries"] if e["species"]["slug"] == "coyote")["capture_count"] == 1
     assert client.patch("/me", headers=h, json={"state": "ZZ"}).status_code == 404
 
 
@@ -623,11 +631,11 @@ def test_states_unlock_by_choice(client, fake):
     assert r["state"] == "NC" and r["unlocked_states"] == ["CA", "NC"]
     r = client.patch("/me", json={"state": "CA"}, headers=h).json()
     assert r["state"] == "CA" and r["unlocked_states"] == ["CA", "NC"]   # stays unlocked
-    # Players keep every state they've captured in (coyote is on both lists).
-    old = signup(client, "bob")
+    # Capturing an animal that's on both lists doesn't unlock the other state.
+    other = signup(client, "bob")
     fake.next = [Prediction("coyote", 0.93)]
-    upload(client, old)
-    assert client.get("/me", headers=old).json()["unlocked_states"] == ["CA", "NC"]
+    upload(client, other)
+    assert client.get("/me", headers=other).json()["unlocked_states"] == ["CA"]
 
 
 def test_older_photos_get_scored(client, fake):
@@ -658,6 +666,24 @@ def test_older_photos_get_scored(client, fake):
     coyote = next(e for e in client.get("/me/collection", headers=h).json()["entries"]
                   if e["species"]["slug"] == "coyote")
     assert coyote["photo_stars"] == caps[0].score_stars and coyote["photo_score"] == caps[0].score
+
+
+def test_old_captures_get_a_state(client, fake):
+    from app.db import SessionLocal
+    from app.main import fill_capture_states
+    from app.models import Capture
+    h = signup(client)
+    for _ in range(2):
+        fake.next = [Prediction("coyote", 0.95)]
+        upload(client, h)
+    with SessionLocal() as db:
+        a, b = db.query(Capture).order_by(Capture.id).all()
+        a.state = b.state = None
+        b.latitude, b.longitude = 35.6, -79.0      # in North Carolina, which lists coyotes
+        db.commit()
+        assert fill_capture_states(db) == 2
+        a, b = db.query(Capture).order_by(Capture.id).all()
+        assert (a.state, b.state) == ("CA", "NC")      # no location: the player's home state
 
 
 def test_installable_web_app(client):
