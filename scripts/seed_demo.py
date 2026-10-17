@@ -120,14 +120,14 @@ def main():
 
     for name, lists in PLAYERS.items():
         h = tokens[name]
-        # Keep each bot small: drop catches from earlier, bigger seedings.
+        # Keep each bot small: drop catches from earlier, bigger seedings. A
+        # species on both states' lists (elk) counts toward both.
         album = requests.get(f"{args.url}/me/album", headers=h).json()
-        have = {state: [] for state in lists}
+        owned = set()
         for p in album["photos"]:
             slug = p["species"]["slug"]
-            keep = next((st for st, slugs in lists.items() if slug in slugs and len(have[st]) < CATCHES[name]), None)
-            if keep:
-                have[keep].append(slug)
+            if any(slug in slugs and len(owned & set(slugs)) < CATCHES[name] for slugs in lists.values()):
+                owned.add(slug)
             else:
                 requests.delete(f"{args.url}/photos/{p['id']}", headers=h)
                 print(f"{name}: removed {slug}")
@@ -135,13 +135,16 @@ def main():
             # Captures are matched against the bot's current state's list.
             requests.patch(f"{args.url}/me", json={"state": state}, headers=h)
             for slug in slugs:
-                if len(have[state]) >= CATCHES[name]:
+                if len(owned & set(slugs)) >= CATCHES[name]:
                     break
+                if slug in owned:
+                    continue  # already caught: don't count it twice
                 if capture(args, h, rng, state, slug, nc_parks if state == "NC" else parks):
-                    have[state].append(slug)
+                    owned.add(slug)
                     print(f"{name}: caught {slug} ({state})")
                 else:
                     print(f"{name}: couldn't get {slug}, trying the next one")
+            print(f"{name}: {len(owned & set(slugs))}/{CATCHES[name]} in {state}")
         requests.patch(f"{args.url}/me", json={"state": "CA"}, headers=h)
     if args.db:
         with sqlite3.connect(args.db) as con:
