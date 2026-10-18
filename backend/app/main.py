@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, UploadFile, status
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, Request, UploadFile, status
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
@@ -21,9 +21,9 @@ from sqlalchemy.orm import Session
 
 from . import classifier as clf
 from . import dex
-from . import bonds, goals, notices, places, scoring, social
+from . import bonds, goals, limits, notices, places, scoring, social
 from . import states as st
-from .auth import create_token, current_user, hash_password, optional_user, verify_password
+from .auth import DUMMY_HASH, create_token, current_user, hash_password, optional_user, verify_password
 from .classifier import OTHER_LABEL, Prediction
 from .config import settings
 from .db import Base, SessionLocal, add_missing_columns, engine, get_db
@@ -160,9 +160,21 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Capture Animals", lifespan=lifespan,
               **({"docs_url": None, "redoc_url": None, "openapi_url": None} if settings.public else {}))
 
-# Failed logins per account in the last LOGIN_WINDOW seconds; slows password guessing.
-LOGIN_WINDOW, LOGIN_MAX_FAILURES = 300, 10
-_failed_logins: dict[str, list[float]] = {}
+
+
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+    h = response.headers
+    h.setdefault("X-Content-Type-Options", "nosniff")
+    h.setdefault("Referrer-Policy", "same-origin")
+    # Nobody else's site may show this one in a frame (stops click-jacking tricks).
+    h.setdefault("X-Frame-Options", "DENY")
+    h.setdefault("Content-Security-Policy", "frame-ancestors 'none'")
+    if settings.public:
+        h.setdefault("Strict-Transport-Security", "max-age=31536000")
+    return response
+
 app.include_router(social.router)
 app.include_router(notices.router)
 # Third-party browser libraries, served from here so the app works without a CDN.
@@ -305,7 +317,11 @@ def health():
 # --- auth -------------------------------------------------------------------
 
 @app.post("/auth/register", response_model=TokenOut, status_code=201)
-def register(body: RegisterIn, db: Session = Depends(get_db)):
+def register(body: RegisterIn, request: Request, db: Session = Depends(get_db)):
+    ip = limits.client_ip(request)
+    if limits.registrations_by_ip.blocked(ip):
+        raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS,
+                            "Too many new accounts from here. Try again later.")
     taken = db.scalar(select(User).where(or_(User.email == body.email.lower(),
                                              func.lower(User.username) == body.username.lower())))
     if taken:
@@ -320,6 +336,7 @@ def register(body: RegisterIn, db: Session = Depends(get_db)):
         db.commit()
     except IntegrityError:
         raise HTTPException(status.HTTP_409_CONFLICT, "Email or username already registered")
+    limits.registrations_by_ip.hit(ip)
     # The example bot players (one set for every state, clearly labelled as
     # bots in the app) add them as a friend; players can remove them from the
     # Friends tab and add them back from the suggestions.
@@ -330,19 +347,21 @@ def register(body: RegisterIn, db: Session = Depends(get_db)):
 
 
 @app.post("/auth/login", response_model=TokenOut)
-def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login(request: Request, form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """Log in with email or username (sent in the OAuth2 `username` field)."""
     ident = form.username.strip()
-    now = time.monotonic()
-    recent = [t for t in _failed_logins.get(ident.lower(), []) if now - t < LOGIN_WINDOW]
-    if len(recent) >= LOGIN_MAX_FAILURES:
+    ip = limits.client_ip(request)
+    if limits.failed_logins_by_account.blocked(ident.lower()) or limits.failed_logins_by_ip.blocked(ip):
         raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS,
                             "Too many failed logins. Try again in a few minutes.")
     user = db.scalar(select(User).where(User.email == ident.lower())) or user_named(db, ident)
-    if not user or not verify_password(form.password, user.password_hash):
-        _failed_logins[ident.lower()] = recent + [now]
+    # Check a password even for unknown names, so the reply takes as long either way
+    # and doesn't give away which accounts exist.
+    if not verify_password(form.password, user.password_hash if user else DUMMY_HASH) or not user:
+        limits.failed_logins_by_account.hit(ident.lower())
+        limits.failed_logins_by_ip.hit(ip)
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Wrong email/username or password")
-    _failed_logins.pop(ident.lower(), None)
+    limits.failed_logins_by_account.clear(ident.lower())
     return TokenOut(access_token=create_token(user.id))
 
 
@@ -490,10 +509,20 @@ def list_hotspots(state: str | None = Query(None), user: User | None = Depends(o
 def _read_image(data: bytes) -> Image.Image:
     try:
         im = Image.open(io.BytesIO(data))
+        # A tiny file can claim huge dimensions and take gigabytes to decode;
+        # check the size from the header before decoding anything.
+        if im.width * im.height > MAX_IMAGE_PIXELS:
+            raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "Photo has too many pixels")
         im.load()
+    except Image.DecompressionBombError:  # Pillow's own check, for sizes far past ours
+        raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "Photo has too many pixels")
     except (UnidentifiedImageError, OSError):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Not a valid image")
     return im
+
+
+# 108 MP, the biggest common phone camera (200 MP modes make files over the upload limit anyway).
+MAX_IMAGE_PIXELS = 12032 * 9024
 
 
 def _exif_meta(im: Image.Image) -> tuple[float | None, float | None, datetime | None]:
