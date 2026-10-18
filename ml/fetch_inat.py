@@ -21,11 +21,18 @@ adding North Carolina) are moved out to <out>/../other_pruned/.
 Every downloaded photo is recorded in <out>/attribution.csv. The licenses
 require attribution, so keep that file alongside the images.
 
+Pets and pests (species/household.csv: dogs, cats, pigeons, rats...) are classes
+too, so the app can say "that's a cat" instead of forcing it into "other" or a wild
+species. They're always kept out of "other"; --household downloads their photos.
+Pets are never research grade on iNaturalist (they're captive), so their photos
+come from any quality grade across the US.
+
 The script is resumable: re-running it skips photos already on disk.
 
 Usage:
     python ml/fetch_inat.py --per-species 1000 --negatives 5000 --out data/images   # all states
     python ml/fetch_inat.py --states NC --size small --out data/images              # just add NC
+    python ml/fetch_inat.py --household --only-household --out data/images         # just pets and pests
 
 Please be polite to iNaturalist: the API asks for <= 1 request/sec. For much
 larger pulls, use the iNaturalist Open Data bucket on AWS instead
@@ -47,6 +54,7 @@ API = "https://api.inaturalist.org/v1"
 CALIFORNIA_PLACE_ID = 14
 US_PLACE_ID = 1
 STATES_JSON = Path(__file__).resolve().parents[1] / "species" / "states.json"
+HOUSEHOLD_CSV = STATES_JSON.parent / "household.csv"
 ANIMALIA_TAXON_ID = 1
 # The "other" class is spread evenly over these groups and over the 12 months,
 # so it isn't dominated by whatever is most observed right now (e.g. this
@@ -236,6 +244,8 @@ def main():
     ap.add_argument("--size", default="medium", choices=["small", "medium", "large"],
                     help="medium is ~500px, plenty for 224-384px training")
     ap.add_argument("--only", nargs="*", help="limit to these slugs")
+    ap.add_argument("--household", action="store_true", help="also download the pets and pests")
+    ap.add_argument("--only-household", action="store_true", help="download only the pets and pests")
     ap.add_argument("--workers", type=int, default=16,
                     help="parallel photo downloads (from the AWS open-data bucket; "
                          "API calls stay at ~1/sec regardless)")
@@ -259,7 +269,17 @@ def main():
     for st in all_lists:
         for row in csv.DictReader(open(st["species"], encoding="utf-8")):
             species.setdefault(row["slug"], {**row, "places": []})["places"].append(st["inat_place_id"])
-    wanted = [r["slug"] for st in lists for r in csv.DictReader(open(st["species"], encoding="utf-8"))]
+    # Pets and pests: one class each, from anywhere in the US, never in "other".
+    household = []
+    if HOUSEHOLD_CSV.exists():
+        for row in csv.DictReader(open(HOUSEHOLD_CSV, encoding="utf-8")):
+            if row["slug"] not in species:
+                species[row["slug"]] = {**row, "places": [US_PLACE_ID]}
+                household.append(row["slug"])
+    wanted = [] if args.only_household else [
+        r["slug"] for st in lists for r in csv.DictReader(open(st["species"], encoding="utf-8"))]
+    if args.household or args.only_household:
+        wanted += household
     wanted = list(dict.fromkeys(s for s in wanted if not args.only or s in set(args.only)))
 
     out_dir = Path(args.out)
@@ -292,18 +312,20 @@ def main():
                 continue
             print(f"{slug} ({taxa[slug]['name']})")
             places = ",".join(str(p) for p in species[slug]["places"])
+            # Pets are captive, so never research grade: take any grade for them.
+            grade = "research" if slug not in household else "research,needs_id,casual"
             total = fetch_class(slug, out_dir, args.per_species, args.size, pool, attribution,
                                 target=args.per_species, place_id=places,
-                                taxon_id=taxa[slug]["taxon_id"], quality_grade="research")
+                                taxon_id=taxa[slug]["taxon_id"], quality_grade=grade)
             if total < args.per_species:
                 # Rare species (red wolf, hellbender...) need photos from their whole US range.
                 print("  topping up from the whole US")
                 fetch_class(slug, out_dir, 2 * args.per_species, args.size, pool, attribution,
                             target=args.per_species, place_id=US_PLACE_ID,
-                            taxon_id=taxa[slug]["taxon_id"], quality_grade="research")
+                            taxon_id=taxa[slug]["taxon_id"], quality_grade=grade)
             fh.flush()
 
-        if args.negatives and not args.only:
+        if args.negatives and not args.only and not args.only_household:
             all_ids = ",".join(str(taxa[slug]["taxon_id"]) for slug in species)
             # Include casual/needs_id too: "other" just needs to be "an animal
             # photo that isn't one of ours", not a confirmed ID. But it must be

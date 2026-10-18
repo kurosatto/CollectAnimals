@@ -36,6 +36,11 @@
    "swim",
    "sleep"
   ],
+  "american_cockroach": [
+   "idle",
+   "walk",
+   "sleep"
+  ],
   "american_crow": [
    "idle",
    "walk",
@@ -202,9 +207,20 @@
    "fly",
    "sleep"
   ],
+  "brown_rat": [
+   "idle",
+   "walk",
+   "sleep"
+  ],
   "brush_rabbit": [
    "idle",
    "walk",
+   "sleep"
+  ],
+  "budgerigar": [
+   "idle",
+   "walk",
+   "fly",
    "sleep"
   ],
   "by_the_wind_sailor": [
@@ -376,6 +392,27 @@
    "swim",
    "sleep"
   ],
+  "domestic_cat": [
+   "idle",
+   "walk",
+   "sleep"
+  ],
+  "domestic_chicken": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep"
+  ],
+  "domestic_dog": [
+   "idle",
+   "walk",
+   "sleep"
+  ],
+  "domestic_rabbit": [
+   "idle",
+   "walk",
+   "sleep"
+  ],
   "eastern_bluebird": [
    "idle",
    "walk",
@@ -452,6 +489,12 @@
    "walk",
    "sleep"
   ],
+  "european_starling": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep"
+  ],
   "five_lined_skink": [
    "idle",
    "walk",
@@ -471,6 +514,11 @@
    "idle",
    "sleep"
   ],
+  "german_cockroach": [
+   "idle",
+   "walk",
+   "sleep"
+  ],
   "giant_green_anemone": [
    "idle",
    "sleep"
@@ -479,6 +527,16 @@
    "idle",
    "walk",
    "fly",
+   "sleep"
+  ],
+  "golden_hamster": [
+   "idle",
+   "walk",
+   "sleep"
+  ],
+  "goldfish": [
+   "idle",
+   "swim",
    "sleep"
   ],
   "gooseneck_barnacle": [
@@ -555,7 +613,28 @@
    "idle",
    "sleep"
   ],
+  "horse": [
+   "idle",
+   "walk",
+   "sleep"
+  ],
   "house_finch": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep"
+  ],
+  "house_fly": [
+   "idle",
+   "fly",
+   "sleep"
+  ],
+  "house_mouse": [
+   "idle",
+   "walk",
+   "sleep"
+  ],
+  "house_sparrow": [
    "idle",
    "walk",
    "fly",
@@ -788,6 +867,12 @@
   "ringtail": [
    "idle",
    "walk",
+   "sleep"
+  ],
+  "rock_pigeon": [
+   "idle",
+   "walk",
+   "fly",
    "sleep"
   ],
   "rough_green_snake": [

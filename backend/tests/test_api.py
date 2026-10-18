@@ -192,6 +192,27 @@ def test_capture_awards_badge_once(client, fake):
     assert client.get("/me/collection", headers=signup(client, "bob")).json()["caught"] == 0
 
 
+def test_pets_and_pests_are_named_but_do_not_count(client, fake):
+    h = signup(client)
+    fake.next = [Prediction("domestic_cat", 0.95), Prediction("bobcat", 0.03), Prediction("other", 0.02)]
+    r = upload(client, h).json()
+    assert not r["matched"] and r["species"] is None and r["score"] is None
+    assert r["household"]["slug"] == "domestic_cat" and r["household"]["kind"] == "pet"
+    assert r["message"].startswith("That's a cat!") and "Field Guide" in r["message"]
+    assert r["top_predictions"][0]["common_name"] == "Cat"
+    assert all(c["slug"] != "domestic_cat" for c in r["choices"])  # can't be picked as a wild animal
+
+    fake.next = [Prediction("european_starling", 0.9), Prediction("other", 0.1)]
+    r = upload(client, h).json()
+    assert r["household"]["kind"] == "pest" and "European starling" in r["message"]
+
+    # Unsure: no name, the usual "couldn't match".
+    fake.next = [Prediction("domestic_dog", 0.5), Prediction("coyote", 0.3), Prediction("other", 0.2)]
+    r = upload(client, h).json()
+    assert r["household"] is None and not r["matched"]
+    assert client.get("/me/collection", headers=h).json()["caught"] == 0
+
+
 def test_low_confidence_and_other_do_not_match(client, fake):
     h = signup(client)
     fake.next = [Prediction("bobcat", 0.41), Prediction("gray_fox", 0.3)]

@@ -21,14 +21,14 @@ from sqlalchemy.orm import Session
 
 from . import classifier as clf
 from . import dex
-from . import bonds, goals, notices, places, scoring, social
+from . import bonds, goals, household, notices, places, scoring, social
 from . import states as st
 from .auth import create_token, current_user, hash_password, optional_user, verify_password
 from .classifier import OTHER_LABEL, Prediction
 from .config import settings
 from .db import Base, SessionLocal, add_missing_columns, engine, get_db
 from .models import AlbumPhoto, Badge, Capture, Friendship, IdFeedback, PhotoLike, Species, StateSpecies, User
-from .schemas import (BondNoteOut, BondOut, BondsOut, BuddyIn, BuddyOut, CaptureOut, ChallengeOut, ChallengesOut, ChoiceOut, ScoreOut, ScorePart, SetOut, SetSpecies, SetsOut, CollectionEntry, CollectionOut, DexOut, PlaceOut, HotspotOut, HotspotSpecies,
+from .schemas import (BondNoteOut, BondOut, BondsOut, BuddyIn, BuddyOut, CaptureOut, HouseholdOut, ChallengeOut, ChallengesOut, ChoiceOut, ScoreOut, ScorePart, SetOut, SetSpecies, SetsOut, CollectionEntry, CollectionOut, DexOut, PlaceOut, HotspotOut, HotspotSpecies,
                       PickIn, PredictionOut, RegisterIn, SpeciesOut, StateOut, TokenOut, UserOut, UserUpdate,
                       WhereWhenIn, WhereWhenResult)
 from .social import catches_in, find_species, friend_ids, revealed_species_ids, species_out, user_named
@@ -591,8 +591,11 @@ async def create_capture(photo: UploadFile = File(...),
     # and western bluebird. Five guesses: the first three are shown, all five are
     # offered if the player says the model got it wrong.
     members = {m.species.slug: m for m in state_species(db, state.code)}
-    preds = restrict(model.predict(image, k=1000), set(members) | {OTHER_LABEL})[:5]
+    # Pets and pests are recognised too (a state list wins if it has the animal).
+    pets = {slug: a for slug, a in household.animals().items() if slug not in members}
+    preds = restrict(model.predict(image, k=1000), set(members) | set(pets) | {OTHER_LABEL})[:5]
     top = preds[0]
+    pet = pets.get(top.label) if top.probability >= settings.match_threshold else None
     species_by_slug = {p.label: members[p.label].species for p in preds if p.label in members}
     names = {p.label: members[p.label].common_name for p in preds if p.label in members}
     species = species_by_slug.get(top.label)
@@ -642,6 +645,8 @@ async def create_capture(photo: UploadFile = File(...),
         message = f"Might be a {names[top.label]}, but we're not sure. Try a clearer photo!"
     elif species is not None:
         message = "Might be an animal you haven't discovered yet, but we're not sure. Try a clearer photo!"
+    elif pet is not None:
+        message = household.message(pet)
     else:
         message = f"We couldn't match this to any animal in the {state.name} collection."
 
@@ -656,6 +661,9 @@ async def create_capture(photo: UploadFile = File(...),
             PredictionOut(label=p.label, probability=round(p.probability, 4),
                           common_name=names[p.label])
             if p.label in species_by_slug and species_by_slug[p.label].id in revealed
+            else PredictionOut(label=p.label, probability=round(p.probability, 4),
+                               common_name=pets[p.label].common_name)
+            if p.label in pets
             else PredictionOut(label="other" if p.label not in species_by_slug else "hidden",
                                probability=round(p.probability, 4), common_name=None)
             for p in preds[:3]
@@ -669,6 +677,8 @@ async def create_capture(photo: UploadFile = File(...),
         bond_up=bond_up,
         where_when=social.where_when_out(capture, state.utc_offset),
         **(_safety_out(species.slug, state.code) if matched else {}),
+        household=HouseholdOut(slug=pet.slug, common_name=pet.common_name, kind=pet.kind, note=pet.note)
+        if pet else None,
     )
 
 
