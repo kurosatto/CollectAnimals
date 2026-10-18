@@ -163,7 +163,7 @@ function habNote() {
   const who = hab.visit ? `${hab.visit.username}'s habitat` : "here";
   $("hab-note").textContent = !n ? (hab.visit ? `No animals in ${who} yet.` : "Capture animals and they'll move in here.")
     : `${n} animal${n > 1 ? "s" : ""} live${n > 1 ? "" : "s"} ${hab.visit ? "in " + who : "here"}` + (asleep ? `, ${asleep} asleep` : "")
-      + (hab.wx ? ". " + habWxLine() : ". Tap one to say hi.");
+      + (hab.wx ? ". " + habWxLine() : ". Tap one to say hi.") + ` ${HAB_SEASON_ICON[habSeason()]} ${habSeason()[0].toUpperCase() + habSeason().slice(1)}.`;
   const night = phase === "night";
   const here = document.getElementById("hab-wx-here");
   if (here) here.hidden = !(hab.wxAsk && hab.wx && !hab.visit);
@@ -505,7 +505,7 @@ function habAnim(a, awake, roost) {
 function habDraw() {
   const cv = $("hab-canvas");
   if (!hab.L || !cv) return;
-  const L = hab.L, phase = habPhase(), key = `${L.w}/${phase}/${habState()}`;
+  const L = hab.L, phase = habPhase(), key = `${L.w}/${phase}/${habState()}/${habSeason()}`;
   if (cv.width !== L.w) { cv.width = L.w; cv.height = HAB_H; }
   if (hab.bgKey !== key) { hab.bg = habBackground(L, phase, habState()); hab.bgKey = key; }
   const c = cv.getContext("2d");
@@ -815,9 +815,54 @@ function habGust() {
 }
 const habCold = () => !!hab.wx && (hab.wx.sky === "snow" || (hab.wx.temp_f != null && hab.wx.temp_f < 45));
 const habWet = () => !!hab.wx && (hab.wx.sky === "rain" || hab.wx.sky === "storm");
-const habTuckedIn = (a) => habCold() && /reptile|amphibian|invertebrate|insect/.test(a.s.category) && !HAB_SEA.has(a.role);
+const habColdBlooded = (a) => /reptile|amphibian|invertebrate|insect/.test(a.s.category) && !HAB_SEA.has(a.role);
+const habTuckedIn = (a) => habColdBlooded(a) && (habCold() || habHibernating());
 const habSheltering = (a) => habWet() && ["fly", "flutter", "hover", "soar"].includes(a.role) && !HAB_SEABIRDS.test(a.s.slug);
 const habLovesRain = (a) => a.s.category === "amphibian" || a.role === "paddle" || /duck|goose|swan|mallard|gallinule|coot/.test(a.s.slug);
+
+// ---- Seasons: the scene follows the real time of year by itself. Spring brings
+// more flowers, fall turns the leaves and drops them on the meadow, and winter
+// browns the grass, bares the leafy trees and (in states with real winters)
+// lays snow, while the reptiles, amphibians and insects hibernate.
+// Preview with ?season=fall.
+const HAB_SEASONS = ["winter", "winter", "spring", "spring", "spring", "summer", "summer", "summer", "fall", "fall", "fall", "winter"];
+const HAB_SEASON_ICON = { spring: "🌸", summer: "☀️", fall: "🍂", winter: "❄️" };
+// States where winter is mild: no snow on the ground, and the animals stay up.
+const HAB_MILD_WINTER = new Set(["CA", "FL", "HI", "TX", "AZ", "LA", "MS", "AL", "GA", "SC", "NC"]);
+const habSeasonTest = (() => { try { return new URLSearchParams(location.search).get("season"); } catch { return null; } })();
+function habSeason() {
+  return HAB_SEASONS.includes(habSeasonTest) ? habSeasonTest : HAB_SEASONS[new Date().getMonth()];
+}
+const habSnowy = (state = habState()) => habSeason() === "winter" && !HAB_MILD_WINTER.has(state);
+const habHibernating = () => habSnowy();
+const hexMix = (a, b, k) => "#" + hexRgb(a).map((v, i) => Math.round(v + (hexRgb(b)[i] - v) * k).toString(16).padStart(2, "0")).join("");
+
+// A state's scene for the season: colors, how many flowers, what the leafy
+// trees are doing (green, fall or bare) and whether there's snow.
+function habSeasonScene(sc, season, state) {
+  const mild = HAB_MILD_WINTER.has(state), tint = (cols, to, k) => cols.map((c) => hexMix(c, to, k));
+  const out = { ...sc, leaves: "green", flowerCount: 26, snow: false };
+  if (season === "spring") {
+    out.flowerCount = 44;
+    out.flowers = [...sc.flowers, ["#f6b8cf", "#ffffff"]];
+  } else if (season === "fall") {
+    const k = mild ? .12 : .28;
+    out.leaves = "fall";
+    out.meadow = tint(sc.meadow, "#c8a040", k);
+    out.far = tint(sc.far, "#c87a30", k * .8);
+    out.near = tint(sc.near, "#c87a30", k);
+    out.flowerCount = 14;
+    out.flowers = [["#9a6ad8", "#ffd84d"], ["#ffd23a", "#c8641e"]];  // asters and goldenrod
+  } else if (season === "winter") {
+    out.leaves = mild ? "green" : "bare";
+    out.meadow = tint(sc.meadow, "#b8a070", mild ? .22 : .5);
+    out.far = tint(sc.far, "#8a8070", mild ? .1 : .35);
+    out.near = tint(sc.near, "#8a8070", mild ? .12 : .4);
+    out.flowerCount = mild ? 8 : 0;
+    out.snow = !mild;
+  }
+  return out;
+}
 
 // "🌧️ Raining in Houston, 61°F." for the line under the scene.
 function habWxLine() {
@@ -832,7 +877,7 @@ function habWxLine() {
 // What a tapped animal is up to in this weather, or null.
 function habWxMood(a, awake) {
   if (!hab.wx) return null;
-  if (habTuckedIn(a)) return "tucked in from the cold 💤";
+  if (habTuckedIn(a)) return habCold() ? "tucked in from the cold 💤" : "hibernating till spring 💤";
   if (!awake) return null;
   if (habSheltering(a)) return "staying dry";
   if (habWet() && habLovesRain(a)) return "loves the rain";
@@ -1171,7 +1216,8 @@ const HAB_SCENES = {
 
 function habBackground(L, phase, state) {
   // Land is painted in daylight colors, then graded for the time of day at the end.
-  const W = L.w, H = HAB_H, sc = HAB_SCENES[state] || HAB_SCENES.default, P = pxPalette("day");
+  const W = L.w, H = HAB_H, season = habSeason(), snowy = habSnowy(state);
+  const sc = habSeasonScene(HAB_SCENES[state] || HAB_SCENES.default, season, state), P = pxPalette("day");
   const night = phase === "night", r = mulberry(7);
   const img = pxLayer(W, H);
   img.own = new Uint8Array(W * H);
@@ -1329,6 +1375,7 @@ function habBackground(L, phase, state) {
       }
     }
   }
+  const snowPal = P("#b8c4d8", "#d4dcea", "#eef2f8", "#ffffff");
   // Hills, far then near, each with a lit top edge (low and gentle in flat states).
   const hills = sc.flat ? [[150, 3, .021, sc.far, 20], [158, 2, .034, sc.near, 21]]
     : [[132, 12, .021, sc.far, 20], [150, 9, .034, sc.near, 21]];
@@ -1340,7 +1387,8 @@ function habBackground(L, phase, state) {
       const slope = Math.cos(x * k + base) * amp * k + Math.cos(x * k * 2.7) * 3 * k * 2.7;
       for (let y = h; y < L.water + 10; y++) {
         const v = .62 - slope * 1.2 - (y - h) / 40 + (fbm(x / 12, y / 6, seed) - .5) * .4;
-        img.set(x, y, y === h ? pal[3] : ramp(pal, v, x, y));
+        if (sc.snow && y - h < 2 + fbm(x / 6, y / 4, seed + 5) * 9) img.set(x, y, ramp(snowPal, v + .2, x, y));
+        else img.set(x, y, y === h ? pal[3] : ramp(pal, v, x, y));
       }
     }
     // Trees on the hills: little oaks, a dense forest, or round trees.
@@ -1352,6 +1400,9 @@ function habBackground(L, phase, state) {
                   P("#9a7a14", "#bc9a1e", "#d8b82a", "#ecd048"), P("#2f6a34", "#3f7f41", "#55964f", "#6dad60")];
     const leaf = dots === "oak" ? P("#3f5a26", "#526f30", "#67853b", "#7f9c4a")
       : dots === "forest" ? P("#1f4f2c", "#2b6236", "#387542", "#4a8a4f") : P("#2f6a34", "#3f7f41", "#55964f", "#6dad60");
+    // Leafy trees (not oaks, pines or palms) follow the season.
+    const twig = P("#5a4a3e", "#6e5c4c", "#857060", "#9a8472");
+    const leafy = (j) => sc.leaves === "fall" ? fall[j % 3] : sc.leaves === "bare" ? twig : dots === "maple" ? fall[3] : leaf;
     for (let i = 0; i < n; i++) {
       const x = Math.floor(tr() * (L.sea - 30)) + 4;
       const raw = base + Math.sin(x * k + base) * amp + Math.sin(x * k * 2.7) * 3;
@@ -1361,7 +1412,7 @@ function habBackground(L, phase, state) {
       const s = li ? 1 : .7;
       if (dots === "oak") pxBlob(tl, x, y - 2, Math.round(5 * s + tr() * 2), Math.round(3 * s + 1), leaf, { rough: .5, seed: i });
       else if (dots === "forest") {
-        if (tr() < .5) pxBlob(tl, x, y, Math.round(3 * s + 1), Math.round(4 * s + 1), leaf, { rough: .45, seed: i });
+        if (tr() < .5) pxBlob(tl, x, y, Math.round(3 * s + 1), Math.round(4 * s + 1), sc.leaves === "green" ? leaf : leafy(i), { rough: .45, seed: i });
         else for (let j = 0; j < 7 * s + 2; j++) {
           const w = Math.round(j * .45);
           for (let dx = -w; dx <= w; dx++) tl.set(x + dx, y - 8 * s + j, ramp(leaf, .75 - (dx + w) / (2 * w + 1) * .7, x + dx, y + j));
@@ -1373,8 +1424,8 @@ function habBackground(L, phase, state) {
         for (const [dx, dy] of [[-4, 1], [-3, 0], [-2, -1], [-1, -1], [1, -1], [2, -1], [3, 0], [4, 1], [0, -2], [-1, -3], [1, -3], [-5, 2], [5, 2]])
           tl.set(x + dx, y - h + dy, leaf[dy < -1 ? 3 : dy < 0 ? 2 : 1]);
       } else if (dots === "maple") {
-        pxBlob(tl, x, y - 1, Math.round(3 * s + 1), Math.round(3 * s + 1), fall[Math.floor(tr() * fall.length)], { rough: .5, seed: i });
-      } else pxBlob(tl, x, y - 2, Math.round(4 * s + 1), Math.round(4 * s + 1), leaf, { rough: .4, seed: i });
+        pxBlob(tl, x, y - 1, Math.round(3 * s + 1), Math.round(3 * s + 1), leafy(Math.floor(tr() * 4)), { rough: .5, seed: i });
+      } else pxBlob(tl, x, y - 2, Math.round(4 * s + 1), Math.round(4 * s + 1), leafy(i), { rough: .4, seed: i });
     }
     tl.onto(img, li ? P("#22401f") : undefined);
   });
@@ -1390,7 +1441,9 @@ function habBackground(L, phase, state) {
   // Meadow with patchy grass color.
   const mead = P(...sc.meadow);
   for (let y = L.water + 4; y < H; y++) for (let x = 0; x < L.shore[y] + 3; x++) {
-    img.set(x, y, ramp(mead, .35 + (fbm(x / 16, y / 7, 17) - .5) * 1.1 + (y < L.water + 8 ? .2 : 0), x, y));
+    const n = fbm(x / 16, y / 7, 17);
+    if (sc.snow && n + (fbm(x / 5, y / 3, 27) - .5) * .3 > .42) img.set(x, y, ramp(snowPal, .4 + (n - .42) * 3, x, y));
+    else img.set(x, y, ramp(mead, .35 + (n - .5) * 1.1 + (y < L.water + 8 ? .2 : 0), x, y));
   }
   // Sandy shore curving down to the sea, wet near the water.
   const sand = P("#cdb27a", "#dcc38b", "#e9d49f", "#f4e3b6"), wet = P("#b39a68", "#c4aa76");
@@ -1412,13 +1465,22 @@ function habBackground(L, phase, state) {
     img.set(x, y, blade[0]); img.set(x, y - 1, blade[0]); img.set(x + 1, y - 2, blade[1]); img.set(x - 1, y - 1, blade[1]);
   }
   const flowerSets = sc.flowers.map((f) => P(...f));
-  for (let i = 0; i < 26; i++) {
+  for (let i = 0; i < sc.flowerCount; i++) {
     const cx = Math.floor(r() * (L.land - 16)) + 6, cy = L.water + 12 + Math.floor(r() * (H - L.water - 16));
     const [petal, mid] = flowerSets[Math.floor(r() * flowerSets.length)];
     for (let j = 0; j < 3 + r() * 3; j++) {
       const x = cx + Math.round((r() - .5) * 12), y = cy + Math.round((r() - .5) * 6);
       img.set(x, y + 1, blade[0]); img.set(x, y + 2, blade[0]);
       img.set(x - 1, y, petal); img.set(x + 1, y, petal); img.set(x, y - 1, petal); img.set(x, y + 1, petal); img.set(x, y, mid);
+    }
+  }
+  if (sc.leaves === "fall") {
+    // Fallen leaves scattered on the meadow (plenty under New York's maples).
+    const lv = [P("#c8441c"), P("#e8782a"), P("#e8b82a"), P("#9a2a16")];
+    for (let i = 0; i < (sc.dots === "maple" ? 90 : 45); i++) {
+      const x = Math.floor(hash2(i, 71) * (L.land - 6)) + 2, y = L.water + 10 + Math.floor(hash2(i, 72) * (HAB_H - L.water - 12));
+      if (((x - L.pond.x) / (L.pond.rx + 4)) ** 2 + ((y - L.pond.y) / (L.pond.ry + 4)) ** 2 < 1) continue;
+      img.set(x, y, lv[i % 4]); if (hash2(i, 73) > .5) img.set(x + 1, y, lv[(i + 1) % 4]);
     }
   }
   // Sea floor rocks, some with moss.
@@ -1631,13 +1693,6 @@ function habBackground(L, phase, state) {
     const foam = P("#e9f6ff");
     for (let dx = -36; dx <= 36; dx++) if (hash2(dx, 83) > .45) img.set(ix + dx, ground + 9 + (hash2(dx, 84) > .7 ? 1 : 0), foam);
   } else if (state === "NY") {
-    // Fallen leaves scattered on the meadow.
-    const lv = [P("#c8441c"), P("#e8782a"), P("#e8b82a"), P("#9a2a16")];
-    for (let i = 0; i < 90; i++) {
-      const x = Math.floor(hash2(i, 71) * (L.land - 6)) + 2, y = L.water + 10 + Math.floor(hash2(i, 72) * (HAB_H - L.water - 12));
-      if (((x - L.pond.x) / (L.pond.rx + 4)) ** 2 + ((y - L.pond.y) / (L.pond.ry + 4)) ** 2 < 1) continue;
-      img.set(x, y, lv[i % 4]); if (hash2(i, 73) > .5) img.set(x + 1, y, lv[(i + 1) % 4]);
-    }
     // The Statue of Liberty on its island: a star fort, the stone pedestal, and
     // the copper-green statue holding up her torch.
     const lib = pxLayer(W, H), { sx, ftop, ptop, torch } = habLiberty(L);
@@ -1780,10 +1835,14 @@ function habBackground(L, phase, state) {
     limb(tx - 2, 110, tx - 22, 101, 3, 2);
     limb(tx + 2, 133, tx + 18, 130, 2, 1);
     // California's coast live oak is a darker, olive green.
+    // Oaks stay green all year; other leafy trees turn in fall and are bare in a
+    // snowy winter (New York's sugar maple is the reddest).
+    const turn = kind !== "oak" && sc.leaves === "fall";
     const leaf = kind === "oak" ? P("#24391c", "#344f25", "#486b2f", "#62893c", "#86ab55")
-      : kind === "maple" ? P("#6a1a12", "#9a2a16", "#c8441c", "#e8702a", "#f6b040")  // a sugar maple in fall
+      : turn && kind === "maple" ? P("#6a1a12", "#9a2a16", "#c8441c", "#e8702a", "#f6b040")
+      : turn ? P("#7a3a14", "#a8561a", "#d07a24", "#e8a032", "#f6c850")
       : P("#22492a", "#2f6633", "#41863d", "#5aa548", "#84c55c");
-    const crown = [[-20, 88, 12], [22, 86, 13], [-8, 74, 14], [12, 70, 13], [2, 58, 11], [0, 92, 18],
+    const crown = kind !== "oak" && sc.leaves === "bare" ? [] : [[-20, 88, 12], [22, 86, 13], [-8, 74, 14], [12, 70, 13], [2, 58, 11], [0, 92, 18],
                    [-18, 104, 13], [17, 101, 14], [-4, 112, 9], [27, 106, 8]];
     for (const [dx, cy, rr] of crown) {
       const cx = tx + dx;
