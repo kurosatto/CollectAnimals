@@ -655,9 +655,11 @@ function habLeave() {
 const HAB_SHOWCASE = {
   CA: { slug: "brown_pelican", common_name: "Brown Pelican", category: "bird", rarity: "common" },
   NC: { slug: "northern_cardinal", common_name: "Northern Cardinal", category: "bird", rarity: "common" },
+  // States without their own pick yet: a robin, found in every state.
+  default: { slug: "american_robin", common_name: "American Robin", category: "bird", rarity: "common" },
 };
 function habShowcase(state, slot) {
-  const s = HAB_SHOWCASE[state] || HAB_SHOWCASE.CA;
+  const s = HAB_SHOWCASE[state] || HAB_SHOWCASE.default;
   if (slot && $("habitat").parentElement !== slot) slot.append($("habitat"));
   if (!hab.visit || !hab.visit.showcase || hab.visit.state !== state) {
     hab.visit = { showcase: true, state, home: [] };

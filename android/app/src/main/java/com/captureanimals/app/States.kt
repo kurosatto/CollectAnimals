@@ -2,8 +2,14 @@ package com.captureanimals.app
 
 import org.json.JSONObject
 
-/** A playable state from species/states.json: its own 100 species and Field Guide. */
-class StateInfo(val code: String, val name: String, val species: List<Species>, val fieldGuide: FieldGuide)
+/**
+ * A playable state from species/states.json: its own 100 species and Field Guide.
+ * The Field Guide (sighting map, parks, seasons) is read the first time it's needed,
+ * so 50 states don't all load at start-up.
+ */
+class StateInfo(val code: String, val name: String, val species: List<Species>, guide: () -> FieldGuide) {
+    val fieldGuide: FieldGuide by lazy(guide)
+}
 
 /**
  * Reads species/states.json (packaged as assets) the way the backend does
@@ -21,17 +27,35 @@ object States {
         val states = List(arr.length()) { i ->
             val s = arr.getJSONObject(i)
             val name = s.getString("name")
-            // Sighting maps are built on a PC with iNaturalist access; until then a state has an empty map.
-            val ranges = read(s.getString("ranges"))
-                ?: JSONObject().put("grid", s.getJSONObject("grid")).put("species", JSONObject()).toString()
             fun optional(key: String) = s.optString(key).takeIf { it.isNotEmpty() && it != "null" }?.let(read)
-            var guide = FieldGuide.parse(details, ranges, read(s.getString("outline")) ?: error("no outline for $name"),
-                optional("hotspots"), optional("seasons"), region = name)
-            val dex = optional("dex")
-            if (dex != null) guide = guide.withDetails(overlay(guide.details, dex))
-            StateInfo(s.getString("code"), name, parseSpecies(read(s.getString("species")) ?: error("no list for $name")), guide)
+            StateInfo(s.getString("code"), name, parseSpecies(read(s.getString("species")) ?: error("no list for $name"))) {
+                // Sighting maps and outlines are built on a PC with iNaturalist access; until then
+                // a state has an empty sighting map and its bounding box as the outline.
+                val bounds = s.getJSONObject("bounds")
+                val ranges = optional("ranges")
+                    ?: JSONObject().put("grid", s.optJSONObject("grid") ?: gridFor(bounds)).put("species", JSONObject()).toString()
+                var guide = FieldGuide.parse(details, ranges, optional("outline") ?: boxOutline(bounds),
+                    optional("hotspots"), optional("seasons"), region = name)
+                val dex = optional("dex")
+                if (dex != null) guide = guide.withDetails(overlay(guide.details, dex))
+                guide
+            }
         }
         return o.optString("default", states.first().code) to states
+    }
+
+    /** A quarter-degree sighting grid over the state's bounds, for a state with no ranges file yet. */
+    fun gridFor(b: JSONObject): JSONObject {
+        val step = 0.25
+        return JSONObject().put("lon0", b.getDouble("west")).put("lat0", b.getDouble("south")).put("step", step)
+            .put("cols", Math.ceil((b.getDouble("east") - b.getDouble("west")) / step).toInt())
+            .put("rows", Math.ceil((b.getDouble("north") - b.getDouble("south")) / step).toInt())
+    }
+
+    /** The state's bounding box as its outline, until the real outline is added. */
+    fun boxOutline(b: JSONObject): String {
+        val (w, e, so, n) = listOf("west", "east", "south", "north").map { b.getDouble(it) }
+        return """{"rings":[[[$w,$so],[$e,$so],[$e,$n],[$w,$n],[$w,$so]]]}"""
     }
 
     fun parseSpecies(csv: String): List<Species> {

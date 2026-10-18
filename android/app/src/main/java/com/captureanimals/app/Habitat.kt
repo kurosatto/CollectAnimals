@@ -137,7 +137,10 @@ class AssetClient(private val context: Context) : WebViewClient() {
     override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
         val url = request.url
         if (url.host != "appassets.androidplatform.net") return null
-        val path = url.path.orEmpty().trimStart('/')
+        val raw = url.path.orEmpty().trimStart('/')
+        // An animal without pixel art yet gets the placeholder egg, as on the website.
+        val path = if (raw.startsWith("sprites/") && raw.endsWith(".png"))
+            spriteAsset(raw, spriteFiles(context)) else raw
         return runCatching {
             WebResourceResponse(mimeType(path), if (mimeType(path).startsWith("text") ||
                 path.endsWith(".js") || path.endsWith(".json")) "utf-8" else null, context.assets.open(path))

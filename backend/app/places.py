@@ -90,7 +90,7 @@ def in_state(state, lat: float, lon: float) -> bool:
     """Whether a point is inside the state's outline, or just off its edge."""
     rings = _outlines.get(state.code)
     if rings is None:
-        rings = json.loads(state.outline.read_text(encoding="utf-8"))["rings"] if state.outline.exists() else []
+        rings = json.loads(state.outline.read_text(encoding="utf-8"))["rings"] if state.outline and state.outline.exists() else []
         _outlines[state.code] = rings
     b = state.bounds
     if not (b["south"] - _MARGIN <= lat <= b["north"] + _MARGIN and b["west"] - _MARGIN <= lon <= b["east"] + _MARGIN):

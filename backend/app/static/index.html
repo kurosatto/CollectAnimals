@@ -63,6 +63,13 @@
   dialog { border:1px solid var(--line); border-radius:14px; background:var(--card); color:var(--ink);
            padding:0; width:min(560px, calc(100vw - 32px)); }
   dialog::backdrop { background:rgba(0,0,0,.45); }
+  #state-search { width:100%; box-sizing:border-box; margin:12px 0 8px; }
+  .state-list { max-height:min(420px, 60dvh); overflow-y:auto; display:grid; gap:2px; }
+  .state-list button { text-align:left; padding:9px 10px; border-radius:8px; border:none; background:transparent;
+                       color:var(--ink); cursor:pointer; display:flex; justify-content:space-between; gap:8px; }
+  .state-list button:hover, .state-list button:focus-visible { background:var(--line); }
+  .state-list button.on { font-weight:600; color:var(--accent); }
+  .state-list .sep { font-size:.75rem; color:var(--muted); padding:8px 10px 2px; text-transform:uppercase; letter-spacing:.04em; }
   .dex { padding:16px; }
   .dex-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
   .dex-head h2 { margin:0; }
@@ -319,12 +326,12 @@
 <main>
   <button id="update" class="hidden"></button>
   <header>
-    <h1>Capture Animals <span class="muted" style="font-size:1rem" id="state-name">California</span></h1>
+    <h1>Capture Animals <span class="muted" style="font-size:1rem" id="state-name"></span></h1>
     <div class="head-right">
     <span id="offline" class="hidden" title="No connection: your Field Guide and habitat still work, new captures need the internet">Offline</span>
     <button class="link hidden" id="install">Install app</button>
     <div id="who" class="hidden"><button class="link" id="username"></button>
-      <label title="Your primary location: your Field Guide, Parks and maps follow it, and friends see it first">📍 <select id="my-state" aria-label="Primary location"></select></label>
+      <button class="link" id="my-state" title="Your primary location: your Field Guide, Parks and maps follow it, and friends see it first">📍</button>
       <button class="link" id="logout">Log out</button></div>
     </div>
   </header>
@@ -339,9 +346,9 @@
 </nav>
 
   <section id="auth" class="card auth">
-    <div class="auth-scene" id="auth-scene"><span class="auth-place" id="auth-place">📍 California</span></div>
+    <div class="auth-scene" id="auth-scene"><span class="auth-place" id="auth-place">📍</span></div>
     <div class="auth-side">
-    <h2 class="pitch-title">How many of <span id="pitch-state">California</span>'s 100 animals can you capture?</h2>
+    <h2 class="pitch-title">How many of <span id="pitch-state">your state</span>'s <span id="pitch-count">100</span> animals can you capture?</h2>
     <p class="pitch">Spot a wild animal, snap a great photo, and it's captured in your Field Guide.
       Then it moves into your own little pixel habitat, like the one here.</p>
     <h2 id="auth-title">Log in</h2>
@@ -349,7 +356,7 @@
       <input id="email" type="email" placeholder="Email" class="hidden">
       <input id="ident" placeholder="Email or username" required>
       <input id="password" type="password" placeholder="Password (8+ chars)" required>
-      <select id="signup-state" class="hidden" aria-label="Your state"></select>
+      <button type="button" class="photo-btn hidden" id="signup-state">📍 Choose your state</button>
       <button type="submit" id="auth-submit">Log in</button>
     </form>
     <p class="muted"><button class="link" id="toggle">Need an account? Sign up</button></p>
@@ -466,6 +473,14 @@
   <div class="pic"><img id="viewer-img" alt=""><button class="shut" id="viewer-close" aria-label="Close">×</button></div>
   <div class="side" id="viewer-side"></div>
 </div></dialog>
+<dialog id="state-pick"><div class="dex">
+  <div class="dex-head">
+    <div><h2 id="state-pick-title"></h2><div class="muted" id="state-pick-note"></div></div>
+    <button class="close" id="state-pick-close" aria-label="Close">×</button>
+  </div>
+  <input id="state-search" type="search" placeholder="Search states" aria-label="Search states" autocomplete="off">
+  <div id="state-list" class="state-list"></div>
+</div></dialog>
 <dialog id="album"><div class="dex">
   <div class="dex-head">
     <div><h2 id="album-title"></h2><div class="muted" id="album-sub"></div></div>
@@ -505,26 +520,29 @@ function setToken(t) {
 }
 
 // Logged out: the login page shows the state's scenery with one animal in it.
-// Before a state is chosen that's the last one used on this device, else California.
-let authState = "CA";
-try { authState = localStorage.getItem("state") || "CA"; } catch {}
+// Before a state is chosen that's the last one used on this device, else the
+// first state in states.json.
+let savedState = null;
+try { savedState = localStorage.getItem("state"); } catch {}
+let authState = savedState;
 function authScene(code) {
-  authState = code || authState;
-  const name = (states.find((st) => st.code === authState) || {}).name || "California";
+  authState = code || (states.some((st) => st.code === authState) ? authState : (states[0] || {}).code);
+  const name = (states.find((st) => st.code === authState) || {}).name || "";
   $("auth-place").textContent = `📍 ${name}`;
-  $("pitch-state").textContent = name;
+  $("pitch-state").textContent = name || "your state";
+  $("pitch-count").textContent = (states.find((st) => st.code === authState) || {}).species_count || 100;
   $("state-name").textContent = name;
   if (!token) habShowcase(authState, $("auth-scene"));
 }
-$("signup-state").onchange = () => authScene($("signup-state").value);
 
 $("toggle").onclick = () => {
   signup = !signup;
-  if (signup && states.some((st) => st.code === authState)) $("signup-state").value = authState;
+  // The state last used on this device (not a guess) starts out chosen.
+  if (signup && !signupState && states.some((st) => st.code === savedState)) setSignupState(savedState);
   $("auth-title").textContent = $("auth-submit").textContent = signup ? "Sign up" : "Log in";
   $("toggle").textContent = signup ? "Have an account? Log in" : "Need an account? Sign up";
   $("email").classList.toggle("hidden", !signup);
-  $("signup-state").classList.toggle("hidden", !signup);
+  $("signup-state").classList.toggle("hidden", !signup || states.length < 2);
   $("email").required = signup;
   $("ident").placeholder = signup ? "Username" : "Email or username";
 };
@@ -535,9 +553,12 @@ $("auth-form").onsubmit = async (e) => {
   try {
     let r;
     if (signup) {
+      // Where they live decides their Field Guide, so ask rather than assume.
+      if (!signupState && states.length > 1) await chooseSignupState();
+      if (!signupState && states.length > 1) return;
       r = await api("/auth/register", { method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: $("email").value, username: $("ident").value, password: $("password").value,
-                               state: $("signup-state").value }) });
+                               state: signupState || undefined }) });
     } else {
       r = await api("/auth/login", { method: "POST",
         body: new URLSearchParams({ username: $("ident").value, password: $("password").value }) });
@@ -1056,24 +1077,24 @@ const spriteUrl = (slug, caught) => `/sprites/${encodeURIComponent(slug)}${caugh
 // The player's state (from /me) picks the Dex, Hotspots and map. Outline rings
 // are [lon, lat] from /map/<state>; the map is scaled so every state is ~430 px wide.
 let states = [];
-let myState = { code: "CA", name: "California", bounds: { west: -124.6, east: -113.9, south: 32.3, north: 42.2 } };
+// Until /states and /me answer: no state, and a map of the lower 48.
+let myState = { code: "", name: "", bounds: { west: -124.8, east: -66.9, south: 24.5, north: 49.4 } };
 let OUTLINE = [];
 let MAP = {};
 const px = (lon, lat) => [(lon - MAP.lon0) * MAP.kx, (MAP.lat1 - lat) * MAP.ky];
 
 async function loadStates() {
   try { states = await api("/states"); } catch { states = []; }
-  for (const id of ["signup-state", "my-state"]) {
-    $(id).innerHTML = "";
-    for (const st of states) $(id).append(new Option(st.name, st.code));
-  }
+  if (!myState.code && states.length) myState = states[0];
+  $("signup-state").classList.toggle("hidden", !signup || states.length < 2);
 }
 
 async function useState(code) {
   myState = states.find((st) => st.code === code) || myState;
   try { localStorage.setItem("state", myState.code); } catch {}
-  $("state-name").textContent = myState.name;
-  $("my-state").value = myState.code;
+  $("state-name").textContent = myState.name || "";
+  $("my-state").textContent = `📍 ${myState.name || ""}`;
+  $("my-state").classList.toggle("hidden", states.length < 2);
   const b = myState.bounds;
   const k = Math.cos((b.south + b.north) / 2 * Math.PI / 180);
   const scale = 430 / ((b.east - b.west) * k);
@@ -1082,24 +1103,83 @@ async function useState(code) {
   try { OUTLINE = (await api(`/map/${myState.code}`)).rings || []; } catch {}
 }
 
+// Picking a state from all 50: a searchable list, the player's own states first.
+// Resolves to the chosen code, or null when closed.
+function pickState({ title, note = "", current = null, mine = [] }) {
+  const dlg = $("state-pick"), list = $("state-list"), search = $("state-search");
+  $("state-pick-title").textContent = title;
+  $("state-pick-note").textContent = note;
+  search.value = "";
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = (code) => { if (done) return; done = true; dlg.close(); resolve(code); };
+    const draw = () => {
+      const q = search.value.trim().toLowerCase();
+      // The start of the name or of any word in it ("carolina", "new y"), or the code ("nc").
+      const hit = (st) => !q || st.code.toLowerCase() === q
+        || st.name.toLowerCase().split(" ").some((_, i, w) => w.slice(i).join(" ").startsWith(q));
+      const own = states.filter((st) => mine.includes(st.code) && hit(st));
+      const rest = states.filter((st) => !mine.includes(st.code) && hit(st))
+        .sort((a, b) => a.name.localeCompare(b.name));
+      list.innerHTML = "";
+      const row = (st, locked) => {
+        const b = el("button", st.code === current ? "on" : "");
+        b.type = "button";
+        b.append(el("span", "", (locked ? "🔒 " : "") + st.name),
+                 el("span", "muted", st.code === current ? "✓" : ""));
+        b.onclick = () => finish(st.code);
+        list.append(b);
+      };
+      if (own.length && mine.length) list.append(el("div", "sep", "Your states"));
+      own.forEach((st) => row(st, false));
+      if (own.length && rest.length) list.append(el("div", "sep", "Other states"));
+      rest.forEach((st) => row(st, mine.length > 0));
+      if (!own.length && !rest.length) list.append(el("p", "muted", "No state matches."));
+    };
+    search.oninput = draw;
+    // Enter picks the only (or first) match.
+    search.onkeydown = (e) => {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      const first = list.querySelector("button");
+      if (first) first.click();
+    };
+    $("state-pick-close").onclick = () => finish(null);
+    dlg.onclose = () => finish(null);
+    draw();
+    dlg.showModal();
+    search.focus();
+  });
+}
+
+// Sign-up: which state they live in.
+let signupState = null;
+async function chooseSignupState() {
+  const code = await pickState({ title: "Which state are you in?", current: signupState,
+    note: "Your Field Guide and parks follow your state. You can unlock others later." });
+  if (code) setSignupState(code);
+}
+function setSignupState(code) {
+  signupState = code;
+  $("signup-state").textContent = `📍 ${(states.find((x) => x.code === code) || {}).name || code}`;
+  authScene(code);
+}
+$("signup-state").onclick = chooseSignupState;
+
 // Players start with their home state; other states show 🔒 until they choose
 // to unlock one.
 let unlocked = [];
 function markLocked(list) {
   unlocked = list || unlocked;
-  for (const o of $("my-state").options) {
-    const st = states.find((x) => x.code === o.value);
-    if (st) o.textContent = (unlocked.includes(st.code) ? "" : "🔒 ") + st.name;
-  }
 }
 
-$("my-state").onchange = async () => {
-  const code = $("my-state").value, st = states.find((x) => x.code === code) || { name: code };
+$("my-state").onclick = async () => {
+  const code = await pickState({ title: "Primary location", current: myState.code, mine: unlocked,
+    note: "Your Field Guide, parks and challenges follow it." });
+  if (!code || code === myState.code) return;
+  const st = states.find((x) => x.code === code) || { name: code };
   if (!unlocked.includes(code) && !confirm(`Unlock ${st.name}? Its Field Guide, parks and challenges will open, ` +
-      `and your captures will count there while it's your state.`)) {
-    $("my-state").value = myState.code;
-    return;
-  }
+      `and your captures will count there while it's your state.`)) return;
   try {
     const me = await api("/me", { method: "PATCH", headers: { "Content-Type": "application/json" },
                        body: JSON.stringify({ state: code }) });
@@ -1107,7 +1187,7 @@ $("my-state").onchange = async () => {
     hotSelected = null;
     await useState(code);
     loadCollection();
-  } catch (err) { $("my-state").value = myState.code; alert(err.message); }
+  } catch (err) { alert(err.message); }
 };
 
 // Outlines of other states, for a Field Guide entry from a state that isn't yours.
@@ -1875,6 +1955,9 @@ let hotSelected = null;
 async function loadHotspots() {
   try { hotspots = await api(`/hotspots?state=${myState.code}`); } catch { hotspots = []; }
   $("hotspots-card").classList.toggle("hidden", !hotspots.length);
+  // A state whose park data isn't built yet has no Parks tab, as in the app.
+  document.querySelector('#tabs [data-tab="parks"]').classList.toggle("hidden", !hotspots.length);
+  if (!hotspots.length && location.hash === "#parks") showTab("dex");
   if (hotspots.length) drawHotspots();
 }
 

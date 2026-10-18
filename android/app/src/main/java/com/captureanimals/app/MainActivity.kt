@@ -42,8 +42,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -244,48 +242,6 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
             }
         }
     }
-}
-
-/** "📍 NC" in the top bar; switching changes the Field Guide, parks and which animals count. */
-@Composable
-private fun StateMenu(states: List<StateInfo>, current: String, unlocked: Set<String>, onPick: (String) -> Unit) {
-    var open by remember { mutableStateOf(false) }
-    // A locked state asks first: players unlock new states by choice.
-    var unlocking by remember { mutableStateOf<StateInfo?>(null) }
-    Box {
-        TextButton(onClick = { open = true }) { Text("📍 $current") }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            states.forEach { s ->
-                val locked = s.code !in unlocked
-                DropdownMenuItem(text = { Text((if (locked) "🔒 " else "") + s.name) }, onClick = {
-                    open = false
-                    if (locked) unlocking = s else onPick(s.code)
-                })
-            }
-        }
-    }
-    unlocking?.let { s ->
-        AlertDialog(onDismissRequest = { unlocking = null },
-            title = { Text("Unlock ${s.name}?") },
-            text = { Text("Its Field Guide, parks and challenges will open, and your captures will count there while it's your state.") },
-            confirmButton = { TextButton(onClick = { unlocking = null; onPick(s.code) }) { Text("Unlock") } },
-            dismissButton = { TextButton(onClick = { unlocking = null }) { Text("Not now") } })
-    }
-}
-
-/** First launch: which state are you in? Same question as the website's sign-up. */
-@Composable
-private fun StatePicker(states: List<StateInfo>, onDismiss: () -> Unit, onPick: (String) -> Unit) {
-    AlertDialog(onDismissRequest = onDismiss, confirmButton = {},
-        title = { Text("Which state are you in?") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Your Field Guide and parks follow your state. You can change it any time with 📍 at the top.")
-                states.forEach { s ->
-                    OutlinedButton(onClick = { onPick(s.code) }, modifier = Modifier.fillMaxWidth()) { Text(s.name) }
-                }
-            }
-        })
 }
 
 // Icons are the website's 16x16 pixel-art tab icons (species/sprites/ui_tab_*.png).
