@@ -185,11 +185,10 @@ class CaptureOut(BaseModel):
     bond: int | None = None
     bond_up: list[str] = []
     # For an animal with a safety rating (caution or danger): how far to stay
-    # back, its safety note and the general tip (zoom, stay with an adult).
+    # back and its safety note.
     safety: str = "none"
     safe_distance: str | None = None
     safety_note: str | None = None
-    safety_tip: str | None = None
     where_when: WhereWhenOut | None = None
     # Set when the photo is a pet or a pest (a dog, a pigeon...) rather than a wild animal.
     household: HouseholdOut | None = None
@@ -300,8 +299,6 @@ class SetOut(BaseModel):
     total: int
     complete: bool
     species: list[SetSpecies]
-    # Set when some of its animals have a safety rating.
-    safety_tip: str | None = None
 
 
 class SetsOut(BaseModel):
@@ -315,8 +312,6 @@ class ChallengeOut(BaseModel):
     progress: int
     goal: int
     done: bool
-    # Set when the animals it counts include ones with a safety rating.
-    safety_tip: str | None = None
 
 
 class ChallengesOut(BaseModel):
@@ -427,17 +422,3 @@ class BondOut(BaseModel):
 class BondsOut(BaseModel):
     state: str
     bonds: list[BondOut]
-
-
-class BuddyOut(BaseModel):
-    # False while the player hasn't picked one (we show their closest bond).
-    chosen: bool
-    bond: BondOut
-    mood: str
-    outing_days: int
-    line: str
-    activity: str | None = None
-
-
-class BuddyIn(BaseModel):
-    species: str

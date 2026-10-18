@@ -1,9 +1,7 @@
 package com.captureanimals.app
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -12,12 +10,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -27,8 +23,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -38,7 +32,7 @@ import androidx.compose.ui.unit.dp
 import org.json.JSONArray
 import org.json.JSONObject
 
-// Photo stars, sets, weekly challenges, bonds and the buddy: the website's versions
+// Photo stars, sets, weekly challenges and bonds: the website's versions
 // (backend/app/goals.py, bonds.py, static/index.html), shown the same way in the app.
 
 // --- Data --------------------------------------------------------------------------------
@@ -55,8 +49,7 @@ data class PhotoScore(val total: Int, val stars: Int, val parts: List<Pair<Strin
 }
 
 /** A themed set from species/sets.json, resolved for one state. */
-data class SetDef(val id: String, val title: String, val description: String, val slugs: List<String>,
-                  val careful: Boolean = false)
+data class SetDef(val id: String, val title: String, val description: String, val slugs: List<String>)
 
 /**
  * species/sets.json, read the way goals.sets_for() does: a state shows the sets with at
@@ -68,8 +61,7 @@ class SetCatalog(private val sets: List<JSONObject>) {
         val list = s.optJSONObject("species_by_state")?.optJSONArray(code) ?: s.optJSONArray("species") ?: JSONArray()
         val slugs = List(list.length()) { list.getString(it) }.filter { it in members && safety(it) != "danger" }
         if (slugs.size < MIN_SET_SIZE) null
-        else SetDef(s.getString("id"), s.getString("title"), s.optString("description"), slugs,
-                    careful = slugs.any { safety(it) == "caution" })
+        else SetDef(s.getString("id"), s.getString("title"), s.optString("description"), slugs)
     }
 
     companion object {
@@ -81,8 +73,7 @@ class SetCatalog(private val sets: List<JSONObject>) {
     }
 }
 
-data class Challenge(val title: String, val progress: Int, val goal: Int, val done: Boolean,
-                     val safetyTip: String? = null)
+data class Challenge(val title: String, val progress: Int, val goal: Int, val done: Boolean)
 
 /** This week's challenges for the player's state (ChallengesOut). */
 data class Week(val endsAt: Long, val challenges: List<Challenge>, val done: Int) {
@@ -91,7 +82,7 @@ data class Week(val endsAt: Long, val challenges: List<Challenge>, val done: Int
             val a = o.getJSONArray("challenges")
             return Week(Online.parseTime(o.optStringOrNull("week_end")), List(a.length()) { i ->
                 a.getJSONObject(i).let { Challenge(it.getString("title"), it.getInt("progress"), it.getInt("goal"),
-                    it.getBoolean("done"), it.optStringOrNull("safety_tip")) }
+                    it.getBoolean("done")) }
             }, o.getInt("done"))
         }
     }
@@ -115,16 +106,7 @@ data class Bond(val slug: String, val name: String, val level: Int, val maxLevel
     }
 }
 
-/** The animal the player keeps closest; its mood follows recent outings (BuddyOut). */
-data class Buddy(val chosen: Boolean, val bond: Bond, val mood: String, val line: String) {
-    companion object {
-        fun parse(o: JSONObject) = Buddy(o.getBoolean("chosen"), Bond.parse(o.getJSONObject("bond")),
-            o.optString("mood"), o.optString("line"))
-    }
-}
-
 val BOND_TITLES = listOf("Met", "Familiar", "Regular", "Friend", "Good friend", "Lifelong friend")
-private val MOODS = mapOf("napping" to "napping 💤", "happy" to "happy", "excited" to "excited!")
 
 // --- UI ----------------------------------------------------------------------------------
 
@@ -192,37 +174,7 @@ fun ChallengesCard(week: Week) {
                     }
                     LinearProgressIndicator(progress = { c.progress / c.goal.coerceAtLeast(1).toFloat() },
                         modifier = Modifier.fillMaxWidth().padding(top = 2.dp))
-                    c.safetyTip?.let {
-                        Text("✋ $it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline,
-                            modifier = Modifier.padding(top = 2.dp))
-                    }
                 }
-            }
-        }
-    }
-}
-
-/** The buddy above the habitat: its sprite, hearts, mood and what it says. */
-@Composable
-fun BuddyCard(b: Buddy, onOpen: (String) -> Unit) {
-    Card(Modifier.fillMaxWidth()) {
-        Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(56.dp).clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.surfaceVariant)
-                .clickable { onOpen(b.bond.slug) }, contentAlignment = Alignment.Center) {
-                PixelSprite(b.bond.slug, caught = true, Modifier.size(48.dp)
-                    .let { if (b.mood == "napping") it.alpha(0.7f) else it })
-            }
-            Column(Modifier.weight(1f)) {
-                Text((if (b.chosen) "Your buddy: " else "") + b.bond.name, fontWeight = FontWeight.Bold)
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Hearts(b.bond.level, b.bond.maxLevel)
-                    Text("${b.bond.title} · ${MOODS[b.mood] ?: b.mood}", style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.outline)
-                }
-                Text(b.line, style = MaterialTheme.typography.bodyMedium)
-                if (!b.chosen) Text("Pick any animal you've captured as your buddy from its page.",
-                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
             }
         }
     }
@@ -248,32 +200,23 @@ fun SetCard(set: SetDef, collection: Map<String, Badge>, onOpen: (String) -> Uni
                 }
             }
             Text(set.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
-            if (set.careful) Text("✋ $SAFE_TIP", style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline)
         }
     }
 }
 
 /**
- * Bond hearts and field notes on a captured animal's page, with "Make my buddy".
+ * Bond hearts and field notes on a captured animal's page.
  * Signed in only: bonds live on the server.
  */
 @Composable
-fun BondPanel(slug: String, buddySlug: String?, onMakeBuddy: (String) -> Unit) {
+fun BondPanel(slug: String) {
     var bond by remember(slug) { mutableStateOf<Bond?>(null) }
     LaunchedEffect(slug) { bond = runCatching { Online.bond(slug) }.getOrNull() }
     val b = bond ?: return
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text("Bond: ${b.title}", fontWeight = FontWeight.Bold)
-                    Hearts(b.level, b.maxLevel)
-                }
-                OutlinedButton(onClick = { onMakeBuddy(slug) }, enabled = buddySlug != slug) {
-                    Text(if (buddySlug == slug) "Your buddy ✓" else "Make my buddy")
-                }
-            }
+            Text("Bond: ${b.title}", fontWeight = FontWeight.Bold)
+            Hearts(b.level, b.maxLevel)
             b.notes.forEach { n ->
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(if (n.done) "♥" else "♡", color = Heart)

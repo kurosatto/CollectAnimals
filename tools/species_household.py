@@ -103,30 +103,6 @@ def _(s):
          beak_col="#3a3438", legs="#d86a6a", wing_mark=bars, face=neck)
 
 
-@sprite("house_sparrow")
-def _(s):
-    def face(s):
-        s.paint(s.m_ellipse(11, 7.5, 5, 2.2), "#8a8c92")  # grey cap
-        s.paint(s.m_ellipse(7, 15, 2.6, 2), BLACK)  # black bib
-        s.paint(s.m_ellipse(14, 10, 2.6, 1.4), "#8a5a36")
-
-    def streaks(s, m):
-        s.paint(s.m_px([(17, 18), (20, 17), (22, 20), (18, 21), (24, 18)]), "#3a2a20", within=m)
-    bird(s, "#a67a4e", "#ddd6c8", head="#b88a5a", wing="#9a6e44", tail_col="#7a5a3a", beak="cone",
-         beak_col="#3a3438", legs="#c99060", face=face, wing_mark=streaks)
-
-
-@sprite("european_starling")
-def _(s):
-    def spots(s, m):
-        s.paint(s.m_px([(12, 21), (15, 23), (18, 22), (14, 19), (20, 24), (11, 24)]), "#f2efe4", within=m)
-
-    def sheen(s):
-        s.paint(s.m_ellipse(12, 14, 3, 2), "#4a3a6a")
-    bird(s, "#2a2a36", "#2e3040", head="#2a2a36", wing="#3a3448", tail_col="#26242e", beak="long",
-         beak_col="#f2c83a", legs="#d88a7a", belly_mark=spots, face=sheen)
-
-
 def cockroach(s, wings, pron, legs, stripes=False):
     """Top view: a long flat oval of wings, a shield over the head, spiny legs and
     antennae as long as the body. Scuttles when walking."""

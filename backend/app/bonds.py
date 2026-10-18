@@ -12,10 +12,6 @@ photo score, which never rewards getting close (see scoring.py).
 Animals with a safety rating (caution or danger, from details.csv) only get the
 notes that don't send a player back to them: "First meeting" and "Great shot".
 No repeat visits, no night outings, no tracking one down somewhere else.
-
-The buddy is one captured animal the player picks to keep them company. Its
-mood comes from recent outings and never drops below napping: no hunger, no
-guilt.
 """
 
 from __future__ import annotations
@@ -46,7 +42,6 @@ NOTES = [
 NOTE_TITLES = {n[0]: n[1] for n in NOTES}
 # The notes for animals with a safety rating.
 SAFE_NOTES = {"first", "star"}
-SAFE_TIP = "Watch from far away with zoom, and stay with an adult."
 GOALS = {"first": 1, "days": DAYS_GOAL, "times": TIMES_GOAL, "places": PLACES_GOAL,
          "seasons": SEASONS_GOAL, "star": 1}
 
@@ -134,8 +129,7 @@ def notes(sightings: list[Sighting], safety: str | None = "none") -> list[Note]:
         "star": 1 if any((s.stars or 0) >= GREAT_SHOT_STARS for s in sightings) else 0,
     }
     keep = SAFE_NOTES if careful(safety) else set(GOALS)
-    return [Note(i, title, f"{hint}. {SAFE_TIP}" if careful(safety) and i == "star" else hint,
-                 min(progress[i], GOALS[i]), GOALS[i]) for i, title, hint in NOTES if i in keep]
+    return [Note(i, title, hint, min(progress[i], GOALS[i]), GOALS[i]) for i, title, hint in NOTES if i in keep]
 
 
 def level(ns: list[Note]) -> int:
@@ -150,42 +144,3 @@ def newly_done(before: list[Sighting], after: list[Sighting], safety: str | None
     """Titles of the notes the latest capture ticked."""
     was = {n.id for n in notes(before, safety) if n.done}
     return [n.title for n in notes(after, safety) if n.done and n.id not in was and n.id != "first"]
-
-
-# --- buddy ----------------------------------------------------------------------
-
-def mood(outing_days: int) -> str:
-    """From the number of days with a capture in the last 7."""
-    return "napping" if outing_days == 0 else "happy" if outing_days < 3 else "excited"
-
-
-def buddy_line(mood_: str, ns: list[Note], suggestion: str | None = None, safety: str | None = "none") -> str:
-    """What the buddy says: a nudge towards its next field note, or another
-    animal to look for once its own notes are done. A buddy with a safety
-    rating never asks to be visited again; it reminds the player to keep back."""
-    if mood_ == "napping":
-        opener = "Zzz... oh, hi! Take me outside sometime?"
-    elif mood_ == "excited":
-        opener = "What a week of outings!"
-    else:
-        opener = "That was a nice outing."
-    todo = next((n for n in ns if not n.done), None)
-    if careful(safety):
-        if todo is not None and todo.id == "star":
-            return f"{opener} If you ever spot me again, a {GREAT_SHOT_STARS}-star photo from far away would be great. {SAFE_TIP}"
-        if suggestion:
-            return f"{opener} Thanks for keeping your distance. Have you met {suggestion} yet? It's around this month."
-        return f"{opener} Thanks for keeping your distance. {SAFE_TIP}"
-    if todo is None:
-        if suggestion:
-            return f"{opener} We're lifelong friends now. Have you met {suggestion} yet? It's around this month."
-        return f"{opener} We're lifelong friends now."
-    ask = {
-        "days": f"Come find me on another day: {todo.progress} of {todo.goal} days so far.",
-        "times": "I'd love a photo of me at a different time of day.",
-        "places": "Let's look for me somewhere new, at least a kilometer away.",
-        "seasons": "Visit me again in another season.",
-        "star": f"Try for a {GREAT_SHOT_STARS}-star photo of me. Steady hands, good light.",
-        "first": "Let's go outside!",
-    }[todo.id]
-    return f"{opener} {ask}"

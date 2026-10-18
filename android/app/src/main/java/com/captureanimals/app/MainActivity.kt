@@ -168,7 +168,7 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
                 val badge = state.collection[entry.slug]
                 DexEntryScreen(info.dexNumber(entry.slug), entry, badge, entryDex, bond = {
                     if (state.account != null && badge != null) {
-                        BondPanel(entry.slug, state.buddy?.takeIf { it.chosen }?.bond?.slug, vm::setBuddy)
+                        BondPanel(entry.slug)
                     }
                 }) { dexSlug = null }
             }
@@ -234,7 +234,7 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
                     val sets = remember(state.sets, info, dex, state.stateCode) {
                         state.sets.forState(state.stateCode, info.species.map { it.slug }.toSet()) { dex?.details?.get(it)?.safety }
                     }
-                    CollectionScreen(info, dex, state.stateCode, state.collection, state.buddy, sets) { dexSlug = it }
+                    CollectionScreen(info, dex, state.stateCode, state.collection, sets) { dexSlug = it }
                 }
                 TABS[tab].key == "gallery" -> GalleryScreen(state.allSpecies, state.collection, onOpenDex = { dexSlug = it },
                     onDelete = vm::deleteCatch)
@@ -344,7 +344,7 @@ fun ResultCard(r: CaptureResult, onDismiss: () -> Unit, onPick: (String?) -> Uni
                 RarityTag(r.species.rarity)
             }
             Text(r.message, style = MaterialTheme.typography.bodyLarge)
-            if (r.matched && safety != null) SafetyCard(safety, tip = true)
+            if (r.matched && safety != null) SafetyCard(safety)
             if (r.whereWhen != null && onSaveWhereWhen != null) WhereWhenRow(r.whereWhen, parks, onSaveWhereWhen)
             r.score?.let { ScoreBox(it, r.bondUp) }
             Text("Top guesses", style = MaterialTheme.typography.labelLarge)
@@ -400,7 +400,7 @@ private val SECTIONS = listOf("Captured", "Not captured yet")
 
 @Composable
 fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, stateCode: String, collection: Map<String, Badge>,
-                     buddy: Buddy?, sets: List<SetDef>, onOpen: (String) -> Unit) {
+                     sets: List<SetDef>, onOpen: (String) -> Unit) {
     // The live habitat sits above the list, as on the website; one WebView for the screen.
     val habitat = rememberHabitatView()
     val animals = remember(info, dex, collection) { habitatAnimals(info, dex, collection) }
@@ -415,7 +415,6 @@ fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, stateCode: String, colle
     LazyVerticalGrid(columns = GridCells.Adaptive(72.dp), modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(8.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        if (buddy != null) item(span = { GridItemSpan(maxLineSpan) }, key = "buddy") { BuddyCard(buddy, onOpen) }
         item(span = { GridItemSpan(maxLineSpan) }, key = "habitat") {
             Habitat(habitat, animals, stateCode, Modifier.padding(bottom = 4.dp), onOpen = onOpen)
         }
