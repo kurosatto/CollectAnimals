@@ -39,7 +39,7 @@ const HAB_ROLES = [
   [/hawk|eagle|vulture|condor|osprey|kestrel/, "soar"],
   [/hummingbird/, "hover"],
   [/quail|turkey|roadrunner/, "walk"],
-  [/firefly|swallowtail|monarch|painted_lady|mourning_cloak|fritillary|luna_moth|flame_skimmer|honey_bee|bumble_bee|queen|buckeye|hairstreak|white_peacock|longwing|salt_marsh_moth|pondhawk|dasher|pennant/, "flutter"],
+  [/firefly|swallowtail|monarch|painted_lady|mourning_cloak|fritillary|luna_moth|flame_skimmer|honey_bee|bumble_bee|queen|buckeye|hairstreak|white_peacock|longwing|salt_marsh_moth|pondhawk|dasher|pennant|_bat$/, "flutter"],
   [/spider|widow|orbweaver/, "dangle"],
   [/frog|toad|peeper|grasshopper/, "hop"],
 ];

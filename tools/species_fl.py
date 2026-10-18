@@ -38,10 +38,58 @@ def _(s):
            markings=lambda s: s.paint(s.m_px([(12, 9), (19, 9), (15, 7), (17, 11)]), "#5a4a34", within=s.last))
 
 
-@sprite("black_rat")
+@sprite("mexican_free_tailed_bat")
 def _(s):
-    mammal(s, "#4a4650", "#8a8690", ears="round", ear_in="#e0a8b0", tail="rat", tail_col="#5a5460",
-           muzzle="#6a6670", nose="#e88a90", head_r=(8, 7), feet="#e0b0b8")
+    s.can("fly")
+    # Seen from the front with its wings spread: tips up on the upbeat frames.
+    up = s.act == "fly" and s.f % 2 == 0
+    fur, wing, bone = "#6a5444", "#3e3230", "#241c1a"
+    lift = -5 if up else 0
+    for side in (-1, 1):
+        x = lambda v: 16 + side * v
+        tip = (x(15), 9 + lift)
+        pts = [(x(3), 13), tip, (x(13), 19 + lift * .4), (x(10), 17 + lift * .2), (x(8), 21), (x(5), 19), (x(3), 23)]
+        s.poly(pts, wing, edge=True)
+        for end in (tip, (x(13), 19 + lift * .4), (x(8), 21)):
+            s.path([(x(3), 13.5), end], 0.45, bone, shade=False)
+        s.px([(round(x(15)), round(9 + lift) - 1)], bone)  # the thumb claw
+    s.poly([(13, 24), (19, 24), (17.5, 28), (16, 30), (14.5, 28)], wing)  # tail membrane
+    s.path([(16, 27), (16, 31)], 0.5, fur, shade=False)  # its free tail
+    m = s.ellipse(16, 19, 3.8, 6, fur, edge=True)
+    s.paint(s.m_ellipse(16, 21, 2.5, 3.5), mix(fur, "#ffffff", 0.22), within=m)
+    s.poly([(12, 9.5), (11.5, 3.5), (15, 8.5)], fur)  # big ears
+    s.poly([(18, 9.5), (20.5, 3.5), (17, 8.5)], fur)
+    s.poly([(12.6, 8.8), (12.3, 5.5), (14.2, 8.4)], "#c88a80", shade=False)
+    s.poly([(19.4, 8.8), (19.7, 5.5), (17.8, 8.4)], "#c88a80", shade=False)
+    s.ellipse(16, 11.5, 4, 3.6, fur, edge=True)
+    s.ellipse(16, 13.5, 1.8, 1.2, mix(fur, "#000000", 0.25))  # wrinkled lips
+    s.px([(15, 13), (17, 13)], "#2b2226")
+    s.eye(14, 11)
+    s.eye(18, 11)
+    s.blush(13, 13)
+    s.blush(19, 13)
+
+
+@sprite("eastern_mole")
+def _(s):
+    s.can("walk")
+    w = s.wave() if s.act == "walk" else 0
+    fur, pink = "#5a5660", "#f0a8a8"
+    s.path([(28, 25), (31, 26)], (1.2, 0.6), pink)  # stubby tail
+    for x, sw in ((22, -w), (25, w)):
+        s.ellipse(x - sw, 28, 2, 1.3, pink)
+    m = s.ellipse(18, 22, 11, 6.5, fur, edge=True)
+    s.paint(s.m_ellipse(17, 18, 8, 2), mix(fur, "#ffffff", 0.18), within=m)
+    s.paint(s.m_px([(14, 21), (20, 19), (24, 22), (11, 24)]), mix(fur, "#ffffff", 0.3), within=m)
+    # Big pink digging hands, turned out to the side.
+    s.ellipse(10 + w, 27, 3.6, 2.2, pink, rot=-15, edge=True)
+    s.px([(7 + round(w), 28), (8 + round(w), 29), (10 + round(w), 29)], mix(pink, "#000000", 0.25))
+    s.path([(9, 21), (2, 23)], (2.6, 1.0), fur)  # pointed snout
+    s.ellipse(1.5, 23.5, 1.4, 1.2, pink)
+    s.px([(6, 20)], "#2b2226")  # tiny eye in the fur
+    s.blush(8, 23)
+    if s.act == "walk" and s.f % 2:
+        s.shift(0, -1)
 
 
 # --------------------------------------------------------------------------- birds

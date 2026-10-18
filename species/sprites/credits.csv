@@ -30,7 +30,6 @@ bighorn_sheep,bighorn_sheep.png,bighorn_sheep_silhouette.png,"drawn by tools/mak
 black_bellied_whistling_duck,black_bellied_whistling_duck.png,black_bellied_whistling_duck_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 black_oystercatcher,black_oystercatcher.png,black_oystercatcher_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 black_phoebe,black_phoebe.png,black_phoebe_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
-black_rat,black_rat.png,black_rat_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 black_skimmer,black_skimmer.png,black_skimmer_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 black_tailed_jackrabbit,black_tailed_jackrabbit.png,black_tailed_jackrabbit_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 black_tailed_prairie_dog,black_tailed_prairie_dog.png,black_tailed_prairie_dog_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
@@ -89,7 +88,6 @@ desert_cottontail,desert_cottontail.png,desert_cottontail_silhouette.png,"drawn 
 desert_iguana,desert_iguana.png,desert_iguana_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 desert_tortoise,desert_tortoise.png,desert_tortoise_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 diamondback_terrapin,diamondback_terrapin.png,diamondback_terrapin_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
-domestic_cat,domestic_cat.png,domestic_cat_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 double_crested_cormorant,double_crested_cormorant.png,double_crested_cormorant_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 downy_woodpecker,downy_woodpecker.png,downy_woodpecker_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 eastern_bluebird,eastern_bluebird.png,eastern_bluebird_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
@@ -102,6 +100,7 @@ eastern_hellbender,eastern_hellbender.png,eastern_hellbender_silhouette.png,"dra
 eastern_hognose_snake,eastern_hognose_snake.png,eastern_hognose_snake_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 eastern_kingsnake,eastern_kingsnake.png,eastern_kingsnake_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 eastern_lubber_grasshopper,eastern_lubber_grasshopper.png,eastern_lubber_grasshopper_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
+eastern_mole,eastern_mole.png,eastern_mole_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 eastern_mosquitofish,eastern_mosquitofish.png,eastern_mosquitofish_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 eastern_newt,eastern_newt.png,eastern_newt_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 eastern_phoebe,eastern_phoebe.png,eastern_phoebe_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
@@ -168,6 +167,7 @@ marbled_salamander,marbled_salamander.png,marbled_salamander_silhouette.png,"dra
 marsh_rabbit,marsh_rabbit.png,marsh_rabbit_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 mayan_cichlid,mayan_cichlid.png,mayan_cichlid_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 mediterranean_house_gecko,mediterranean_house_gecko.png,mediterranean_house_gecko_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
+mexican_free_tailed_bat,mexican_free_tailed_bat.png,mexican_free_tailed_bat_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 mexican_long_nosed_armadillo,mexican_long_nosed_armadillo.png,mexican_long_nosed_armadillo_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 monarch,monarch.png,monarch_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 mountain_lion,mountain_lion.png,mountain_lion_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0

@@ -60,19 +60,6 @@ def _(s):
          muzzle="#6a625c", nose="#2b2630", feet="#2b2630", belly=False, markings=collar)
 
 
-@sprite("domestic_cat")
-def _(s):
-    def stripes(s, b):
-        bx, by, brx, bry = b["body"]
-        m = s.m_ellipse(bx, by, brx, bry)
-        for x in (bx - 3, bx, bx + 3, bx + 6):
-            s.paint(s.m_path([(x, by - bry), (x + 1, by)], 0.7), "#c06a2a", within=m)
-        hx, hy = b["head"][:2]
-        s.paint(s.m_line(hx, hy - 3, hx, hy - 1), "#c06a2a", within=s.m_ellipse(*b["head"]))
-    quad(s, "#f0a050", "#fbf1e2", build="cat", ears="point", ear_in="#f2a7b4", tail="long", tail_tip="#c06a2a",
-         nose="#e88a8a", markings=stripes)
-
-
 @sprite("coypu")
 def _(s):
     def teeth(s):

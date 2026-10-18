@@ -557,6 +557,11 @@
    "walk",
    "sleep"
   ],
+  "eastern_mole": [
+   "idle",
+   "walk",
+   "sleep"
+  ],
   "eastern_mosquitofish": [
    "idle",
    "swim",
@@ -902,6 +907,11 @@
   "mediterranean_house_gecko": [
    "idle",
    "walk",
+   "sleep"
+  ],
+  "mexican_free_tailed_bat": [
+   "idle",
+   "fly",
    "sleep"
   ],
   "mexican_long_nosed_armadillo": [
