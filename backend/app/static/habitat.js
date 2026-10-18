@@ -24,27 +24,29 @@ let habAnimIdx = null;
 fetch("/sprites/anim/index.json").then((r) => (r.ok ? r.json() : null)).then((j) => { habAnimIdx = j; }).catch(() => {});
 const habStill = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const HAB_ROLES = [
-  [/pelican|royal_tern|kingfisher|osprey/, "dive"],
+  [/millipede|centipede|woodlouse/, "walk"],
+  [/pelican|royal_tern|kingfisher|osprey|cormorant|anhinga/, "dive"],
   [/black_skimmer/, "skim"],
   [/sea_otter|by_the_wind/, "float"],
-  [/jellyfish/, "jelly"],
-  [/dolphin|whale|garibaldi|red_drum|sculpin|sea_hare|loggerhead/, "swim"],
+  [/jellyfish|man_o_war/, "jelly"],
+  [/dolphin|whale|manatee|garibaldi|red_drum|snapper|sculpin|sea_hare|loggerhead/, "swim"],
   [/seal|sea_lion|crab/, "beach"],
   [/star|anemone|mussel|barnacle|limpet|urchin|turban_snail|hopkins|scotch_bonnet/, "reef"],
-  [/mallard|wood_duck|goose|swan|trout|hellbender|beaver|river_otter|alligator/, "paddle"],
-  [/pond_slider|pond_turtle|snapping|terrapin|newt|salamander|ensatina/, "shore"],
-  [/heron|egret|ibis|oystercatcher/, "wade"],
+  [/mallard|wood_duck|whistling_duck|shoveler|coot|gallinule|goose|swan|trout|bluegill|sunfish|bass|cichlid|gar$|mosquitofish|hellbender|beaver|coypu|river_otter|alligator/, "paddle"],
+  [/pond_slider|pond_turtle|snapping|terrapin|cooter|softshell|crayfish|newt|salamander|ensatina/, "shore"],
+  [/heron|egret|ibis|crane|stork|spoonbill|limpkin|oystercatcher/, "wade"],
+  [/sanderling|willet|turnstone|killdeer/, "beach"],
   [/hawk|eagle|vulture|condor|osprey|kestrel/, "soar"],
   [/hummingbird/, "hover"],
   [/quail|turkey|roadrunner/, "walk"],
-  [/firefly|swallowtail|monarch|painted_lady|mourning_cloak|fritillary|luna_moth|flame_skimmer|honey_bee/, "flutter"],
-  [/spider|widow/, "dangle"],
+  [/firefly|swallowtail|monarch|painted_lady|mourning_cloak|fritillary|luna_moth|flame_skimmer|honey_bee|bumble_bee|queen|buckeye|hairstreak|white_peacock|longwing|salt_marsh_moth|pondhawk|dasher|pennant/, "flutter"],
+  [/spider|widow|orbweaver/, "dangle"],
   [/frog|toad|peeper|grasshopper/, "hop"],
 ];
 const HAB_DEFAULT_ROLE = { bird: "fly", amphibian: "shore", marine: "swim", fish: "paddle" };
 const HAB_FLIERS = new Set(["fly", "soar", "hover", "flutter", "dive", "skim"]);
 // Big birds glide between bursts of slow wingbeats.
-const HAB_GLIDERS = /pelican|gull|heron|egret|goose|swan|vulture|condor|eagle|osprey|hawk|ibis|(^|_)tern|skimmer/;
+const HAB_GLIDERS = /pelican|gull|heron|egret|crane|stork|spoonbill|goose|swan|vulture|condor|eagle|osprey|hawk|ibis|(^|_)tern|skimmer/;
 // Sea birds rest and sleep on the sea stack (or the lighthouse) instead of the tree.
 const HAB_SEABIRDS = /gull|pelican|royal_tern|oystercatcher|black_skimmer|osprey|cormorant/;
 // Ground animals that look around while they stand still.
