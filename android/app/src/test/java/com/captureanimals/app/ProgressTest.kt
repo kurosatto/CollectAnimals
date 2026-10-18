@@ -25,20 +25,20 @@ class ProgressTest {
     }
 
     @Test
-    fun parsesScoreBondAndBuddy() {
+    fun parsesScoreAndBond() {
         val score = PhotoScore.parse(JSONObject("""{"total": 1250, "stars": 4,
             "parts": [{"label": "Photo", "points": 1000}, {"label": "New animal", "points": 250}]}"""))!!
         assertEquals(PhotoScore(1250, 4, listOf("Photo" to 1000, "New animal" to 250)), score)
         assertNull(PhotoScore.parse(null))
         assertEquals("★★★★☆", stars(4))
 
-        val buddy = Buddy.parse(JSONObject("""{"chosen": true, "mood": "happy", "outing_days": 2, "line": "Hi!",
-            "bond": {"species": {"number": 3, "slug": "coyote", "common_name": "Coyote", "scientific_name": "Canis latrans",
-              "category": "mammal", "rarity": "common"}, "level": 2, "max_level": 6, "title": "Familiar",
-              "notes": [{"id": "met", "title": "First meeting", "hint": "Capture it", "progress": 1, "goal": 1, "done": true}]}}"""))
-        assertEquals("coyote", buddy.bond.slug)
-        assertEquals(2, buddy.bond.level)
-        assertEquals(BondNote("First meeting", "Capture it", 1, 1, true), buddy.bond.notes.single())
+        val bond = Bond.parse(JSONObject("""{"species": {"number": 3, "slug": "coyote", "common_name": "Coyote",
+              "scientific_name": "Canis latrans", "category": "mammal", "rarity": "common"},
+              "level": 2, "max_level": 6, "title": "Familiar",
+              "notes": [{"id": "met", "title": "First meeting", "hint": "Capture it", "progress": 1, "goal": 1, "done": true}]}"""))
+        assertEquals("coyote", bond.slug)
+        assertEquals(2, bond.level)
+        assertEquals(BondNote("First meeting", "Capture it", 1, 1, true), bond.notes.single())
 
         val week = Week.parse(JSONObject("""{"state": "CA", "week_start": "2026-10-12T07:00:00Z",
             "week_end": "2026-10-19T07:00:00Z", "done": 1,

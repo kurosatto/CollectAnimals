@@ -28,7 +28,7 @@ from .classifier import OTHER_LABEL, Prediction
 from .config import settings
 from .db import Base, SessionLocal, add_missing_columns, engine, get_db
 from .models import AlbumPhoto, Badge, Capture, Friendship, IdFeedback, PhotoLike, Species, StateSpecies, User
-from .schemas import (BondNoteOut, BondOut, BondsOut, BuddyIn, BuddyOut, CaptureOut, ChallengeOut, ChallengesOut, ChoiceOut, ScoreOut, ScorePart, SetOut, SetSpecies, SetsOut, CollectionEntry, CollectionOut, DexOut, PlaceOut, HotspotOut, HotspotSpecies,
+from .schemas import (BondNoteOut, BondOut, BondsOut, CaptureOut, ChallengeOut, ChallengesOut, ChoiceOut, ScoreOut, ScorePart, SetOut, SetSpecies, SetsOut, CollectionEntry, CollectionOut, DexOut, PlaceOut, HotspotOut, HotspotSpecies,
                       PickIn, PredictionOut, RegisterIn, SpeciesOut, StateOut, TokenOut, UserOut, UserUpdate,
                       WhereWhenIn, WhereWhenResult)
 from .social import catches_in, find_species, friend_ids, revealed_species_ids, species_out, user_named
@@ -1098,7 +1098,7 @@ def my_challenges(user: User = Depends(current_user), db: Session = Depends(get_
                          done=sum(c.done for c in out))
 
 
-# --- bonds and buddy (app/bonds.py) ---------------------------------------------
+# --- bonds (app/bonds.py) ---------------------------------------------------
 
 def _sightings(db: Session, user_id: int, utc_offset: int, species_id: int | None = None,
                skip_capture: int | None = None) -> dict[int, list[bonds.Sighting]]:
@@ -1154,63 +1154,3 @@ def my_bonds(species: str | None = Query(None), user: User = Depends(current_use
         out.append(_bond_out(sp, members.get(species_id), sightings, state.code))
     out.sort(key=lambda b: (-b.level, b.species.common_name or ""))
     return BondsOut(state=state.code, bonds=out)
-
-
-def _buddy_suggestion(db: Session, user: User, state: st.State, buddy: Species) -> str | None:
-    """An animal around this month that the player hasn't captured, preferring
-    the buddy's own kind. Hidden names stay hidden. Never one with a safety
-    rating: the buddy shouldn't send a player looking for a bear or a seal."""
-    month = (datetime.now(timezone.utc) + timedelta(hours=state.utc_offset)).month
-    caught = set(catches_in(db, user.id, state.code))
-    revealed = revealed_species_ids(db, user)
-    options = [m for m in state_species(db, state.code)
-               if m.species_id not in caught and dex.in_season(m.species.slug, state.code, month)
-               and not bonds.careful(dex.details(m.species.slug, state.code).get("safety"))]
-    if not options:
-        return None
-    same = [m for m in options if m.species.category == buddy.category] or options
-    # Changes once a day, so the buddy doesn't say something new on every refresh.
-    day = (datetime.now(timezone.utc) + timedelta(hours=state.utc_offset)).toordinal()
-    m = same[(day + user.id) % len(same)]
-    return f"the {m.common_name}" if m.species_id in revealed else f"a mystery {m.species.category}"
-
-
-@app.get("/me/buddy", response_model=BuddyOut | None)
-def my_buddy(user: User = Depends(current_user), db: Session = Depends(get_db)):
-    """The player's buddy: the animal they picked (or, until they pick, their
-    closest bond), its mood from the last week's outings and what it says.
-    None before the first capture."""
-    state = state_or_404(user.state)
-    seen = _sightings(db, user.id, state.utc_offset)
-    if not seen:
-        return None
-    chosen = user.buddy_species_id in seen
-    if chosen:
-        sid = user.buddy_species_id
-    else:
-        sid = max(seen, key=lambda k: (bonds.level(bonds.notes(seen[k], _safety(db, k, state.code))),
-                                       len(seen[k]), -k))
-    sp = db.get(Species, sid)
-    safety = _safety(db, sid, state.code)
-    bond = _bond_out(sp, state_member(db, state.code, sid), seen[sid], state.code)
-    since = datetime.now(timezone.utc) - timedelta(days=7)
-    days = {(_aware(c) + timedelta(hours=state.utc_offset)).date() for c in db.scalars(
-        select(Capture.created_at).where(Capture.user_id == user.id, Capture.species_id.is_not(None)))
-        if _aware(c) >= since}
-    mood = bonds.mood(len(days))
-    ns = bonds.notes(seen[sid], safety)
-    suggestion = _buddy_suggestion(db, user, state, sp) if bonds.level(ns) == len(ns) else None
-    return BuddyOut(chosen=chosen, bond=bond, mood=mood, outing_days=len(days),
-                    line=bonds.buddy_line(mood, ns, suggestion, safety),
-                    activity=dex.activity(sp.slug, state.code))
-
-
-@app.put("/me/buddy", response_model=BuddyOut | None)
-def set_buddy(body: BuddyIn, user: User = Depends(current_user), db: Session = Depends(get_db)):
-    """Pick any animal you've captured as your buddy."""
-    sp = find_species(db, body.species)
-    if not db.scalar(select(Badge).where(Badge.user_id == user.id, Badge.species_id == sp.id)):
-        raise HTTPException(400, "Capture this animal first to make it your buddy")
-    user.buddy_species_id = sp.id
-    db.commit()
-    return my_buddy(user, db)
