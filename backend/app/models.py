@@ -28,8 +28,6 @@ class User(Base):
     # Private players' photos are shown only to themselves and their friends.
     is_private: Mapped[bool | None] = mapped_column(nullable=True, default=False)
     is_bot: Mapped[bool | None] = mapped_column(nullable=True, default=False)
-    # The captured animal the player picked as their buddy (app/bonds.py).
-    buddy_species_id: Mapped[int | None] = mapped_column(ForeignKey("species.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 

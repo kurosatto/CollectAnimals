@@ -417,17 +417,3 @@ class BondOut(BaseModel):
 class BondsOut(BaseModel):
     state: str
     bonds: list[BondOut]
-
-
-class BuddyOut(BaseModel):
-    # False while the player hasn't picked one (we show their closest bond).
-    chosen: bool
-    bond: BondOut
-    mood: str
-    outing_days: int
-    line: str
-    activity: str | None = None
-
-
-class BuddyIn(BaseModel):
-    species: str

@@ -192,20 +192,13 @@ object Online {
         FriendGuide.parse(username, JSONObject(call("GET", "/users/${q(username)}/collection" +
             (state?.let { "?state=${q(it)}" } ?: ""))))
 
-    // --- Challenges, bonds, buddy ------------------------------------------------------
+    // --- Challenges and bonds ------------------------------------------------------------
 
     suspend fun challenges(): Week = Week.parse(JSONObject(call("GET", "/me/challenges")))
 
     /** Bond and field notes for one captured animal, or null when it isn't captured. */
     suspend fun bond(slug: String): Bond? =
         JSONObject(call("GET", "/me/bonds?species=${q(slug)}")).getJSONArray("bonds").optJSONObject(0)?.let { Bond.parse(it) }
-
-    /** The buddy, or null before the first capture. */
-    suspend fun buddy(): Buddy? = call("GET", "/me/buddy").trim().takeIf { it != "null" }?.let { Buddy.parse(JSONObject(it)) }
-
-    suspend fun setBuddy(slug: String): Buddy? =
-        call("PUT", "/me/buddy", JSONObject().put("species", slug)).trim().takeIf { it != "null" }
-            ?.let { Buddy.parse(JSONObject(it)) }
 
     // --- Photos, feed, likes -----------------------------------------------------------
 
