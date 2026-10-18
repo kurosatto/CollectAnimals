@@ -202,9 +202,9 @@ def test_pets_and_pests_are_named_but_do_not_count(client, fake):
     assert r["top_predictions"][0]["common_name"] == "Cat"
     assert all(c["slug"] != "domestic_cat" for c in r["choices"])  # can't be picked as a wild animal
 
-    fake.next = [Prediction("european_starling", 0.9), Prediction("other", 0.1)]
+    fake.next = [Prediction("rock_pigeon", 0.9), Prediction("other", 0.1)]
     r = upload(client, h).json()
-    assert r["household"]["kind"] == "pest" and "European starling" in r["message"]
+    assert r["household"]["kind"] == "pest" and "pigeon" in r["message"]
 
     # Unsure: no name, the usual "couldn't match".
     fake.next = [Prediction("domestic_dog", 0.5), Prediction("coyote", 0.3), Prediction("other", 0.2)]
