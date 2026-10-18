@@ -315,14 +315,19 @@ fun CatchScreen(state: UiState, onCapture: (Uri, Pair<Double, Double>?, Boolean)
             Text("Identifying…", style = MaterialTheme.typography.bodyMedium)
         }
         state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        state.result?.let { ResultCard(it, onDismiss, onPick, onOpenDex, state.fieldGuide?.parks.orEmpty(), onSaveWhereWhen) }
+        state.result?.let { r ->
+            ResultCard(r, onDismiss, onPick, onOpenDex, state.fieldGuide?.parks.orEmpty(), onSaveWhereWhen,
+                safety = r.species?.let { state.fieldGuide?.details?.get(it.slug) }
+                    ?.takeIf { it.safety == "caution" || it.safety == "danger" })
+        }
         if (state.account != null) state.week?.let { ChallengesCard(it) }
     }
 }
 
 @Composable
 fun ResultCard(r: CaptureResult, onDismiss: () -> Unit, onPick: (String?) -> Unit, onOpenDex: (String) -> Unit,
-               parks: List<Park> = emptyList(), onSaveWhereWhen: SaveWhereWhen? = null) {
+               parks: List<Park> = emptyList(), onSaveWhereWhen: SaveWhereWhen? = null,
+               safety: SpeciesDetails? = null) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Image(r.photo.asImageBitmap(), contentDescription = "Your photo",
@@ -331,6 +336,7 @@ fun ResultCard(r: CaptureResult, onDismiss: () -> Unit, onPick: (String?) -> Uni
                     .clip(RoundedCornerShape(12.dp)),
                 contentScale = ContentScale.Crop)
             if (r.matched && r.species != null) {
+                if (r.newBadge) CaptureReveal(r.species.slug, Modifier.size(120.dp).align(Alignment.CenterHorizontally))
                 Text(if (r.newBadge) "New badge!" else "Captured again",
                     style = MaterialTheme.typography.labelLarge, color = rarityColor(r.species.rarity))
                 Text(r.species.commonName, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
@@ -338,6 +344,7 @@ fun ResultCard(r: CaptureResult, onDismiss: () -> Unit, onPick: (String?) -> Uni
                 RarityTag(r.species.rarity)
             }
             Text(r.message, style = MaterialTheme.typography.bodyLarge)
+            if (r.matched && safety != null) SafetyCard(safety, tip = true)
             if (r.whereWhen != null && onSaveWhereWhen != null) WhereWhenRow(r.whereWhen, parks, onSaveWhereWhen)
             r.score?.let { ScoreBox(it, r.bondUp) }
             Text("Top guesses", style = MaterialTheme.typography.labelLarge)

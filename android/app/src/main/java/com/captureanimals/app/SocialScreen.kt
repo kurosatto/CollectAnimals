@@ -324,6 +324,13 @@ fun AccountDialog(state: UiState, vm: GameViewModel, onDismiss: () -> Unit) {
     text = {
         Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (acct == null) {
+                val here = state.states.find { it.code == state.stateCode } ?: state.states.firstOrNull()
+                val place = here?.name ?: "your state"
+                HabitatShowcase(rememberHabitatView(), here?.code ?: "", place)
+                Text("How many of $place's ${here?.species?.size ?: 100} animals can you capture?", style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold)
+                Text("Spot a wild animal, snap a great photo, and it's captured in your Field Guide. Then it moves " +
+                    "into your own little pixel habitat, like the one here.", style = MaterialTheme.typography.bodyMedium)
                 Text("An account adds friends, the news feed and likes, and keeps your badges on the game " +
                     "server, the same as the website. Without one you play offline on this phone.",
                     style = MaterialTheme.typography.bodySmall)

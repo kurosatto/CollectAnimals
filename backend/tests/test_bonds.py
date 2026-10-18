@@ -50,7 +50,7 @@ def test_local_time_uses_exif_or_state_time():
 def test_bonds_buddy_api(client, fake):
     h = signup(client)
     assert client.get("/me/buddy", headers=h).json() is None
-    fake.next = [Prediction("coyote", 0.95)]
+    fake.next = [Prediction("western_gray_squirrel", 0.95)]
     r = upload(client, h).json()
     assert r["bond"] == 1 and r["bond_up"] == []
     # A second photo "taken" on another day and time of day. The new upload's time
@@ -60,18 +60,44 @@ def test_bonds_buddy_api(client, fake):
         c = db.get(Capture, r["capture_id"])
         c.taken_at = datetime(2026, 1, 3, 22 if bonds.time_of_day(now) == "morning" else 6)
         db.commit()
-    fake.next = [Prediction("coyote", 0.95)]
+    fake.next = [Prediction("western_gray_squirrel", 0.95)]
     r2 = upload(client, h).json()
     assert r2["bond"] >= 3 and "Early and late" in r2["bond_up"] and "Bond with the" in r2["message"]
 
     b = client.get("/me/bonds", headers=h).json()["bonds"]
-    assert b[0]["species"]["slug"] == "coyote" and b[0]["level"] == r2["bond"]
+    assert b[0]["species"]["slug"] == "western_gray_squirrel" and b[0]["level"] == r2["bond"]
     entry = next(e for e in client.get("/me/collection", headers=h).json()["entries"]
-                 if e["species"]["slug"] == "coyote")
+                 if e["species"]["slug"] == "western_gray_squirrel")
     assert entry["bond"] == r2["bond"]
 
     buddy = client.get("/me/buddy", headers=h).json()
-    assert buddy["chosen"] is False and buddy["bond"]["species"]["slug"] == "coyote"
+    assert buddy["chosen"] is False and buddy["bond"]["species"]["slug"] == "western_gray_squirrel"
     assert buddy["mood"] == "happy" and buddy["line"]
     assert client.put("/me/buddy", headers=h, json={"species": "raccoon"}).status_code == 400
-    assert client.put("/me/buddy", headers=h, json={"species": "coyote"}).json()["chosen"] is True
+    assert client.put("/me/buddy", headers=h, json={"species": "western_gray_squirrel"}).json()["chosen"] is True
+
+
+def test_animals_with_a_safety_rating_get_only_safe_notes():
+    # No repeat visits, night outings or new places for a bear or a coyote.
+    lots = [S(2026, 10, 16, 9, 37.0, -122.0), S(2026, 10, 17, 22, 37.05, -122.0), S(2027, 1, 5, 9)]
+    for safety in ("caution", "danger"):
+        ns = bonds.notes(lots, safety)
+        assert [n.id for n in ns] == ["first", "star"] and bonds.level(ns) == 1
+        assert "zoom" in ns[1].hint and "adult" in ns[1].hint
+        assert bonds.newly_done(lots[:1], lots, safety) == []
+        line = bonds.buddy_line("happy", ns, safety=safety)
+        assert "adult" in line and "another day" not in line and "time of day" not in line
+    assert len(bonds.notes(lots, "none")) == 6
+
+
+def test_capture_screen_shows_safety(client, fake):
+    h = signup(client)
+    fake.next = [Prediction("american_black_bear", 0.95)]
+    r = upload(client, h).json()
+    assert r["safety"] == "danger" and r["safe_distance"] == "50 yards (45 m)"
+    assert "bear" in r["safety_note"] and "adult" in r["safety_tip"]
+    b = client.get("/me/bonds", headers=h).json()["bonds"][0]
+    assert b["max_level"] == 2 and {n["id"] for n in b["notes"]} == {"first", "star"}
+    fake.next = [Prediction("western_gray_squirrel", 0.95)]
+    r = upload(client, h).json()
+    assert r["safety"] == "none" and r["safety_tip"] is None

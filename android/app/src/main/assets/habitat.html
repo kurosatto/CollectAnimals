@@ -21,12 +21,16 @@
                 white-space:nowrap; pointer-events:none; box-shadow:0 2px 6px rgba(0,0,0,.15); }
   .hab-bar { display:flex; justify-content:space-between; align-items:center; gap:8px; margin:6px 2px 0; font-size:.8rem; }
   .muted { color:var(--muted); }
+  .place { position:absolute; z-index:1; top:6px; left:6px; padding:2px 8px; border-radius:999px; font-size:.75rem;
+           background:rgba(0,0,0,.45); color:#fff; pointer-events:none; }
+  body.showcase .hab-bar { display:none; }
   button { font:inherit; font-size:.8rem; padding:4px 10px; border-radius:999px; border:1px solid var(--line);
            background:transparent; color:var(--accent); white-space:nowrap; }
 </style>
 </head>
 <body>
 <div id="habitat" class="habitat">
+  <span id="place" class="place hidden"></span>
   <canvas id="hab-canvas" width="320" height="270" aria-label="Your habitat: the animals you've captured"></canvas>
   <div id="hab-bubble" class="hab-bubble hidden"></div>
 </div>
@@ -53,10 +57,21 @@ function setAnimals(entries, state, visitor) {
   slugs = {}; dexNumbers = {};
   entries.forEach((e) => { slugs[e.species.number] = e.species.slug; dexNumbers[e.species.number] = e.species.number; });
   caughtNums = new Set(entries.filter((e) => e.caught).map((e) => e.species.number));
+  document.body.classList.remove("showcase");
+  $("place").classList.add("hidden");
   const was = hab.visit && hab.visit.username;
   hab.visit = visitor ? { username: visitor, state: myState.code, home: [] } : null;
   if ((visitor || null) !== (was || null)) { hab.animals = []; hab.w = 0; hab.picked = null; hab.fx = []; }
   habitatSet(entries);
+  reportHeight();
+}
+
+// The account screen before you log in: the state's scenery with one featured animal.
+function showcase(state, placeName) {
+  document.body.classList.add("showcase");
+  $("place").textContent = `📍 ${placeName}`;
+  $("place").classList.remove("hidden");
+  habShowcase(state || "");
   reportHeight();
 }
 

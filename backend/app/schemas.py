@@ -176,6 +176,12 @@ class CaptureOut(BaseModel):
     # Bond hearts with this animal after the photo, and the field notes it ticked.
     bond: int | None = None
     bond_up: list[str] = []
+    # For an animal with a safety rating (caution or danger): how far to stay
+    # back, its safety note and the general tip (zoom, stay with an adult).
+    safety: str = "none"
+    safe_distance: str | None = None
+    safety_note: str | None = None
+    safety_tip: str | None = None
     where_when: WhereWhenOut | None = None
 
 
@@ -284,6 +290,8 @@ class SetOut(BaseModel):
     total: int
     complete: bool
     species: list[SetSpecies]
+    # Set when some of its animals have a safety rating.
+    safety_tip: str | None = None
 
 
 class SetsOut(BaseModel):
@@ -297,6 +305,8 @@ class ChallengeOut(BaseModel):
     progress: int
     goal: int
     done: bool
+    # Set when the animals it counts include ones with a safety rating.
+    safety_tip: str | None = None
 
 
 class ChallengesOut(BaseModel):

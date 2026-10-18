@@ -153,6 +153,7 @@ const habAwake = (a, phase) => phase === "dawn" || phase === "dusk" || a.activit
   || a.activity === (phase === "night" ? "night" : "day");
 
 function habNote() {
+  if (hab.visit?.showcase) return;
   const phase = habPhase(), n = hab.animals.length;
   const asleep = hab.animals.filter((a) => !habAwake(a, phase)).length;
   const who = hab.visit ? `${hab.visit.username}'s habitat` : "here";
@@ -616,7 +617,7 @@ function habTap(ev) {
   }).filter((h) => Math.abs(x - h.px) <= 18 && y >= h.py - 34 && y <= h.py + 4).sort((p, q) => q.z - p.z);
   if (!hits.length) { hab.picked = null; habDraw(); return; }
   const h = hits[0];
-  if (hab.picked === h.a && performance.now() < hab.pickedUntil) {
+  if (hab.picked === h.a && performance.now() < hab.pickedUntil && !hab.visit?.showcase) {
     if (hab.visit) openDex(h.a.s.number, h.a.num, caughtNums.has(h.a.s.number), hab.visit.state);
     else openDex(h.a.s.number, dexNumbers[h.a.s.number], true);
     return;
@@ -625,7 +626,7 @@ function habTap(ev) {
   hab.pickedUntil = performance.now() + 4000;
   const b = $("hab-bubble");
   b.textContent = h.a.s.common_name + (h.awake ? "" : " 💤");
-  b.title = "Tap again to open its page";
+  b.title = hab.visit?.showcase ? "" : "Tap again to open its page";
   if (habStill) habDraw();
 }
 
@@ -647,6 +648,27 @@ function habLeave() {
   $("grid").before($("habitat"), $("hab-bar"));
   hab.animals = []; hab.w = 0; hab.picked = null; hab.fx = [];
   habitatSet(home);
+}
+
+// Before you log in: your state's scenery with one featured animal, as a taste of
+// the game (the login page and the app's account screen). Harmless animals only.
+const HAB_SHOWCASE = {
+  CA: { slug: "brown_pelican", common_name: "Brown Pelican", category: "bird", rarity: "common" },
+  NC: { slug: "northern_cardinal", common_name: "Northern Cardinal", category: "bird", rarity: "common" },
+  // States without their own pick yet: a robin, found in every state.
+  default: { slug: "american_robin", common_name: "American Robin", category: "bird", rarity: "common" },
+};
+function habShowcase(state, slot) {
+  const s = HAB_SHOWCASE[state] || HAB_SHOWCASE.default;
+  if (slot && $("habitat").parentElement !== slot) slot.append($("habitat"));
+  if (!hab.visit || !hab.visit.showcase || hab.visit.state !== state) {
+    hab.visit = { showcase: true, state, home: [] };
+    hab.animals = []; hab.w = 0; hab.picked = null; hab.fx = [];
+  }
+  const fresh = !hab.animals.length;
+  habitatSet([{ caught: true, activity: "any", species: { number: 0, ...s } }]);
+  // Start it in plain view instead of flying in from off the edge.
+  if (fresh && hab.animals[0]) hab.animals[0].x = rnd(hab.L.w * .3, hab.L.w * .6);
 }
 
 function habLoop(now) {

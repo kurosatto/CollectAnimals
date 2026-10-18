@@ -237,6 +237,11 @@
   .week-row.done .tick { background:var(--accent); border-color:var(--accent); }
   .week-row.done .what { color:var(--muted); text-decoration:line-through; }
   .week-row .bar { grid-column:2 / 4; }
+  .week-row .safe-tip, .set .safe-tip { grid-column:2 / 4; font-size:.8rem; color:var(--muted); }
+  .safety-box { margin-top:10px; padding:8px 10px; border-radius:10px; max-width:360px; font-size:.9rem;
+                background:#fff4d6; color:#5a4200; border:1px solid #f0d58a; }
+  .safety-box.danger { background:#ffe3dc; color:#6b1d0c; border-color:#f3b3a2; }
+  .safety-box b { display:block; margin-bottom:2px; }
   .sets { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:10px; }
   .set { border:1px solid var(--line); border-radius:10px; padding:10px; display:grid; gap:6px; }
   .set.complete { border-color:var(--legendary); }
@@ -259,6 +264,24 @@
   .hab-bubble { position:absolute; transform:translate(-50%,-100%); background:var(--card); color:var(--ink);
                 border:1px solid var(--line); border-radius:8px; padding:3px 8px; font-size:.8rem; font-weight:600;
                 white-space:nowrap; pointer-events:none; box-shadow:0 2px 6px rgba(0,0,0,.15); }
+  .auth { display:grid; gap:4px 20px; }
+  .auth-scene { position:relative; }
+  .auth-place { position:absolute; z-index:1; top:8px; left:8px; padding:2px 8px; border-radius:999px; font-size:.8rem;
+                background:rgba(0,0,0,.45); color:#fff; pointer-events:none; }
+  .auth .habitat { margin:0; }
+  .pitch-title { font-size:1.3rem; margin:12px 0 6px; line-height:1.25; }
+  .pitch { margin:0 0 4px; }
+  #auth-title { font-size:1.05rem; margin:14px 0 8px; }
+  .auth form { flex-direction:column; }
+  .pitch-list { list-style:none; padding:0; margin:12px 0 0; display:grid; gap:8px;
+                grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); font-size:.9rem; }
+  .pitch-list li { display:flex; align-items:center; gap:8px; }
+  .pitch-list img { width:24px; height:24px; image-rendering:pixelated; flex:none; }
+  @media (min-width:760px) {
+    .auth { grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); align-items:center; }
+    .pitch-title { margin-top:0; }
+    .pitch-list { grid-column:1 / -1; }
+  }
   .hab-bar { display:flex; justify-content:space-between; align-items:center; gap:8px; margin:8px 0 12px; font-size:.85rem; }
   .hab-bar button { padding:4px 10px; font-size:.8rem; white-space:nowrap; }
   /* Bonds and buddy (app/bonds.py): hearts are field notes done. */
@@ -273,6 +296,19 @@
   .buddy.excited img { animation-duration:.7s; }
   @keyframes buddy-bob { 50% { transform:translateY(-4px); } }
   @media (prefers-reduced-motion: reduce) { .buddy img { animation:none; } }
+  /* New capture: the silhouette, then the colour pixel art wipes in row by row. */
+  .reveal { position:relative; width:120px; height:120px; margin:4px auto 10px; }
+  .reveal img { position:absolute; inset:0; width:100%; height:100%; image-rendering:pixelated; }
+  .reveal .color { clip-path:inset(100% 0 0 0); animation:reveal-wipe 1.2s steps(20, end) .7s forwards; }
+  .reveal .sil { animation:reveal-shake .5s ease-in-out .1s 1; }
+  .reveal::after { content:""; position:absolute; inset:-14px; border-radius:50%; pointer-events:none; opacity:0;
+                   background:radial-gradient(circle, rgba(255,215,90,.55), rgba(255,215,90,0) 65%);
+                   animation:reveal-glow 1s ease-out 1.9s 1; }
+  @keyframes reveal-wipe { to { clip-path:inset(0 0 0 0); } }
+  @keyframes reveal-shake { 25% { transform:rotate(-6deg); } 75% { transform:rotate(6deg); } }
+  @keyframes reveal-glow { 30% { opacity:1; transform:scale(1.1); } to { opacity:0; transform:scale(1.25); } }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal .color { animation:none; clip-path:none; } .reveal .sil, .reveal::after { animation:none; } }
   .buddy .who { font-weight:600; display:flex; flex-wrap:wrap; gap:4px 8px; align-items:baseline; }
   .buddy .say { margin:4px 0 0; font-size:.9rem; }
   .buddy .say::before { content:"“"; } .buddy .say::after { content:"”"; }
@@ -309,7 +345,12 @@
   <button data-tab="friends"><img class="ic" src="/sprites/ui_tab_friends.png" alt="">Friends</button>
 </nav>
 
-  <section id="auth" class="card">
+  <section id="auth" class="card auth">
+    <div class="auth-scene" id="auth-scene"><span class="auth-place" id="auth-place">📍</span></div>
+    <div class="auth-side">
+    <h2 class="pitch-title">How many of <span id="pitch-state">your state</span>'s <span id="pitch-count">100</span> animals can you capture?</h2>
+    <p class="pitch">Spot a wild animal, snap a great photo, and it's captured in your Field Guide.
+      Then it moves into your own little pixel habitat, like the one here.</p>
     <h2 id="auth-title">Log in</h2>
     <form id="auth-form">
       <input id="email" type="email" placeholder="Email" class="hidden">
@@ -320,6 +361,13 @@
     </form>
     <p class="muted"><button class="link" id="toggle">Need an account? Sign up</button></p>
     <p id="auth-error" style="color:#c0392b"></p>
+    </div>
+    <ul class="pitch-list">
+      <li><img src="/sprites/ui_tab_capture.png" alt="">Photograph real animals and find out what you met</li>
+      <li><img src="/sprites/ui_tab_guide.png" alt="">Fill your Field Guide, from backyard birds to legendary finds</li>
+      <li><img src="/sprites/ui_tab_photos.png" alt="">Earn up to 5 stars for sharp, well framed shots</li>
+      <li><img src="/sprites/ui_tab_friends.png" alt="">Add friends and race to capture them all</li>
+    </ul>
   </section>
 
   <section id="game" class="hidden">
@@ -470,8 +518,26 @@ function setToken(t) {
   render();
 }
 
+// Logged out: the login page shows the state's scenery with one animal in it.
+// Before a state is chosen that's the last one used on this device, else the
+// first state in states.json.
+let savedState = null;
+try { savedState = localStorage.getItem("state"); } catch {}
+let authState = savedState;
+function authScene(code) {
+  authState = code || (states.some((st) => st.code === authState) ? authState : (states[0] || {}).code);
+  const name = (states.find((st) => st.code === authState) || {}).name || "";
+  $("auth-place").textContent = `📍 ${name}`;
+  $("pitch-state").textContent = name || "your state";
+  $("pitch-count").textContent = (states.find((st) => st.code === authState) || {}).species_count || 100;
+  $("state-name").textContent = name;
+  if (!token) habShowcase(authState, $("auth-scene"));
+}
+
 $("toggle").onclick = () => {
   signup = !signup;
+  // The state last used on this device (not a guess) starts out chosen.
+  if (signup && !signupState && states.some((st) => st.code === savedState)) setSignupState(savedState);
   $("auth-title").textContent = $("auth-submit").textContent = signup ? "Sign up" : "Log in";
   $("toggle").textContent = signup ? "Have an account? Log in" : "Need an account? Sign up";
   $("email").classList.toggle("hidden", !signup);
@@ -542,7 +608,10 @@ $("upload-form").onsubmit = async (e) => {
     p.className = "muted";
     p.textContent = "Top guesses: " + r.top_predictions
       .map((x) => `${x.common_name || (x.label === "other" ? "not on the list" : "???")} ${(x.probability * 100).toFixed(0)}%`).join(", ");
+    if (r.new_badge && r.species?.slug) box.append(captureReveal(r.species.slug));
     box.append(h, p);
+    const sb = safetyBox(r);
+    if (sb) box.append(sb);
     if (r.where_when) box.append(whereWhen(r.where_when, (res) => {
       if (res.score) box.querySelector(".score")?.replaceWith(scoreCard(res.score));
       if (res.bond_up?.length) box.querySelector(".ww").append(el("div", "", `Field notes ✓ ${res.bond_up.join(", ")}`));
@@ -555,6 +624,17 @@ $("upload-form").onsubmit = async (e) => {
     loadCollection(); loadFeed();
   } catch (err) { box.textContent = err.message; }
 };
+
+// Safety for animals rated caution or danger: how far back to stay, the
+// animal's own note and the general tip (zoom, stay with an adult).
+function safetyBox(r) {
+  if (!r.safety_tip) return null;
+  const box = el("div", "safety-box" + (r.safety === "danger" ? " danger" : ""));
+  box.append(el("b", "", (r.safety === "danger" ? "⚠️ " : "✋ ") +
+    (r.safe_distance ? `Stay at least ${r.safe_distance} away` : "Look, don't touch")));
+  box.append(el("span", "", [r.safety_note, r.safety_tip].filter(Boolean).join(" ")));
+  return box;
+}
 
 // Photo score: stars for the photo itself, points with the bonuses added.
 const stars = (n) => "★".repeat(n) + "☆".repeat(5 - n);
@@ -733,7 +813,12 @@ function pickPanel(r, box) {
       wrap.remove();
       box.querySelector(".keep")?.remove();
       box.querySelector(".score")?.remove();
+      box.querySelector(".reveal")?.remove();
+      if (res.new_badge && res.species?.slug) h.before(captureReveal(res.species.slug));
+      box.querySelector(".safety-box")?.remove();
       if (res.score) h.after(scoreCard(res.score));
+      const sb = safetyBox(res);
+      if (sb) h.after(sb);
       if (res.matched && !res.album_photo_id) keepWhich(res.species, r.capture_id, r.file, box, res.score && res.score.total);
       loadCollection(); loadFeed();
     } catch (err) {
@@ -783,6 +868,7 @@ async function loadChallenges() {
       bar.append(fill);
       row.append(el("span", "tick", c.done ? "✓" : ""), el("span", "what", c.title),
                  el("span", "muted", `${c.progress} / ${c.goal}`), bar);
+      if (c.safety_tip) row.append(el("span", "safe-tip", "✋ " + c.safety_tip));
       list.append(row);
     }
   } catch (err) { $("week-list").textContent = err.message; }
@@ -810,6 +896,7 @@ async function loadSets() {
         sprites.append(img);
       }
       card.append(head, bar, sprites, el("div", "desc", st.description));
+      if (st.safety_tip) card.append(el("div", "safe-tip", "✋ " + st.safety_tip));
       box.append(card);
     }
   } catch (err) { box.textContent = err.message; }
@@ -973,6 +1060,16 @@ async function showBond(number) {
   box.classList.remove("hidden");
 }
 
+// A new animal in the Field Guide: its silhouette, then the colour pixel art.
+function captureReveal(slug) {
+  const box = el("div", "reveal");
+  const sil = el("img", "sil"), color = el("img", "color");
+  sil.src = spriteUrl(slug, false); color.src = spriteUrl(slug, true);
+  sil.alt = ""; color.alt = "";
+  box.append(sil, color);
+  return box;
+}
+
 // Colour pixel art once caught, a silhouette until then.
 const spriteUrl = (slug, caught) => `/sprites/${encodeURIComponent(slug)}${caught ? "" : "_silhouette"}.png`;
 
@@ -993,6 +1090,7 @@ async function loadStates() {
 
 async function useState(code) {
   myState = states.find((st) => st.code === code) || myState;
+  try { localStorage.setItem("state", myState.code); } catch {}
   $("state-name").textContent = myState.name || "";
   $("my-state").textContent = `📍 ${myState.name || ""}`;
   $("my-state").classList.toggle("hidden", states.length < 2);
@@ -1058,9 +1156,12 @@ let signupState = null;
 async function chooseSignupState() {
   const code = await pickState({ title: "Which state are you in?", current: signupState,
     note: "Your Field Guide and parks follow your state. You can unlock others later." });
-  if (!code) return;
+  if (code) setSignupState(code);
+}
+function setSignupState(code) {
   signupState = code;
   $("signup-state").textContent = `📍 ${(states.find((x) => x.code === code) || {}).name || code}`;
+  authScene(code);
 }
 $("signup-state").onclick = chooseSignupState;
 
@@ -2002,6 +2103,8 @@ async function render() {
   $("who").classList.toggle("hidden", !authed);
   $("tabs").classList.toggle("hidden", !authed);
   document.body.classList.toggle("authed", authed);
+  if (!authed) authScene();
+  else if (hab.visit?.showcase) habLeave();
   if (authed) {
     showTab(location.hash.slice(1));
     try {

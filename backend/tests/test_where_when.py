@@ -56,7 +56,7 @@ def test_phone_location_only_for_recent_photos(client, fake):
 
 def test_owner_edits_time_and_place(client, fake):
     h = signup(client)
-    r = post(client, fake, h, latitude=34.05, longitude=-118.24)
+    r = post(client, fake, h, slug="western_gray_squirrel", latitude=34.05, longitude=-118.24)
     cid = r["capture_id"]
     body = {"taken_at": "2026-01-10T07:15:00", "latitude": 36.9741, "longitude": -122.0308}
     e = client.put(f"/captures/{cid}/where-when", headers=h, json=body)
@@ -70,8 +70,8 @@ def test_owner_edits_time_and_place(client, fake):
     assert p["taken_on"] == "2026-01-10" and p["place"] == "near Santa Cruz"
     assert p["where_when"]["capture_id"] == cid
     # Field notes count the edited day.
-    post(client, fake, h)
-    bond = client.get("/me/bonds?species=coyote", headers=h).json()
+    post(client, fake, h, slug="western_gray_squirrel")
+    bond = client.get("/me/bonds?species=western_gray_squirrel", headers=h).json()
     days = next(n for n in bond["bonds"][0]["notes"] if n["id"] == "days")
     assert days["progress"] == 2
 

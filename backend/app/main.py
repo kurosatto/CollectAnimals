@@ -667,7 +667,17 @@ async def create_capture(photo: UploadFile = File(...),
         bond=bond,
         bond_up=bond_up,
         where_when=social.where_when_out(capture, state.utc_offset),
+        **(_safety_out(species.slug, state.code) if matched else {}),
     )
+
+
+def _safety_out(slug: str, state_code: str | None) -> dict:
+    """The capture screen's safety fields for an animal with a safety rating."""
+    d = dex.details(slug, state_code)
+    if not bonds.careful(d.get("safety")):
+        return {}
+    return {"safety": d["safety"], "safe_distance": d.get("safe_distance") or None,
+            "safety_note": d.get("safety_note") or None, "safety_tip": bonds.SAFE_TIP}
 
 
 def _score_capture(model, capture: Capture, slug: str, rarity: str, image: Image.Image, state_code: str,
@@ -834,7 +844,8 @@ def pick_capture_species(capture_id: int, body: PickIn, user: User = Depends(cur
                       confidence=capture.confidence, new_badge=new_badge, message=message,
                       top_predictions=[], album_photo_id=album_photo.id if album_photo else None,
                       score=score_out(capture), bond=bond, bond_up=bond_up,
-                      where_when=social.where_when_out(capture, (st.get(user.state) or st.get(None)).utc_offset))
+                      where_when=social.where_when_out(capture, (st.get(user.state) or st.get(None)).utc_offset),
+                      **_safety_out(species.slug, capture.state or user.state))
 
 
 @app.put("/captures/{capture_id}/where-when", response_model=WhereWhenResult)
@@ -877,8 +888,9 @@ def set_where_when(capture_id: int, body: WhereWhenIn, user: User = Depends(curr
     bond, bond_up = None, []
     if capture.species_id is not None:
         after = _sightings(db, user.id, state.utc_offset, capture.species_id).get(capture.species_id, [])
-        bond = bonds.level(bonds.notes(after))
-        bond_up = bonds.newly_done(before_bond, after)
+        safety = _safety(db, capture.species_id, state.code)
+        bond = bonds.level(bonds.notes(after, safety))
+        bond_up = bonds.newly_done(before_bond, after, safety)
     return WhereWhenResult(where_when=social.where_when_out(capture, state.utc_offset), score=score_out(capture),
                            bond=bond, bond_up=bond_up)
 
@@ -977,7 +989,8 @@ def _collection(db: Session, owner: User, viewer: User, st_: st.State) -> Collec
         select(AlbumPhoto.species_id, Capture.image_path, Capture.score, Capture.score_stars)
         .join(Capture, Capture.id == AlbumPhoto.capture_id).where(AlbumPhoto.user_id == owner.id))}
     storage = get_storage()
-    bond_levels = {sid: bonds.level(bonds.notes(sg)) for sid, sg in _sightings(db, owner.id, st_.utc_offset).items()}
+    bond_levels = {sid: bonds.level(bonds.notes(sg, _safety(db, sid, code)))
+                   for sid, sg in _sightings(db, owner.id, st_.utc_offset).items()}
     entries = []
     for m in state_species(db, code):
         b = here.get(m.species_id)
@@ -1014,8 +1027,9 @@ def my_sets(state: str | None = Query(None), user: User = Depends(current_user),
         rows = [SetSpecies(species=species_out(members[x].species, members[x].species_id in revealed, members[x]),
                            caught=members[x].species_id in caught) for x in s.slugs]
         n = sum(r.caught for r in rows)
+        careful = any(bonds.careful(dex.details(x, code).get("safety")) for x in s.slugs)
         out.append(SetOut(id=s.id, title=s.title, description=s.description, caught=n, total=len(rows),
-                          complete=n == len(rows), species=rows))
+                          complete=n == len(rows), species=rows, safety_tip=bonds.SAFE_TIP if careful else None))
     return SetsOut(state=code, sets=out)
 
 
@@ -1045,7 +1059,11 @@ def my_challenges(user: User = Depends(current_user), db: Session = Depends(get_
     out = []
     for ch in challenges:
         p = goals.progress(ch, week, likes)
-        out.append(ChallengeOut(id=ch.id, title=ch.title, progress=min(p, ch.goal), goal=ch.goal, done=p >= ch.goal))
+        pool = ([m.species.slug for m in members.values() if m.species.category == ch.category]
+                if ch.kind == "category" else list(ch.slugs))
+        careful = any(bonds.careful(dex.details(x, state.code).get("safety")) for x in pool)
+        out.append(ChallengeOut(id=ch.id, title=ch.title, progress=min(p, ch.goal), goal=ch.goal, done=p >= ch.goal,
+                                safety_tip=bonds.SAFE_TIP if careful else None))
     return ChallengesOut(state=state.code, week_start=start, week_end=end, challenges=out,
                          done=sum(c.done for c in out))
 
@@ -1067,16 +1085,24 @@ def _sightings(db: Session, user_id: int, utc_offset: int, species_id: int | Non
     return out
 
 
+def _safety(db: Session, species_id: int, state_code: str | None) -> str:
+    """The animal's safety rating ("none", "caution" or "danger") in the state."""
+    sp = db.get(Species, species_id)
+    return (dex.details(sp.slug, state_code).get("safety") or "none") if sp else "none"
+
+
 def _bond_after(db: Session, user: User, capture: Capture) -> tuple[int, list[str]]:
     """Bond hearts with the capture's animal now, and the field notes it ticked."""
     offset = (st.get(user.state) or st.get(None)).utc_offset
+    safety = _safety(db, capture.species_id, capture.state or user.state)
     after = _sightings(db, user.id, offset, capture.species_id).get(capture.species_id, [])
     before = _sightings(db, user.id, offset, capture.species_id, skip_capture=capture.id).get(capture.species_id, [])
-    return bonds.level(bonds.notes(after)), bonds.newly_done(before, after)
+    return bonds.level(bonds.notes(after, safety)), bonds.newly_done(before, after, safety)
 
 
-def _bond_out(species: Species, m: StateSpecies | None, sightings: list[bonds.Sighting]) -> BondOut:
-    ns = bonds.notes(sightings)
+def _bond_out(species: Species, m: StateSpecies | None, sightings: list[bonds.Sighting],
+              state_code: str | None = None) -> BondOut:
+    ns = bonds.notes(sightings, dex.details(species.slug, state_code or (m.state if m else None)).get("safety"))
     lvl = bonds.level(ns)
     return BondOut(species=species_out(species, True, m), level=lvl, max_level=len(ns), title=bonds.title(lvl),
                    notes=[BondNoteOut(id=n.id, title=n.title, hint=n.hint, progress=n.progress, goal=n.goal,
@@ -1095,20 +1121,21 @@ def my_bonds(species: str | None = Query(None), user: User = Depends(current_use
     out = []
     for species_id, sightings in seen.items():
         sp = db.get(Species, species_id)
-        out.append(_bond_out(sp, members.get(species_id), sightings))
+        out.append(_bond_out(sp, members.get(species_id), sightings, state.code))
     out.sort(key=lambda b: (-b.level, b.species.common_name or ""))
     return BondsOut(state=state.code, bonds=out)
 
 
 def _buddy_suggestion(db: Session, user: User, state: st.State, buddy: Species) -> str | None:
     """An animal around this month that the player hasn't captured, preferring
-    the buddy's own kind. Hidden names stay hidden. Never a dangerous one."""
+    the buddy's own kind. Hidden names stay hidden. Never one with a safety
+    rating: the buddy shouldn't send a player looking for a bear or a seal."""
     month = (datetime.now(timezone.utc) + timedelta(hours=state.utc_offset)).month
     caught = set(catches_in(db, user.id, state.code))
     revealed = revealed_species_ids(db, user)
     options = [m for m in state_species(db, state.code)
                if m.species_id not in caught and dex.in_season(m.species.slug, state.code, month)
-               and dex.details(m.species.slug, state.code).get("safety") != "danger"]
+               and not bonds.careful(dex.details(m.species.slug, state.code).get("safety"))]
     if not options:
         return None
     same = [m for m in options if m.species.category == buddy.category] or options
@@ -1131,18 +1158,20 @@ def my_buddy(user: User = Depends(current_user), db: Session = Depends(get_db)):
     if chosen:
         sid = user.buddy_species_id
     else:
-        sid = max(seen, key=lambda k: (bonds.level(bonds.notes(seen[k])), len(seen[k]), -k))
+        sid = max(seen, key=lambda k: (bonds.level(bonds.notes(seen[k], _safety(db, k, state.code))),
+                                       len(seen[k]), -k))
     sp = db.get(Species, sid)
-    bond = _bond_out(sp, state_member(db, state.code, sid), seen[sid])
+    safety = _safety(db, sid, state.code)
+    bond = _bond_out(sp, state_member(db, state.code, sid), seen[sid], state.code)
     since = datetime.now(timezone.utc) - timedelta(days=7)
     days = {(_aware(c) + timedelta(hours=state.utc_offset)).date() for c in db.scalars(
         select(Capture.created_at).where(Capture.user_id == user.id, Capture.species_id.is_not(None)))
         if _aware(c) >= since}
     mood = bonds.mood(len(days))
-    ns = bonds.notes(seen[sid])
+    ns = bonds.notes(seen[sid], safety)
     suggestion = _buddy_suggestion(db, user, state, sp) if bonds.level(ns) == len(ns) else None
     return BuddyOut(chosen=chosen, bond=bond, mood=mood, outing_days=len(days),
-                    line=bonds.buddy_line(mood, ns, suggestion),
+                    line=bonds.buddy_line(mood, ns, suggestion, safety),
                     activity=dex.activity(sp.slug, state.code))
 
 
