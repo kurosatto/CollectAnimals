@@ -49,10 +49,10 @@ def load(details_csv: Path, states: list[State]) -> None:
         _details.update(_read_csv(details_csv))
     _base_state = next((s.code for s in states if s.dex_csv is None), None)
     for st in states:
-        if st.ranges.exists():
+        if st.ranges and st.ranges.exists():
             _ranges[st.code] = json.loads(st.ranges.read_text(encoding="utf-8"))
         parks = []
-        if st.hotspots.exists():
+        if st.hotspots and st.hotspots.exists():
             parks = json.loads(st.hotspots.read_text(encoding="utf-8"))["parks"]
             for p in parks:
                 p["species"] = [sp for sp in p["species"]

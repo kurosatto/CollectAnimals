@@ -311,9 +311,83 @@ def test_collection_marks_species_in_season(client):
         dex.load(settings.details_csv, real)
 
 
-def test_california_outline(client):
-    r = client.get("/map/california")
+def test_state_outline(client):
+    r = client.get("/map/CA")
     assert r.status_code == 200 and len(r.json()["rings"][0]) > 100
+
+
+def test_new_state_without_map_data_or_art(tmp_path, fake):
+    """A state added with only its species list (the other 48 states, before their
+    maps and art) plays like any other: no outline, sighting map or parks yet, and
+    the "?" placeholder for animals with no sprite."""
+    import json
+
+    from app import states
+    from app.config import settings
+    from app.db import SessionLocal
+    from app.models import Species
+
+    real = settings.states_json
+    data = json.loads(real.read_text(encoding="utf-8"))
+    for s in data["states"]:  # absolute paths, so the copy can live elsewhere
+        for k, v in s.items():
+            if isinstance(v, str) and v.endswith((".csv", ".json")):
+                s[k] = str(real.parent / v)
+    header = (real.parent / "california_100.csv").read_text(encoding="utf-8").splitlines()[0]
+    cols = header.split(",")
+    rows = []
+    for slug, name, sci, cat in [("coyote", "Coyote", "Canis latrans", "mammal"),
+                                 ("testland_mystery_vole", "Mystery Vole", "Microtus testus", "mammal")]:
+        row = {c: "" for c in cols} | {"slug": slug, "common_name": name, "scientific_name": sci,
+                                        "category": cat, "rarity": "common"}
+        rows.append(",".join(row[c] for c in cols))
+    (tmp_path / "tl.csv").write_text("\n".join([header, *rows]) + "\n", encoding="utf-8")
+    data["states"].append({"code": "TL", "name": "Testland", "species": "tl.csv", "utc_offset": -6,
+                           "bounds": {"west": -100.0, "east": -95.0, "south": 40.0, "north": 43.0}})
+    (tmp_path / "states.json").write_text(json.dumps(data), encoding="utf-8")
+    from app.db import Base, engine
+    from app.main import app
+
+    Base.metadata.drop_all(engine)
+    settings.states_json = tmp_path / "states.json"
+    try:
+        with TestClient(app) as client:
+            st = {s["code"]: s for s in client.get("/states").json()}
+            assert st["TL"]["name"] == "Testland" and st["TL"]["species_count"] == 2
+            h = signup(client, "tess", state="TL")
+            me = client.get("/me", headers=h).json()
+            assert me["state"] == "TL" and me["unlocked_states"] == ["TL"]
+            guide = client.get("/species", params={"state": "TL"}, headers=h).json()
+            assert [s["number"] for s in guide] == sorted(s["number"] for s in guide) and len(guide) == 2
+            assert client.get("/map/TL").status_code == 404
+            assert client.get("/hotspots", params={"state": "TL"}).json() == []
+            dex_entry = client.get("/species/testland_mystery_vole/dex", params={"state": "TL"}).json()
+            assert dex_entry["state"] == "TL" and not dex_entry["hotspots"]
+            # No pixel art yet: the placeholder egg, in colour and as a silhouette.
+            placeholder = (settings.sprites_dir / "placeholder.png").read_bytes()
+            r = client.get("/sprites/testland_mystery_vole.png")
+            assert r.status_code == 200 and r.content == placeholder
+            assert r.headers["cache-control"].endswith("3600")
+            assert client.get("/sprites/testland_mystery_vole_silhouette.png").content == \
+                (settings.sprites_dir / "placeholder_silhouette.png").read_bytes()
+            with SessionLocal() as db:
+                vole = db.query(Species).filter_by(slug="testland_mystery_vole").one().id
+            assert client.get(f"/sprites/silhouette/{vole}.png").status_code == 200
+            assert client.get("/sprites/coyote.png").content != placeholder
+            # Captures count there: the model knows every state's animals, and only
+            # Testland's are kept.
+            fake.next = [Prediction("sea_otter", 0.5), Prediction("testland_mystery_vole", 0.45),
+                         Prediction("other", 0.05)]
+            r = upload(client, h)
+            assert r.status_code == 201, r.text
+            assert r.json()["species"]["slug"] == "testland_mystery_vole"
+            # Moving to another state and back works the same as for CA and NC.
+            assert client.patch("/me", headers=h, json={"state": "NC"}).json()["unlocked_states"] == ["NC", "TL"]
+    finally:
+        settings.states_json = real
+        Base.metadata.drop_all(engine)
+        with TestClient(app):
+            pass
 
 
 def test_hotspots(client, fake):

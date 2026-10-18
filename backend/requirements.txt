@@ -6,5 +6,6 @@ pyjwt>=2.8
 bcrypt>=4.1
 python-multipart>=0.0.9
 pillow>=10
+cryptography>=42   # Web Push encryption and signing (app/push.py)
 # For the real classifier (optional for running tests):
 #   pip install -r ml/requirements.txt
