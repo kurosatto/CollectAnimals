@@ -230,6 +230,11 @@
   .week-row.done .tick { background:var(--accent); border-color:var(--accent); }
   .week-row.done .what { color:var(--muted); text-decoration:line-through; }
   .week-row .bar { grid-column:2 / 4; }
+  .week-row .safe-tip, .set .safe-tip { grid-column:2 / 4; font-size:.8rem; color:var(--muted); }
+  .safety-box { margin-top:10px; padding:8px 10px; border-radius:10px; max-width:360px; font-size:.9rem;
+                background:#fff4d6; color:#5a4200; border:1px solid #f0d58a; }
+  .safety-box.danger { background:#ffe3dc; color:#6b1d0c; border-color:#f3b3a2; }
+  .safety-box b { display:block; margin-bottom:2px; }
   .sets { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:10px; }
   .set { border:1px solid var(--line); border-radius:10px; padding:10px; display:grid; gap:6px; }
   .set.complete { border-color:var(--legendary); }
@@ -570,6 +575,8 @@ $("upload-form").onsubmit = async (e) => {
     p.textContent = "Top guesses: " + r.top_predictions
       .map((x) => `${x.common_name || (x.label === "other" ? "not on the list" : "???")} ${(x.probability * 100).toFixed(0)}%`).join(", ");
     box.append(h, p);
+    const sb = safetyBox(r);
+    if (sb) box.append(sb);
     if (r.where_when) box.append(whereWhen(r.where_when, (res) => {
       if (res.score) box.querySelector(".score")?.replaceWith(scoreCard(res.score));
       if (res.bond_up?.length) box.querySelector(".ww").append(el("div", "", `Field notes ✓ ${res.bond_up.join(", ")}`));
@@ -582,6 +589,17 @@ $("upload-form").onsubmit = async (e) => {
     loadCollection(); loadFeed();
   } catch (err) { box.textContent = err.message; }
 };
+
+// Safety for animals rated caution or danger: how far back to stay, the
+// animal's own note and the general tip (zoom, stay with an adult).
+function safetyBox(r) {
+  if (!r.safety_tip) return null;
+  const box = el("div", "safety-box" + (r.safety === "danger" ? " danger" : ""));
+  box.append(el("b", "", (r.safety === "danger" ? "⚠️ " : "✋ ") +
+    (r.safe_distance ? `Stay at least ${r.safe_distance} away` : "Look, don't touch")));
+  box.append(el("span", "", [r.safety_note, r.safety_tip].filter(Boolean).join(" ")));
+  return box;
+}
 
 // Photo score: stars for the photo itself, points with the bonuses added.
 const stars = (n) => "★".repeat(n) + "☆".repeat(5 - n);
@@ -760,7 +778,10 @@ function pickPanel(r, box) {
       wrap.remove();
       box.querySelector(".keep")?.remove();
       box.querySelector(".score")?.remove();
+      box.querySelector(".safety-box")?.remove();
       if (res.score) h.after(scoreCard(res.score));
+      const sb = safetyBox(res);
+      if (sb) h.after(sb);
       if (res.matched && !res.album_photo_id) keepWhich(res.species, r.capture_id, r.file, box, res.score && res.score.total);
       loadCollection(); loadFeed();
     } catch (err) {
@@ -810,6 +831,7 @@ async function loadChallenges() {
       bar.append(fill);
       row.append(el("span", "tick", c.done ? "✓" : ""), el("span", "what", c.title),
                  el("span", "muted", `${c.progress} / ${c.goal}`), bar);
+      if (c.safety_tip) row.append(el("span", "safe-tip", "✋ " + c.safety_tip));
       list.append(row);
     }
   } catch (err) { $("week-list").textContent = err.message; }
@@ -837,6 +859,7 @@ async function loadSets() {
         sprites.append(img);
       }
       card.append(head, bar, sprites, el("div", "desc", st.description));
+      if (st.safety_tip) card.append(el("div", "safe-tip", "✋ " + st.safety_tip));
       box.append(card);
     }
   } catch (err) { box.textContent = err.message; }
