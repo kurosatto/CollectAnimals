@@ -432,6 +432,46 @@ def test_login_rate_limit(client):
     assert r.status_code == 429
 
 
+def test_login_limits_per_address_and_long_passwords(client):
+    signup(client, "dora")
+    # Over bcrypt's 72-byte limit: a plain wrong password, not a server error.
+    assert client.post("/auth/login", data={"username": "dora", "password": "x" * 100}).status_code == 401
+    # One address trying many accounts gets stopped too.
+    for i in range(29):
+        assert client.post("/auth/login", data={"username": f"nobody{i}", "password": "wrong-pass"}).status_code == 401
+    r = client.post("/auth/login", data={"username": "dora", "password": "hunter22!"})
+    assert r.status_code == 429
+
+
+def test_signup_limit_per_address(client):
+    for i in range(10):
+        signup(client, f"new{i}")
+    r = client.post("/auth/register", json={"email": "x@example.com", "username": "x11", "password": "hunter22!"})
+    assert r.status_code == 429
+    # Cloudflare's header counts as a different player only on connections from this machine.
+    r = client.post("/auth/register", headers={"CF-Connecting-IP": "203.0.113.9"},
+                    json={"email": "x@example.com", "username": "x11", "password": "hunter22!"})
+    assert r.status_code == 429
+
+
+def test_security_headers(client):
+    r = client.get("/health")
+    assert r.headers["X-Content-Type-Options"] == "nosniff"
+    assert r.headers["X-Frame-Options"] == "DENY"
+
+
+def test_huge_image_dimensions_rejected(client, fake):
+    h = signup(client, "erin")
+    buf = io.BytesIO()
+    Image.new("1", (20000, 20000)).save(buf, "PNG")  # a few KB on disk, 400 MP decoded
+    r = client.post("/captures", headers=h, files={"photo": ("big.png", buf.getvalue(), "image/png")})
+    assert r.status_code == 413
+    buf = io.BytesIO()
+    Image.new("1", (11000, 11000)).save(buf, "PNG")  # 121 MP: past our limit, under Pillow's
+    r = client.post("/captures", headers=h, files={"photo": ("big.png", buf.getvalue(), "image/png")})
+    assert r.status_code == 413
+
+
 def test_states_and_signup_state(client):
     states = {s["code"]: s for s in client.get("/states").json()}
     assert states["CA"]["species_count"] == 100 and states["NC"]["species_count"] == 100
