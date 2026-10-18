@@ -81,3 +81,10 @@ def test_no_weather_when_offline(client, monkeypatch):
     r = client.get("/weather/NC")
     assert r.status_code == 200 and r.json() is None
     assert client.get("/weather/ZZ").status_code == 404
+
+
+def test_too_many_spots_fall_back_to_the_city(client, nws):
+    calls, _ = nws
+    for i in range(25):
+        client.get("/weather/CA", params={"lat": 32.5 + i * .35, "lon": -117})
+    assert any("/points/34.05,-118.24" in c for c in calls)

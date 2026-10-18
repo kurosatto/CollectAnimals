@@ -25,27 +25,29 @@ let habAnimIdx = null;
 fetch("/sprites/anim/index.json").then((r) => (r.ok ? r.json() : null)).then((j) => { habAnimIdx = j; }).catch(() => {});
 const habStill = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const HAB_ROLES = [
-  [/pelican|royal_tern|kingfisher|osprey/, "dive"],
+  [/millipede|centipede|woodlouse/, "walk"],
+  [/pelican|royal_tern|kingfisher|osprey|cormorant|anhinga/, "dive"],
   [/black_skimmer/, "skim"],
   [/sea_otter|by_the_wind/, "float"],
-  [/jellyfish/, "jelly"],
-  [/dolphin|whale|garibaldi|red_drum|sculpin|sea_hare|loggerhead/, "swim"],
+  [/jellyfish|man_o_war/, "jelly"],
+  [/dolphin|whale|manatee|garibaldi|red_drum|snapper|sculpin|sea_hare|loggerhead/, "swim"],
   [/seal|sea_lion|crab/, "beach"],
   [/star|anemone|mussel|barnacle|limpet|urchin|turban_snail|hopkins|scotch_bonnet/, "reef"],
-  [/mallard|wood_duck|goose|swan|trout|hellbender|beaver|river_otter|alligator/, "paddle"],
-  [/pond_slider|pond_turtle|snapping|terrapin|newt|salamander|ensatina/, "shore"],
-  [/heron|egret|ibis|oystercatcher/, "wade"],
+  [/mallard|wood_duck|whistling_duck|shoveler|coot|gallinule|goose|swan|trout|bluegill|sunfish|bass|cichlid|gar$|mosquitofish|hellbender|beaver|coypu|river_otter|alligator/, "paddle"],
+  [/pond_slider|pond_turtle|snapping|terrapin|cooter|softshell|crayfish|newt|salamander|ensatina/, "shore"],
+  [/heron|egret|ibis|crane|stork|spoonbill|limpkin|oystercatcher/, "wade"],
+  [/sanderling|willet|turnstone|killdeer/, "beach"],
   [/hawk|eagle|vulture|condor|osprey|kestrel/, "soar"],
   [/hummingbird/, "hover"],
   [/quail|turkey|roadrunner/, "walk"],
-  [/firefly|swallowtail|monarch|painted_lady|mourning_cloak|fritillary|luna_moth|flame_skimmer|honey_bee/, "flutter"],
-  [/spider|widow/, "dangle"],
+  [/firefly|swallowtail|monarch|painted_lady|mourning_cloak|fritillary|luna_moth|flame_skimmer|honey_bee|bumble_bee|queen|buckeye|hairstreak|white_peacock|longwing|salt_marsh_moth|pondhawk|dasher|pennant|_bat$/, "flutter"],
+  [/spider|widow|orbweaver/, "dangle"],
   [/frog|toad|peeper|grasshopper/, "hop"],
 ];
 const HAB_DEFAULT_ROLE = { bird: "fly", amphibian: "shore", marine: "swim", fish: "paddle" };
 const HAB_FLIERS = new Set(["fly", "soar", "hover", "flutter", "dive", "skim"]);
 // Big birds glide between bursts of slow wingbeats.
-const HAB_GLIDERS = /pelican|gull|heron|egret|goose|swan|vulture|condor|eagle|osprey|hawk|ibis|(^|_)tern|skimmer/;
+const HAB_GLIDERS = /pelican|gull|heron|egret|crane|stork|spoonbill|goose|swan|vulture|condor|eagle|osprey|hawk|ibis|(^|_)tern|skimmer/;
 // Sea birds rest and sleep on the sea stack (or the lighthouse) instead of the tree.
 const HAB_SEABIRDS = /gull|pelican|royal_tern|oystercatcher|black_skimmer|osprey|cormorant/;
 // Ground animals that look around while they stand still.
@@ -171,6 +173,8 @@ const HAB_PERCH_SCALE = .72;
 // Spots on the state's coastal landmark where sea birds stand: [x, feet y].
 // California's sea stack: two on the flat top, one on the ledge, one on the
 // small rock beside it. North Carolina's lighthouse: the gallery and the base.
+// Texas's windmill: its platform, the tail vane and the stock tank below.
+// Florida's mangrove island: the top of its canopy.
 function habPerches(L, state) {
   if (state === "CA") {
     const sx = L.w - Math.round(L.w * .1), top = L.water - 44;
@@ -179,6 +183,16 @@ function habPerches(L, state) {
   if (state === "NC") {
     const lx = L.sea - 12, topY = L.water - 58;
     return [[lx - 4, topY - 1], [lx + 5, topY - 1], [lx - 6, L.water], [lx + 6, L.water]];
+  }
+  if (state === "TX") {
+    // The ranch windmill: the platform under the wheel and the tail vane.
+    const wx = L.land - 34, top = L.water - 52;
+    return [[wx - 4, top + 14], [wx + 4, top + 14], [wx + 15, top], [wx - 7, L.water + 8]];
+  }
+  if (state === "FL") {
+    // The mangrove island just offshore: along the top of its canopy.
+    const mx = L.sea + Math.round((L.w - L.sea) * .45), top = L.water - 14;
+    return [[mx - 12, top + 3], [mx - 3, top], [mx + 7, top + 1], [mx + 15, top + 4]];
   }
   return [];
 }
@@ -671,6 +685,8 @@ function habLeave() {
 const HAB_SHOWCASE = {
   CA: { slug: "brown_pelican", common_name: "Brown Pelican", category: "bird", rarity: "common" },
   NC: { slug: "northern_cardinal", common_name: "Northern Cardinal", category: "bird", rarity: "common" },
+  TX: { slug: "northern_mockingbird", common_name: "Northern Mockingbird", category: "bird", rarity: "common" },
+  FL: { slug: "roseate_spoonbill", common_name: "Roseate Spoonbill", category: "bird", rarity: "uncommon" },
   // States without their own pick yet: a robin, found in every state.
   default: { slug: "american_robin", common_name: "American Robin", category: "bird", rarity: "common" },
 };
@@ -1076,7 +1092,11 @@ function habTinted(img, slug, phase) {
 // Each state gets its own scenery: California has the snowy Sierra behind golden
 // hills dotted with oaks, a coast live oak, poppies, a sea stack and kelp; North
 // Carolina has the blue ridges of the mountains over forested hills, a longleaf
-// pine, dogwood blossoms, dunes with sea oats and a striped lighthouse.
+// pine, dogwood blossoms, dunes with sea oats and a striped lighthouse; Texas has
+// flat-topped mesas over Hill Country, a live oak, bluebonnets and Indian
+// paintbrush, prickly pear and a ranch windmill by the Gulf; Florida is flat
+// sawgrass with cypress domes and cabbage palms, coreopsis, a palm for the
+// roosting tree, a mangrove island offshore and a rocket on its launch pad.
 const HAB_SCENES = {
   CA: { far: ["#c99b48", "#dcb35e", "#ecc875", "#f7dc95"], near: ["#7d8a3c", "#97a24a", "#aeb65a", "#c6c977"],
         meadow: ["#5f9a3d", "#77b04a", "#8fc35a", "#a8d36d"], dots: "oak", tree: "oak",
@@ -1084,6 +1104,12 @@ const HAB_SCENES = {
   NC: { far: ["#3f7a4a", "#4f8d55", "#62a061", "#79b473"], near: ["#2f6a3c", "#3d7d46", "#4f9150", "#64a55e"],
         meadow: ["#56943c", "#6aaa48", "#80bd57", "#98cf69"], dots: "forest", tree: "pine",
         flowers: [["#ffffff", "#f3e6b0"], ["#ffffff", "#f3e6b0"], ["#f6b8cf", "#ffffff"], ["#ffd84d", "#fff2a0"]] },
+  TX: { far: ["#8f9550", "#a3a75b", "#b8b969", "#cccb7c"], near: ["#647f36", "#789341", "#8ca64d", "#a2b85e"],
+        meadow: ["#678f38", "#7da344", "#92b652", "#a8c765"], dots: "oak", tree: "oak",
+        flowers: [["#3a58d0", "#ffffff"], ["#3a58d0", "#ffffff"], ["#e4502c", "#ffa860"], ["#ffd84d", "#fff2a0"]] },
+  FL: { far: ["#6f8f5a", "#7f9f63", "#90ae6e", "#a3bf7c"], near: ["#7a9a48", "#8eac52", "#a2bd5e", "#b8cd70"],
+        meadow: ["#5f9a3d", "#76ae48", "#8cc156", "#a3d26a"], dots: "palm", tree: "palm", flat: true,
+        flowers: [["#ffd23a", "#c8641e"], ["#ffd23a", "#c8641e"], ["#f27aa8", "#ffe0ec"], ["#b48cff", "#f0e8ff"]] },
   default: { far: ["#6f9e60", "#82b370", "#97c483", "#b0d69a"], near: ["#4f8d43", "#62a250", "#78b55e", "#90c771"],
              meadow: ["#5f9a3d", "#77b04a", "#8fc35a", "#a8d36d"], dots: "round", tree: "round",
              flowers: [["#ffffff", "#ffe9a0"], ["#ffd84d", "#fff2a0"], ["#f27aa8", "#ffc4dc"], ["#b48cff", "#e0d0ff"]] },
@@ -1190,9 +1216,46 @@ function habBackground(L, phase, state) {
         for (let y = h; y < foot; y++) img.set(x, y, y === h ? pal[1] : ramp(pal, .7 - (y - h) / 30, x, y));
       }
     });
+  } else if (state === "FL") {
+    // Cypress domes and cabbage palms on the far edge of the sawgrass.
+    const dome = P("#3d5a44", "#4b6b4f", "#5b7d5a", "#6d8f66"), far = pxLayer(W, H);
+    for (let i = 0; i < 9; i++) {
+      const x = Math.round((i + .3 + hash2(i, 41) * .5) * coastEnd / 9), rx = 10 + Math.round(hash2(i, 42) * 12);
+      pxBlob(far, x, 152, rx, 7 + Math.round(hash2(i, 43) * 6), dome, { flat: true, rough: .7, grain: 1, seed: i });
+    }
+    far.onto(img);
+    const pf = P("#4f7a4a", "#6a9658"), trunk = P("#7a6a52");
+    for (let i = 0; i < 12; i++) {
+      const x = Math.round(hash2(i, 44) * (coastEnd - 10)) + 4, h = 10 + Math.round(hash2(i, 45) * 6), y0 = 152;
+      for (let j = 0; j < h; j++) img.set(x, y0 - j, atmo(trunk[0], .2));
+      for (const [dx, dy] of [[-3, 1], [-2, 0], [-1, -1], [1, -1], [2, 0], [3, 1], [0, -2], [-4, 2], [4, 2]])
+        img.set(x + dx, y0 - h + dy, atmo(pf[dy < 0 ? 1 : 0], .2));
+    }
+  } else if (state === "TX") {
+    // Mesas and buttes: flat caprock tops over red-and-tan banded cliffs.
+    const rock = P("#9a5e44", "#b47456", "#c98c68", "#dca77f"), cap = P("#b88e6a", "#e6cba4");
+    const hm = [];
+    for (let x = -1; x <= coastEnd + 1; x++) {
+      // Thresholded noise gives flat tops with steep sides; two layers make a big
+      // mesa and smaller buttes in front of the haze.
+      const n = vnoise(x / 30, 0, 21), k = clamp01((n - .45) * 9), k2 = clamp01((vnoise(x / 13, 0, 24) - .62) * 10);
+      const step = k * k * (3 - 2 * k), step2 = k2 * k2 * (3 - 2 * k2);
+      hm[x + 1] = fade(x, Math.round(140 - Math.max(step * 34 + (n > .68 ? 7 : 0), step2 * 22)));
+    }
+    for (let x = 0; x < coastEnd; x++) {
+      const h = hm[x + 1], s = hm[x + 2] - hm[x];
+      if (h >= 139) continue;
+      for (let y = h; y < foot; y++) {
+        const band = Math.floor((y - 100 + vnoise(x / 20, 0, 22) * 2) / 4) % 3;
+        const lit = s > 1 ? -.3 : s < -1 ? .2 : 0;
+        const v = .66 + lit - band * .14 + (vnoise(x / 5, y / 3, 23) - .5) * .22 - (y - h) * .006;
+        img.set(x, y, atmo(y - h < 2 && Math.abs(s) < 2 ? cap[1 - (y - h)] : ramp(rock, v, x, y), .16));
+      }
+    }
   }
-  // Hills, far then near, each with a lit top edge.
-  const hills = [[132, 12, .021, sc.far, 20], [150, 9, .034, sc.near, 21]];
+  // Hills, far then near, each with a lit top edge (low and gentle in flat states).
+  const hills = sc.flat ? [[150, 3, .021, sc.far, 20], [158, 2, .034, sc.near, 21]]
+    : [[132, 12, .021, sc.far, 20], [150, 9, .034, sc.near, 21]];
   hills.forEach(([base, amp, k, hex, seed], li) => {
     const pal = P(...hex);
     for (let x = 0; x < L.sea - 10; x++) {
@@ -1206,7 +1269,7 @@ function habBackground(L, phase, state) {
     }
     // Trees on the hills: little oaks, a dense forest, or round trees.
     const dots = sc.dots, tl = pxLayer(W, H), tr = mulberry(31 + li);
-    const n = dots === "forest" ? (li ? 70 : 90) : dots === "oak" ? (li ? 14 : 9) : (li ? 10 : 6);
+    const n = dots === "forest" ? (li ? 70 : 90) : dots === "oak" ? (li ? 14 : 9) : dots === "palm" ? (li ? 12 : 8) : (li ? 10 : 6);
     const leaf = dots === "oak" ? P("#3f5a26", "#526f30", "#67853b", "#7f9c4a")
       : dots === "forest" ? P("#1f4f2c", "#2b6236", "#387542", "#4a8a4f") : P("#2f6a34", "#3f7f41", "#55964f", "#6dad60");
     for (let i = 0; i < n; i++) {
@@ -1223,6 +1286,12 @@ function habBackground(L, phase, state) {
           const w = Math.round(j * .45);
           for (let dx = -w; dx <= w; dx++) tl.set(x + dx, y - 8 * s + j, ramp(leaf, .75 - (dx + w) / (2 * w + 1) * .7, x + dx, y + j));
         }
+      } else if (dots === "palm") {
+        // A cabbage palm: a thin trunk and a burst of fronds.
+        const h = Math.round(9 * s + tr() * 4);
+        for (let j = 0; j < h; j++) tl.set(x, y - j, P("#7a6a52"));
+        for (const [dx, dy] of [[-4, 1], [-3, 0], [-2, -1], [-1, -1], [1, -1], [2, -1], [3, 0], [4, 1], [0, -2], [-1, -3], [1, -3], [-5, 2], [5, 2]])
+          tl.set(x + dx, y - h + dy, leaf[dy < -1 ? 3 : dy < 0 ? 2 : 1]);
       } else pxBlob(tl, x, y - 2, Math.round(4 * s + 1), Math.round(4 * s + 1), leaf, { rough: .4, seed: i });
     }
     tl.onto(img, li ? P("#22401f") : undefined);
@@ -1393,6 +1462,93 @@ function habBackground(L, phase, state) {
     lh.set(lx, topY - 11, black[1]);
     for (let y = L.water; y < L.water + 4; y++) for (let dx = -8; dx <= 8; dx++) lh.set(lx + dx, y, ramp(P("#7a3a2a", "#9a4c36", "#b8634a"), .8 - (dx + 8) / 17, lx + dx, y));
     lh.onto(img, P("#14161b"));
+  } else if (state === "FL") {
+    // A mangrove island just offshore: a dense canopy over arching prop roots.
+    const mg = pxLayer(W, H), mx = L.sea + Math.round((W - L.sea) * .45), top = L.water - 14;
+    const root = P("#4a3a2c", "#6a5440", "#8a7058"), leaf = P("#1f4a2a", "#2b5f34", "#3b7640", "#4f8f4c", "#6aa85a");
+    for (let k = -18; k <= 18; k += 4) {
+      // each root arches out from the trunks and down into the water
+      for (let t = 0; t <= 1; t += .06) {
+        const x = Math.round(mx + k * .4 + (k * .6) * t), y = Math.round(top + 10 + t * (L.water + 4 - top - 10) - Math.sin(t * Math.PI) * 3);
+        mg.set(x, y, root[t < .5 ? 2 : 1]);
+      }
+    }
+    for (const [dx, dy, rx, ry] of [[-10, 6, 9, 6], [8, 6, 10, 6], [-2, 2, 11, 7], [14, 9, 6, 4], [-16, 9, 5, 4]])
+      pxBlob(mg, mx + dx, top + dy, rx, ry, leaf, { rough: .9, grain: 1, seed: dx + 40 });
+    mg.onto(img, P("#132a18"));
+    const foam = P("#e9f6ff");
+    for (let dx = -22; dx <= 22; dx++) if (hash2(dx, 47) > .45) img.set(mx + dx, L.water + 4 + (hash2(dx, 48) > .7 ? 1 : 0), foam);
+    // Cape Canaveral: a white rocket on its launch pad beside a red gantry tower.
+    const rk = pxLayer(W, H), rx = L.land - 30, pad = L.water + 10, rtop = L.water - 62;
+    const white = P("#a8acb4", "#cfd3da", "#eceef2", "#ffffff"), red = P("#8a2a22", "#b83a2e", "#d8574a");
+    const steel = P("#3a3a40", "#55565e");
+    for (let y = rtop + 6; y < pad; y++) {
+      const hw = y < rtop + 14 ? Math.round((y - rtop - 6) * .45) : 4;
+      for (let dx = -hw; dx <= hw; dx++) rk.set(rx + dx, y, ramp(white, .85 - (dx + hw) / (2 * hw + 1) * .7, rx + dx, y));
+      if ((y - rtop) % 16 === 0) for (let dx = -hw; dx <= hw; dx++) rk.set(rx + dx, y, steel[1]);
+    }
+    for (let y = rtop; y < rtop + 6; y++) rk.set(rx, y, red[1]);
+    for (let y = rtop + 6; y < rtop + 12; y++) for (let dx = -2; dx <= 2; dx++) if (Math.abs(dx) <= (y - rtop - 6) * .45) rk.set(rx + dx, y, ramp(red, .8 - (dx + 2) / 5, rx + dx, y));
+    for (let y = rtop + 30; y < rtop + 36; y++) for (let dx = -4; dx <= 4; dx++) rk.set(rx + dx, y, ramp(P("#2a4aa0", "#3a64c8"), .8 - (dx + 4) / 9, rx + dx, y));
+    // fins at the bottom
+    for (let k = 0; k < 6; k++) { rk.set(rx - 5 - (k >> 1), pad - 6 + k, white[1]); rk.set(rx + 5 + (k >> 1), pad - 6 + k, white[1]); }
+    // the gantry: a lattice tower with arms reaching to the rocket
+    const gx = rx + 12;
+    for (let y = rtop + 4; y <= pad; y++) {
+      rk.set(gx - 3, y, red[0]); rk.set(gx + 3, y, red[1]);
+      if ((y - rtop) % 6 === 0) for (let dx = -3; dx <= 3; dx++) rk.set(gx + dx, y, red[2]);
+      if ((y - rtop) % 6 === 3) { rk.set(gx - 1, y, red[0]); rk.set(gx + 1, y, red[0]); }
+    }
+    for (const ay of [rtop + 16, rtop + 34]) for (let x = rx + 5; x < gx - 3; x++) rk.set(x, ay, steel[0]);
+    for (let dx = -10; dx <= 18; dx++) for (let y = pad; y < pad + 3; y++) rk.set(rx + dx, y, ramp(P("#7a7a80", "#9a9aa0", "#b8b8bc"), .8 - (y - pad) * .3, rx + dx, y));
+    rk.onto(img, P("#1e1e24"));
+  } else if (state === "TX") {
+    // Prickly pear: clumps of flat pads with yellow flowers and red fruit.
+    const pad = P("#3d6a32", "#4f8240", "#669a4c", "#82b45e"), cac = pxLayer(W, H);
+    for (const [fx, fy, n] of [[.26, 262, 4], [.52, 196, 3], [.58, 254, 4], [.07, 252, 3]]) {
+      const cx = Math.round(L.w * fx);
+      if (Math.abs(cx - L.pond.x) < L.pond.rx + 12 && Math.abs(fy - L.pond.y) < 22) continue;
+      const pads = [[0, 0], [-5, -5], [5, -6], [1, -11], [-8, 1], [8, 0]].slice(0, n + 1);
+      pads.forEach(([dx, dy], i) => pxBlob(cac, cx + dx, fy + dy - 5, 3, 4 + (i === 0 ? 1 : 0), pad, { seed: i + fx * 10 }));
+      pads.forEach(([dx, dy], i) => {
+        if (i % 2) { cac.set(cx + dx, fy + dy - 10, P("#ffd94a")); cac.set(cx + dx + 1, fy + dy - 10, P("#ffe98a")); }
+        else if (i) cac.set(cx + dx + 2, fy + dy - 9, P("#c8304a"));
+        for (const [sx, sy] of [[-1, -6], [1, -4], [-2, -3], [2, -7]]) if (hash2(dx + sx, dy + sy, i) > .4) cac.set(cx + dx + sx, fy + dy + sy, P("#e8e4b8"));
+      });
+    }
+    cac.onto(img, P("#22401f"));
+    // Bluebonnets: spikes of blue with a white tip, in drifts across the meadow.
+    const bb = P("#2c3e9e", "#3a58d0", "#6f8cf0"), tip = P("#ffffff");
+    for (let i = 0; i < 70; i++) {
+      const x = Math.floor(hash2(i, 31) * (L.land - 10)) + 4, y = L.water + 14 + Math.floor(hash2(i, 32) * (HAB_H - L.water - 20));
+      if (((x - L.pond.x) / (L.pond.rx + 6)) ** 2 + ((y - L.pond.y) / (L.pond.ry + 6)) ** 2 < 1) continue;
+      img.set(x, y + 1, blade[0]); img.set(x, y + 2, blade[0]);
+      img.set(x, y, bb[0]); img.set(x - 1, y - 1, bb[1]); img.set(x + 1, y - 1, bb[1]); img.set(x, y - 2, bb[2]); img.set(x, y - 3, tip);
+    }
+    // A ranch windmill and its stock tank by the coast.
+    const wm = pxLayer(W, H), wx = L.land - 34, top = L.water - 52, gnd = L.water + 12;
+    const steel = P("#3a3a40", "#55565e", "#74767e", "#9a9ca4");
+    for (let y = top + 14; y <= gnd; y++) {
+      const spread = Math.round((y - top - 14) * .16);
+      wm.set(wx - 2 - spread, y, steel[1]); wm.set(wx + 2 + spread, y, steel[2]);
+      if ((y - top) % 9 === 0) for (let dx = -1 - spread; dx <= 1 + spread; dx++) wm.set(wx + dx, y, steel[1]);
+      if ((y - top) % 9 === 4) { wm.set(wx - spread, y, steel[0]); wm.set(wx + spread, y, steel[0]); }
+    }
+    for (let dx = -6; dx <= 6; dx++) { wm.set(wx + dx, top + 14, steel[2]); wm.set(wx + dx, top + 15, steel[0]); }
+    // The wheel: blades around a hub.
+    const hubX = wx - 1, hubY = top + 4;
+    for (let a = 0; a < Math.PI * 2; a += Math.PI / 9) for (let rr = 3; rr <= 10; rr++) {
+      const x = Math.round(hubX + Math.cos(a) * rr), y = Math.round(hubY + Math.sin(a) * rr);
+      wm.set(x, y, rr === 10 ? steel[0] : steel[2 + (Math.cos(a - 2.3) > 0 ? 1 : 0)]);
+    }
+    for (let a = 0; a < Math.PI * 2; a += .1) wm.set(Math.round(hubX + Math.cos(a) * 10.5), Math.round(hubY + Math.sin(a) * 10.5), steel[0]);
+    pxBlob(wm, hubX, hubY, 2, 2, steel);
+    // The tail vane sticking out behind, with a red stripe.
+    for (let dx = 2; dx <= 12; dx++) wm.set(wx + dx, hubY, steel[1]);
+    for (let y = hubY - 4; y <= hubY + 2; y++) for (let dx = 12; dx <= 18; dx++) wm.set(wx + dx, y, y === hubY - 1 ? P("#c8302a") : ramp(steel, .8 - (dx - 12) / 10, wx + dx, y));
+    // Stock tank: a round galvanised tank with water in it.
+    for (let dx = -12; dx <= -2; dx++) for (let y = gnd - 4; y <= gnd + 1; y++) wm.set(wx + dx, y, y === gnd - 4 ? P("#7fc0e8") : ramp(steel, .9 - (dx + 12) / 12, wx + dx, y));
+    wm.onto(img, P("#1e1e24"));
   }
   // The tree for roosting birds and a spider's thread: a big leafy oak, or in
   // North Carolina a longleaf pine.
@@ -1400,7 +1556,30 @@ function habBackground(L, phase, state) {
   for (let y = ground - 5; y <= ground + 6; y++) for (let x = tx - 30; x <= tx + 40; x++)
     if (((x - tx - 6) / 34) ** 2 + ((y - ground) / 6) ** 2 <= 1 && dith(x, y, .5)) img.set(x, y, pxMix(img.get(x, y), 0x1e3a14, .45));
   const bark = P("#4a3020", "#6e4a2e", "#8f6840", "#a98050");
-  if (kind === "pine") {
+  if (kind === "palm") {
+    // A cabbage palm: a tall, slightly curving trunk with crossed leaf bases,
+    // and a round burst of fan fronds drooping at the tips.
+    const top = 106, cx = (y) => tx + Math.round(Math.sin((ground - y) / 60) * 5);
+    for (let y = top; y < 196; y++) {
+      const hw = 2 + (y > 186 ? 1 : 0), x0 = cx(y);
+      for (let dx = -hw; dx <= hw; dx++) {
+        const v = .8 - (dx + hw) / (2 * hw + 1) * .7 + ((y + (dx > 0 ? 2 : 0)) % 4 === 0 ? -.25 : 0);
+        tree.set(x0 + dx, y, ramp(bark, v, x0 + dx, y));
+      }
+    }
+    const frond = P("#1e4a2c", "#2a6036", "#377642", "#4a8e4e", "#62a85e"), hx = cx(top), hy = top;
+    for (let a = -Math.PI; a <= Math.PI; a += Math.PI / 11) {
+      const len = 22 + hash2(Math.round(a * 10), 5, 46) * 8;
+      for (let t = 2; t < len; t += .5) {
+        const droop = Math.max(0, t - len * .45) ** 1.6 * .05;
+        const x = Math.round(hx + Math.cos(a) * t), y = Math.round(hy + Math.sin(a) * t * .55 + droop + (Math.cos(a) ** 2) * t * .1);
+        const wdt = t < len * .3 ? 1 : t < len * .8 ? 2 : 1;
+        for (let k = 0; k < wdt; k++) tree.set(x, y + k, frond[Math.sin(a) < -.2 ? 4 - k : Math.sin(a) < .3 ? 3 - k : 2 - k]);
+      }
+    }
+    pxBlob(tree, hx, hy + 2, 4, 3, P("#5a4a32", "#7a6444"), { rough: .5 });
+    tree.onto(img, P("#13281a"));
+  } else if (kind === "pine") {
     for (let y = 76; y < 196; y++) {
       const hw = 2 + (y > 186 ? 2 : 0);
       for (let dx = -hw; dx <= hw; dx++) {

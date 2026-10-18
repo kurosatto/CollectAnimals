@@ -69,9 +69,8 @@ data class UiState(
     val accountError: String? = null,
     // species/sets.json; each state shows its own sets (works offline too).
     val sets: SetCatalog = SetCatalog(emptyList()),
-    // Signed in: this week's challenges and the buddy (both live on the server).
+    // Signed in: this week's challenges (they live on the server).
     val week: Week? = null,
-    val buddy: Buddy? = null,
 )
 
 class GameViewModel(app: Application) : AndroidViewModel(app) {
@@ -129,7 +128,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 refreshCollection()
             } catch (e: Online.ApiError) {
                 // Signed out by the server (401): back to the badges saved on this phone.
-                if (!Online.signedIn) _state.update { it.copy(account = null, collection = store.load(it.stateCode), week = null, buddy = null) }
+                if (!Online.signedIn) _state.update { it.copy(account = null, collection = store.load(it.stateCode), week = null) }
             }
         }
     }
@@ -140,20 +139,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         _state.update { it.copy(collection = c) }
         // Extras: the game works without them if the server can't send them.
         val week = runCatching { Online.challenges() }.getOrNull()
-        val buddy = runCatching { Online.buddy() }.getOrNull()
-        _state.update { it.copy(week = week, buddy = buddy) }
-    }
-
-    /** "Make my buddy" on a captured animal's page. */
-    fun setBuddy(slug: String) {
-        viewModelScope.launch {
-            try {
-                val b = Online.setBuddy(slug)
-                _state.update { it.copy(buddy = b) }
-            } catch (e: Exception) {
-                _state.update { it.copy(error = e.message) }
-            }
-        }
+        _state.update { it.copy(week = week) }
     }
 
     fun signIn(ident: String, password: String) = account { Online.login(ident.trim(), password) }
@@ -184,7 +170,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     /** Back to playing offline, with the badges saved on this phone. */
     fun signOut() {
         Online.logout()
-        _state.update { it.copy(account = null, collection = store.load(it.stateCode), result = null, week = null, buddy = null) }
+        _state.update { it.copy(account = null, collection = store.load(it.stateCode), result = null, week = null) }
     }
 
     fun setServer(url: String?) {

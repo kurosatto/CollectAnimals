@@ -19,7 +19,14 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(password: str, hashed: str) -> bool:
-    return bcrypt.checkpw(password.encode(), hashed.encode())
+    try:
+        return bcrypt.checkpw(password.encode(), hashed.encode())
+    except ValueError:  # over bcrypt's 72-byte limit, so it can't be anyone's password
+        return False
+
+
+# Checked against when the account doesn't exist, so failed logins take the same time.
+DUMMY_HASH = hash_password("not-a-real-password")
 
 
 def create_token(user_id: int) -> str:
