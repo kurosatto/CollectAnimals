@@ -42,7 +42,6 @@ NOTES = [
 NOTE_TITLES = {n[0]: n[1] for n in NOTES}
 # The notes for animals with a safety rating.
 SAFE_NOTES = {"first", "star"}
-SAFE_TIP = "Watch from far away with zoom, and stay with an adult."
 GOALS = {"first": 1, "days": DAYS_GOAL, "times": TIMES_GOAL, "places": PLACES_GOAL,
          "seasons": SEASONS_GOAL, "star": 1}
 
@@ -130,8 +129,7 @@ def notes(sightings: list[Sighting], safety: str | None = "none") -> list[Note]:
         "star": 1 if any((s.stars or 0) >= GREAT_SHOT_STARS for s in sightings) else 0,
     }
     keep = SAFE_NOTES if careful(safety) else set(GOALS)
-    return [Note(i, title, f"{hint}. {SAFE_TIP}" if careful(safety) and i == "star" else hint,
-                 min(progress[i], GOALS[i]), GOALS[i]) for i, title, hint in NOTES if i in keep]
+    return [Note(i, title, hint, min(progress[i], GOALS[i]), GOALS[i]) for i, title, hint in NOTES if i in keep]
 
 
 def level(ns: list[Note]) -> int:

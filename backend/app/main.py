@@ -722,7 +722,7 @@ def _safety_out(slug: str, state_code: str | None) -> dict:
     if not bonds.careful(d.get("safety")):
         return {}
     return {"safety": d["safety"], "safe_distance": d.get("safe_distance") or None,
-            "safety_note": d.get("safety_note") or None, "safety_tip": bonds.SAFE_TIP}
+            "safety_note": d.get("safety_note") or None}
 
 
 def _score_capture(model, capture: Capture, slug: str, rarity: str, image: Image.Image, state_code: str,
@@ -1072,9 +1072,8 @@ def my_sets(state: str | None = Query(None), user: User = Depends(current_user),
         rows = [SetSpecies(species=species_out(members[x].species, members[x].species_id in revealed, members[x]),
                            caught=members[x].species_id in caught) for x in s.slugs]
         n = sum(r.caught for r in rows)
-        careful = any(bonds.careful(dex.details(x, code).get("safety")) for x in s.slugs)
         out.append(SetOut(id=s.id, title=s.title, description=s.description, caught=n, total=len(rows),
-                          complete=n == len(rows), species=rows, safety_tip=bonds.SAFE_TIP if careful else None))
+                          complete=n == len(rows), species=rows))
     return SetsOut(state=code, sets=out)
 
 
@@ -1104,11 +1103,7 @@ def my_challenges(user: User = Depends(current_user), db: Session = Depends(get_
     out = []
     for ch in challenges:
         p = goals.progress(ch, week, likes)
-        pool = ([m.species.slug for m in members.values() if m.species.category == ch.category]
-                if ch.kind == "category" else list(ch.slugs))
-        careful = any(bonds.careful(dex.details(x, state.code).get("safety")) for x in pool)
-        out.append(ChallengeOut(id=ch.id, title=ch.title, progress=min(p, ch.goal), goal=ch.goal, done=p >= ch.goal,
-                                safety_tip=bonds.SAFE_TIP if careful else None))
+        out.append(ChallengeOut(id=ch.id, title=ch.title, progress=min(p, ch.goal), goal=ch.goal, done=p >= ch.goal))
     return ChallengesOut(state=state.code, week_start=start, week_end=end, challenges=out,
                          done=sum(c.done for c in out))
 
