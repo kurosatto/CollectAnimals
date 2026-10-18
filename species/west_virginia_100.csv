@@ -14,7 +14,6 @@ northern_cardinal,Northern Cardinal,Cardinalis cardinalis,bird,common
 eastern_ratsnake,Central Ratsnake,Pantherophis alleghaniensis,reptile,common
 pipevine_swallowtail,Pipevine Swallowtail,Battus philenor,invertebrate,common
 allegheny_mountain_dusky_salamander,Allegheny Mountain Dusky Salamander,Desmognathus ochrophaeus,amphibian,common
-eastern_black_legged_tick,Eastern Black-legged Tick,Ixodes scapularis,invertebrate,common
 isabella_tiger_moth,Isabella Tiger Moth,Pyrrharctia isabella,invertebrate,common
 eastern_gray_squirrel,Eastern Gray Squirrel,Sciurus carolinensis,mammal,common
 mallard,Mallard,Anas platyrhynchos,bird,common
@@ -29,6 +28,7 @@ northern_slimy_salamander,Northern Slimy Salamander,Plethodon glutinosus,amphibi
 turkey_vulture,Turkey Vulture,Cathartes aura,bird,common
 eastern_cottontail,Eastern Cottontail,Sylvilagus floridanus,mammal,common
 mourning_dove,Mourning Dove,Zenaida macroura,bird,common
+luna_moth,North American Luna Moth,Actias luna,invertebrate,common
 american_goldfinch,American Goldfinch,Spinus tristis,bird,common
 northern_dusky_salamander,Northern Dusky Salamander,Desmognathus fuscus,amphibian,common
 groundhog,Groundhog,Marmota monax,mammal,common
@@ -92,10 +92,10 @@ green_sunfish,Green Sunfish,Lepomis cyanellus,marine,rare
 greenhouse_millipede,Greenhouse Millipede,Oxidus gracilis,marine,rare
 fantail_darter,Fantail Darter,Etheostoma flabellare,marine,rare
 rock_bass,Rock Bass,Ambloplites rupestris,marine,rare
-domestic_cat,Domestic Cat,Felis catus,mammal,rare
 striped_skunk,Striped Skunk,Mephitis mephitis,mammal,rare
-northern_short_tailed_shrew,Northern Short-tailed Shrew,Blarina brevicauda,mammal,legendary
+northern_short_tailed_shrew,Northern Short-tailed Shrew,Blarina brevicauda,mammal,rare
 muskrat,Muskrat,Ondatra zibethicus,mammal,legendary
 bobcat,Bobcat,Lynx rufus,mammal,legendary
 north_american_river_otter,North American River Otter,Lontra canadensis,mammal,legendary
 gray_fox,Gray Fox,Urocyon cinereoargenteus,mammal,legendary
+american_mink,American Mink,Neogale vison,mammal,legendary

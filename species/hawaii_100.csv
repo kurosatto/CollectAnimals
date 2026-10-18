@@ -39,43 +39,50 @@ wedgetail_triggerfish,Wedgetail Triggerfish,Rhinecanthus rectangulus,marine,comm
 dusky_surgeonfish,Dusky Surgeonfish,Acanthurus nigrofuscus,marine,common
 pacific_orange_spine_unicornfish,Pacific Orange-spine Unicornfish,Naso lituratus,marine,common
 blackspot_sergeant,Blackspot Sergeant,Abudefduf sordidus,marine,common
+spotted_boxfish,Spotted Boxfish,Ostracion meleagris,marine,common
+red_pencil_urchin,Red Pencil Urchin,Heterocentrotus mamillatus,marine,common
 laysan_albatross,Laysan Albatross,Phoebastria immutabilis,bird,common
 western_honey_bee,Western Honey Bee,Apis mellifera,invertebrate,common
 gulf_fritillary,Gulf Fritillary,Dione vanillae,invertebrate,common
 hawaiian_coot,Hawaiian Coot,Fulica alai,bird,common
 wandering_tattler,Wandering Tattler,Tringa incana,bird,common
 red_footed_booby,Red-footed Booby,Sula sula,bird,common
+hawaiian_spotted_toby,Hawaiian Spotted Toby,Canthigaster jactator,marine,common
 house_finch,House Finch,Haemorhous mexicanus,bird,common
-grey_francolin,Grey Francolin,Ortygornis pondicerianus,bird,common
-blue_billed_white_tern,Blue-billed White-Tern,Gygis candida,bird,common
-wedge_tailed_shearwater,Wedge-tailed Shearwater,Ardenna pacifica,bird,common
+grey_francolin,Grey Francolin,Ortygornis pondicerianus,bird,uncommon
+blue_billed_white_tern,Blue-billed White-Tern,Gygis candida,bird,uncommon
+wedge_tailed_shearwater,Wedge-tailed Shearwater,Ardenna pacifica,bird,uncommon
 monarch,Monarch,Danaus plexippus,invertebrate,uncommon
+yellowstripe_goatfish,Yellowstripe Goatfish,Mulloidichthys flavolineatus,marine,uncommon
+raccoon_butterflyfish,Raccoon Butterflyfish,Chaetodon lunula,marine,uncommon
+zebra_blenny,Zebra Blenny,Istiblennius zebra,marine,uncommon
 kalij_pheasant,Kalij Pheasant,Lophura leucomelanos,bird,uncommon
+whitemouth_moray,Whitemouth Moray,Gymnothorax meleagris,marine,uncommon
 asian_spinybacked_orbweaver,Asian Spinybacked Orbweaver,Thelacantha brevispina,invertebrate,uncommon
+threadfin_butterflyfish,Threadfin Butterflyfish,Chaetodon auriga,marine,uncommon
 ruddy_turnstone,Ruddy Turnstone,Arenaria interpres,bird,uncommon
 black_witch,Black Witch,Ascalapha odorata,invertebrate,uncommon
 i_iwi,ʻIʻiwi,Drepanis coccinea,bird,uncommon
 great_frigatebird,Great Frigatebird,Fregata minor,bird,uncommon
+black_triggerfish,Black Triggerfish,Melichthys niger,marine,uncommon
 yellow_fronted_canary,Yellow-fronted Canary,Crithagra mozambica,bird,uncommon
 hawaiian_black_nerite,Hawaiian Black Nerite,Nerita picea,invertebrate,uncommon
 rose_ringed_parakeet,Rose-ringed Parakeet,Psittacula krameri,bird,uncommon
 asian_house_gecko,Asian House Gecko,Hemidactylus frenatus,reptile,uncommon
 humpback_whale,Humpback Whale,Megaptera novaeangliae,mammal,uncommon
 hawaiian_snakehead_cowrie,Hawaiian Snakehead Cowrie,Monetaria caputophidii,invertebrate,uncommon
-domestic_cat,Domestic Cat,Felis catus,mammal,uncommon
 dotted_periwinkle,Dotted Periwinkle,Littoraria pintado,invertebrate,uncommon
 chestnut_munia,Chestnut Munia,Lonchura atricapilla,bird,uncommon
 red_billed_leiothrix,Red-billed Leiothrix,Leiothrix lutea,bird,uncommon
 hawai_i_amakihi,Hawaiʻi ʻAmakihi,Chlorodrepanis virens,bird,uncommon
-red_junglefowl,Red Junglefowl,Gallus gallus,bird,uncommon
 common_coqui,Common Coqui,Eleutherodactylus coqui,amphibian,uncommon
-spinner_dolphin,Spinner Dolphin,Stenella longirostris,mammal,uncommon
-red_tailed_tropicbird,Red-tailed Tropicbird,Phaethon rubricauda,bird,uncommon
-scaly_breasted_munia,Scaly-breasted Munia,Lonchura punctulata,bird,uncommon
-valley_carpenter_bee,Valley Carpenter Bee,Xylocopa sonorina,invertebrate,uncommon
-day_octopus,Day Octopus,Octopus cyanea,invertebrate,uncommon
-domestic_goat,Domestic Goat,Capra hircus,mammal,uncommon
-dark_flecked_garden_sunskink,Dark-flecked Garden Sunskink,Lampropholis delicata,reptile,uncommon
+spinner_dolphin,Spinner Dolphin,Stenella longirostris,mammal,rare
+red_tailed_tropicbird,Red-tailed Tropicbird,Phaethon rubricauda,bird,rare
+scaly_breasted_munia,Scaly-breasted Munia,Lonchura punctulata,bird,rare
+white_tailed_tropicbird,White-tailed Tropicbird,Phaethon lepturus,bird,rare
+valley_carpenter_bee,Valley Carpenter Bee,Xylocopa sonorina,invertebrate,rare
+day_octopus,Day Octopus,Octopus cyanea,invertebrate,rare
+dark_flecked_garden_sunskink,Dark-flecked Garden Sunskink,Lampropholis delicata,reptile,rare
 wild_boar,Wild Boar,Sus scrofa,mammal,rare
 greenhouse_frog,Greenhouse Frog,Eleutherodactylus planirostris,amphibian,rare
 jacksons_chameleon,Jackson's Chameleon,Trioceros jacksonii,reptile,rare
@@ -87,15 +94,8 @@ mottled_snake_eyed_skink,Mottled Snake-eyed Skink,Cryptoblepharus poecilopleurus
 wrinkled_frog,Wrinkled Frog,Glandirana rugosa,amphibian,rare
 pond_slider,Pond Slider,Trachemys scripta,reptile,rare
 chital,Chital,Axis axis,mammal,rare
-black_rat,Black Rat,Rattus rattus,mammal,rare
-house_mouse,House Mouse,Mus musculus,mammal,rare
-common_bottlenose_dolphin,Common Bottlenose Dolphin,Tursiops truncatus,mammal,rare
-domestic_sheep,Domestic Sheep,Ovis aries,mammal,rare
-hawaiian_hoary_bat,Hawaiian Hoary Bat,Lasiurus semotus,mammal,rare
-short_finned_pilot_whale,Short-finned Pilot Whale,Globicephala macrorhynchus,mammal,rare
-domestic_cattle,Domestic Cattle,Bos taurus,mammal,rare
-domestic_horse,Domestic Horse,Equus caballus,mammal,legendary
+common_bottlenose_dolphin,Common Bottlenose Dolphin,Tursiops truncatus,mammal,legendary
+hawaiian_hoary_bat,Hawaiian Hoary Bat,Lasiurus semotus,mammal,legendary
 pantropical_spotted_dolphin,Pantropical Spotted Dolphin,Stenella attenuata,mammal,legendary
-dense_beaked_whale,Dense-beaked Whale,Mesoplodon densirostris,mammal,legendary
-domestic_dog,Domestic Dog,Canis familiaris,mammal,legendary
 polynesian_rat,Polynesian Rat,Rattus exulans,mammal,legendary
+orca,Orca,Orcinus orca,mammal,legendary

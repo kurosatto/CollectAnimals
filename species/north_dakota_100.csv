@@ -6,7 +6,6 @@ american_robin,American Robin,Turdus migratorius,bird,common
 brown_belted_bumble_bee,Brown-belted Bumble Bee,Bombus griseocollis,invertebrate,common
 northern_leopard_frog,Northern Leopard Frog,Lithobates pipiens,amphibian,common
 canada_goose,Canada Goose,Branta canadensis,bird,common
-domestic_horse,Domestic Horse,Equus caballus,mammal,common
 hunts_bumble_bee,Hunt's Bumble Bee,Bombus huntii,invertebrate,common
 two_spotted_bumble_bee,Two-spotted Bumble Bee,Bombus bimaculatus,invertebrate,common
 ring_necked_pheasant,Ring-necked Pheasant,Phasianus colchicus,bird,common
@@ -49,7 +48,7 @@ house_sparrow,House Sparrow,Passer domesticus,bird,common
 common_grackle,Common Grackle,Quiscalus quiscula,bird,common
 cedar_waxwing,Cedar Waxwing,Bombycilla cedrorum,bird,common
 western_grebe,Western Grebe,Aechmophorus occidentalis,bird,common
-dark_eyed_junco,Dark-eyed Junco,Junco hyemalis,bird,uncommon
+dark_eyed_junco,Dark-eyed Junco,Junco hyemalis,bird,common
 american_avocet,American Avocet,Recurvirostra americana,bird,uncommon
 northern_flicker,Northern Flicker,Colaptes auratus,bird,uncommon
 northern_yellow_warbler,Northern Yellow Warbler,Setophaga aestiva,bird,uncommon
@@ -76,13 +75,14 @@ eastern_gray_squirrel,Eastern Gray Squirrel,Sciurus carolinensis,mammal,uncommon
 greater_short_horned_lizard,Greater Short-horned Lizard,Phrynosoma hernandesi,reptile,uncommon
 boreal_chorus_frog,Boreal Chorus Frog,Pseudacris maculata,amphibian,uncommon
 north_american_porcupine,North American Porcupine,Erethizon dorsatum,mammal,uncommon
-american_beaver,American Beaver,Castor canadensis,mammal,rare
+american_beaver,American Beaver,Castor canadensis,mammal,uncommon
 common_sagebrush_lizard,Common Sagebrush Lizard,Sceloporus graciosus,reptile,rare
 smooth_greensnake,Smooth Greensnake,Opheodrys vernalis,reptile,rare
 wood_frog,Wood Frog,Lithobates sylvaticus,amphibian,rare
 common_snapping_turtle,Common Snapping Turtle,Chelydra serpentina,reptile,rare
 raccoon,Common Raccoon,Procyon lotor,mammal,rare
 red_fox,Red Fox,Vulpes vulpes,mammal,rare
+bighorn_sheep,Bighorn Sheep,Ovis canadensis,mammal,rare
 red_bellied_snake,Red-bellied Snake,Storeria occipitomaculata,reptile,rare
 plains_hognose_snake,Plains Hognose Snake,Heterodon nasicus,reptile,rare
 brickwork_woodlouse,Brickwork Woodlouse,Porcellio spinicornis,marine,rare

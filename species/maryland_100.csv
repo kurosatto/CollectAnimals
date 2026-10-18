@@ -80,10 +80,8 @@ eastern_chipmunk,Eastern Chipmunk,Tamias striatus,mammal,rare
 redbreast_sunfish,Redbreast Sunfish,Lepomis auritus,marine,rare
 atlantic_horseshoe_crab,Atlantic Horseshoe Crab,Limulus polyphemus,marine,rare
 eastern_fence_lizard,Eastern Fence Lizard,Sceloporus undulatus,reptile,rare
-domestic_horse,Domestic Horse,Equus caballus,mammal,rare
 nosy_pill_woodlouse,Nosy Pill Woodlouse,Armadillidium nasatum,marine,rare
 virginia_opossum,Virginia Opossum,Didelphis virginiana,mammal,rare
-domestic_cat,Domestic Cat,Felis catus,mammal,rare
 broad_headed_skink,Broad-headed Skink,Plestiodon laticeps,reptile,rare
 largemouth_bass,Largemouth Bass,Micropterus nigricans,marine,rare
 ring_necked_snake,Ring-necked Snake,Diadophis punctatus,reptile,rare
@@ -94,8 +92,10 @@ northern_short_tailed_shrew,Northern Short-tailed Shrew,Blarina brevicauda,mamma
 muskrat,Muskrat,Ondatra zibethicus,mammal,rare
 north_american_river_otter,North American River Otter,Lontra canadensis,mammal,rare
 coyote,Coyote,Canis latrans,mammal,rare
-sika_deer,Sika Deer,Cervus nippon,mammal,legendary
-white_footed_mouse,White-footed Mouse,Peromyscus leucopus,mammal,legendary
+sika_deer,Sika Deer,Cervus nippon,mammal,rare
+white_footed_mouse,White-footed Mouse,Peromyscus leucopus,mammal,rare
 american_black_bear,American Black Bear,Ursus americanus,mammal,legendary
 eastern_red_bat,Eastern Red Bat,Lasiurus borealis,mammal,legendary
 striped_skunk,Striped Skunk,Mephitis mephitis,mammal,legendary
+eastern_mole,Eastern Mole,Scalopus aquaticus,mammal,legendary
+american_mink,American Mink,Neogale vison,mammal,legendary

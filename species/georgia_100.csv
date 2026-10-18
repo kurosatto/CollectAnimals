@@ -61,7 +61,6 @@ common_snapping_turtle,Common Snapping Turtle,Chelydra serpentina,reptile,uncomm
 song_sparrow,Song Sparrow,Melospiza melodia,bird,uncommon
 northern_slimy_salamander,Northern Slimy Salamander,Plethodon glutinosus,amphibian,uncommon
 raccoon,Common Raccoon,Procyon lotor,mammal,uncommon
-domestic_cat,Domestic Cat,Felis catus,mammal,uncommon
 fowlers_toad,Fowler's Toad,Anaxyrus fowleri,amphibian,uncommon
 double_crested_cormorant,Double-crested Cormorant,Nannopterum auritum,bird,uncommon
 mediterranean_house_gecko,Mediterranean House Gecko,Hemidactylus turcicus,reptile,uncommon
@@ -76,26 +75,27 @@ anhinga,Anhinga,Anhinga anhinga,bird,uncommon
 ruby_crowned_kinglet,Ruby-crowned Kinglet,Corthylio calendula,bird,uncommon
 pileated_woodpecker,Pileated Woodpecker,Dryocopus pileatus,bird,uncommon
 white_breasted_nuthatch,White-breasted Nuthatch,Sitta carolinensis,bird,uncommon
-virginia_opossum,Virginia Opossum,Didelphis virginiana,mammal,rare
+virginia_opossum,Virginia Opossum,Didelphis virginiana,mammal,uncommon
 bluegill,Bluegill,Lepomis macrochirus,marine,rare
 eastern_cottontail,Eastern Cottontail,Sylvilagus floridanus,mammal,rare
 greenhouse_millipede,Greenhouse Millipede,Oxidus gracilis,marine,rare
 nosy_pill_woodlouse,Nosy Pill Woodlouse,Armadillidium nasatum,marine,rare
 redbreast_sunfish,Redbreast Sunfish,Lepomis auritus,marine,rare
-shovel_headed_garden_worm,Shovel-headed Garden Worm,Bipalium kewense,marine,rare
 cannonball_jellyfish,Cannonball Jelly,Stomolophus meleagris,marine,rare
 eastern_mosquitofish,Eastern Mosquitofish,Gambusia holbrooki,marine,rare
 atlantic_horseshoe_crab,Atlantic Horseshoe Crab,Limulus polyphemus,marine,rare
 squareback_marsh_crab,Squareback Marsh Crab,Armases cinereum,marine,rare
 american_beaver,American Beaver,Castor canadensis,mammal,rare
+atlantic_ghost_crab,Atlantic Ghost Crab,Ocypode quadrata,marine,rare
 groundhog,Groundhog,Marmota monax,mammal,rare
 coyote,Coyote,Canis latrans,mammal,rare
 american_black_bear,American Black Bear,Ursus americanus,mammal,rare
 red_fox,Red Fox,Vulpes vulpes,mammal,rare
 north_american_river_otter,North American River Otter,Lontra canadensis,mammal,rare
 gray_fox,Gray Fox,Urocyon cinereoargenteus,mammal,rare
-fox_squirrel,Eastern Fox Squirrel,Sciurus niger,mammal,legendary
-domestic_horse,Domestic Horse,Equus caballus,mammal,legendary
+fox_squirrel,Eastern Fox Squirrel,Sciurus niger,mammal,rare
 tamanends_bottlenose_dolphin,Tamanend's Bottlenose Dolphin,Tursiops erebennus,mammal,legendary
 wild_boar,Wild Boar,Sus scrofa,mammal,legendary
 bobcat,Bobcat,Lynx rufus,mammal,legendary
+marsh_rabbit,Marsh Rabbit,Sylvilagus palustris,mammal,legendary
+southern_flying_squirrel,Southern Flying Squirrel,Glaucomys volans,mammal,legendary

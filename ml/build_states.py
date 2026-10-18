@@ -42,6 +42,9 @@ STATES_GEO = NE + "ne_50m_admin_1_states_provinces.geojson"
 TOWNS_GEO = NE + "ne_10m_populated_places_simple.geojson"
 session = requests.Session()
 session.headers["User-Agent"] = "CollectAnimals-dataset-builder/0.1"
+# Retry dropped connections (GitHub raw and iNaturalist both reset now and then).
+session.mount("https://", requests.adapters.HTTPAdapter(max_retries=requests.adapters.Retry(
+    total=6, backoff_factor=2, status_forcelist=[429, 500, 502, 503, 504])))
 
 # code, name, standard-time UTC offset
 STATES = [
@@ -67,6 +70,21 @@ GROUPS = [("Mammalia", "mammal"), ("Aves", "bird"), ("Reptilia", "reptile"), ("A
           ("Actinopterygii", "marine"), ("Animalia", "marine")]
 # Per state, like the hand-made lists: lots of birds and mammals, a few bugs.
 QUOTA = {"mammal": 20, "bird": 38, "reptile": 12, "amphibian": 8, "invertebrate": 12, "marine": 10}
+# Pets and farm animals, parasites and plant diseases, and animals nobody can
+# reasonably photograph (one cave, the open ocean) stay off every list.
+EXCLUDE = {
+    "Felis catus", "Canis familiaris", "Bos taurus", "Equus caballus", "Equus asinus", "Capra hircus",
+    "Ovis aries", "Gallus gallus", "Homo sapiens", "Litylenchus crenatae", "Ixodes scapularis",
+    "Bipalium kewense", "Cyprinodon diabolis", "Cyprinodon eremus", "Mesoplodon densirostris",
+    "Globicephala macrorhynchus",
+    # Pets and pests have their own model classes (ml/fetch_pets.py), not state-list slots.
+    "Rattus norvegicus", "Rattus rattus", "Mus musculus", "Columba livia", "Oryctolagus cuniculus",
+    "Cavia porcellus",
+    # Deep-water whales and dolphins only seen far offshore (Hawaii's lists filled up with them).
+    "Ziphius cavirostris", "Kogia sima", "Kogia breviceps", "Pseudorca crassidens", "Lagenodelphis hosei",
+    "Peponocephala electra", "Feresa attenuata", "Steno bredanensis", "Physeter macrocephalus",
+    "Mesoplodon",
+}
 RARITY = ["common"] * 50 + ["uncommon"] * 27 + ["rare"] * 18 + ["legendary"] * 5
 
 
@@ -108,7 +126,8 @@ def draft_list(pid, slugs, used):
     for group, cat in GROUPS:
         res = api("observations/species_counts", place_id=pid, iconic_taxa=group, quality_grade="research",
                   rank="species", captive="false", per_page=60)["results"]
-        pools.setdefault(cat, []).extend(r for r in res if r["taxon"].get("preferred_common_name"))
+        pools.setdefault(cat, []).extend(r for r in res if r["taxon"].get("preferred_common_name")
+                                         and r["taxon"]["name"] not in EXCLUDE)
     for cat in pools:
         pools[cat].sort(key=lambda r: -r["count"])
     picked, seen = [], set()
@@ -169,9 +188,13 @@ def grid_for(bounds):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--only", nargs="*", help="state codes")
+    ap.add_argument("--redo", action="store_true", help="rebuild drafted states too (never CA or NC)")
     args = ap.parse_args()
     sj_path = SPECIES / "states.json"
     sj = json.loads(sj_path.read_text(encoding="utf-8"))
+    if args.redo:
+        sj["states"] = [s for s in sj["states"] if s["code"] in ("CA", "NC")
+                        or (args.only and s["code"] not in args.only)]
     have = {s["code"] for s in sj["states"]}
     todo = [s for s in STATES if s[0] not in have and (not args.only or s[0] in args.only)]
     geo = session.get(STATES_GEO, timeout=120).json()

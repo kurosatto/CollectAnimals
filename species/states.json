@@ -54,32 +54,6 @@
    }
   },
   {
-   "code": "VA",
-   "name": "Virginia",
-   "species": "virginia_100.csv",
-   "dex": null,
-   "outline": "virginia_outline.json",
-   "ranges": "virginia_ranges.json",
-   "hotspots": "virginia_hotspots.json",
-   "places": "virginia_places.json",
-   "seasons": "virginia_seasons.json",
-   "utc_offset": -5,
-   "inat_place_id": 7,
-   "bounds": {
-    "west": -83.8,
-    "east": -75.1,
-    "south": 36.5,
-    "north": 39.6
-   },
-   "grid": {
-    "lon0": -83.875,
-    "lat0": 36.5,
-    "step": 0.125,
-    "cols": 71,
-    "rows": 25
-   }
-  },
-  {
    "code": "AL",
    "name": "Alabama",
    "species": "alabama_100.csv",
@@ -259,6 +233,32 @@
     "step": 0.0625,
     "cols": 17,
     "rows": 25
+   }
+  },
+  {
+   "code": "FL",
+   "name": "Florida",
+   "species": "florida_100.csv",
+   "dex": null,
+   "outline": "florida_outline.json",
+   "ranges": "florida_ranges.json",
+   "hotspots": "florida_hotspots.json",
+   "places": "florida_places.json",
+   "seasons": "florida_seasons.json",
+   "utc_offset": -5,
+   "inat_place_id": 21,
+   "bounds": {
+    "west": -87.7,
+    "east": -79.9,
+    "south": 24.4,
+    "north": 31.1
+   },
+   "grid": {
+    "lon0": -87.75,
+    "lat0": 24.375,
+    "step": 0.125,
+    "cols": 63,
+    "rows": 54
    }
   },
   {
@@ -496,6 +496,32 @@
    }
   },
   {
+   "code": "MD",
+   "name": "Maryland",
+   "species": "maryland_100.csv",
+   "dex": null,
+   "outline": "maryland_outline.json",
+   "ranges": "maryland_ranges.json",
+   "hotspots": "maryland_hotspots.json",
+   "places": "maryland_places.json",
+   "seasons": "maryland_seasons.json",
+   "utc_offset": -5,
+   "inat_place_id": 39,
+   "bounds": {
+    "west": -79.6,
+    "east": -74.9,
+    "south": 37.9,
+    "north": 39.8
+   },
+   "grid": {
+    "lon0": -79.625,
+    "lat0": 37.875,
+    "step": 0.0625,
+    "cols": 76,
+    "rows": 31
+   }
+  },
+  {
    "code": "MA",
    "name": "Massachusetts",
    "species": "massachusetts_100.csv",
@@ -623,6 +649,32 @@
     "step": 0.125,
     "cols": 56,
     "rows": 39
+   }
+  },
+  {
+   "code": "MT",
+   "name": "Montana",
+   "species": "montana_100.csv",
+   "dex": null,
+   "outline": "montana_outline.json",
+   "ranges": "montana_ranges.json",
+   "hotspots": "montana_hotspots.json",
+   "places": "montana_places.json",
+   "seasons": "montana_seasons.json",
+   "utc_offset": -7,
+   "inat_place_id": 16,
+   "bounds": {
+    "west": -116.1,
+    "east": -103.9,
+    "south": 44.3,
+    "north": 49.1
+   },
+   "grid": {
+    "lon0": -116.25,
+    "lat0": 44.25,
+    "step": 0.25,
+    "cols": 50,
+    "rows": 20
    }
   },
   {
@@ -1094,6 +1146,32 @@
    }
   },
   {
+   "code": "VA",
+   "name": "Virginia",
+   "species": "virginia_100.csv",
+   "dex": null,
+   "outline": "virginia_outline.json",
+   "ranges": "virginia_ranges.json",
+   "hotspots": "virginia_hotspots.json",
+   "places": "virginia_places.json",
+   "seasons": "virginia_seasons.json",
+   "utc_offset": -5,
+   "inat_place_id": 7,
+   "bounds": {
+    "west": -83.8,
+    "east": -75.1,
+    "south": 36.5,
+    "north": 39.6
+   },
+   "grid": {
+    "lon0": -83.875,
+    "lat0": 36.5,
+    "step": 0.125,
+    "cols": 71,
+    "rows": 25
+   }
+  },
+  {
    "code": "WA",
    "name": "Washington",
    "species": "washington_100.csv",
@@ -1198,32 +1276,6 @@
    }
   },
   {
-   "code": "FL",
-   "name": "Florida",
-   "species": "florida_100.csv",
-   "dex": null,
-   "outline": "florida_outline.json",
-   "ranges": "florida_ranges.json",
-   "hotspots": "florida_hotspots.json",
-   "places": "florida_places.json",
-   "seasons": "florida_seasons.json",
-   "utc_offset": -5,
-   "inat_place_id": 21,
-   "bounds": {
-    "west": -87.7,
-    "east": -79.9,
-    "south": 24.4,
-    "north": 31.1
-   },
-   "grid": {
-    "lon0": -87.75,
-    "lat0": 24.375,
-    "step": 0.125,
-    "cols": 63,
-    "rows": 54
-   }
-  },
-  {
    "code": "HI",
    "name": "Hawaii",
    "species": "hawaii_100.csv",
@@ -1247,58 +1299,6 @@
     "step": 0.125,
     "cols": 46,
     "rows": 28
-   }
-  },
-  {
-   "code": "MD",
-   "name": "Maryland",
-   "species": "maryland_100.csv",
-   "dex": null,
-   "outline": "maryland_outline.json",
-   "ranges": "maryland_ranges.json",
-   "hotspots": "maryland_hotspots.json",
-   "places": "maryland_places.json",
-   "seasons": "maryland_seasons.json",
-   "utc_offset": -5,
-   "inat_place_id": 39,
-   "bounds": {
-    "west": -79.6,
-    "east": -74.9,
-    "south": 37.9,
-    "north": 39.8
-   },
-   "grid": {
-    "lon0": -79.625,
-    "lat0": 37.875,
-    "step": 0.0625,
-    "cols": 76,
-    "rows": 31
-   }
-  },
-  {
-   "code": "MT",
-   "name": "Montana",
-   "species": "montana_100.csv",
-   "dex": null,
-   "outline": "montana_outline.json",
-   "ranges": "montana_ranges.json",
-   "hotspots": "montana_hotspots.json",
-   "places": "montana_places.json",
-   "seasons": "montana_seasons.json",
-   "utc_offset": -7,
-   "inat_place_id": 16,
-   "bounds": {
-    "west": -116.1,
-    "east": -103.9,
-    "south": 44.3,
-    "north": 49.1
-   },
-   "grid": {
-    "lon0": -116.25,
-    "lat0": 44.25,
-    "step": 0.25,
-    "cols": 50,
-    "rows": 20
    }
   }
  ]

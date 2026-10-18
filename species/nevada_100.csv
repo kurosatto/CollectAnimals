@@ -20,7 +20,6 @@ gambels_quail,Gambel's Quail,Callipepla gambelii,bird,common
 white_tailed_antelope_squirrel,White-tailed Antelope Squirrel,Ammospermophilus leucurus,mammal,common
 long_nosed_leopard_lizard,Long-nosed Leopard Lizard,Gambelia wislizenii,reptile,common
 mourning_dove,Mourning Dove,Zenaida macroura,bird,common
-domestic_horse,Domestic Horse,Equus caballus,mammal,common
 black_crowned_night_heron,Black-crowned Night Heron,Nycticorax nycticorax,bird,common
 phainopepla,Phainopepla,Phainopepla nitens,bird,common
 greater_roadrunner,Greater Roadrunner,Geococcyx californianus,bird,common
@@ -49,18 +48,17 @@ desert_tortoise,Mojave Desert Tortoise,Gopherus agassizii,reptile,common
 white_faced_ibis,White-faced Ibis,Plegadis chihi,bird,common
 cinnamon_teal,Cinnamon Teal,Spatula cyanoptera,bird,common
 northern_shoveler,Northern Shoveler,Spatula clypeata,bird,common
-black_phoebe,Black Phoebe,Sayornis nigricans,bird,uncommon
+black_phoebe,Black Phoebe,Sayornis nigricans,bird,common
 great_egret,Great Egret,Ardea alba,bird,uncommon
 pallid_winged_grasshopper,Pallid-winged Grasshopper,Trimerotropis pallidipennis,invertebrate,uncommon
 great_horned_owl,Great Horned Owl,Bubo virginianus,bird,uncommon
 large_creosote_gall_midge,Large Creosote Gall Midge,Asphondylia auripila,invertebrate,uncommon
 mormon_cricket,Mormon Cricket,Anabrus simplex,invertebrate,uncommon
-donkey,Donkey,Equus asinus,mammal,uncommon
 killdeer,Killdeer,Charadrius vociferus,bird,uncommon
 american_kestrel,American Kestrel,Falco sparverius,bird,uncommon
 ring_necked_duck,Ring-necked Duck,Aythya collaris,bird,uncommon
-yellow_headed_blackbird,Yellow-headed Blackbird,Xanthocephalus xanthocephalus,bird,uncommon
 western_pygmy_blue,Western Pygmy-Blue,Brephidium exilis,invertebrate,uncommon
+yellow_headed_blackbird,Yellow-headed Blackbird,Xanthocephalus xanthocephalus,bird,uncommon
 blue_dasher,Blue Dasher,Pachydiplax longipennis,invertebrate,uncommon
 pacific_chorus_frog,Pacific chorus frog,Pseudacris regilla,amphibian,uncommon
 variegated_meadowhawk,Variegated Meadowhawk,Sympetrum corruptum,invertebrate,uncommon
@@ -76,8 +74,8 @@ common_golden_mantled_ground_squirrel,Common Golden-mantled Ground Squirrel,Call
 bighorn_sheep,Bighorn Sheep,Ovis canadensis,mammal,uncommon
 american_bullfrog,American Bullfrog,Lithobates catesbeianus,amphibian,uncommon
 yellow_bellied_marmot,Yellow-bellied Marmot,Marmota flaviventris,mammal,uncommon
-common_pill_woodlouse,Common Pill Woodlouse,Armadillidium vulgare,marine,rare
-palmers_chipmunk,Palmer's Chipmunk,Neotamias palmeri,mammal,rare
+common_pill_woodlouse,Common Pill Woodlouse,Armadillidium vulgare,marine,uncommon
+palmers_chipmunk,Palmer's Chipmunk,Neotamias palmeri,mammal,uncommon
 red_spotted_toad,Red-spotted Toad,Anaxyrus punctatus,amphibian,rare
 american_beaver,American Beaver,Castor canadensis,mammal,rare
 red_swamp_crayfish,Red Swamp Crayfish,Procambarus clarkii,marine,rare
@@ -91,6 +89,8 @@ western_gray_squirrel,Western Gray Squirrel,Sciurus griseus,mammal,rare
 woodhouses_toad,Woodhouse's Toad,Anaxyrus woodhousii,amphibian,rare
 rock_squirrel,Rock Squirrel,Otospermophilus variegatus,mammal,rare
 elk,Wapiti,Cervus canadensis,mammal,rare
+muskrat,Muskrat,Ondatra zibethicus,mammal,rare
+uinta_chipmunk,Uinta Chipmunk,Neotamias umbrinus,mammal,rare
 common_desert_centipede,Common Desert Centipede,Scolopendra polymorpha,marine,rare
 sailfin_molly,Sailfin Molly,Poecilia latipinna,marine,rare
 signal_crayfish,Signal Crayfish,Pacifastacus leniusculus,marine,rare
@@ -98,4 +98,4 @@ amargosa_toad,Amargosa Toad,Anaxyrus nelsoni,amphibian,legendary
 largemouth_bass,Largemouth Bass,Micropterus nigricans,marine,legendary
 rainbow_trout,Rainbow Trout,Oncorhynchus mykiss,marine,legendary
 relict_leopard_frog,Relict Leopard Frog,Lithobates onca,amphibian,legendary
-devils_hole_pupfish,Devils Hole Pupfish,Cyprinodon diabolis,marine,legendary
+brook_trout,Brook Trout,Salvelinus fontinalis,marine,legendary

@@ -81,7 +81,6 @@ largemouth_bass,Largemouth Bass,Micropterus nigricans,marine,rare
 southern_leopard_frog,Southern Leopard Frog,Lithobates sphenocephalus,amphibian,rare
 eastern_foxsnake,Eastern Foxsnake,Pantherophis vulpinus,reptile,rare
 boreal_chorus_frog,Boreal Chorus Frog,Pseudacris maculata,amphibian,rare
-domestic_cat,Domestic Cat,Felis catus,mammal,rare
 red_fox,Red Fox,Vulpes vulpes,mammal,rare
 greenhouse_millipede,Greenhouse Millipede,Oxidus gracilis,marine,rare
 plain_bellied_watersnake,Plain-bellied Watersnake,Nerodia erythrogaster,reptile,rare
@@ -94,8 +93,9 @@ nosy_pill_woodlouse,Nosy Pill Woodlouse,Armadillidium nasatum,marine,rare
 rathkes_woodlouse,Rathke's Woodlouse,Trachelipus rathkii,marine,rare
 blackstripe_topminnow,Blackstripe Topminnow,Fundulus notatus,marine,rare
 northern_short_tailed_shrew,Northern Short-tailed Shrew,Blarina brevicauda,mammal,rare
-thirteen_lined_ground_squirrel,Thirteen-lined Ground Squirrel,Ictidomys tridecemlineatus,mammal,legendary
+thirteen_lined_ground_squirrel,Thirteen-lined Ground Squirrel,Ictidomys tridecemlineatus,mammal,rare
 american_mink,American Mink,Neogale vison,mammal,legendary
-brown_rat,Brown Rat,Rattus norvegicus,mammal,legendary
 eastern_red_bat,Eastern Red Bat,Lasiurus borealis,mammal,legendary
 mexican_long_nosed_armadillo,Mexican Long-nosed Armadillo,Dasypus mexicanus,mammal,legendary
+silver_haired_bat,Silver-haired Bat,Lasionycteris noctivagans,mammal,legendary
+big_brown_bat,Big Brown Bat,Eptesicus fuscus,mammal,legendary

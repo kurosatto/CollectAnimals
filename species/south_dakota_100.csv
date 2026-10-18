@@ -51,7 +51,6 @@ mourning_dove,Mourning Dove,Zenaida macroura,bird,common
 northern_flicker,Northern Flicker,Colaptes auratus,bird,common
 northern_yellow_warbler,Northern Yellow Warbler,Setophaga aestiva,bird,uncommon
 coyote,Coyote,Canis latrans,mammal,uncommon
-donkey,Donkey,Equus asinus,mammal,uncommon
 house_sparrow,House Sparrow,Passer domesticus,bird,uncommon
 ring_billed_gull,Ring-billed Gull,Larus delawarensis,bird,uncommon
 thirteen_lined_ground_squirrel,Thirteen-lined Ground Squirrel,Ictidomys tridecemlineatus,mammal,uncommon
@@ -76,7 +75,7 @@ american_red_squirrel,American Red Squirrel,Tamiasciurus hudsonicus,mammal,uncom
 boreal_chorus_frog,Boreal Chorus Frog,Pseudacris maculata,amphibian,uncommon
 brown_trout,Brown Trout,Salmo trutta,marine,uncommon
 white_sucker,White Sucker,Catostomus commersonii,marine,uncommon
-yellow_bellied_marmot,Yellow-bellied Marmot,Marmota flaviventris,mammal,rare
+yellow_bellied_marmot,Yellow-bellied Marmot,Marmota flaviventris,mammal,uncommon
 great_plains_toad,Great Plains Toad,Anaxyrus cognatus,amphibian,rare
 european_carp,European Carp,Cyprinus carpio,marine,rare
 brook_stickleback,Brook Stickleback,Culaea inconstans,marine,rare
@@ -94,6 +93,7 @@ muskrat,Muskrat,Ondatra zibethicus,mammal,rare
 western_foxsnake,Western Foxsnake,Pantherophis ramspotti,reptile,rare
 north_american_racer,North American Racer,Coluber constrictor,reptile,rare
 raccoon,Common Raccoon,Procyon lotor,mammal,rare
+american_beaver,American Beaver,Castor canadensis,mammal,rare
 prairie_skink,Prairie Skink,Plestiodon septentrionalis,reptile,legendary
 red_bellied_snake,Red-bellied Snake,Storeria occipitomaculata,reptile,legendary
 canadian_toad,Canadian Toad,Anaxyrus hemiophrys,amphibian,legendary

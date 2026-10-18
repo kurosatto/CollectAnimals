@@ -75,10 +75,10 @@ dekays_brownsnake,DeKay's Brownsnake,Storeria dekayi,reptile,uncommon
 american_red_squirrel,American Red Squirrel,Tamiasciurus hudsonicus,mammal,uncommon
 common_pill_woodlouse,Common Pill Woodlouse,Armadillidium vulgare,marine,uncommon
 atlantic_lions_mane_jelly,Atlantic Lion's Mane Jelly,Cyanea fulva,marine,uncommon
-beech_leaf_disease,Beech Leaf Disease,Litylenchus crenatae,marine,uncommon
-common_rough_woodlouse,Common Rough Woodlouse,Porcellio scaber,marine,rare
+common_rough_woodlouse,Common Rough Woodlouse,Porcellio scaber,marine,uncommon
 common_shiny_woodlouse,Common Shiny Woodlouse,Oniscus asellus,marine,rare
 atlantic_sand_crab,Atlantic Sand Crab,Emerita talpoida,marine,rare
+long_claw_hermit_crab,Long-claw Hermit Crab,Pagurus longicarpus,marine,rare
 virginia_opossum,Virginia Opossum,Didelphis virginiana,mammal,rare
 spotted_turtle,Spotted Turtle,Clemmys guttata,reptile,rare
 red_fox,Red Fox,Vulpes vulpes,mammal,rare
@@ -91,11 +91,11 @@ northern_water_snake,Common Watersnake,Nerodia sipedon,reptile,rare
 eastern_meadow_vole,Eastern Meadow Vole,Microtus pennsylvanicus,mammal,rare
 ring_necked_snake,Ring-necked Snake,Diadophis punctatus,reptile,rare
 bobcat,Bobcat,Lynx rufus,mammal,rare
-brown_rat,Brown Rat,Rattus norvegicus,mammal,rare
 northern_short_tailed_shrew,Northern Short-tailed Shrew,Blarina brevicauda,mammal,rare
 fisher,Fisher,Pekania pennanti,mammal,rare
-white_footed_mouse,White-footed Mouse,Peromyscus leucopus,mammal,legendary
+white_footed_mouse,White-footed Mouse,Peromyscus leucopus,mammal,rare
 eastern_musk_turtle,Eastern Musk Turtle,Sternotherus odoratus,reptile,legendary
 eastern_hognose_snake,Eastern Hognose Snake,Heterodon platirhinos,reptile,legendary
+grey_seal,Grey Seal,Halichoerus grypus,mammal,legendary
 eastern_ratsnake,Central Ratsnake,Pantherophis alleghaniensis,reptile,legendary
 north_american_racer,North American Racer,Coluber constrictor,reptile,legendary

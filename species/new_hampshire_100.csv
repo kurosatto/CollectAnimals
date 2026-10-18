@@ -51,7 +51,6 @@ american_black_bear,American Black Bear,Ursus americanus,mammal,common
 mourning_dove,Mourning Dove,Zenaida macroura,bird,common
 gray_catbird,Gray Catbird,Dumetella carolinensis,bird,uncommon
 cedar_waxwing,Cedar Waxwing,Bombycilla cedrorum,bird,uncommon
-beech_leaf_disease,Beech Leaf Disease,Litylenchus crenatae,marine,uncommon
 white_breasted_nuthatch,White-breasted Nuthatch,Sitta carolinensis,bird,uncommon
 bald_eagle,Bald Eagle,Haliaeetus leucocephalus,bird,uncommon
 ruby_throated_hummingbird,Ruby-throated Hummingbird,Archilochus colubris,bird,uncommon
@@ -76,7 +75,7 @@ american_herring_gull,American Herring Gull,Larus smithsonianus,bird,uncommon
 groundhog,Groundhog,Marmota monax,mammal,uncommon
 northern_water_snake,Common Watersnake,Nerodia sipedon,reptile,uncommon
 bobcat,Bobcat,Lynx rufus,mammal,uncommon
-eastern_milksnake,Eastern Milksnake,Lampropeltis triangulum,reptile,rare
+eastern_milksnake,Eastern Milksnake,Lampropeltis triangulum,reptile,uncommon
 red_fox,Red Fox,Vulpes vulpes,mammal,rare
 brook_trout,Brook Trout,Salvelinus fontinalis,marine,rare
 virile_crayfish,Virile Crayfish,Faxonius virilis,marine,rare
@@ -94,7 +93,8 @@ magnificent_bryozoan,Magnificent Bryozoan,Pectinatella magnifica,marine,rare
 red_bellied_snake,Red-bellied Snake,Storeria occipitomaculata,reptile,rare
 wood_turtle,Wood Turtle,Glyptemys insculpta,reptile,rare
 muskrat,Muskrat,Ondatra zibethicus,mammal,rare
-atlantic_horseshoe_crab,Atlantic Horseshoe Crab,Limulus polyphemus,marine,legendary
+atlantic_horseshoe_crab,Atlantic Horseshoe Crab,Limulus polyphemus,marine,rare
+redbreast_sunfish,Redbreast Sunfish,Lepomis auritus,marine,legendary
 dekays_brownsnake,DeKay's Brownsnake,Storeria dekayi,reptile,legendary
 spotted_turtle,Spotted Turtle,Clemmys guttata,reptile,legendary
 common_ribbon_snake,Common Ribbon Snake,Thamnophis saurita,reptile,legendary

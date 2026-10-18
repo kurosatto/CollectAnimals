@@ -77,7 +77,6 @@ eastern_milksnake,Eastern Milksnake,Lampropeltis triangulum,reptile,uncommon
 nosy_pill_woodlouse,Nosy Pill Woodlouse,Armadillidium nasatum,marine,uncommon
 bluegill,Bluegill,Lepomis macrochirus,marine,uncommon
 common_pill_woodlouse,Common Pill Woodlouse,Armadillidium vulgare,marine,rare
-domestic_cat,Domestic Cat,Felis catus,mammal,rare
 american_beaver,American Beaver,Castor canadensis,mammal,rare
 house_centipede,House Centipede,Scutigera coleoptrata,marine,rare
 common_shiny_woodlouse,Common Shiny Woodlouse,Oniscus asellus,marine,rare
@@ -94,8 +93,9 @@ smallmouth_bass,Smallmouth Bass,Micropterus dolomieu,marine,rare
 fox_squirrel,Eastern Fox Squirrel,Sciurus niger,mammal,rare
 north_american_porcupine,North American Porcupine,Erethizon dorsatum,mammal,rare
 striped_skunk,Striped Skunk,Mephitis mephitis,mammal,rare
-muskrat,Muskrat,Ondatra zibethicus,mammal,legendary
+muskrat,Muskrat,Ondatra zibethicus,mammal,rare
 five_lined_skink,Common Five-lined Skink,Plestiodon fasciatus,reptile,legendary
 coyote,Coyote,Canis latrans,mammal,legendary
 american_mink,American Mink,Neogale vison,mammal,legendary
 elk,Wapiti,Cervus canadensis,mammal,legendary
+big_brown_bat,Big Brown Bat,Eptesicus fuscus,mammal,legendary

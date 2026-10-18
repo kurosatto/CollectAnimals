@@ -86,7 +86,6 @@ eastern_milksnake,Eastern Milksnake,Lampropeltis triangulum,reptile,rare
 greenhouse_millipede,Greenhouse Millipede,Oxidus gracilis,marine,rare
 northern_map_turtle,Northern Map Turtle,Graptemys geographica,reptile,rare
 six_lined_racerunner,Six-lined Racerunner,Aspidoscelis sexlineatus,reptile,rare
-domestic_cat,Domestic Cat,Felis catus,mammal,rare
 coyote,Coyote,Canis latrans,mammal,rare
 red_fox,Red Fox,Vulpes vulpes,mammal,rare
 striped_skunk,Striped Skunk,Mephitis mephitis,mammal,rare
@@ -94,8 +93,9 @@ creek_chub,Creek Chub,Semotilus atromaculatus,marine,rare
 house_centipede,House Centipede,Scutigera coleoptrata,marine,rare
 smallmouth_bass,Smallmouth Bass,Micropterus dolomieu,marine,rare
 green_sunfish,Green Sunfish,Lepomis cyanellus,marine,rare
-northern_short_tailed_shrew,Northern Short-tailed Shrew,Blarina brevicauda,mammal,legendary
+northern_short_tailed_shrew,Northern Short-tailed Shrew,Blarina brevicauda,mammal,rare
 american_mink,American Mink,Neogale vison,mammal,legendary
 eastern_mole,Eastern Mole,Scalopus aquaticus,mammal,legendary
 big_brown_bat,Big Brown Bat,Eptesicus fuscus,mammal,legendary
 north_american_river_otter,North American River Otter,Lontra canadensis,mammal,legendary
+bobcat,Bobcat,Lynx rufus,mammal,legendary

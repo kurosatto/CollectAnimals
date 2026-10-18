@@ -87,15 +87,15 @@ gray_snapper,Gray Snapper,Lutjanus griseus,marine,rare
 west_indian_manatee,West Indian Manatee,Trichechus manatus,mammal,rare
 mayan_cichlid,Mayan Cichlid,Mayaheros urophthalmus,marine,rare
 southern_cricket_frog,Southern Cricket Frog,Acris gryllus,amphibian,rare
-domestic_cat,Domestic Cat,Felis catus,mammal,rare
 common_bottlenose_dolphin,Common Bottlenose Dolphin,Tursiops truncatus,mammal,rare
 north_american_river_otter,North American River Otter,Lontra canadensis,mammal,rare
 wild_boar,Wild Boar,Sus scrofa,mammal,rare
 bobcat,Bobcat,Lynx rufus,mammal,rare
 coyote,Coyote,Canis latrans,mammal,rare
 hispid_cotton_rat,Hispid Cotton Rat,Sigmodon hispidus,mammal,rare
-fox_squirrel,Eastern Fox Squirrel,Sciurus niger,mammal,legendary
+fox_squirrel,Eastern Fox Squirrel,Sciurus niger,mammal,rare
 american_black_bear,American Black Bear,Ursus americanus,mammal,legendary
 tamanends_bottlenose_dolphin,Tamanend's Bottlenose Dolphin,Tursiops erebennus,mammal,legendary
-black_rat,Black Rat,Rattus rattus,mammal,legendary
 gray_fox,Gray Fox,Urocyon cinereoargenteus,mammal,legendary
+mexican_free_tailed_bat,Mexican Free-tailed Bat,Tadarida brasiliensis,mammal,legendary
+eastern_mole,Eastern Mole,Scalopus aquaticus,mammal,legendary

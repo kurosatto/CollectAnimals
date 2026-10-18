@@ -85,7 +85,6 @@ largemouth_bass,Largemouth Bass,Micropterus nigricans,marine,rare
 rio_grande_leopard_frog,Rio Grande Leopard Frog,Lithobates berlandieri,amphibian,rare
 plains_longear_sunfish,Plains Longear Sunfish,Lepomis aquilensis,marine,rare
 collared_peccary,Collared Peccary,Pecari tajacu,mammal,rare
-domestic_cat,Domestic Cat,Felis catus,mammal,rare
 coypu,Coypu,Myocastor coypus,mammal,rare
 american_beaver,American Beaver,Castor canadensis,mammal,rare
 red_swamp_crayfish,Red Swamp Crayfish,Procambarus clarkii,marine,rare
@@ -94,8 +93,9 @@ squirrel_tree_frog,Squirrel Tree Frog,Dryophytes squirellus,amphibian,rare
 giant_desert_centipede,Giant Desert Centipede,Scolopendra heros,marine,rare
 rock_squirrel,Rock Squirrel,Otospermophilus variegatus,mammal,rare
 black_tailed_jackrabbit,Black-tailed Jackrabbit,Lepus californicus,mammal,rare
-black_tailed_prairie_dog,Black-tailed Prairie Dog,Cynomys ludovicianus,mammal,legendary
+black_tailed_prairie_dog,Black-tailed Prairie Dog,Cynomys ludovicianus,mammal,rare
 texas_toad,Texas Toad,Anaxyrus speciosus,amphibian,legendary
 swamp_rabbit,Swamp Rabbit,Sylvilagus aquaticus,mammal,legendary
 greenhouse_millipede,Greenhouse Millipede,Oxidus gracilis,marine,legendary
 texas_cichlid,Texas Cichlid,Herichthys cyanoguttatus,marine,legendary
+hispid_cotton_rat,Hispid Cotton Rat,Sigmodon hispidus,mammal,legendary

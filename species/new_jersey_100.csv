@@ -70,13 +70,12 @@ raccoon,Common Raccoon,Procyon lotor,mammal,uncommon
 eastern_ratsnake,Central Ratsnake,Pantherophis alleghaniensis,reptile,uncommon
 eastern_fence_lizard,Eastern Fence Lizard,Sceloporus undulatus,reptile,uncommon
 pickerel_frog,Pickerel Frog,Lithobates palustris,amphibian,uncommon
-beech_leaf_disease,Beech Leaf Disease,Litylenchus crenatae,marine,uncommon
 painted_turtle,Painted Turtle,Chrysemys picta,reptile,uncommon
 wood_frog,Wood Frog,Lithobates sylvaticus,amphibian,uncommon
 atlantic_blue_crab,Atlantic Blue Crab,Callinectes sapidus,marine,uncommon
 atlantic_ghost_crab,Atlantic Ghost Crab,Ocypode quadrata,marine,uncommon
 american_beaver,American Beaver,Castor canadensis,mammal,uncommon
-common_garter_snake,Common Garter Snake,Thamnophis sirtalis,reptile,rare
+common_garter_snake,Common Garter Snake,Thamnophis sirtalis,reptile,uncommon
 atlantic_sand_crab,Atlantic Sand Crab,Emerita talpoida,marine,rare
 five_lined_skink,Common Five-lined Skink,Plestiodon fasciatus,reptile,rare
 common_pill_woodlouse,Common Pill Woodlouse,Armadillidium vulgare,marine,rare
@@ -88,14 +87,15 @@ largemouth_bass,Largemouth Bass,Micropterus nigricans,marine,rare
 house_centipede,House Centipede,Scutigera coleoptrata,marine,rare
 northern_short_tailed_shrew,Northern Short-tailed Shrew,Blarina brevicauda,mammal,rare
 spotted_turtle,Spotted Turtle,Clemmys guttata,reptile,rare
-domestic_cat,Domestic Cat,Felis catus,mammal,rare
+mud_fiddler_crab,Mud Fiddler Crab,Minuca pugnax,marine,rare
 american_black_bear,American Black Bear,Ursus americanus,mammal,rare
 virginia_opossum,Virginia Opossum,Didelphis virginiana,mammal,rare
 tamanends_bottlenose_dolphin,Tamanend's Bottlenose Dolphin,Tursiops erebennus,mammal,rare
 muskrat,Muskrat,Ondatra zibethicus,mammal,rare
 striped_skunk,Striped Skunk,Mephitis mephitis,mammal,rare
-coyote,Coyote,Canis latrans,mammal,legendary
+coyote,Coyote,Canis latrans,mammal,rare
 american_mink,American Mink,Neogale vison,mammal,legendary
 american_red_squirrel,American Red Squirrel,Tamiasciurus hudsonicus,mammal,legendary
 harbor_seal,Harbor Seal,Phoca vitulina,mammal,legendary
 north_american_porcupine,North American Porcupine,Erethizon dorsatum,mammal,legendary
+eastern_red_bat,Eastern Red Bat,Lasiurus borealis,mammal,legendary
