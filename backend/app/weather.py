@@ -2,8 +2,8 @@
 
 From the US National Weather Service (api.weather.gov: free, no key, public
 domain). Each state's weather is a big city's, unless the player's phone shares
-roughly where they are (rounded to half a degree, about 50 km, before it's
-used or cached). Answers are cached, and anything that goes wrong just means
+roughly where they are (rounded to a tenth of a degree, about 10 km, before
+it's used or cached). Answers are cached, and anything that goes wrong just means
 no weather in the scene.
 """
 
@@ -52,7 +52,7 @@ def spot(state: str, lat: float | None, lon: float | None, bounds: dict | None) 
     """Where to look: the player's rounded position if it's in the state, else the state's city."""
     if lat is not None and lon is not None and bounds and \
             bounds["south"] <= lat <= bounds["north"] and bounds["west"] <= lon <= bounds["east"]:
-        return round(lat * 2) / 2, round(lon * 2) / 2
+        return round(lat, 1), round(lon, 1)
     return CITIES.get(state.upper())
 
 

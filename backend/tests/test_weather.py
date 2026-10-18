@@ -57,8 +57,10 @@ def test_the_states_weather_now(client, nws):
 
 def test_near_the_player_but_rounded(client, nws):
     calls, _ = nws
-    client.get("/weather/CA", params={"lat": 37.77, "lon": -122.42})
-    assert "/points/38.0,-122.5" in calls[0]
+    w = client.get("/weather/CA", params={"lat": 37.7749, "lon": -122.4194}).json()
+    assert "/points/37.8,-122.4" in calls[0]
+    assert w["near"] is True
+    assert "near" not in client.get("/weather/CA").json()
     # Somewhere outside the state: the state's city instead.
     weather._now.clear()
     client.get("/weather/CA", params={"lat": 40.7, "lon": -74.0})
