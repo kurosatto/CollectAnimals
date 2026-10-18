@@ -48,6 +48,7 @@ blue_jay,blue_jay.png,blue_jay_silhouette.png,"drawn by tools/make_sprites.py (o
 bluegill,bluegill.png,bluegill_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 boat_tailed_grackle,boat_tailed_grackle.png,boat_tailed_grackle_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 bobcat,bobcat.png,bobcat_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
+broad_headed_skink,broad_headed_skink.png,broad_headed_skink_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 brook_trout,brook_trout.png,brook_trout_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 brown_anole,brown_anole.png,brown_anole_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 brown_belted_bumble_bee,brown_belted_bumble_bee.png,brown_belted_bumble_bee_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
@@ -73,6 +74,7 @@ cannonball_jellyfish,cannonball_jellyfish.png,cannonball_jellyfish_silhouette.pn
 carolina_chickadee,carolina_chickadee.png,carolina_chickadee_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 carolina_mantis,carolina_mantis.png,carolina_mantis_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 carolina_wren,carolina_wren.png,carolina_wren_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
+chipping_sparrow,chipping_sparrow.png,chipping_sparrow_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 coast_horned_lizard,coast_horned_lizard.png,coast_horned_lizard_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 collared_peccary,collared_peccary.png,collared_peccary_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 common_bottlenose_dolphin,common_bottlenose_dolphin.png,common_bottlenose_dolphin_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
@@ -85,10 +87,12 @@ common_grackle,common_grackle.png,common_grackle_silhouette.png,"drawn by tools/
 common_green_darner,common_green_darner.png,common_green_darner_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 common_pill_woodlouse,common_pill_woodlouse.png,common_pill_woodlouse_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 common_raven,common_raven.png,common_raven_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
+common_rough_woodlouse,common_rough_woodlouse.png,common_rough_woodlouse_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 common_shiny_woodlouse,common_shiny_woodlouse.png,common_shiny_woodlouse_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 common_snapping_turtle,common_snapping_turtle.png,common_snapping_turtle_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 common_spotted_whiptail,common_spotted_whiptail.png,common_spotted_whiptail_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 common_striped_woodlouse,common_striped_woodlouse.png,common_striped_woodlouse_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
+common_whitetail,common_whitetail.png,common_whitetail_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 common_yellowthroat,common_yellowthroat.png,common_yellowthroat_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 convergent_lady_beetle,convergent_lady_beetle.png,convergent_lady_beetle_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 coopers_hawk,coopers_hawk.png,coopers_hawk_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
@@ -108,6 +112,7 @@ eastern_bluebird,eastern_bluebird.png,eastern_bluebird_silhouette.png,"drawn by 
 eastern_box_turtle,eastern_box_turtle.png,eastern_box_turtle_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 eastern_carpenter_bee,eastern_carpenter_bee.png,eastern_carpenter_bee_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 eastern_chipmunk,eastern_chipmunk.png,eastern_chipmunk_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
+eastern_copperhead,eastern_copperhead.png,eastern_copperhead_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 eastern_cottontail,eastern_cottontail.png,eastern_cottontail_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 eastern_fence_lizard,eastern_fence_lizard.png,eastern_fence_lizard_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 eastern_gray_squirrel,eastern_gray_squirrel.png,eastern_gray_squirrel_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
@@ -123,6 +128,8 @@ eastern_phoebe,eastern_phoebe.png,eastern_phoebe_silhouette.png,"drawn by tools/
 eastern_pondhawk,eastern_pondhawk.png,eastern_pondhawk_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 eastern_ratsnake,eastern_ratsnake.png,eastern_ratsnake_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 eastern_red_backed_salamander,eastern_red_backed_salamander.png,eastern_red_backed_salamander_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
+eastern_red_bat,eastern_red_bat.png,eastern_red_bat_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
+eastern_tailed_blue,eastern_tailed_blue.png,eastern_tailed_blue_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 eastern_tiger_swallowtail,eastern_tiger_swallowtail.png,eastern_tiger_swallowtail_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 elk,elk.png,elk_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 ensatina,ensatina.png,ensatina_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
@@ -135,6 +142,7 @@ florida_cottonmouth,florida_cottonmouth.png,florida_cottonmouth_silhouette.png,"
 florida_gar,florida_gar.png,florida_gar_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 florida_red_bellied_cooter,florida_red_bellied_cooter.png,florida_red_bellied_cooter_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 florida_softshell_turtle,florida_softshell_turtle.png,florida_softshell_turtle_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
+fowlers_toad,fowlers_toad.png,fowlers_toad_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 fox_squirrel,fox_squirrel.png,fox_squirrel_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 garibaldi,garibaldi.png,garibaldi_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 giant_desert_centipede,giant_desert_centipede.png,giant_desert_centipede_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
@@ -173,6 +181,7 @@ house_centipede,house_centipede.png,house_centipede_silhouette.png,"drawn by too
 house_finch,house_finch.png,house_finch_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 house_sparrow,house_sparrow.png,house_sparrow_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 humpback_whale,humpback_whale.png,humpback_whale_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
+huron_skipper,huron_skipper.png,huron_skipper_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 isabella_tiger_moth,isabella_tiger_moth.png,isabella_tiger_moth_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 italian_wall_lizard,italian_wall_lizard.png,italian_wall_lizard_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 joro_spider,joro_spider.png,joro_spider_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
@@ -204,6 +213,7 @@ north_american_porcupine,north_american_porcupine.png,north_american_porcupine_s
 north_american_racer,north_american_racer.png,north_american_racer_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 north_american_river_otter,north_american_river_otter.png,north_american_river_otter_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 northern_cardinal,northern_cardinal.png,northern_cardinal_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
+northern_cricket_frog,northern_cricket_frog.png,northern_cricket_frog_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 northern_curly_tailed_lizard,northern_curly_tailed_lizard.png,northern_curly_tailed_lizard_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 northern_elephant_seal,northern_elephant_seal.png,northern_elephant_seal_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 northern_flicker,northern_flicker.png,northern_flicker_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
@@ -211,6 +221,7 @@ northern_mockingbird,northern_mockingbird.png,northern_mockingbird_silhouette.pn
 northern_short_tailed_shrew,northern_short_tailed_shrew.png,northern_short_tailed_shrew_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 northern_shoveler,northern_shoveler.png,northern_shoveler_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 northern_water_snake,northern_water_snake.png,northern_water_snake_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
+nosy_pill_woodlouse,nosy_pill_woodlouse.png,nosy_pill_woodlouse_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 ochre_sea_star,ochre_sea_star.png,ochre_sea_star_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 osprey,osprey.png,osprey_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 owl_limpet,owl_limpet.png,owl_limpet_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
@@ -220,6 +231,7 @@ painted_bunting,painted_bunting.png,painted_bunting_silhouette.png,"drawn by too
 painted_lady,painted_lady.png,painted_lady_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 painted_turtle,painted_turtle.png,painted_turtle_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 palm_warbler,palm_warbler.png,palm_warbler_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
+pearl_crescent,pearl_crescent.png,pearl_crescent_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 peterss_rock_agama,peterss_rock_agama.png,peterss_rock_agama_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 pileated_woodpecker,pileated_woodpecker.png,pileated_woodpecker_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 pine_barrens_treefrog,pine_barrens_treefrog.png,pine_barrens_treefrog_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
@@ -245,6 +257,7 @@ red_swamp_crayfish,red_swamp_crayfish.png,red_swamp_crayfish_silhouette.png,"dra
 red_tailed_hawk,red_tailed_hawk.png,red_tailed_hawk_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 red_winged_blackbird,red_winged_blackbird.png,red_winged_blackbird_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 red_wolf,red_wolf.png,red_wolf_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
+redbreast_sunfish,redbreast_sunfish.png,redbreast_sunfish_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 ring_billed_gull,ring_billed_gull.png,ring_billed_gull_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 ring_necked_snake,ring_necked_snake.png,ring_necked_snake_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 ringtail,ringtail.png,ringtail_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
@@ -266,6 +279,7 @@ scotch_bonnet,scotch_bonnet.png,scotch_bonnet_silhouette.png,"drawn by tools/mak
 sea_otter,sea_otter.png,sea_otter_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 side_blotched_lizard,side_blotched_lizard.png,side_blotched_lizard_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 sierran_treefrog,sierran_treefrog.png,sierran_treefrog_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
+sika_deer,sika_deer.png,sika_deer_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 silver_spotted_skipper,silver_spotted_skipper.png,silver_spotted_skipper_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 small_white,small_white.png,small_white_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0
 snowy_egret,snowy_egret.png,snowy_egret_silhouette.png,"drawn by tools/make_sprites.py (original pixel art, no photo source)",CC0-1.0

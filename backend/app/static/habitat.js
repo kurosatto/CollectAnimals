@@ -40,7 +40,7 @@ const HAB_ROLES = [
   [/hawk|eagle|vulture|condor|osprey|kestrel/, "soar"],
   [/hummingbird/, "hover"],
   [/quail|turkey|roadrunner/, "walk"],
-  [/firefly|swallowtail|monarch|painted_lady|mourning_cloak|fritillary|luna_moth|flame_skimmer|honey_bee|bumble_bee|queen|buckeye|hairstreak|white_peacock|longwing|salt_marsh_moth|pondhawk|dasher|pennant|_bat$|carpenter_bee|lanternfly|spongy_moth|small_white|skipper/, "flutter"],
+  [/firefly|swallowtail|monarch|painted_lady|mourning_cloak|fritillary|luna_moth|flame_skimmer|honey_bee|bumble_bee|queen|buckeye|hairstreak|white_peacock|longwing|salt_marsh_moth|pondhawk|dasher|pennant|_bat$|carpenter_bee|lanternfly|spongy_moth|small_white|skipper|whitetail|crescent|tailed_blue/, "flutter"],
   [/spider|widow|orbweaver/, "dangle"],
   [/frog|toad|peeper|grasshopper/, "hop"],
 ];
@@ -199,7 +199,17 @@ function habPerches(L, state) {
     const { sx, ftop, ptop } = habLiberty(L);
     return [[sx - 5, ptop], [sx + 5, ptop], [sx - 12, ftop], [sx + 12, ftop]];
   }
+  if (state === "VA") {
+    // Assateague: the lighthouse gallery and the island's sandy ends.
+    const { ix, ground, lx, ltop } = habAssateague(L);
+    return [[lx - 4, ltop - 1], [lx + 5, ltop - 1], [ix - 20, ground + 1], [ix + 22, ground + 1]];
+  }
   return [];
+}
+// Assateague Island out in the bay: where it sits, its lighthouse and the lamp.
+function habAssateague(L) {
+  const ix = L.sea + Math.round((L.w - L.sea) * .5), ground = L.water - 2, lx = ix + 12, ltop = ground - 46;
+  return { ix, ground, lx, ltop, lamp: [lx, ltop - 4] };
 }
 // Where the Statue of Liberty stands on its island in the harbor.
 function habLiberty(L) {
@@ -698,6 +708,7 @@ const HAB_SHOWCASE = {
   TX: { slug: "northern_mockingbird", common_name: "Northern Mockingbird", category: "bird", rarity: "common" },
   FL: { slug: "roseate_spoonbill", common_name: "Roseate Spoonbill", category: "bird", rarity: "uncommon" },
   NY: { slug: "black_capped_chickadee", common_name: "Black-capped Chickadee", category: "bird", rarity: "common" },
+  VA: { slug: "northern_cardinal", common_name: "Northern Cardinal", category: "bird", rarity: "common" },
   // States without their own pick yet: a robin, found in every state.
   default: { slug: "american_robin", common_name: "American Robin", category: "bird", rarity: "common" },
 };
@@ -1109,7 +1120,9 @@ function habTinted(img, slug, phase) {
 // sawgrass with cypress domes and cabbage palms, coreopsis, a palm for the
 // roosting tree, a mangrove island offshore and a rocket on its launch pad; New
 // York is fall color, with the Manhattan skyline beyond the hills, a sugar maple
-// and the Statue of Liberty out in the harbor.
+// and the Statue of Liberty out in the harbor; Virginia has the Blue Ridge over
+// Shenandoah's forests, flowering dogwood and Virginia bluebells, and Assateague
+// Island offshore with its red-and-white lighthouse and wild ponies.
 const HAB_SCENES = {
   CA: { far: ["#c99b48", "#dcb35e", "#ecc875", "#f7dc95"], near: ["#7d8a3c", "#97a24a", "#aeb65a", "#c6c977"],
         meadow: ["#5f9a3d", "#77b04a", "#8fc35a", "#a8d36d"], dots: "oak", tree: "oak",
@@ -1126,6 +1139,9 @@ const HAB_SCENES = {
   NY: { far: ["#9a7a52", "#b08a5a", "#c49c66", "#d6b078"], near: ["#7a7a3a", "#8e8a42", "#a49a4c", "#b8ac5a"],
         meadow: ["#5f9a3d", "#77b04a", "#8fc35a", "#a8d36d"], dots: "maple", tree: "maple",
         flowers: [["#9a6ad8", "#ffd84d"], ["#9a6ad8", "#ffd84d"], ["#ffd23a", "#c8641e"], ["#ffffff", "#ffe9a0"]] },
+  VA: { far: ["#4a7f52", "#5a925c", "#6ca567", "#82b878"], near: ["#3a7442", "#4a874c", "#5c9a56", "#72ad66"],
+        meadow: ["#5f9a3d", "#77b04a", "#8fc35a", "#a8d36d"], dots: "forest", tree: "round",
+        flowers: [["#ffffff", "#f3e6b0"], ["#f6b8cf", "#ffffff"], ["#5a7ae0", "#f6b8cf"], ["#5a7ae0", "#c4d0ff"]] },
   default: { far: ["#6f9e60", "#82b370", "#97c483", "#b0d69a"], near: ["#4f8d43", "#62a250", "#78b55e", "#90c771"],
              meadow: ["#5f9a3d", "#77b04a", "#8fc35a", "#a8d36d"], dots: "round", tree: "round",
              flowers: [["#ffffff", "#ffe9a0"], ["#ffd84d", "#fff2a0"], ["#f27aa8", "#ffc4dc"], ["#b48cff", "#e0d0ff"]] },
@@ -1223,7 +1239,7 @@ function habBackground(L, phase, state) {
         img.set(x, y, atmo(ramp(isSnow ? snow : rock, v, x, y), .28));
       }
     }
-  } else if (state === "NC") {
+  } else if (state === "NC" || state === "VA") {
     // The Blue Ridge: ridges fading into the haze.
     [[96, "#9fb6dc", "#b4c8e8"], [108, "#8199c8", "#98aedb"], [121, "#6683b8", "#7c97c9"]].forEach(([base, a, b], i) => {
       const pal = P(a, b);
@@ -1546,6 +1562,52 @@ function habBackground(L, phase, state) {
     for (const ay of [rtop + 16, rtop + 34]) for (let x = rx + 5; x < gx - 3; x++) rk.set(x, ay, steel[0]);
     for (let dx = -10; dx <= 18; dx++) for (let y = pad; y < pad + 3; y++) rk.set(rx + dx, y, ramp(P("#7a7a80", "#9a9aa0", "#b8b8bc"), .8 - (y - pad) * .3, rx + dx, y));
     rk.onto(img, P("#1e1e24"));
+  } else if (state === "VA") {
+    // Assateague Island: a sandy barrier island with marsh grass, the striped
+    // lighthouse, and the wild ponies grazing.
+    const as = pxLayer(W, H), { ix, ground, lx, ltop } = habAssateague(L);
+    const sand = P("#c8b07a", "#dcc690", "#ecdcac"), marsh = P("#6a8a3a", "#7f9e44", "#98b456", "#b0c66a");
+    pxBlob(as, ix, ground + 5, 34, 6, sand, { flat: true, rough: .3, seed: 11 });
+    pxBlob(as, ix - 4, ground + 2, 24, 4, marsh, { flat: true, rough: .8, grain: 1, seed: 12 });
+    for (let i = 0; i < 18; i++) {
+      const x = ix - 26 + Math.floor(hash2(i, 81) * 50), y = ground + 1 + Math.floor(hash2(i, 82) * 3);
+      as.set(x, y - 1, marsh[3]); as.set(x, y - 2, marsh[2]);
+    }
+    // the lighthouse: red and white bands, a black lantern and a white base house
+    const red = P("#7a2018", "#a8302a", "#c84a3a", "#de6a56"), white = P("#b9b5aa", "#dcd8cc", "#f6f3ea", "#ffffff");
+    const black = P("#15171c", "#2a2d34");
+    for (let y = ltop; y < ground + 1; y++) {
+      const hw = Math.round(2 + (y - ltop) * .07);
+      for (let dx = -hw; dx <= hw; dx++)
+        as.set(lx + dx, y, ramp(Math.floor((y - ltop) / 8) % 2 ? white : red, .9 - (dx + hw) / (2 * hw + 1) * .75, lx + dx, y));
+    }
+    for (let dx = -4; dx <= 4; dx++) as.set(lx + dx, ltop - 1, black[0]);
+    for (let y = ltop - 6; y < ltop - 1; y++) for (let dx = -2; dx <= 2; dx++)
+      as.set(lx + dx, y, Math.abs(dx) === 2 ? black[1] : P("#ffe9a0"), night ? 1 : 0);
+    for (let y = ltop - 9; y < ltop - 6; y++) for (let dx = -(y - ltop + 10); dx <= y - ltop + 10; dx++) as.set(lx + dx, y, black[1]);
+    as.set(lx, ltop - 10, black[0]);
+    for (let y = ground - 4; y < ground + 1; y++) for (let dx = 4; dx <= 10; dx++)
+      as.set(lx + dx, y, y === ground - 4 ? red[0] : ramp(white, .8 - (dx - 4) / 7 * .5, lx + dx, y));
+    // the wild ponies: a chestnut pinto and a bay, heads down in the grass, and a foal
+    const pony = (px, py, coat, patch, mane, s, grazing) => {
+      const c = P(...coat);
+      for (let y = 0; y < 4 * s; y++) for (let x = 0; x < 8 * s; x++) {
+        const pinto = patch && hash2(Math.floor(x / 3), Math.floor(y / 2), px) > .55;
+        as.set(px + x, py - 3 * s - y, pinto ? P(patch) : ramp(c, .85 - y / (4 * s) * .5, px + x, py - y));
+      }
+      for (const lx2 of [0, 2 * s, 5 * s, 7 * s]) for (let y = 0; y < 3 * s; y++) as.set(px + lx2, py - y, c[0]);
+      // neck and head: down to the grass, or up and looking
+      const hx = px - 1, nk = grazing ? [[0, -6], [-1, -5], [-1, -4], [-2, -3], [-2, -2], [-3, -1]] : [[0, -6], [0, -7], [-1, -8], [-1, -9], [-2, -9], [-3, -9], [-3, -8]];
+      for (const [dx, dy] of nk) for (let k = 0; k < s; k++) as.set(hx + dx * s + k, py + dy * s + (s > 1 ? 1 : 0), c[1]);
+      for (const [dx, dy] of grazing ? [[0, -7], [1, -7]] : [[0, -10], [1, -9]]) as.set(hx + dx * s, py + dy * s, P(mane));
+      as.set(px + 8 * s, py - 6 * s, P(mane)); as.set(px + 8 * s, py - 5 * s, P(mane));  // tail
+    };
+    pony(ix - 28, ground + 2, ["#7a3a1c", "#9a4e26", "#b86a38"], "#f2ece0", "#f2ece0", 1, true);
+    pony(ix - 14, ground + 3, ["#4a2a1a", "#6a3c24", "#86522e"], null, "#1e1612", 1, false);
+    pony(ix - 1, ground + 4, ["#9a5e34", "#b8784a", "#d09060"], "#f6f0e4", "#5a3a22", 1, true);
+    as.onto(img, P("#2a2014"));
+    const foam = P("#e9f6ff");
+    for (let dx = -36; dx <= 36; dx++) if (hash2(dx, 83) > .45) img.set(ix + dx, ground + 9 + (hash2(dx, 84) > .7 ? 1 : 0), foam);
   } else if (state === "NY") {
     // Fallen leaves scattered on the meadow.
     const lv = [P("#c8441c"), P("#e8782a"), P("#e8b82a"), P("#9a2a16")];
@@ -1789,6 +1851,14 @@ function habAmbient(c, L, phase) {
     const [lx, ly] = habLiberty(L).torch, k = .25 + Math.sin(t * 3.1) * .05 + Math.sin(t * 7.3) * .03;
     c.fillStyle = `rgba(255,220,120,${k.toFixed(3)})`; c.fillRect(lx - 4, ly - 5, 10, 8);
     c.fillStyle = `rgba(255,220,120,${(k * .5).toFixed(3)})`; c.fillRect(lx - 8, ly - 3, 18, 4);
+  } else if (habState() === "VA" && phase !== "day") {
+    // Assateague's lighthouse flashes after sundown.
+    const [lx, ly] = habAssateague(L).lamp;
+    if (Math.sin(t * 2.1) > .3) {
+      c.fillStyle = "rgba(255,240,160,.3)"; c.fillRect(lx - 9, ly - 4, 19, 8);
+      c.fillStyle = "rgba(255,240,160,.22)"; c.fillRect(lx - 18, ly - 1, 37, 3);
+      c.fillStyle = "#fff6c0"; c.fillRect(lx - 1, ly - 2, 3, 4);
+    }
   } else if (habState() === "NC" && phase !== "day") {
     // The lighthouse lamp flashes after sundown.
     const on = Math.sin(t * 2.4) > .2, lx = L.sea - 12, ly = L.water - 62;

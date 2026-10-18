@@ -277,6 +277,11 @@
    "walk",
    "sleep"
   ],
+  "broad_headed_skink": [
+   "idle",
+   "walk",
+   "sleep"
+  ],
   "brook_trout": [
    "idle",
    "swim",
@@ -408,6 +413,12 @@
    "fly",
    "sleep"
   ],
+  "chipping_sparrow": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep"
+  ],
   "coast_horned_lizard": [
    "idle",
    "walk",
@@ -471,6 +482,11 @@
    "fly",
    "sleep"
   ],
+  "common_rough_woodlouse": [
+   "idle",
+   "walk",
+   "sleep"
+  ],
   "common_shiny_woodlouse": [
    "idle",
    "walk",
@@ -490,6 +506,11 @@
   "common_striped_woodlouse": [
    "idle",
    "walk",
+   "sleep"
+  ],
+  "common_whitetail": [
+   "idle",
+   "fly",
    "sleep"
   ],
   "common_yellowthroat": [
@@ -603,6 +624,11 @@
    "walk",
    "sleep"
   ],
+  "eastern_copperhead": [
+   "idle",
+   "walk",
+   "sleep"
+  ],
   "eastern_cottontail": [
    "idle",
    "walk",
@@ -678,6 +704,16 @@
    "walk",
    "sleep"
   ],
+  "eastern_red_bat": [
+   "idle",
+   "fly",
+   "sleep"
+  ],
+  "eastern_tailed_blue": [
+   "idle",
+   "fly",
+   "sleep"
+  ],
   "eastern_tiger_swallowtail": [
    "idle",
    "fly",
@@ -736,6 +772,12 @@
    "sleep"
   ],
   "florida_softshell_turtle": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep"
+  ],
+  "fowlers_toad": [
    "idle",
    "walk",
    "swim",
@@ -942,6 +984,11 @@
    "swim",
    "sleep"
   ],
+  "huron_skipper": [
+   "idle",
+   "fly",
+   "sleep"
+  ],
   "isabella_tiger_moth": [
    "idle",
    "walk",
@@ -1104,6 +1151,12 @@
    "fly",
    "sleep"
   ],
+  "northern_cricket_frog": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep"
+  ],
   "northern_curly_tailed_lizard": [
    "idle",
    "walk",
@@ -1139,6 +1192,11 @@
    "sleep"
   ],
   "northern_water_snake": [
+   "idle",
+   "walk",
+   "sleep"
+  ],
+  "nosy_pill_woodlouse": [
    "idle",
    "walk",
    "sleep"
@@ -1185,6 +1243,11 @@
   "palm_warbler": [
    "idle",
    "walk",
+   "fly",
+   "sleep"
+  ],
+  "pearl_crescent": [
+   "idle",
    "fly",
    "sleep"
   ],
@@ -1322,6 +1385,11 @@
    "walk",
    "sleep"
   ],
+  "redbreast_sunfish": [
+   "idle",
+   "swim",
+   "sleep"
+  ],
   "ring_billed_gull": [
    "idle",
    "walk",
@@ -1434,6 +1502,11 @@
    "idle",
    "walk",
    "swim",
+   "sleep"
+  ],
+  "sika_deer": [
+   "idle",
+   "walk",
    "sleep"
   ],
   "silver_spotted_skipper": [
