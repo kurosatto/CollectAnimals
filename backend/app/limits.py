@@ -47,7 +47,10 @@ failed_logins_by_ip = Limit(300, 30)
 # New accounts per address.
 registrations_by_ip = Limit(3600, 10)
 
-ALL = (failed_logins_by_account, failed_logins_by_ip, registrations_by_ip)
+# Habitat weather for the player's own spot (each new spot asks the weather service).
+weather_spots_by_ip = Limit(3600, 20)
+
+ALL = (failed_logins_by_account, failed_logins_by_ip, registrations_by_ip, weather_spots_by_ip)
 
 
 def client_ip(request: Request) -> str:

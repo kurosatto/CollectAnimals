@@ -11,7 +11,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, Request, UploadFile, status
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
 from PIL import Image, ImageOps, UnidentifiedImageError
@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session
 
 from . import classifier as clf
 from . import dex
-from . import bonds, goals, limits, notices, places, scoring, social
+from . import bonds, goals, limits, notices, places, scoring, social, weather
 from . import states as st
 from .auth import DUMMY_HASH, create_token, current_user, hash_password, optional_user, verify_password
 from .classifier import OTHER_LABEL, Prediction
@@ -437,6 +437,21 @@ def get_species(key: str, state: str | None = Query(None), user: User | None = D
                 db: Session = Depends(get_db)):
     s, m = _species_in(key, state_or_404(state).code, db)
     return species_out(s, s.id in revealed_species_ids(db, user), m)
+
+
+@app.get("/weather/{state}")
+def get_weather(request: Request, state: str, lat: float | None = Query(None), lon: float | None = Query(None)):
+    """The weather right now for the habitat scene (app/weather.py), or null."""
+    s = state_or_404(state)
+    # Past a few spots an hour, an address gets its state's city (always cached).
+    if lat is not None and lon is not None:
+        ip = limits.client_ip(request)
+        if limits.weather_spots_by_ip.blocked(ip):
+            lat = lon = None
+        else:
+            limits.weather_spots_by_ip.hit(ip)
+    where = weather.spot(s.code, lat, lon, s.bounds)
+    return JSONResponse(weather.current(where) if where else None, headers={"Cache-Control": "private, max-age=600"})
 
 
 @app.get("/map/{state}")

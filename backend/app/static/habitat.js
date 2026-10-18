@@ -8,7 +8,8 @@
 // hoppers, fliers, swimmers, tide pool animals...) and is awake by day, by night
 // or both (`activity` from /me/collection). The scene follows the phone's clock,
 // and a button peeks at the other half of the day. Tap an animal for its name,
-// tap again for its Field Guide page.
+// tap again for its Field Guide page. The sky follows the real weather outside
+// (rain, snow, fog, wind, storms) and the animals react to it.
 const HAB_H = 270;
 // While you look at a friend's profile, the scene moves into it and shows their
 // animals in their state's scenery (`visit`); closing the profile brings yours back.
@@ -138,6 +139,7 @@ function habitatSet(entries) {
     if (!habSheets[a.s.slug]) { habSheets[a.s.slug] = new Image(); habSheets[a.s.slug].src = `/sprites/anim/${a.s.slug}.png`; }
     return a;
   });
+  habWeather();
   habNote();
   if (habStill) setTimeout(habDraw, 300);
 }
@@ -151,8 +153,8 @@ function habPhase() {
   if (!hab.peek) return real;
   return real === "day" ? "night" : "day";
 }
-const habAwake = (a, phase) => phase === "dawn" || phase === "dusk" || a.activity === "any"
-  || a.activity === (phase === "night" ? "night" : "day");
+const habAwake = (a, phase) => !habTuckedIn(a) && (phase === "dawn" || phase === "dusk" || a.activity === "any"
+  || a.activity === (phase === "night" ? "night" : "day"));
 
 function habNote() {
   if (hab.visit?.showcase) return;
@@ -161,7 +163,7 @@ function habNote() {
   const who = hab.visit ? `${hab.visit.username}'s habitat` : "here";
   $("hab-note").textContent = !n ? (hab.visit ? `No animals in ${who} yet.` : "Capture animals and they'll move in here.")
     : `${n} animal${n > 1 ? "s" : ""} live${n > 1 ? "" : "s"} ${hab.visit ? "in " + who : "here"}` + (asleep ? `, ${asleep} asleep` : "")
-      + ". Tap one to say hi.";
+      + (hab.wx ? ". " + habWxLine() : ". Tap one to say hi.");
   const night = phase === "night";
   $("hab-peek").textContent = hab.peek ? "Back to now" : night || phase === "dusk" ? "☀️ Peek at daytime" : "🌙 Peek at night";
 }
@@ -221,10 +223,11 @@ function habLeavePerch(a) {
   delete a.perch;
 }
 
-// Where a sleeping animal rests, or null if it sleeps where it is: sea birds on
-// the coastal landmark while there's room, other fliers in the tree.
+// Where a sleeping (or sheltering) animal rests, or null if it sleeps where it is:
+// sea birds on the coastal landmark while there's room, other fliers in the tree.
 function habRestSpot(a, awake, counter) {
-  if (awake) return null;
+  // Small fliers wait out the rain in the tree.
+  if (awake) return habSheltering(a) ? habRoost(counter.n++) : null;
   if (HAB_SEABIRDS.test(a.s.slug)) {
     const i = habPerchFor(a);
     if (i !== null) return [...habPerches(hab.L, habState())[i], HAB_PERCH_SCALE, HAB_PERCH_SCALE];
@@ -336,6 +339,7 @@ function habPerchStep(a, dt) {
 
 function habStep(a, dt, awake) {
   a.phase += dt;
+  habWxReact(a, dt, awake);
   if (awake && HAB_SEABIRDS.test(a.s.slug) && HAB_FLIERS.has(a.role) && habPerchStep(a, dt)) return;
   if (!awake && (a.mode === "toPerch" || a.mode === "perched")) a.mode = a.role === "dive" ? "fly" : null;
   // Awake birds that don't fly to perches (oystercatchers wading) give theirs up.
@@ -450,6 +454,9 @@ function habPose(a, awake, roost) {
     case "float": case "paddle": y += Math.sin(a.phase * 1.5) * 1.5; break;
     case "jelly": y += Math.sin(a.phase * .8) * 6; sy = 1 + Math.sin(a.phase * .8 + 1.6) * .12; sx = 2 - sy; break;
   }
+  // Shaking off the rain or shivering, and jumping at thunder.
+  if (a.shake > 0) x += Math.floor(a.shake * 28) % 2 ? 1 : -1;
+  if (a.jump > 0) y -= Math.sin(a.jump / .35 * Math.PI) * 7;
   return [x, y, sx, sy, tilt];
 }
 
@@ -460,7 +467,8 @@ function habAnim(a, awake, roost) {
   if (!acts) return null;
   const has = (k) => acts.includes(k);
   const cyc = (t) => ((Math.floor(t) % 4) + 4) % 4;
-  if (!awake || roost) return ["sleep", cyc(a.phase * 1.2)];
+  if (!awake) return ["sleep", cyc(a.phase * 1.2)];
+  if (roost) return ["idle", 0];  // sheltering from the rain
   if (a.mode === "perched") return ["idle", 0];
   if (a.mode === "toPerch") return has("fly") ? ["fly", cyc(a.phase * 9 / (2 * Math.PI) * 4)] : ["idle", 0];
   switch (a.role) {
@@ -491,6 +499,7 @@ function habDraw() {
   const c = cv.getContext("2d");
   c.imageSmoothingEnabled = false;
   c.drawImage(hab.bg, 0, 0);
+  habWxShade(c, L, phase);
   habAmbient(c, L, phase);
   const roosting = { n: 0 };
   const poses = hab.animals.map((a) => {
@@ -503,7 +512,7 @@ function habDraw() {
     if (anim && anim[0] !== "idle" && a.role !== "hop" && a.role !== "jelly" && a.mode !== "rise" && !(roost && roost[2])) sx = sy = 1;
     const perched = awake && a.mode === "perched";
     return { a, awake, phase, anim, roost: !!roost || perched, x: Math.round(x), y: Math.round(y), sx, sy, tilt,
-             sky: awake && HAB_FLIERS.has(a.role) && !perched, hidden: awake && a.mode === "under" };
+             sky: awake && HAB_FLIERS.has(a.role) && !perched && !roost, hidden: awake && a.mode === "under" };
   });
   const sea = poses.filter((p) => HAB_SEA.has(p.a.role) && !p.sky).sort((p, q) => p.y - q.y);
   const land = poses.filter((p) => !HAB_SEA.has(p.a.role) && !p.sky).sort((p, q) => p.y - q.y);
@@ -516,6 +525,7 @@ function habDraw() {
   land.forEach((p) => habSprite(c, p));
   sky.forEach((p) => habSprite(c, p));
   habFx(c, phase);
+  habWxDraw(c, L, phase, poses);
   for (const p of poses) {
     if (/firefly/.test(p.a.s.slug) && p.awake && phase !== "day") {
       const on = Math.sin(p.a.phase * 4) > -.2;
@@ -587,7 +597,7 @@ function habSprite(c, p) {
   }
 }
 
-// Splash drops, ripple rings and skimmer wakes.
+// Splash drops, ripple rings, skimmer wakes and frosty breath.
 function habFx(c, phase) {
   const light = phase === "night" ? "rgba(200,220,255," : "rgba(240,250,255,";
   for (const f of hab.fx) {
@@ -596,6 +606,10 @@ function habFx(c, phase) {
       c.fillStyle = light + a + ")"; c.fillRect(Math.round(f.x), Math.round(f.y), 2, 2);
     } else if (f.kind === "dot") {
       c.fillStyle = light + a * .8 + ")"; c.fillRect(Math.round(f.x) - 1, Math.round(f.y), 3, 1);
+    } else if (f.kind === "puff") {
+      // A frosty breath.
+      const n = Math.round(2 + (1.2 - f.life) * 3);
+      c.fillStyle = light + (a * .6).toFixed(2) + ")"; c.fillRect(Math.round(f.x) - (n >> 1), Math.round(f.y) - (n >> 1), n, n);
     } else {
       c.fillStyle = light + a * .8 + ")";
       const r = Math.round(f.r);
@@ -612,6 +626,7 @@ function habFxStep(dt) {
     f.life -= dt;
     if (f.kind === "drop") { f.vy += 220 * dt; f.x += f.vx * dt; f.y += f.vy * dt; }
     else if (f.kind === "ring") f.r += 9 * dt;
+    else if (f.kind === "puff") { f.x += f.vx * dt; f.y -= 5 * dt; }
   }
   hab.fx = hab.fx.filter((f) => f.life > 0);
 }
@@ -649,7 +664,8 @@ function habTap(ev) {
   hab.picked = h.a;
   hab.pickedUntil = performance.now() + 4000;
   const b = $("hab-bubble");
-  b.textContent = h.a.s.common_name + (h.awake ? "" : " 💤");
+  const mood = habWxMood(h.a, h.awake);
+  b.textContent = h.a.s.common_name + (mood ? ` · ${mood}` : h.awake ? "" : " 💤");
   b.title = hab.visit?.showcase ? "" : "Tap again to open its page";
   if (habStill) habDraw();
 }
@@ -708,9 +724,262 @@ function habLoop(now) {
   hab.last = now;
   const phase = habPhase();
   hab.t += dt;
+  habWeather();
   hab.animals.forEach((a) => habStep(a, dt, habAwake(a, phase)));
   habFxStep(dt);
+  habWxStep(dt);
   habDraw();
+}
+
+// ---- Weather: the real sky outside right now (GET /weather/{state}, from the
+// National Weather Service) as clouds, rain, snow, fog, wind and thunderstorms.
+// The animals react: small fliers wait out the rain in the tree, ducks and frogs
+// love it, the others shake it off or shiver, reptiles, amphibians and bugs stay
+// tucked in when it's cold, and everyone jumps at thunder. Add ?weather=rain,windy
+// (or storm, snow, fog, cloudy, clear; breezy; cold) to the page's URL to preview.
+const HAB_GREY = new Set(["cloudy", "rain", "storm", "snow"]);
+const HAB_LAND = new Set(["walk", "hop", "shore", "wade", "beach"]);
+const HAB_WX_ICON = { clear: "☀️", partly: "⛅", cloudy: "☁️", fog: "🌫️", rain: "🌧️", storm: "⛈️", snow: "🌨️" };
+const HAB_WX_WORDS = { clear: "Clear skies", partly: "Some clouds", cloudy: "Cloudy", fog: "Foggy", rain: "Raining",
+                       storm: "Thunderstorms", snow: "Snowing" };
+const habWxTest = (() => { try { return new URLSearchParams(location.search).get("weather"); } catch { return null; } })();
+Object.assign(hab, { wx: null, wxKey: "", wxAt: 0, drops: [], gusts: [], flash: 0, bolt: null, boltIn: 5 });
+
+// Fetches the weather for the scene's state, again every 15 minutes.
+function habWeather() {
+  if (habWxTest) {
+    if (!hab.wx) {
+      const w = habWxTest.split(",");
+      hab.wx = { sky: w.find((k) => k in HAB_WX_ICON) || "clear", wind: w.find((k) => k === "breezy" || k === "windy") || "calm",
+                 wind_from: 270, temp_f: w.includes("cold") ? 30 : 60, text: "Preview", place: null };
+      habNote();
+    }
+    return;
+  }
+  const state = habState(), now = Date.now();
+  if (state === hab.wxKey && now - hab.wxAt < 15 * 60e3) return;
+  if (state !== hab.wxKey) { hab.wx = null; hab.drops = []; }
+  hab.wxKey = state; hab.wxAt = now;
+  // Your own scene uses roughly where you are, when the page already knows it;
+  // a friend's uses their state's big city.
+  const pos = !hab.visit && typeof feedPos !== "undefined" && feedPos;
+  const q = pos ? `?lat=${pos.lat.toFixed(1)}&lon=${pos.lon.toFixed(1)}` : "";
+  fetch(`/weather/${state}${q}`).then((r) => (r.ok ? r.json() : null)).catch(() => null).then((w) => {
+    if (hab.wxKey !== state) return;
+    hab.wx = w && w.sky ? w : null;
+    hab.drops = [];
+    habNote();
+    if (habStill) habDraw();
+  });
+}
+
+// The wind across the scene in px/s, + to the right (a west wind).
+function habGust() {
+  const w = hab.wx;
+  if (!w || w.wind === "calm") return 0;
+  const k = w.wind === "windy" ? 14 : 7;
+  return w.wind_from == null || -Math.sin(w.wind_from * Math.PI / 180) >= 0 ? k : -k;
+}
+const habCold = () => !!hab.wx && (hab.wx.sky === "snow" || (hab.wx.temp_f != null && hab.wx.temp_f < 45));
+const habWet = () => !!hab.wx && (hab.wx.sky === "rain" || hab.wx.sky === "storm");
+const habTuckedIn = (a) => habCold() && /reptile|amphibian|invertebrate|insect/.test(a.s.category) && !HAB_SEA.has(a.role);
+const habSheltering = (a) => habWet() && ["fly", "flutter", "hover", "soar"].includes(a.role) && !HAB_SEABIRDS.test(a.s.slug);
+const habLovesRain = (a) => a.s.category === "amphibian" || a.role === "paddle" || /duck|goose|swan|mallard|gallinule|coot/.test(a.s.slug);
+
+// "🌧️ Raining in Houston, 61°F." for the line under the scene.
+function habWxLine() {
+  const w = hab.wx, moon = habPhase() === "night" && (w.sky === "clear" || w.sky === "partly");
+  let line = `${moon ? "🌙" : HAB_WX_ICON[w.sky]} ${HAB_WX_WORDS[w.sky]}`;
+  if (w.wind === "windy") line += " and windy";
+  if (w.place) line += ` in ${w.place}`;
+  if (w.temp_f != null) line += `, ${w.temp_f}°F`;
+  return line + ".";
+}
+
+// What a tapped animal is up to in this weather, or null.
+function habWxMood(a, awake) {
+  if (!hab.wx) return null;
+  if (habTuckedIn(a)) return "tucked in from the cold 💤";
+  if (!awake) return null;
+  if (habSheltering(a)) return "staying dry";
+  if (habWet() && habLovesRain(a)) return "loves the rain";
+  if (hab.wx.sky === "snow") return "out in the snow";
+  if (hab.wx.wind === "windy" && HAB_FLIERS.has(a.role)) return "riding the wind";
+  return null;
+}
+
+// Every few seconds an animal reacts to the weather.
+function habWxReact(a, dt, awake) {
+  if (a.react && (a.react.life -= dt) <= 0) a.react = null;
+  if (a.shake > 0) a.shake -= dt;
+  if (a.jump > 0) a.jump -= dt;
+  if (!hab.wx || !awake || habSheltering(a)) return;
+  const gust = habGust();
+  if (gust && (a.role === "fly" || a.role === "flutter")) a.x += gust * (a.role === "flutter" ? .5 : 1) * dt;
+  if ((a.wxIn = (a.wxIn ?? rnd(2, 8)) - dt) > 0) return;
+  a.wxIn = rnd(6, 14);
+  if (habWet() && habLovesRain(a)) { a.react = { kind: "note", life: 1.6 }; return; }
+  if (!HAB_LAND.has(a.role) || a.pause <= 0) return;
+  const nose = a.x + (a.dir > 0 ? 12 : -12);
+  if (habWet()) {
+    a.shake = .5;
+    for (let i = 0; i < 6; i++) {
+      hab.fx.push({ kind: "drop", x: a.x + rnd(-6, 6), y: a.y - rnd(8, 18), vx: rnd(-45, 45), vy: rnd(-80, -30), life: .6 });
+    }
+  } else if (habCold()) {
+    a.shake = .8;
+    hab.fx.push({ kind: "puff", x: nose, y: a.y - 16, vx: (a.dir > 0 ? 1 : -1) * 5, life: 1.2 });
+  }
+}
+
+function habDrop(d, anywhere) {
+  d.x = rnd(-20, hab.L.w + 20);
+  d.floor = rnd(140, HAB_H);
+  d.y = anywhere ? rnd(-10, d.floor) : rnd(-30, -4);
+  d.v = d.snow ? rnd(14, 30) : rnd(230, 300);
+  d.len = Math.floor(rnd(4, 8));
+  d.ph = rnd(0, 6.3);
+  d.big = Math.random() < .3;
+  return d;
+}
+function habGustLine(gust, anywhere) {
+  const L = hab.L;
+  return { x: anywhere ? rnd(0, L.w) : gust < 0 ? L.w + 30 : -30, y: rnd(20, 240), len: Math.floor(rnd(14, 30)),
+           v: rnd(150, 230), leaf: Math.random() < .4, col: pick("#7aa040", "#c8862a", "#a8b848") };
+}
+// Enough raindrops, snowflakes and gusts for the weather and the canvas width.
+function habWxFill() {
+  const w = hab.wx, L = hab.L, snow = !!w && w.sky === "snow";
+  const n = w ? Math.round(({ rain: 70, storm: 120, snow: 90 }[w.sky] || 0) * L.w / 480) : 0;
+  if (hab.drops.length && hab.drops[0].snow !== snow) hab.drops = [];
+  while (hab.drops.length < n) hab.drops.push(habDrop({ snow }, true));
+  hab.drops.length = Math.min(hab.drops.length, n);
+  const g = !w || w.wind === "calm" ? 0 : w.wind === "windy" ? 8 : 3;
+  while (hab.gusts.length < g) hab.gusts.push(habGustLine(habGust(), true));
+  hab.gusts.length = Math.min(hab.gusts.length, g);
+}
+
+// Raindrops hitting water make rings; on land, a tiny splash.
+function habSplashAt(x, y) {
+  if (Math.random() > .25) return;
+  const L = hab.L, p = L.pond, row = Math.min(HAB_H - 1, Math.round(y));
+  const wet = (y > L.water + 2 && x > L.surf[row]) || ((x - p.x) / p.rx) ** 2 + ((y - p.y) / p.ry) ** 2 < 1;
+  hab.fx.push(wet ? { kind: "ring", x, y, r: 1, life: .5 } : { kind: "dot", x, y, life: .25 });
+}
+
+function habWxStep(dt) {
+  const w = hab.wx, L = hab.L;
+  if (!L) return;
+  habWxFill();
+  if (!w) return;
+  const gust = habGust();
+  for (const d of hab.drops) {
+    d.y += d.v * dt;
+    d.x += (d.snow ? Math.sin(hab.t * 1.3 + d.ph) * 8 + gust * 1.5 : gust * 4) * dt;
+    if (d.y >= d.floor) { if (!d.snow) habSplashAt(d.x, d.floor); habDrop(d, false); }
+    if (d.x < -20) d.x += L.w + 40; else if (d.x > L.w + 20) d.x -= L.w + 40;
+  }
+  for (const g of hab.gusts) {
+    g.x += (gust < 0 ? -1 : 1) * g.v * dt;
+    if (g.x > L.w + 30 || g.x < -30) Object.assign(g, habGustLine(gust, false));
+  }
+  hab.flash = Math.max(0, hab.flash - dt * 2.2);
+  // A gentle flash every so often in a thunderstorm (not with reduced motion).
+  if (w.sky === "storm" && !habStill && (hab.boltIn -= dt) <= 0) {
+    hab.boltIn = rnd(8, 18);
+    hab.flash = .45;
+    const pts = [];
+    for (let x = rnd(L.w * .2, L.w * .85), y = 0, end = rnd(70, 110); y < end; y += rnd(5, 10), x += rnd(-6, 6)) pts.push([x, y]);
+    hab.bolt = pts;
+    const phase = habPhase();
+    for (const a of hab.animals) {
+      if (HAB_LAND.has(a.role) && habAwake(a, phase)) { a.jump = .35; a.react = { kind: "!", life: 1.2 }; }
+    }
+  }
+}
+
+// Under a heavy sky: the sky goes grey (hiding the sun), the land a little
+// darker, and snow whitens the ground. Drawn before the clouds and animals.
+function habWxShade(c, L, phase) {
+  const w = hab.wx, sky = w && { cloudy: .5, rain: .65, storm: .75, snow: .55, fog: .45 }[w.sky];
+  if (!sky) return;
+  const pale = w.sky === "snow" || w.sky === "fog", night = phase === "night";
+  const rgb = night ? (pale ? "70,78,100" : "26,30,44") : pale ? "200,206,214" : w.sky === "storm" ? "92,100,114" : "128,138,152";
+  for (let y = 0; y < 160; y += 2) {
+    c.fillStyle = `rgba(${rgb},${(sky * (1 - (y / 160) ** 2)).toFixed(3)})`;
+    c.fillRect(0, y, L.w, 2);
+  }
+  const land = { cloudy: .08, rain: .16, storm: .24, snow: .2, fog: .14 }[w.sky];
+  c.fillStyle = pale ? `rgba(235,240,248,${land})` : `rgba(50,60,80,${land})`;
+  c.fillRect(0, 0, L.w, HAB_H);
+}
+
+const HAB_GLYPHS = { note: ["..###", "..#.#", "..#..", "###..", "###.."], "!": ["##", "##", "##", "..", "##"] };
+function habGlyph(c, kind, x, y) {
+  const rows = HAB_GLYPHS[kind];
+  const dots = (dx, dy) => rows.forEach((r, j) => [...r].forEach((ch, i) => ch === "#" && c.fillRect(x + i + dx, y + j + dy, 1, 1)));
+  c.fillStyle = "#1c2a1c";
+  [[-1, 0], [1, 0], [0, -1], [0, 1]].forEach(([dx, dy]) => dots(dx, dy));
+  c.fillStyle = kind === "!" ? "#ff6a4a" : "#ffffff";
+  dots(0, 0);
+}
+
+// Fog, rain, snow, gusts and lightning in front of everything, and the animals'
+// little reactions over their heads.
+function habWxDraw(c, L, phase, poses) {
+  const w = hab.wx;
+  if (!w) return;
+  if (!hab.drops.length) habWxFill();
+  const night = phase === "night", t = hab.t, gust = habGust();
+  if (w.sky === "fog") {
+    for (let b = 0; b < 4; b++) {
+      const y0 = 60 + b * 50, x0 = ((t * (3 + b) * (b % 2 ? 1 : -1)) % 64 + 64) % 64;
+      for (let r = 0; r < 22; r++) {
+        c.fillStyle = (night ? "rgba(150,160,185," : "rgba(235,240,245,") + (Math.sin(r / 22 * Math.PI) * .38).toFixed(3) + ")";
+        for (let x = x0 - 64; x < L.w; x += 64) c.fillRect(Math.round(x + Math.sin(r * .7 + b) * 6), y0 + r, 48 + (r % 3) * 4, 1);
+      }
+    }
+  }
+  const rain = night ? "rgba(170,190,235,.5)" : "rgba(215,230,250,.65)";
+  const snow = night ? "rgba(225,232,255,.85)" : "rgba(255,255,255,.95)";
+  for (const d of hab.drops) {
+    if (d.snow) { c.fillStyle = snow; const n = d.big ? 2 : 1;
+      c.fillRect(Math.round(d.x), Math.round(d.y), n + 1, n); c.fillRect(Math.round(d.x) + (n > 1 ? 1 : 0), Math.round(d.y) - 1, 1, n + 2); continue; }
+    c.fillStyle = rain;
+    const sx = gust * 4 / d.v;
+    for (let k = 0; k < d.len; k++) c.fillRect(Math.round(d.x - sx * k), Math.round(d.y) - k, 1, 1);
+  }
+  for (const g of hab.gusts) {
+    const x = Math.round(g.x), y = Math.round(g.y + Math.sin(g.x * .05) * 3);
+    if (g.leaf) {
+      c.fillStyle = g.col;
+      const flip = Math.floor(g.x / 6) % 2;
+      c.fillRect(x, y, flip ? 2 : 3, flip ? 2 : 1);
+    } else {
+      c.fillStyle = night ? "rgba(200,215,255,.45)" : "rgba(255,255,255,.75)";
+      c.fillRect(x, y, g.len, 1);
+      c.fillRect(gust < 0 ? x - 3 : x + g.len, y - 1, 3, 1);
+    }
+  }
+  if (hab.flash > 0) {
+    if (hab.bolt && hab.flash > .25) {
+      c.fillStyle = "#fffbe0";
+      hab.bolt.forEach(([x, y], i) => {
+        const [nx, ny] = hab.bolt[i + 1] || [x, y + 6];
+        for (let k = 0; k <= 6; k++) c.fillRect(Math.round(x + (nx - x) * k / 6), Math.round(y + (ny - y) * k / 6), 2, 2);
+      });
+    }
+    c.fillStyle = `rgba(255,255,255,${(hab.flash * .8).toFixed(2)})`;
+    c.fillRect(0, 0, L.w, HAB_H);
+  }
+  for (const p of poses) {
+    const r = p.a.react;
+    if (!r || p.hidden) continue;
+    const k = 1 - r.life / (r.kind === "!" ? 1.2 : 1.6);
+    c.globalAlpha = Math.min(1, r.life * 2);
+    habGlyph(c, r.kind, p.x + 6, Math.round(p.y - 36 - k * 6));
+    c.globalAlpha = 1;
+  }
 }
 
 // ---- Scenery, painted once per size, time of day and state. ----
@@ -1461,11 +1730,12 @@ function habBackground(L, phase, state) {
 
 // Fluffy clouds, shaded underneath, painted once per time of day.
 const habClouds = {};
-function habCloud(phase, i) {
-  const key = `${phase}/${i}`;
+function habCloud(phase, i, grey = false) {
+  const key = `${phase}/${i}/${grey}`;
   if (habClouds[key]) return habClouds[key];
-  const P = pxPalette(phase === "night" ? "day" : phase), w = [56, 72, 44, 36][i], h = 22;
-  const pal = phase === "day" ? P("#b9d3ea", "#d8e8f5", "#f3f8fd", "#ffffff")
+  const P = pxPalette(phase === "night" && !grey ? "day" : phase), w = [56, 72, 44, 36][i], h = 22;
+  const pal = grey ? P("#7c858f", "#959ea8", "#b0b8c0", "#c8ced4")
+    : phase === "day" ? P("#b9d3ea", "#d8e8f5", "#f3f8fd", "#ffffff")
     : P("#b98aa6", "#e0a8b0", "#f6c9c0", "#ffe6d6");
   const l = pxLayer(w + 4, h + 4), rr = mulberry(50 + i);
   const puffs = [[w * .3, 14, w * .2, 7], [w * .55, 11, w * .22, 9], [w * .78, 15, w * .16, 6], [w * .18, 16, w * .13, 5]];
@@ -1479,7 +1749,7 @@ function habCloud(phase, i) {
     const v = l.d[k];
     if (v < 0) continue;
     data.data[k * 4] = v >> 16 & 255; data.data[k * 4 + 1] = v >> 8 & 255; data.data[k * 4 + 2] = v & 255;
-    data.data[k * 4 + 3] = phase === "day" ? 240 : 215;
+    data.data[k * 4 + 3] = phase === "day" || grey ? 240 : 215;
   }
   c.putImageData(data, 0, 0);
   return (habClouds[key] = cv);
@@ -1488,9 +1758,17 @@ function habCloud(phase, i) {
 // Things that move without being animals: clouds, surf, kelp, light on the sea.
 function habAmbient(c, L, phase) {
   const t = hab.t;
-  if (phase !== "night") {
-    [[30, 22, 2.2], [L.w * .45, 8, 1.4], [L.w * .72, 44, 3], [L.w * .2, 58, 2.6]].forEach(([x0, y, v], i) => {
-      const img = habCloud(phase, i), x = Math.round(((x0 + t * v) % (L.w + img.width * 2)) - img.width);
+  const sky = hab.wx ? hab.wx.sky : "partly", grey = HAB_GREY.has(sky), gust = habGust();
+  if (phase !== "night" || grey) {
+    // Clear skies keep two clouds, grey ones fill up, and the wind hurries them along.
+    let clouds = [[30, 22, 2.2], [L.w * .45, 8, 1.4], [L.w * .72, 44, 3], [L.w * .2, 58, 2.6]];
+    if (sky === "clear") clouds = clouds.slice(0, 2);
+    if (grey) clouds = clouds.concat([[L.w * .6, 0, 1.8], [L.w * .9, 26, 2.4], [L.w * .05, 4, 1.6], [L.w * .35, 34, 2]]);
+    const span = L.w + 160;
+    clouds.forEach(([x0, y, v], i) => {
+      const img = habCloud(phase, i % 4, grey);
+      const k = gust ? Math.sign(gust) * (Math.abs(gust) * .6 + v) : v;
+      const x = Math.round((((x0 + t * k) % span) + span) % span - img.width);
       c.drawImage(img, x, y);
     });
   }
@@ -1532,7 +1810,7 @@ function habAmbient(c, L, phase) {
     if ((y + Math.floor(t * 6)) % 3) c.fillRect(e + 2 + Math.round((1 - roll) * 16) + sway, y, 1, 1);
   }
   // Sun or moon glitter on the sea.
-  if (hab.glowX > L.surf[L.water] + 8) {
+  if (hab.glowX > L.surf[L.water] + 8 && !grey) {
     c.fillStyle = night ? "rgba(225,232,255,.5)" : phase === "day" ? "rgba(255,250,215,.7)" : "rgba(255,210,150,.6)";
     for (let y = L.water + 2; y < L.water + 44; y += 2) {
       const k = (y - L.water) / 44, w = Math.round((3 + k * 12) * (.6 + .4 * Math.sin(t * 2.1 + y * 1.7)));
@@ -1547,7 +1825,7 @@ function habAmbient(c, L, phase) {
     c.fillRect(Math.round(p.x - p.rx * .7 + k * p.rx * 1.4), p.y - 4 + i * 4, 4 - i, 1);
   }
   // Bright stars twinkle.
-  if (night) (hab.stars || []).forEach(([x, y], i) => {
+  if (night && !grey) (hab.stars || []).forEach(([x, y], i) => {
     const s = Math.sin(t * 2.3 + i * 1.9);
     if (s <= .4) return;
     c.fillStyle = `rgba(255,255,255,${((s - .4) * 1.5).toFixed(2)})`;
