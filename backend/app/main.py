@@ -478,9 +478,10 @@ def get_dex_entry(key: str, state: str | None = Query(None), user: User | None =
     # An animal that isn't on this state's list (one opened from the feed or a
     # friend's photo) gets the entry of a state that lists it; `state` says which.
     if m is None:
-        m = db.scalars(select(StateSpecies).where(StateSpecies.species_id == s.id)
-                       .order_by(StateSpecies.state)).first()
-        code = m.state
+        other = db.scalars(select(StateSpecies).where(StateSpecies.species_id == s.id)
+                           .order_by(StateSpecies.state)).first()
+        if other:  # a retired animal is on no list: keep the state asked for
+            m, code = other, other.state
     d = dex.details(s.slug, code)
     revealed = s.id in revealed_species_ids(db, user)
     caught = user is not None and db.scalar(select(Capture.id).where(
