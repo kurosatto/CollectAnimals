@@ -1,0 +1,101 @@
+slug,common_name,scientific_name,category,rarity
+american_bison,American Bison,Bos bison,mammal,common
+black_tailed_prairie_dog,Black-tailed Prairie Dog,Cynomys ludovicianus,mammal,common
+monarch,Monarch,Danaus plexippus,invertebrate,common
+american_robin,American Robin,Turdus migratorius,bird,common
+brown_belted_bumble_bee,Brown-belted Bumble Bee,Bombus griseocollis,invertebrate,common
+northern_leopard_frog,Northern Leopard Frog,Lithobates pipiens,amphibian,common
+canada_goose,Canada Goose,Branta canadensis,bird,common
+domestic_horse,Domestic Horse,Equus caballus,mammal,common
+hunts_bumble_bee,Hunt's Bumble Bee,Bombus huntii,invertebrate,common
+two_spotted_bumble_bee,Two-spotted Bumble Bee,Bombus bimaculatus,invertebrate,common
+ring_necked_pheasant,Ring-necked Pheasant,Phasianus colchicus,bird,common
+leafy_spurge_hawkmoth,Leafy Spurge Hawkmoth,Hyles euphorbiae,invertebrate,common
+wild_turkey,Wild Turkey,Meleagris gallopavo,bird,common
+american_white_pelican,American White Pelican,Pelecanus erythrorhynchos,bird,common
+white_tailed_deer,White-tailed Deer,Odocoileus virginianus,mammal,common
+eastern_kingbird,Eastern Kingbird,Tyrannus tyrannus,bird,common
+painted_lady,Painted Lady,Vanessa cardui,invertebrate,common
+mallard,Mallard,Anas platyrhynchos,bird,common
+blue_winged_teal,Blue-winged Teal,Spatula discors,bird,common
+mule_deer,Mule Deer,Odocoileus hemionus,mammal,common
+yellow_headed_blackbird,Yellow-headed Blackbird,Xanthocephalus xanthocephalus,bird,common
+red_winged_blackbird,Red-winged Blackbird,Agelaius phoeniceus,bird,common
+american_goldfinch,American Goldfinch,Spinus tristis,bird,common
+thirteen_lined_ground_squirrel,Thirteen-lined Ground Squirrel,Ictidomys tridecemlineatus,mammal,common
+red_tailed_hawk,Red-tailed Hawk,Buteo jamaicensis,bird,common
+pronghorn,Pronghorn,Antilocapra americana,mammal,common
+melissa_blue,Melissa Blue,Plebejus melissa,invertebrate,common
+asian_lady_beetle,Asian Lady Beetle,Harmonia axyridis,invertebrate,common
+woodhouses_toad,Woodhouse's Toad,Anaxyrus woodhousii,amphibian,common
+killdeer,Killdeer,Charadrius vociferus,bird,common
+western_meadowlark,Western Meadowlark,Sturnella neglecta,bird,common
+mourning_dove,Mourning Dove,Zenaida macroura,bird,common
+western_honey_bee,Western Honey Bee,Apis mellifera,invertebrate,common
+northern_shoveler,Northern Shoveler,Spatula clypeata,bird,common
+seven_spotted_lady_beetle,Seven-spotted Lady Beetle,Coccinella septempunctata,invertebrate,common
+bald_eagle,Bald Eagle,Haliaeetus leucocephalus,bird,common
+tricolored_bumble_bee,Tricolored Bumble Bee,Bombus ternarius,invertebrate,common
+red_admiral,Red Admiral,Vanessa atalanta,invertebrate,common
+plains_garter_snake,Plains Garter Snake,Thamnophis radix,reptile,common
+chipping_sparrow,Chipping Sparrow,Spizella passerina,bird,common
+eastern_cottontail,Eastern Cottontail,Sylvilagus floridanus,mammal,common
+lark_sparrow,Lark Sparrow,Chondestes grammacus,bird,common
+american_coot,American Coot,Fulica americana,bird,common
+swainsons_hawk,Swainson's Hawk,Buteo swainsoni,bird,common
+coyote,Coyote,Canis latrans,mammal,common
+ring_billed_gull,Ring-billed Gull,Larus delawarensis,bird,common
+house_sparrow,House Sparrow,Passer domesticus,bird,common
+common_grackle,Common Grackle,Quiscalus quiscula,bird,common
+cedar_waxwing,Cedar Waxwing,Bombycilla cedrorum,bird,common
+western_grebe,Western Grebe,Aechmophorus occidentalis,bird,common
+dark_eyed_junco,Dark-eyed Junco,Junco hyemalis,bird,uncommon
+american_avocet,American Avocet,Recurvirostra americana,bird,uncommon
+northern_flicker,Northern Flicker,Colaptes auratus,bird,uncommon
+northern_yellow_warbler,Northern Yellow Warbler,Setophaga aestiva,bird,uncommon
+fox_squirrel,Eastern Fox Squirrel,Sciurus niger,mammal,uncommon
+black_capped_chickadee,Black-capped Chickadee,Poecile atricapillus,bird,uncommon
+spotted_towhee,Spotted Towhee,Pipilo maculatus,bird,uncommon
+western_kingbird,Western Kingbird,Tyrannus verticalis,bird,uncommon
+ruddy_duck,Ruddy Duck,Oxyura jamaicensis,bird,uncommon
+bobolink,Bobolink,Dolichonyx oryzivorus,bird,uncommon
+double_crested_cormorant,Double-crested Cormorant,Nannopterum auritum,bird,uncommon
+song_sparrow,Song Sparrow,Melospiza melodia,bird,uncommon
+clay_colored_sparrow,Clay-colored Sparrow,Spizella pallida,bird,uncommon
+painted_turtle,Painted Turtle,Chrysemys picta,reptile,uncommon
+canadian_toad,Canadian Toad,Anaxyrus hemiophrys,amphibian,uncommon
+richardsons_ground_squirrel,Richardson's Ground Squirrel,Urocitellus richardsonii,mammal,uncommon
+muskrat,Muskrat,Ondatra zibethicus,mammal,uncommon
+white_tailed_jackrabbit,White-tailed Jackrabbit,Lepus townsendii,mammal,uncommon
+american_red_squirrel,American Red Squirrel,Tamiasciurus hudsonicus,mammal,uncommon
+western_tiger_salamander,Western Tiger Salamander,Ambystoma mavortium,amphibian,uncommon
+prairie_rattlesnake,Prairie Rattlesnake,Crotalus viridis,reptile,uncommon
+moose,Moose,Alces alces,mammal,uncommon
+great_plains_toad,Great Plains Toad,Anaxyrus cognatus,amphibian,uncommon
+eastern_gray_squirrel,Eastern Gray Squirrel,Sciurus carolinensis,mammal,uncommon
+greater_short_horned_lizard,Greater Short-horned Lizard,Phrynosoma hernandesi,reptile,uncommon
+boreal_chorus_frog,Boreal Chorus Frog,Pseudacris maculata,amphibian,uncommon
+north_american_porcupine,North American Porcupine,Erethizon dorsatum,mammal,uncommon
+american_beaver,American Beaver,Castor canadensis,mammal,rare
+common_sagebrush_lizard,Common Sagebrush Lizard,Sceloporus graciosus,reptile,rare
+smooth_greensnake,Smooth Greensnake,Opheodrys vernalis,reptile,rare
+wood_frog,Wood Frog,Lithobates sylvaticus,amphibian,rare
+common_snapping_turtle,Common Snapping Turtle,Chelydra serpentina,reptile,rare
+raccoon,Common Raccoon,Procyon lotor,mammal,rare
+red_fox,Red Fox,Vulpes vulpes,mammal,rare
+red_bellied_snake,Red-bellied Snake,Storeria occipitomaculata,reptile,rare
+plains_hognose_snake,Plains Hognose Snake,Heterodon nasicus,reptile,rare
+brickwork_woodlouse,Brickwork Woodlouse,Porcellio spinicornis,marine,rare
+north_american_racer,North American Racer,Coluber constrictor,reptile,rare
+northern_pike,Northern Pike,Esox lucius,marine,rare
+walleye,Walleye,Sander vitreus,marine,rare
+rathkes_woodlouse,Rathke's Woodlouse,Trachelipus rathkii,marine,rare
+smallmouth_bass,Smallmouth Bass,Micropterus dolomieu,marine,rare
+bluegill,Bluegill,Lepomis macrochirus,marine,rare
+yellow_perch,Yellow Perch,Perca flavescens,marine,rare
+channel_catfish,Channel Catfish,Ictalurus punctatus,marine,rare
+common_garter_snake,Common Garter Snake,Thamnophis sirtalis,reptile,legendary
+goldeye,Goldeye,Hiodon alosoides,marine,legendary
+fathead_minnow,Fathead Minnow,Pimephales promelas,marine,legendary
+plains_spadefoot,Plains Spadefoot,Spea bombifrons,amphibian,legendary
+gopher_snake,Gopher Snake,Pituophis catenifer,reptile,legendary

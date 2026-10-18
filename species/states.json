@@ -13,8 +13,19 @@
    "seasons": "seasons.json",
    "utc_offset": -8,
    "inat_place_id": 14,
-   "bounds": {"west": -124.6, "east": -113.9, "south": 32.3, "north": 42.2},
-   "grid": {"lon0": -124.5, "lat0": 32.5, "step": 0.25, "cols": 42, "rows": 38}
+   "bounds": {
+    "west": -124.6,
+    "east": -113.9,
+    "south": 32.3,
+    "north": 42.2
+   },
+   "grid": {
+    "lon0": -124.5,
+    "lat0": 32.5,
+    "step": 0.25,
+    "cols": 42,
+    "rows": 38
+   }
   },
   {
    "code": "NC",
@@ -28,8 +39,1267 @@
    "seasons": "north_carolina_seasons.json",
    "utc_offset": -5,
    "inat_place_id": 30,
-   "bounds": {"west": -84.5, "east": -75.3, "south": 33.7, "north": 36.8},
-   "grid": {"lon0": -84.5, "lat0": 33.75, "step": 0.125, "cols": 73, "rows": 24}
+   "bounds": {
+    "west": -84.5,
+    "east": -75.3,
+    "south": 33.7,
+    "north": 36.8
+   },
+   "grid": {
+    "lon0": -84.5,
+    "lat0": 33.75,
+    "step": 0.125,
+    "cols": 73,
+    "rows": 24
+   }
+  },
+  {
+   "code": "VA",
+   "name": "Virginia",
+   "species": "virginia_100.csv",
+   "dex": null,
+   "outline": "virginia_outline.json",
+   "ranges": "virginia_ranges.json",
+   "hotspots": "virginia_hotspots.json",
+   "places": "virginia_places.json",
+   "seasons": "virginia_seasons.json",
+   "utc_offset": -5,
+   "inat_place_id": 7,
+   "bounds": {
+    "west": -83.8,
+    "east": -75.1,
+    "south": 36.5,
+    "north": 39.6
+   },
+   "grid": {
+    "lon0": -83.875,
+    "lat0": 36.5,
+    "step": 0.125,
+    "cols": 71,
+    "rows": 25
+   }
+  },
+  {
+   "code": "AL",
+   "name": "Alabama",
+   "species": "alabama_100.csv",
+   "dex": null,
+   "outline": "alabama_outline.json",
+   "ranges": "alabama_ranges.json",
+   "hotspots": "alabama_hotspots.json",
+   "places": "alabama_places.json",
+   "seasons": "alabama_seasons.json",
+   "utc_offset": -6,
+   "inat_place_id": 19,
+   "bounds": {
+    "west": -88.6,
+    "east": -84.8,
+    "south": 30.1,
+    "north": 35.1
+   },
+   "grid": {
+    "lon0": -88.625,
+    "lat0": 30.0625,
+    "step": 0.0625,
+    "cols": 62,
+    "rows": 81
+   }
+  },
+  {
+   "code": "AK",
+   "name": "Alaska",
+   "species": "alaska_100.csv",
+   "dex": null,
+   "outline": "alaska_outline.json",
+   "ranges": "alaska_ranges.json",
+   "hotspots": "alaska_hotspots.json",
+   "places": "alaska_places.json",
+   "seasons": "alaska_seasons.json",
+   "utc_offset": -9,
+   "inat_place_id": 6,
+   "bounds": {
+    "west": -178.3,
+    "east": -129.9,
+    "south": 51.5,
+    "north": 71.5
+   },
+   "grid": {
+    "lon0": -179.0,
+    "lat0": 51.0,
+    "step": 1.0,
+    "cols": 50,
+    "rows": 21
+   }
+  },
+  {
+   "code": "AZ",
+   "name": "Arizona",
+   "species": "arizona_100.csv",
+   "dex": null,
+   "outline": "arizona_outline.json",
+   "ranges": "arizona_ranges.json",
+   "hotspots": "arizona_hotspots.json",
+   "places": "arizona_places.json",
+   "seasons": "arizona_seasons.json",
+   "utc_offset": -7,
+   "inat_place_id": 40,
+   "bounds": {
+    "west": -114.9,
+    "east": -108.9,
+    "south": 31.2,
+    "north": 37.1
+   },
+   "grid": {
+    "lon0": -115.0,
+    "lat0": 31.125,
+    "step": 0.125,
+    "cols": 49,
+    "rows": 48
+   }
+  },
+  {
+   "code": "AR",
+   "name": "Arkansas",
+   "species": "arkansas_100.csv",
+   "dex": null,
+   "outline": "arkansas_outline.json",
+   "ranges": "arkansas_ranges.json",
+   "hotspots": "arkansas_hotspots.json",
+   "places": "arkansas_places.json",
+   "seasons": "arkansas_seasons.json",
+   "utc_offset": -6,
+   "inat_place_id": 36,
+   "bounds": {
+    "west": -94.7,
+    "east": -89.6,
+    "south": 32.9,
+    "north": 36.6
+   },
+   "grid": {
+    "lon0": -94.75,
+    "lat0": 32.875,
+    "step": 0.125,
+    "cols": 42,
+    "rows": 30
+   }
+  },
+  {
+   "code": "CO",
+   "name": "Colorado",
+   "species": "colorado_100.csv",
+   "dex": null,
+   "outline": "colorado_outline.json",
+   "ranges": "colorado_ranges.json",
+   "hotspots": "colorado_hotspots.json",
+   "places": "colorado_places.json",
+   "seasons": "colorado_seasons.json",
+   "utc_offset": -7,
+   "inat_place_id": 34,
+   "bounds": {
+    "west": -109.1,
+    "east": -101.9,
+    "south": 36.9,
+    "north": 41.1
+   },
+   "grid": {
+    "lon0": -109.125,
+    "lat0": 36.875,
+    "step": 0.125,
+    "cols": 58,
+    "rows": 34
+   }
+  },
+  {
+   "code": "CT",
+   "name": "Connecticut",
+   "species": "connecticut_100.csv",
+   "dex": null,
+   "outline": "connecticut_outline.json",
+   "ranges": "connecticut_ranges.json",
+   "hotspots": "connecticut_hotspots.json",
+   "places": "connecticut_places.json",
+   "seasons": "connecticut_seasons.json",
+   "utc_offset": -5,
+   "inat_place_id": 49,
+   "bounds": {
+    "west": -73.8,
+    "east": -71.7,
+    "south": 40.9,
+    "north": 42.2
+   },
+   "grid": {
+    "lon0": -73.8125,
+    "lat0": 40.875,
+    "step": 0.0625,
+    "cols": 34,
+    "rows": 22
+   }
+  },
+  {
+   "code": "DE",
+   "name": "Delaware",
+   "species": "delaware_100.csv",
+   "dex": null,
+   "outline": "delaware_outline.json",
+   "ranges": "delaware_ranges.json",
+   "hotspots": "delaware_hotspots.json",
+   "places": "delaware_places.json",
+   "seasons": "delaware_seasons.json",
+   "utc_offset": -5,
+   "inat_place_id": 4,
+   "bounds": {
+    "west": -75.9,
+    "east": -74.9,
+    "south": 38.4,
+    "north": 39.9
+   },
+   "grid": {
+    "lon0": -75.9375,
+    "lat0": 38.375,
+    "step": 0.0625,
+    "cols": 17,
+    "rows": 25
+   }
+  },
+  {
+   "code": "GA",
+   "name": "Georgia",
+   "species": "georgia_100.csv",
+   "dex": null,
+   "outline": "georgia_outline.json",
+   "ranges": "georgia_ranges.json",
+   "hotspots": "georgia_hotspots.json",
+   "places": "georgia_places.json",
+   "seasons": "georgia_seasons.json",
+   "utc_offset": -5,
+   "inat_place_id": 23,
+   "bounds": {
+    "west": -85.7,
+    "east": -80.8,
+    "south": 30.3,
+    "north": 35.1
+   },
+   "grid": {
+    "lon0": -85.75,
+    "lat0": 30.25,
+    "step": 0.0625,
+    "cols": 80,
+    "rows": 78
+   }
+  },
+  {
+   "code": "ID",
+   "name": "Idaho",
+   "species": "idaho_100.csv",
+   "dex": null,
+   "outline": "idaho_outline.json",
+   "ranges": "idaho_ranges.json",
+   "hotspots": "idaho_hotspots.json",
+   "places": "idaho_places.json",
+   "seasons": "idaho_seasons.json",
+   "utc_offset": -7,
+   "inat_place_id": 22,
+   "bounds": {
+    "west": -117.3,
+    "east": -111.0,
+    "south": 41.9,
+    "north": 49.1
+   },
+   "grid": {
+    "lon0": -117.375,
+    "lat0": 41.875,
+    "step": 0.125,
+    "cols": 51,
+    "rows": 58
+   }
+  },
+  {
+   "code": "IL",
+   "name": "Illinois",
+   "species": "illinois_100.csv",
+   "dex": null,
+   "outline": "illinois_outline.json",
+   "ranges": "illinois_ranges.json",
+   "hotspots": "illinois_hotspots.json",
+   "places": "illinois_places.json",
+   "seasons": "illinois_seasons.json",
+   "utc_offset": -6,
+   "inat_place_id": 35,
+   "bounds": {
+    "west": -91.6,
+    "east": -86.9,
+    "south": 36.9,
+    "north": 42.6
+   },
+   "grid": {
+    "lon0": -91.625,
+    "lat0": 36.875,
+    "step": 0.0625,
+    "cols": 76,
+    "rows": 92
+   }
+  },
+  {
+   "code": "IN",
+   "name": "Indiana",
+   "species": "indiana_100.csv",
+   "dex": null,
+   "outline": "indiana_outline.json",
+   "ranges": "indiana_ranges.json",
+   "hotspots": "indiana_hotspots.json",
+   "places": "indiana_places.json",
+   "seasons": "indiana_seasons.json",
+   "utc_offset": -5,
+   "inat_place_id": 20,
+   "bounds": {
+    "west": -88.2,
+    "east": -84.7,
+    "south": 37.7,
+    "north": 41.9
+   },
+   "grid": {
+    "lon0": -88.25,
+    "lat0": 37.6875,
+    "step": 0.0625,
+    "cols": 57,
+    "rows": 68
+   }
+  },
+  {
+   "code": "IA",
+   "name": "Iowa",
+   "species": "iowa_100.csv",
+   "dex": null,
+   "outline": "iowa_outline.json",
+   "ranges": "iowa_ranges.json",
+   "hotspots": "iowa_hotspots.json",
+   "places": "iowa_places.json",
+   "seasons": "iowa_seasons.json",
+   "utc_offset": -6,
+   "inat_place_id": 24,
+   "bounds": {
+    "west": -96.7,
+    "east": -90.0,
+    "south": 40.3,
+    "north": 43.6
+   },
+   "grid": {
+    "lon0": -96.75,
+    "lat0": 40.25,
+    "step": 0.125,
+    "cols": 54,
+    "rows": 27
+   }
+  },
+  {
+   "code": "KS",
+   "name": "Kansas",
+   "species": "kansas_100.csv",
+   "dex": null,
+   "outline": "kansas_outline.json",
+   "ranges": "kansas_ranges.json",
+   "hotspots": "kansas_hotspots.json",
+   "places": "kansas_places.json",
+   "seasons": "kansas_seasons.json",
+   "utc_offset": -6,
+   "inat_place_id": 25,
+   "bounds": {
+    "west": -102.1,
+    "east": -94.5,
+    "south": 36.9,
+    "north": 40.1
+   },
+   "grid": {
+    "lon0": -102.125,
+    "lat0": 36.875,
+    "step": 0.125,
+    "cols": 61,
+    "rows": 26
+   }
+  },
+  {
+   "code": "KY",
+   "name": "Kentucky",
+   "species": "kentucky_100.csv",
+   "dex": null,
+   "outline": "kentucky_outline.json",
+   "ranges": "kentucky_ranges.json",
+   "hotspots": "kentucky_hotspots.json",
+   "places": "kentucky_places.json",
+   "seasons": "kentucky_seasons.json",
+   "utc_offset": -5,
+   "inat_place_id": 26,
+   "bounds": {
+    "west": -89.7,
+    "east": -81.9,
+    "south": 36.4,
+    "north": 39.2
+   },
+   "grid": {
+    "lon0": -89.75,
+    "lat0": 36.375,
+    "step": 0.125,
+    "cols": 63,
+    "rows": 23
+   }
+  },
+  {
+   "code": "LA",
+   "name": "Louisiana",
+   "species": "louisiana_100.csv",
+   "dex": null,
+   "outline": "louisiana_outline.json",
+   "ranges": "louisiana_ranges.json",
+   "hotspots": "louisiana_hotspots.json",
+   "places": "louisiana_places.json",
+   "seasons": "louisiana_seasons.json",
+   "utc_offset": -6,
+   "inat_place_id": 27,
+   "bounds": {
+    "west": -94.1,
+    "east": -88.7,
+    "south": 28.9,
+    "north": 33.1
+   },
+   "grid": {
+    "lon0": -94.125,
+    "lat0": 28.875,
+    "step": 0.125,
+    "cols": 44,
+    "rows": 34
+   }
+  },
+  {
+   "code": "ME",
+   "name": "Maine",
+   "species": "maine_100.csv",
+   "dex": null,
+   "outline": "maine_outline.json",
+   "ranges": "maine_ranges.json",
+   "hotspots": "maine_hotspots.json",
+   "places": "maine_places.json",
+   "seasons": "maine_seasons.json",
+   "utc_offset": -5,
+   "inat_place_id": 17,
+   "bounds": {
+    "west": -71.2,
+    "east": -66.9,
+    "south": 43.0,
+    "north": 47.6
+   },
+   "grid": {
+    "lon0": -71.25,
+    "lat0": 43.0,
+    "step": 0.0625,
+    "cols": 70,
+    "rows": 74
+   }
+  },
+  {
+   "code": "MA",
+   "name": "Massachusetts",
+   "species": "massachusetts_100.csv",
+   "dex": null,
+   "outline": "massachusetts_outline.json",
+   "ranges": "massachusetts_ranges.json",
+   "hotspots": "massachusetts_hotspots.json",
+   "places": "massachusetts_places.json",
+   "seasons": "massachusetts_seasons.json",
+   "utc_offset": -5,
+   "inat_place_id": 2,
+   "bounds": {
+    "west": -73.6,
+    "east": -69.8,
+    "south": 41.1,
+    "north": 43.0
+   },
+   "grid": {
+    "lon0": -73.625,
+    "lat0": 41.0625,
+    "step": 0.0625,
+    "cols": 62,
+    "rows": 31
+   }
+  },
+  {
+   "code": "MI",
+   "name": "Michigan",
+   "species": "michigan_100.csv",
+   "dex": null,
+   "outline": "michigan_outline.json",
+   "ranges": "michigan_ranges.json",
+   "hotspots": "michigan_hotspots.json",
+   "places": "michigan_places.json",
+   "seasons": "michigan_seasons.json",
+   "utc_offset": -5,
+   "inat_place_id": 29,
+   "bounds": {
+    "west": -90.5,
+    "east": -82.0,
+    "south": 41.6,
+    "north": 48.4
+   },
+   "grid": {
+    "lon0": -90.5,
+    "lat0": 41.5,
+    "step": 0.125,
+    "cols": 68,
+    "rows": 56
+   }
+  },
+  {
+   "code": "MN",
+   "name": "Minnesota",
+   "species": "minnesota_100.csv",
+   "dex": null,
+   "outline": "minnesota_outline.json",
+   "ranges": "minnesota_ranges.json",
+   "hotspots": "minnesota_hotspots.json",
+   "places": "minnesota_places.json",
+   "seasons": "minnesota_seasons.json",
+   "utc_offset": -6,
+   "inat_place_id": 38,
+   "bounds": {
+    "west": -97.3,
+    "east": -89.4,
+    "south": 43.4,
+    "north": 49.5
+   },
+   "grid": {
+    "lon0": -97.375,
+    "lat0": 43.375,
+    "step": 0.125,
+    "cols": 64,
+    "rows": 49
+   }
+  },
+  {
+   "code": "MS",
+   "name": "Mississippi",
+   "species": "mississippi_100.csv",
+   "dex": null,
+   "outline": "mississippi_outline.json",
+   "ranges": "mississippi_ranges.json",
+   "hotspots": "mississippi_hotspots.json",
+   "places": "mississippi_places.json",
+   "seasons": "mississippi_seasons.json",
+   "utc_offset": -6,
+   "inat_place_id": 37,
+   "bounds": {
+    "west": -91.8,
+    "east": -88.0,
+    "south": 30.1,
+    "north": 35.1
+   },
+   "grid": {
+    "lon0": -91.8125,
+    "lat0": 30.0625,
+    "step": 0.0625,
+    "cols": 61,
+    "rows": 81
+   }
+  },
+  {
+   "code": "MO",
+   "name": "Missouri",
+   "species": "missouri_100.csv",
+   "dex": null,
+   "outline": "missouri_outline.json",
+   "ranges": "missouri_ranges.json",
+   "hotspots": "missouri_hotspots.json",
+   "places": "missouri_places.json",
+   "seasons": "missouri_seasons.json",
+   "utc_offset": -6,
+   "inat_place_id": 28,
+   "bounds": {
+    "west": -95.9,
+    "east": -89.0,
+    "south": 35.9,
+    "north": 40.7
+   },
+   "grid": {
+    "lon0": -96.0,
+    "lat0": 35.875,
+    "step": 0.125,
+    "cols": 56,
+    "rows": 39
+   }
+  },
+  {
+   "code": "NE",
+   "name": "Nebraska",
+   "species": "nebraska_100.csv",
+   "dex": null,
+   "outline": "nebraska_outline.json",
+   "ranges": "nebraska_ranges.json",
+   "hotspots": "nebraska_hotspots.json",
+   "places": "nebraska_places.json",
+   "seasons": "nebraska_seasons.json",
+   "utc_offset": -6,
+   "inat_place_id": 3,
+   "bounds": {
+    "west": -104.1,
+    "east": -95.2,
+    "south": 39.9,
+    "north": 43.1
+   },
+   "grid": {
+    "lon0": -104.125,
+    "lat0": 39.875,
+    "step": 0.125,
+    "cols": 72,
+    "rows": 26
+   }
+  },
+  {
+   "code": "NV",
+   "name": "Nevada",
+   "species": "nevada_100.csv",
+   "dex": null,
+   "outline": "nevada_outline.json",
+   "ranges": "nevada_ranges.json",
+   "hotspots": "nevada_hotspots.json",
+   "places": "nevada_places.json",
+   "seasons": "nevada_seasons.json",
+   "utc_offset": -8,
+   "inat_place_id": 50,
+   "bounds": {
+    "west": -120.1,
+    "east": -113.9,
+    "south": 34.9,
+    "north": 42.1
+   },
+   "grid": {
+    "lon0": -120.125,
+    "lat0": 34.875,
+    "step": 0.125,
+    "cols": 50,
+    "rows": 58
+   }
+  },
+  {
+   "code": "NH",
+   "name": "New Hampshire",
+   "species": "new_hampshire_100.csv",
+   "dex": null,
+   "outline": "new_hampshire_outline.json",
+   "ranges": "new_hampshire_ranges.json",
+   "hotspots": "new_hampshire_hotspots.json",
+   "places": "new_hampshire_places.json",
+   "seasons": "new_hampshire_seasons.json",
+   "utc_offset": -5,
+   "inat_place_id": 41,
+   "bounds": {
+    "west": -72.7,
+    "east": -70.6,
+    "south": 42.6,
+    "north": 45.4
+   },
+   "grid": {
+    "lon0": -72.75,
+    "lat0": 42.5625,
+    "step": 0.0625,
+    "cols": 35,
+    "rows": 46
+   }
+  },
+  {
+   "code": "NJ",
+   "name": "New Jersey",
+   "species": "new_jersey_100.csv",
+   "dex": null,
+   "outline": "new_jersey_outline.json",
+   "ranges": "new_jersey_ranges.json",
+   "hotspots": "new_jersey_hotspots.json",
+   "places": "new_jersey_places.json",
+   "seasons": "new_jersey_seasons.json",
+   "utc_offset": -5,
+   "inat_place_id": 51,
+   "bounds": {
+    "west": -75.6,
+    "east": -73.8,
+    "south": 38.8,
+    "north": 41.5
+   },
+   "grid": {
+    "lon0": -75.625,
+    "lat0": 38.75,
+    "step": 0.0625,
+    "cols": 30,
+    "rows": 44
+   }
+  },
+  {
+   "code": "NM",
+   "name": "New Mexico",
+   "species": "new_mexico_100.csv",
+   "dex": null,
+   "outline": "new_mexico_outline.json",
+   "ranges": "new_mexico_ranges.json",
+   "hotspots": "new_mexico_hotspots.json",
+   "places": "new_mexico_places.json",
+   "seasons": "new_mexico_seasons.json",
+   "utc_offset": -7,
+   "inat_place_id": 9,
+   "bounds": {
+    "west": -109.1,
+    "east": -102.9,
+    "south": 31.2,
+    "north": 37.1
+   },
+   "grid": {
+    "lon0": -109.125,
+    "lat0": 31.125,
+    "step": 0.125,
+    "cols": 50,
+    "rows": 48
+   }
+  },
+  {
+   "code": "NY",
+   "name": "New York",
+   "species": "new_york_100.csv",
+   "dex": null,
+   "outline": "new_york_outline.json",
+   "ranges": "new_york_ranges.json",
+   "hotspots": "new_york_hotspots.json",
+   "places": "new_york_places.json",
+   "seasons": "new_york_seasons.json",
+   "utc_offset": -5,
+   "inat_place_id": 48,
+   "bounds": {
+    "west": -79.9,
+    "east": -71.8,
+    "south": 40.4,
+    "north": 45.1
+   },
+   "grid": {
+    "lon0": -80.0,
+    "lat0": 40.375,
+    "step": 0.125,
+    "cols": 66,
+    "rows": 38
+   }
+  },
+  {
+   "code": "ND",
+   "name": "North Dakota",
+   "species": "north_dakota_100.csv",
+   "dex": null,
+   "outline": "north_dakota_outline.json",
+   "ranges": "north_dakota_ranges.json",
+   "hotspots": "north_dakota_hotspots.json",
+   "places": "north_dakota_places.json",
+   "seasons": "north_dakota_seasons.json",
+   "utc_offset": -6,
+   "inat_place_id": 13,
+   "bounds": {
+    "west": -104.1,
+    "east": -96.5,
+    "south": 45.8,
+    "north": 49.1
+   },
+   "grid": {
+    "lon0": -104.125,
+    "lat0": 45.75,
+    "step": 0.125,
+    "cols": 61,
+    "rows": 27
+   }
+  },
+  {
+   "code": "OH",
+   "name": "Ohio",
+   "species": "ohio_100.csv",
+   "dex": null,
+   "outline": "ohio_outline.json",
+   "ranges": "ohio_ranges.json",
+   "hotspots": "ohio_hotspots.json",
+   "places": "ohio_places.json",
+   "seasons": "ohio_seasons.json",
+   "utc_offset": -5,
+   "inat_place_id": 31,
+   "bounds": {
+    "west": -84.9,
+    "east": -80.4,
+    "south": 38.3,
+    "north": 42.4
+   },
+   "grid": {
+    "lon0": -84.9375,
+    "lat0": 38.25,
+    "step": 0.0625,
+    "cols": 73,
+    "rows": 67
+   }
+  },
+  {
+   "code": "OK",
+   "name": "Oklahoma",
+   "species": "oklahoma_100.csv",
+   "dex": null,
+   "outline": "oklahoma_outline.json",
+   "ranges": "oklahoma_ranges.json",
+   "hotspots": "oklahoma_hotspots.json",
+   "places": "oklahoma_places.json",
+   "seasons": "oklahoma_seasons.json",
+   "utc_offset": -6,
+   "inat_place_id": 12,
+   "bounds": {
+    "west": -103.1,
+    "east": -94.3,
+    "south": 33.5,
+    "north": 37.1
+   },
+   "grid": {
+    "lon0": -103.125,
+    "lat0": 33.5,
+    "step": 0.125,
+    "cols": 71,
+    "rows": 29
+   }
+  },
+  {
+   "code": "OR",
+   "name": "Oregon",
+   "species": "oregon_100.csv",
+   "dex": null,
+   "outline": "oregon_outline.json",
+   "ranges": "oregon_ranges.json",
+   "hotspots": "oregon_hotspots.json",
+   "places": "oregon_places.json",
+   "seasons": "oregon_seasons.json",
+   "utc_offset": -8,
+   "inat_place_id": 10,
+   "bounds": {
+    "west": -124.6,
+    "east": -116.4,
+    "south": 41.9,
+    "north": 46.3
+   },
+   "grid": {
+    "lon0": -124.625,
+    "lat0": 41.875,
+    "step": 0.125,
+    "cols": 66,
+    "rows": 36
+   }
+  },
+  {
+   "code": "PA",
+   "name": "Pennsylvania",
+   "species": "pennsylvania_100.csv",
+   "dex": null,
+   "outline": "pennsylvania_outline.json",
+   "ranges": "pennsylvania_ranges.json",
+   "hotspots": "pennsylvania_hotspots.json",
+   "places": "pennsylvania_places.json",
+   "seasons": "pennsylvania_seasons.json",
+   "utc_offset": -5,
+   "inat_place_id": 42,
+   "bounds": {
+    "west": -80.6,
+    "east": -74.6,
+    "south": 39.6,
+    "north": 42.6
+   },
+   "grid": {
+    "lon0": -80.625,
+    "lat0": 39.5,
+    "step": 0.125,
+    "cols": 49,
+    "rows": 25
+   }
+  },
+  {
+   "code": "RI",
+   "name": "Rhode Island",
+   "species": "rhode_island_100.csv",
+   "dex": null,
+   "outline": "rhode_island_outline.json",
+   "ranges": "rhode_island_ranges.json",
+   "hotspots": "rhode_island_hotspots.json",
+   "places": "rhode_island_places.json",
+   "seasons": "rhode_island_seasons.json",
+   "utc_offset": -5,
+   "inat_place_id": 8,
+   "bounds": {
+    "west": -71.9,
+    "east": -71.1,
+    "south": 41.2,
+    "north": 42.1
+   },
+   "grid": {
+    "lon0": -71.9375,
+    "lat0": 41.1875,
+    "step": 0.0625,
+    "cols": 14,
+    "rows": 15
+   }
+  },
+  {
+   "code": "SC",
+   "name": "South Carolina",
+   "species": "south_carolina_100.csv",
+   "dex": null,
+   "outline": "south_carolina_outline.json",
+   "ranges": "south_carolina_ranges.json",
+   "hotspots": "south_carolina_hotspots.json",
+   "places": "south_carolina_places.json",
+   "seasons": "south_carolina_seasons.json",
+   "utc_offset": -5,
+   "inat_place_id": 43,
+   "bounds": {
+    "west": -83.5,
+    "east": -78.5,
+    "south": 31.9,
+    "north": 35.3
+   },
+   "grid": {
+    "lon0": -83.5,
+    "lat0": 31.875,
+    "step": 0.0625,
+    "cols": 80,
+    "rows": 55
+   }
+  },
+  {
+   "code": "SD",
+   "name": "South Dakota",
+   "species": "south_dakota_100.csv",
+   "dex": null,
+   "outline": "south_dakota_outline.json",
+   "ranges": "south_dakota_ranges.json",
+   "hotspots": "south_dakota_hotspots.json",
+   "places": "south_dakota_places.json",
+   "seasons": "south_dakota_seasons.json",
+   "utc_offset": -6,
+   "inat_place_id": 44,
+   "bounds": {
+    "west": -104.1,
+    "east": -96.4,
+    "south": 42.4,
+    "north": 46.0
+   },
+   "grid": {
+    "lon0": -104.125,
+    "lat0": 42.375,
+    "step": 0.125,
+    "cols": 62,
+    "rows": 29
+   }
+  },
+  {
+   "code": "TN",
+   "name": "Tennessee",
+   "species": "tennessee_100.csv",
+   "dex": null,
+   "outline": "tennessee_outline.json",
+   "ranges": "tennessee_ranges.json",
+   "hotspots": "tennessee_hotspots.json",
+   "places": "tennessee_places.json",
+   "seasons": "tennessee_seasons.json",
+   "utc_offset": -6,
+   "inat_place_id": 45,
+   "bounds": {
+    "west": -90.4,
+    "east": -81.6,
+    "south": 34.9,
+    "north": 36.8
+   },
+   "grid": {
+    "lon0": -90.5,
+    "lat0": 34.875,
+    "step": 0.125,
+    "cols": 72,
+    "rows": 16
+   }
+  },
+  {
+   "code": "TX",
+   "name": "Texas",
+   "species": "texas_100.csv",
+   "dex": null,
+   "outline": "texas_outline.json",
+   "ranges": "texas_ranges.json",
+   "hotspots": "texas_hotspots.json",
+   "places": "texas_places.json",
+   "seasons": "texas_seasons.json",
+   "utc_offset": -6,
+   "inat_place_id": 18,
+   "bounds": {
+    "west": -106.8,
+    "east": -93.4,
+    "south": 25.8,
+    "north": 36.6
+   },
+   "grid": {
+    "lon0": -107.0,
+    "lat0": 25.75,
+    "step": 0.25,
+    "cols": 55,
+    "rows": 44
+   }
+  },
+  {
+   "code": "UT",
+   "name": "Utah",
+   "species": "utah_100.csv",
+   "dex": null,
+   "outline": "utah_outline.json",
+   "ranges": "utah_ranges.json",
+   "hotspots": "utah_hotspots.json",
+   "places": "utah_places.json",
+   "seasons": "utah_seasons.json",
+   "utc_offset": -7,
+   "inat_place_id": 52,
+   "bounds": {
+    "west": -114.1,
+    "east": -108.9,
+    "south": 36.9,
+    "north": 42.1
+   },
+   "grid": {
+    "lon0": -114.125,
+    "lat0": 36.875,
+    "step": 0.125,
+    "cols": 42,
+    "rows": 42
+   }
+  },
+  {
+   "code": "VT",
+   "name": "Vermont",
+   "species": "vermont_100.csv",
+   "dex": null,
+   "outline": "vermont_outline.json",
+   "ranges": "vermont_ranges.json",
+   "hotspots": "vermont_hotspots.json",
+   "places": "vermont_places.json",
+   "seasons": "vermont_seasons.json",
+   "utc_offset": -5,
+   "inat_place_id": 47,
+   "bounds": {
+    "west": -73.5,
+    "east": -71.4,
+    "south": 42.6,
+    "north": 45.1
+   },
+   "grid": {
+    "lon0": -73.5,
+    "lat0": 42.5625,
+    "step": 0.0625,
+    "cols": 34,
+    "rows": 41
+   }
+  },
+  {
+   "code": "WA",
+   "name": "Washington",
+   "species": "washington_100.csv",
+   "dex": null,
+   "outline": "washington_outline.json",
+   "ranges": "washington_ranges.json",
+   "hotspots": "washington_hotspots.json",
+   "places": "washington_places.json",
+   "seasons": "washington_seasons.json",
+   "utc_offset": -8,
+   "inat_place_id": 46,
+   "bounds": {
+    "west": -124.8,
+    "east": -116.8,
+    "south": 45.5,
+    "north": 49.1
+   },
+   "grid": {
+    "lon0": -124.875,
+    "lat0": 45.5,
+    "step": 0.125,
+    "cols": 65,
+    "rows": 29
+   }
+  },
+  {
+   "code": "WV",
+   "name": "West Virginia",
+   "species": "west_virginia_100.csv",
+   "dex": null,
+   "outline": "west_virginia_outline.json",
+   "ranges": "west_virginia_ranges.json",
+   "hotspots": "west_virginia_hotspots.json",
+   "places": "west_virginia_places.json",
+   "seasons": "west_virginia_seasons.json",
+   "utc_offset": -5,
+   "inat_place_id": 33,
+   "bounds": {
+    "west": -82.7,
+    "east": -77.6,
+    "south": 37.1,
+    "north": 40.7
+   },
+   "grid": {
+    "lon0": -82.75,
+    "lat0": 37.0,
+    "step": 0.125,
+    "cols": 42,
+    "rows": 30
+   }
+  },
+  {
+   "code": "WI",
+   "name": "Wisconsin",
+   "species": "wisconsin_100.csv",
+   "dex": null,
+   "outline": "wisconsin_outline.json",
+   "ranges": "wisconsin_ranges.json",
+   "hotspots": "wisconsin_hotspots.json",
+   "places": "wisconsin_places.json",
+   "seasons": "wisconsin_seasons.json",
+   "utc_offset": -6,
+   "inat_place_id": 32,
+   "bounds": {
+    "west": -93.0,
+    "east": -86.2,
+    "south": 42.4,
+    "north": 47.4
+   },
+   "grid": {
+    "lon0": -93.0,
+    "lat0": 42.375,
+    "step": 0.125,
+    "cols": 55,
+    "rows": 41
+   }
+  },
+  {
+   "code": "WY",
+   "name": "Wyoming",
+   "species": "wyoming_100.csv",
+   "dex": null,
+   "outline": "wyoming_outline.json",
+   "ranges": "wyoming_ranges.json",
+   "hotspots": "wyoming_hotspots.json",
+   "places": "wyoming_places.json",
+   "seasons": "wyoming_seasons.json",
+   "utc_offset": -7,
+   "inat_place_id": 15,
+   "bounds": {
+    "west": -111.2,
+    "east": -103.9,
+    "south": 40.9,
+    "north": 45.1
+   },
+   "grid": {
+    "lon0": -111.25,
+    "lat0": 40.875,
+    "step": 0.125,
+    "cols": 59,
+    "rows": 34
+   }
+  },
+  {
+   "code": "FL",
+   "name": "Florida",
+   "species": "florida_100.csv",
+   "dex": null,
+   "outline": "florida_outline.json",
+   "ranges": "florida_ranges.json",
+   "hotspots": "florida_hotspots.json",
+   "places": "florida_places.json",
+   "seasons": "florida_seasons.json",
+   "utc_offset": -5,
+   "inat_place_id": 21,
+   "bounds": {
+    "west": -87.7,
+    "east": -79.9,
+    "south": 24.4,
+    "north": 31.1
+   },
+   "grid": {
+    "lon0": -87.75,
+    "lat0": 24.375,
+    "step": 0.125,
+    "cols": 63,
+    "rows": 54
+   }
+  },
+  {
+   "code": "HI",
+   "name": "Hawaii",
+   "species": "hawaii_100.csv",
+   "dex": null,
+   "outline": "hawaii_outline.json",
+   "ranges": "hawaii_ranges.json",
+   "hotspots": "hawaii_hotspots.json",
+   "places": "hawaii_places.json",
+   "seasons": "hawaii_seasons.json",
+   "utc_offset": -10,
+   "inat_place_id": 11,
+   "bounds": {
+    "west": -160.3,
+    "east": -154.7,
+    "south": 18.9,
+    "north": 22.3
+   },
+   "grid": {
+    "lon0": -160.375,
+    "lat0": 18.875,
+    "step": 0.125,
+    "cols": 46,
+    "rows": 28
+   }
+  },
+  {
+   "code": "MD",
+   "name": "Maryland",
+   "species": "maryland_100.csv",
+   "dex": null,
+   "outline": "maryland_outline.json",
+   "ranges": "maryland_ranges.json",
+   "hotspots": "maryland_hotspots.json",
+   "places": "maryland_places.json",
+   "seasons": "maryland_seasons.json",
+   "utc_offset": -5,
+   "inat_place_id": 39,
+   "bounds": {
+    "west": -79.6,
+    "east": -74.9,
+    "south": 37.9,
+    "north": 39.8
+   },
+   "grid": {
+    "lon0": -79.625,
+    "lat0": 37.875,
+    "step": 0.0625,
+    "cols": 76,
+    "rows": 31
+   }
+  },
+  {
+   "code": "MT",
+   "name": "Montana",
+   "species": "montana_100.csv",
+   "dex": null,
+   "outline": "montana_outline.json",
+   "ranges": "montana_ranges.json",
+   "hotspots": "montana_hotspots.json",
+   "places": "montana_places.json",
+   "seasons": "montana_seasons.json",
+   "utc_offset": -7,
+   "inat_place_id": 16,
+   "bounds": {
+    "west": -116.1,
+    "east": -103.9,
+    "south": 44.3,
+    "north": 49.1
+   },
+   "grid": {
+    "lon0": -116.25,
+    "lat0": 44.25,
+    "step": 0.25,
+    "cols": 50,
+    "rows": 20
+   }
   }
  ]
 }
