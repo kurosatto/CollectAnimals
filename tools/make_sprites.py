@@ -28,6 +28,7 @@ from PIL import Image, ImageDraw
 sys.path.insert(0, str(Path(__file__).parent))
 import species_ca_tidepool  # noqa: E402,F401  (registers the drawings in these modules)
 import species_nc  # noqa: E402,F401
+import species_tx  # noqa: E402,F401
 from archetypes import (BLACK, NOSE, PINK, WHITE, beetle_top, bee, bird, butterfly,  # noqa: E402
                         dragonfly, duck, frog, goose, hummingbird, lizard, mammal, owl, pelican,
                         mantis, pinniped, quad, S, snake, sprite, star, turtle, vulture, wader, whale)

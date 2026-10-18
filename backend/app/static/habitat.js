@@ -169,6 +169,7 @@ const HAB_PERCH_SCALE = .72;
 // Spots on the state's coastal landmark where sea birds stand: [x, feet y].
 // California's sea stack: two on the flat top, one on the ledge, one on the
 // small rock beside it. North Carolina's lighthouse: the gallery and the base.
+// Texas's windmill: its platform, the tail vane and the stock tank below.
 function habPerches(L, state) {
   if (state === "CA") {
     const sx = L.w - Math.round(L.w * .1), top = L.water - 44;
@@ -177,6 +178,11 @@ function habPerches(L, state) {
   if (state === "NC") {
     const lx = L.sea - 12, topY = L.water - 58;
     return [[lx - 4, topY - 1], [lx + 5, topY - 1], [lx - 6, L.water], [lx + 6, L.water]];
+  }
+  if (state === "TX") {
+    // The ranch windmill: the platform under the wheel and the tail vane.
+    const wx = L.land - 34, top = L.water - 52;
+    return [[wx - 4, top + 14], [wx + 4, top + 14], [wx + 15, top], [wx - 7, L.water + 8]];
   }
   return [];
 }
@@ -655,6 +661,7 @@ function habLeave() {
 const HAB_SHOWCASE = {
   CA: { slug: "brown_pelican", common_name: "Brown Pelican", category: "bird", rarity: "common" },
   NC: { slug: "northern_cardinal", common_name: "Northern Cardinal", category: "bird", rarity: "common" },
+  TX: { slug: "northern_mockingbird", common_name: "Northern Mockingbird", category: "bird", rarity: "common" },
 };
 function habShowcase(state, slot) {
   const s = HAB_SHOWCASE[state] || HAB_SHOWCASE.CA;
@@ -805,7 +812,9 @@ function habTinted(img, slug, phase) {
 // Each state gets its own scenery: California has the snowy Sierra behind golden
 // hills dotted with oaks, a coast live oak, poppies, a sea stack and kelp; North
 // Carolina has the blue ridges of the mountains over forested hills, a longleaf
-// pine, dogwood blossoms, dunes with sea oats and a striped lighthouse.
+// pine, dogwood blossoms, dunes with sea oats and a striped lighthouse; Texas has
+// flat-topped mesas over Hill Country, a live oak, bluebonnets and Indian
+// paintbrush, prickly pear and a ranch windmill by the Gulf.
 const HAB_SCENES = {
   CA: { far: ["#c99b48", "#dcb35e", "#ecc875", "#f7dc95"], near: ["#7d8a3c", "#97a24a", "#aeb65a", "#c6c977"],
         meadow: ["#5f9a3d", "#77b04a", "#8fc35a", "#a8d36d"], dots: "oak", tree: "oak",
@@ -813,6 +822,9 @@ const HAB_SCENES = {
   NC: { far: ["#3f7a4a", "#4f8d55", "#62a061", "#79b473"], near: ["#2f6a3c", "#3d7d46", "#4f9150", "#64a55e"],
         meadow: ["#56943c", "#6aaa48", "#80bd57", "#98cf69"], dots: "forest", tree: "pine",
         flowers: [["#ffffff", "#f3e6b0"], ["#ffffff", "#f3e6b0"], ["#f6b8cf", "#ffffff"], ["#ffd84d", "#fff2a0"]] },
+  TX: { far: ["#8f9550", "#a3a75b", "#b8b969", "#cccb7c"], near: ["#647f36", "#789341", "#8ca64d", "#a2b85e"],
+        meadow: ["#678f38", "#7da344", "#92b652", "#a8c765"], dots: "oak", tree: "oak",
+        flowers: [["#3a58d0", "#ffffff"], ["#3a58d0", "#ffffff"], ["#e4502c", "#ffa860"], ["#ffd84d", "#fff2a0"]] },
   default: { far: ["#6f9e60", "#82b370", "#97c483", "#b0d69a"], near: ["#4f8d43", "#62a250", "#78b55e", "#90c771"],
              meadow: ["#5f9a3d", "#77b04a", "#8fc35a", "#a8d36d"], dots: "round", tree: "round",
              flowers: [["#ffffff", "#ffe9a0"], ["#ffd84d", "#fff2a0"], ["#f27aa8", "#ffc4dc"], ["#b48cff", "#e0d0ff"]] },
@@ -919,6 +931,27 @@ function habBackground(L, phase, state) {
         for (let y = h; y < foot; y++) img.set(x, y, y === h ? pal[1] : ramp(pal, .7 - (y - h) / 30, x, y));
       }
     });
+  } else if (state === "TX") {
+    // Mesas and buttes: flat caprock tops over red-and-tan banded cliffs.
+    const rock = P("#9a5e44", "#b47456", "#c98c68", "#dca77f"), cap = P("#b88e6a", "#e6cba4");
+    const hm = [];
+    for (let x = -1; x <= coastEnd + 1; x++) {
+      // Thresholded noise gives flat tops with steep sides; two layers make a big
+      // mesa and smaller buttes in front of the haze.
+      const n = vnoise(x / 30, 0, 21), k = clamp01((n - .45) * 9), k2 = clamp01((vnoise(x / 13, 0, 24) - .62) * 10);
+      const step = k * k * (3 - 2 * k), step2 = k2 * k2 * (3 - 2 * k2);
+      hm[x + 1] = fade(x, Math.round(140 - Math.max(step * 34 + (n > .68 ? 7 : 0), step2 * 22)));
+    }
+    for (let x = 0; x < coastEnd; x++) {
+      const h = hm[x + 1], s = hm[x + 2] - hm[x];
+      if (h >= 139) continue;
+      for (let y = h; y < foot; y++) {
+        const band = Math.floor((y - 100 + vnoise(x / 20, 0, 22) * 2) / 4) % 3;
+        const lit = s > 1 ? -.3 : s < -1 ? .2 : 0;
+        const v = .66 + lit - band * .14 + (vnoise(x / 5, y / 3, 23) - .5) * .22 - (y - h) * .006;
+        img.set(x, y, atmo(y - h < 2 && Math.abs(s) < 2 ? cap[1 - (y - h)] : ramp(rock, v, x, y), .16));
+      }
+    }
   }
   // Hills, far then near, each with a lit top edge.
   const hills = [[132, 12, .021, sc.far, 20], [150, 9, .034, sc.near, 21]];
@@ -1122,6 +1155,53 @@ function habBackground(L, phase, state) {
     lh.set(lx, topY - 11, black[1]);
     for (let y = L.water; y < L.water + 4; y++) for (let dx = -8; dx <= 8; dx++) lh.set(lx + dx, y, ramp(P("#7a3a2a", "#9a4c36", "#b8634a"), .8 - (dx + 8) / 17, lx + dx, y));
     lh.onto(img, P("#14161b"));
+  } else if (state === "TX") {
+    // Prickly pear: clumps of flat pads with yellow flowers and red fruit.
+    const pad = P("#3d6a32", "#4f8240", "#669a4c", "#82b45e"), cac = pxLayer(W, H);
+    for (const [fx, fy, n] of [[.26, 262, 4], [.52, 196, 3], [.58, 254, 4], [.07, 252, 3]]) {
+      const cx = Math.round(L.w * fx);
+      if (Math.abs(cx - L.pond.x) < L.pond.rx + 12 && Math.abs(fy - L.pond.y) < 22) continue;
+      const pads = [[0, 0], [-5, -5], [5, -6], [1, -11], [-8, 1], [8, 0]].slice(0, n + 1);
+      pads.forEach(([dx, dy], i) => pxBlob(cac, cx + dx, fy + dy - 5, 3, 4 + (i === 0 ? 1 : 0), pad, { seed: i + fx * 10 }));
+      pads.forEach(([dx, dy], i) => {
+        if (i % 2) { cac.set(cx + dx, fy + dy - 10, P("#ffd94a")); cac.set(cx + dx + 1, fy + dy - 10, P("#ffe98a")); }
+        else if (i) cac.set(cx + dx + 2, fy + dy - 9, P("#c8304a"));
+        for (const [sx, sy] of [[-1, -6], [1, -4], [-2, -3], [2, -7]]) if (hash2(dx + sx, dy + sy, i) > .4) cac.set(cx + dx + sx, fy + dy + sy, P("#e8e4b8"));
+      });
+    }
+    cac.onto(img, P("#22401f"));
+    // Bluebonnets: spikes of blue with a white tip, in drifts across the meadow.
+    const bb = P("#2c3e9e", "#3a58d0", "#6f8cf0"), tip = P("#ffffff");
+    for (let i = 0; i < 70; i++) {
+      const x = Math.floor(hash2(i, 31) * (L.land - 10)) + 4, y = L.water + 14 + Math.floor(hash2(i, 32) * (HAB_H - L.water - 20));
+      if (((x - L.pond.x) / (L.pond.rx + 6)) ** 2 + ((y - L.pond.y) / (L.pond.ry + 6)) ** 2 < 1) continue;
+      img.set(x, y + 1, blade[0]); img.set(x, y + 2, blade[0]);
+      img.set(x, y, bb[0]); img.set(x - 1, y - 1, bb[1]); img.set(x + 1, y - 1, bb[1]); img.set(x, y - 2, bb[2]); img.set(x, y - 3, tip);
+    }
+    // A ranch windmill and its stock tank by the coast.
+    const wm = pxLayer(W, H), wx = L.land - 34, top = L.water - 52, gnd = L.water + 12;
+    const steel = P("#3a3a40", "#55565e", "#74767e", "#9a9ca4");
+    for (let y = top + 14; y <= gnd; y++) {
+      const spread = Math.round((y - top - 14) * .16);
+      wm.set(wx - 2 - spread, y, steel[1]); wm.set(wx + 2 + spread, y, steel[2]);
+      if ((y - top) % 9 === 0) for (let dx = -1 - spread; dx <= 1 + spread; dx++) wm.set(wx + dx, y, steel[1]);
+      if ((y - top) % 9 === 4) { wm.set(wx - spread, y, steel[0]); wm.set(wx + spread, y, steel[0]); }
+    }
+    for (let dx = -6; dx <= 6; dx++) { wm.set(wx + dx, top + 14, steel[2]); wm.set(wx + dx, top + 15, steel[0]); }
+    // The wheel: blades around a hub.
+    const hubX = wx - 1, hubY = top + 4;
+    for (let a = 0; a < Math.PI * 2; a += Math.PI / 9) for (let rr = 3; rr <= 10; rr++) {
+      const x = Math.round(hubX + Math.cos(a) * rr), y = Math.round(hubY + Math.sin(a) * rr);
+      wm.set(x, y, rr === 10 ? steel[0] : steel[2 + (Math.cos(a - 2.3) > 0 ? 1 : 0)]);
+    }
+    for (let a = 0; a < Math.PI * 2; a += .1) wm.set(Math.round(hubX + Math.cos(a) * 10.5), Math.round(hubY + Math.sin(a) * 10.5), steel[0]);
+    pxBlob(wm, hubX, hubY, 2, 2, steel);
+    // The tail vane sticking out behind, with a red stripe.
+    for (let dx = 2; dx <= 12; dx++) wm.set(wx + dx, hubY, steel[1]);
+    for (let y = hubY - 4; y <= hubY + 2; y++) for (let dx = 12; dx <= 18; dx++) wm.set(wx + dx, y, y === hubY - 1 ? P("#c8302a") : ramp(steel, .8 - (dx - 12) / 10, wx + dx, y));
+    // Stock tank: a round galvanised tank with water in it.
+    for (let dx = -12; dx <= -2; dx++) for (let y = gnd - 4; y <= gnd + 1; y++) wm.set(wx + dx, y, y === gnd - 4 ? P("#7fc0e8") : ramp(steel, .9 - (dx + 12) / 12, wx + dx, y));
+    wm.onto(img, P("#1e1e24"));
   }
   // The tree for roosting birds and a spider's thread: a big leafy oak, or in
   // North Carolina a longleaf pine.
