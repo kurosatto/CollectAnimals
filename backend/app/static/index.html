@@ -1016,7 +1016,9 @@ function pickState({ title, note = "", current = null, mine = [] }) {
     const finish = (code) => { if (done) return; done = true; dlg.close(); resolve(code); };
     const draw = () => {
       const q = search.value.trim().toLowerCase();
-      const hit = (st) => !q || st.name.toLowerCase().includes(q) || st.code.toLowerCase() === q;
+      // The start of the name or of any word in it ("carolina", "new y"), or the code ("nc").
+      const hit = (st) => !q || st.code.toLowerCase() === q
+        || st.name.toLowerCase().split(" ").some((_, i, w) => w.slice(i).join(" ").startsWith(q));
       const own = states.filter((st) => mine.includes(st.code) && hit(st));
       const rest = states.filter((st) => !mine.includes(st.code) && hit(st))
         .sort((a, b) => a.name.localeCompare(b.name));

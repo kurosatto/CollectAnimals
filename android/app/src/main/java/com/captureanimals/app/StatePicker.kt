@@ -34,11 +34,14 @@ object StateSearch {
     /**
      * The picker's rows for a search: the player's own states first, then the rest
      * A to Z (locked when the player has some states of their own). A query matches
-     * any part of a name, or a code exactly ("nc").
+     * the start of the name or of any word in it ("carolina", "new y"), or a code exactly ("nc").
      */
     fun rows(states: List<StateInfo>, query: String, mine: Set<String>): List<StateRow> {
         val q = query.trim().lowercase()
-        val hits = states.filter { q.isEmpty() || q in it.name.lowercase() || it.code.lowercase() == q }
+        val hits = states.filter { st ->
+            val words = st.name.lowercase().split(" ")
+            q.isEmpty() || st.code.lowercase() == q || words.indices.any { words.drop(it).joinToString(" ").startsWith(q) }
+        }
         val own = hits.filter { it.code in mine }.map { StateRow(it.code, it.name) }
         val rest = hits.filter { it.code !in mine }.sortedBy { it.name }.map { StateRow(it.code, it.name, locked = mine.isNotEmpty()) }
         return buildList {
