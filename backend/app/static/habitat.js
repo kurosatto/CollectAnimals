@@ -825,7 +825,7 @@ function habTinted(img, slug, phase) {
 // flat-topped mesas over Hill Country, a live oak, bluebonnets and Indian
 // paintbrush, prickly pear and a ranch windmill by the Gulf; Florida is flat
 // sawgrass with cypress domes and cabbage palms, coreopsis, a palm for the
-// roosting tree and a mangrove island offshore.
+// roosting tree, a mangrove island offshore and a rocket on its launch pad.
 const HAB_SCENES = {
   CA: { far: ["#c99b48", "#dcb35e", "#ecc875", "#f7dc95"], near: ["#7d8a3c", "#97a24a", "#aeb65a", "#c6c977"],
         meadow: ["#5f9a3d", "#77b04a", "#8fc35a", "#a8d36d"], dots: "oak", tree: "oak",
@@ -1207,6 +1207,30 @@ function habBackground(L, phase, state) {
     mg.onto(img, P("#132a18"));
     const foam = P("#e9f6ff");
     for (let dx = -22; dx <= 22; dx++) if (hash2(dx, 47) > .45) img.set(mx + dx, L.water + 4 + (hash2(dx, 48) > .7 ? 1 : 0), foam);
+    // Cape Canaveral: a white rocket on its launch pad beside a red gantry tower.
+    const rk = pxLayer(W, H), rx = L.land - 30, pad = L.water + 10, rtop = L.water - 62;
+    const white = P("#a8acb4", "#cfd3da", "#eceef2", "#ffffff"), red = P("#8a2a22", "#b83a2e", "#d8574a");
+    const steel = P("#3a3a40", "#55565e");
+    for (let y = rtop + 6; y < pad; y++) {
+      const hw = y < rtop + 14 ? Math.round((y - rtop - 6) * .45) : 4;
+      for (let dx = -hw; dx <= hw; dx++) rk.set(rx + dx, y, ramp(white, .85 - (dx + hw) / (2 * hw + 1) * .7, rx + dx, y));
+      if ((y - rtop) % 16 === 0) for (let dx = -hw; dx <= hw; dx++) rk.set(rx + dx, y, steel[1]);
+    }
+    for (let y = rtop; y < rtop + 6; y++) rk.set(rx, y, red[1]);
+    for (let y = rtop + 6; y < rtop + 12; y++) for (let dx = -2; dx <= 2; dx++) if (Math.abs(dx) <= (y - rtop - 6) * .45) rk.set(rx + dx, y, ramp(red, .8 - (dx + 2) / 5, rx + dx, y));
+    for (let y = rtop + 30; y < rtop + 36; y++) for (let dx = -4; dx <= 4; dx++) rk.set(rx + dx, y, ramp(P("#2a4aa0", "#3a64c8"), .8 - (dx + 4) / 9, rx + dx, y));
+    // fins at the bottom
+    for (let k = 0; k < 6; k++) { rk.set(rx - 5 - (k >> 1), pad - 6 + k, white[1]); rk.set(rx + 5 + (k >> 1), pad - 6 + k, white[1]); }
+    // the gantry: a lattice tower with arms reaching to the rocket
+    const gx = rx + 12;
+    for (let y = rtop + 4; y <= pad; y++) {
+      rk.set(gx - 3, y, red[0]); rk.set(gx + 3, y, red[1]);
+      if ((y - rtop) % 6 === 0) for (let dx = -3; dx <= 3; dx++) rk.set(gx + dx, y, red[2]);
+      if ((y - rtop) % 6 === 3) { rk.set(gx - 1, y, red[0]); rk.set(gx + 1, y, red[0]); }
+    }
+    for (const ay of [rtop + 16, rtop + 34]) for (let x = rx + 5; x < gx - 3; x++) rk.set(x, ay, steel[0]);
+    for (let dx = -10; dx <= 18; dx++) for (let y = pad; y < pad + 3; y++) rk.set(rx + dx, y, ramp(P("#7a7a80", "#9a9aa0", "#b8b8bc"), .8 - (y - pad) * .3, rx + dx, y));
+    rk.onto(img, P("#1e1e24"));
   } else if (state === "TX") {
     // Prickly pear: clumps of flat pads with yellow flowers and red fruit.
     const pad = P("#3d6a32", "#4f8240", "#669a4c", "#82b45e"), cac = pxLayer(W, H);
