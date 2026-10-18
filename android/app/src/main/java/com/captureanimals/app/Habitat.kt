@@ -64,6 +64,16 @@ fun Habitat(view: HabitatWebView, animals: List<HabitatAnimal>, state: String, m
     )
 }
 
+/** Before you log in: [state]'s scenery with one featured animal, as a taste of the game. */
+@Composable
+fun HabitatShowcase(view: HabitatWebView, state: String, placeName: String, modifier: Modifier = Modifier) {
+    LaunchedEffect(state, placeName) { view.showcase(state, placeName) }
+    AndroidView(
+        factory = { view.also { (it.parent as? ViewGroup)?.removeView(it) } },
+        modifier = modifier.fillMaxWidth().height(view.heightDp.dp),
+    )
+}
+
 @Composable
 fun rememberHabitatView(): HabitatWebView {
     val context = LocalContext.current
@@ -95,6 +105,12 @@ class HabitatWebView(context: Context) : WebView(context) {
 
     fun show(json: String, state: String, visitor: String?) {
         val call = "setAnimals($json, ${JSONObject.quote(state)}, ${visitor?.let(JSONObject::quote) ?: "null"})"
+        runJs(call)
+    }
+
+    fun showcase(state: String, placeName: String) = runJs("showcase(${JSONObject.quote(state)}, ${JSONObject.quote(placeName)})")
+
+    private fun runJs(call: String) {
         if (ready) evaluateJavascript(call, null) else pending = call
     }
 
