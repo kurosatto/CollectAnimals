@@ -84,7 +84,7 @@ class ParksWebView(context: Context) : WebView(context) {
     init {
         settings.javaScriptEnabled = true
         settings.allowFileAccess = false
-        // OpenStreetMap asks apps to identify themselves.
+        // Identifies the app to the map tile server (USGS The National Map).
         settings.userAgentString = settings.userAgentString + " CaptureAnimals/" + BuildConfigCompat.version(context)
         isVerticalScrollBarEnabled = false
         addJavascriptInterface(Bridge(), "AndroidParks")
