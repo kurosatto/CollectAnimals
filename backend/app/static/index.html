@@ -252,6 +252,24 @@
   .hab-bubble { position:absolute; transform:translate(-50%,-100%); background:var(--card); color:var(--ink);
                 border:1px solid var(--line); border-radius:8px; padding:3px 8px; font-size:.8rem; font-weight:600;
                 white-space:nowrap; pointer-events:none; box-shadow:0 2px 6px rgba(0,0,0,.15); }
+  .auth { display:grid; gap:4px 20px; }
+  .auth-scene { position:relative; }
+  .auth-place { position:absolute; z-index:1; top:8px; left:8px; padding:2px 8px; border-radius:999px; font-size:.8rem;
+                background:rgba(0,0,0,.45); color:#fff; pointer-events:none; }
+  .auth .habitat { margin:0; }
+  .pitch-title { font-size:1.3rem; margin:12px 0 6px; line-height:1.25; }
+  .pitch { margin:0 0 4px; }
+  #auth-title { font-size:1.05rem; margin:14px 0 8px; }
+  .auth form { flex-direction:column; }
+  .pitch-list { list-style:none; padding:0; margin:12px 0 0; display:grid; gap:8px;
+                grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); font-size:.9rem; }
+  .pitch-list li { display:flex; align-items:center; gap:8px; }
+  .pitch-list img { width:24px; height:24px; image-rendering:pixelated; flex:none; }
+  @media (min-width:760px) {
+    .auth { grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); align-items:center; }
+    .pitch-title { margin-top:0; }
+    .pitch-list { grid-column:1 / -1; }
+  }
   .hab-bar { display:flex; justify-content:space-between; align-items:center; gap:8px; margin:8px 0 12px; font-size:.85rem; }
   .hab-bar button { padding:4px 10px; font-size:.8rem; white-space:nowrap; }
   /* Bonds and buddy (app/bonds.py): hearts are field notes done. */
@@ -302,7 +320,12 @@
   <button data-tab="friends"><img class="ic" src="/sprites/ui_tab_friends.png" alt="">Friends</button>
 </nav>
 
-  <section id="auth" class="card">
+  <section id="auth" class="card auth">
+    <div class="auth-scene" id="auth-scene"><span class="auth-place" id="auth-place">📍 California</span></div>
+    <div class="auth-side">
+    <h2 class="pitch-title">How many of <span id="pitch-state">California</span>'s 100 animals can you capture?</h2>
+    <p class="pitch">Spot a wild animal, snap a great photo, and it's captured in your Field Guide.
+      Then it moves into your own little pixel habitat, like the one here.</p>
     <h2 id="auth-title">Log in</h2>
     <form id="auth-form">
       <input id="email" type="email" placeholder="Email" class="hidden">
@@ -313,6 +336,13 @@
     </form>
     <p class="muted"><button class="link" id="toggle">Need an account? Sign up</button></p>
     <p id="auth-error" style="color:#c0392b"></p>
+    </div>
+    <ul class="pitch-list">
+      <li><img src="/sprites/ui_tab_capture.png" alt="">Photograph real animals and find out what you met</li>
+      <li><img src="/sprites/ui_tab_guide.png" alt="">Fill your Field Guide, from backyard birds to legendary finds</li>
+      <li><img src="/sprites/ui_tab_photos.png" alt="">Earn up to 5 stars for sharp, well framed shots</li>
+      <li><img src="/sprites/ui_tab_friends.png" alt="">Add friends and race to capture them all</li>
+    </ul>
   </section>
 
   <section id="game" class="hidden">
@@ -455,8 +485,23 @@ function setToken(t) {
   render();
 }
 
+// Logged out: the login page shows the state's scenery with one animal in it.
+// Before a state is chosen that's the last one used on this device, else California.
+let authState = "CA";
+try { authState = localStorage.getItem("state") || "CA"; } catch {}
+function authScene(code) {
+  authState = code || authState;
+  const name = (states.find((st) => st.code === authState) || {}).name || "California";
+  $("auth-place").textContent = `📍 ${name}`;
+  $("pitch-state").textContent = name;
+  $("state-name").textContent = name;
+  if (!token) habShowcase(authState, $("auth-scene"));
+}
+$("signup-state").onchange = () => authScene($("signup-state").value);
+
 $("toggle").onclick = () => {
   signup = !signup;
+  if (signup && states.some((st) => st.code === authState)) $("signup-state").value = authState;
   $("auth-title").textContent = $("auth-submit").textContent = signup ? "Sign up" : "Log in";
   $("toggle").textContent = signup ? "Have an account? Log in" : "Need an account? Sign up";
   $("email").classList.toggle("hidden", !signup);
@@ -976,6 +1021,7 @@ async function loadStates() {
 
 async function useState(code) {
   myState = states.find((st) => st.code === code) || myState;
+  try { localStorage.setItem("state", myState.code); } catch {}
   $("state-name").textContent = myState.name;
   $("my-state").value = myState.code;
   const b = myState.bounds;
@@ -1925,6 +1971,8 @@ async function render() {
   $("who").classList.toggle("hidden", !authed);
   $("tabs").classList.toggle("hidden", !authed);
   document.body.classList.toggle("authed", authed);
+  if (!authed) authScene();
+  else if (hab.visit?.showcase) habLeave();
   if (authed) {
     showTab(location.hash.slice(1));
     try {
