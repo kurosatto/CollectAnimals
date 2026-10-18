@@ -167,6 +167,27 @@ class SocialViewModel(app: Application) : AndroidViewModel(app) {
         _state.update { it.copy(viewing = p) }
         openComments(p)
     }
+    /** Fixes when and where one of your photos was taken; an error message, or null when saved. */
+    suspend fun saveWhereWhen(p: OnlinePhoto, takenAt: java.time.LocalDateTime, place: Pair<Double, Double>?): String? {
+        val ww = p.whereWhen ?: return null
+        return try {
+            val res = Online.whereWhen(ww.captureId, takenAt, place)
+            val new = WhereWhen.parse(res.getJSONObject("where_when"))!!
+            val score = PhotoScore.parse(res.optJSONObject("score"))
+            fun swap(list: List<OnlinePhoto>) = list.map {
+                if (it.id != p.id) it else it.copy(whereWhen = new, place = new.place,
+                    takenOn = new.takenAt.toLocalDate().atTime(12, 0).atZone(java.time.ZoneId.systemDefault())
+                        .toInstant().toEpochMilli(),
+                    score = score?.total ?: it.score, stars = score?.stars ?: it.stars)
+            }
+            _state.update { it.copy(feed = swap(it.feed), album = it.album?.let(::swap),
+                viewing = it.viewing?.let { v -> swap(listOf(v)).first() }) }
+            null
+        } catch (e: Exception) {
+            e.message ?: "Couldn't save"
+        }
+    }
+
     fun closePhoto() {
         _state.update { it.copy(viewing = null) }
         closeComments()
@@ -303,6 +324,12 @@ fun AccountDialog(state: UiState, vm: GameViewModel, onDismiss: () -> Unit) {
     text = {
         Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (acct == null) {
+                val place = state.states.find { it.code == state.stateCode }?.name ?: "California"
+                HabitatShowcase(rememberHabitatView(), state.stateCode.ifEmpty { "CA" }, place)
+                Text("How many of $place's 100 animals can you capture?", style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold)
+                Text("Spot a wild animal, snap a great photo, and it's captured in your Field Guide. Then it moves " +
+                    "into your own little pixel habitat, like the one here.", style = MaterialTheme.typography.bodyMedium)
                 Text("An account adds friends, the news feed and likes, and keeps your badges on the game " +
                     "server, the same as the website. Without one you play offline on this phone.",
                     style = MaterialTheme.typography.bodySmall)
@@ -364,7 +391,7 @@ fun SocialScreen(state: UiState, social: SocialViewModel, section: String, onSig
         if (section == "feed") FeedSection(s, social, state, onOpenDex) else FriendsSection(s, social)
     }
     CommentsDialog(s, social)
-    PhotoViewer(s, social)
+    PhotoViewer(s, social, state.fieldGuide?.parks.orEmpty())
     FriendGuideDialog(s, social, state, onOpenDex)
 }
 
@@ -420,7 +447,7 @@ private fun Comments(s: SocialState, social: SocialViewModel, p: OnlinePhoto) {
  * private players and animals you haven't unlocked stay hidden as in the feed.
  */
 @Composable
-fun PhotoViewer(s: SocialState, social: SocialViewModel) {
+fun PhotoViewer(s: SocialState, social: SocialViewModel, parks: List<Park> = emptyList()) {
     val p = s.viewing ?: return
     Dialog(onDismissRequest = social::closePhoto, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Column(Modifier.fillMaxSize().background(Color.Black).imePadding()) {
@@ -449,9 +476,13 @@ fun PhotoViewer(s: SocialState, social: SocialViewModel) {
                             Text(p.commonName ?: "Photo", fontWeight = FontWeight.Bold, color = rarityColor(p.rarity),
                                 style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             p.stars?.let { Stars(it, points = p.score) }
-                            Text(listOfNotNull(if (p.isMine) "You" else p.username, p.place, dateOf(p.caughtAt)).joinToString(" · "),
-                                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline,
-                                maxLines = 2, overflow = TextOverflow.Ellipsis)
+                            if (p.whereWhen != null) {
+                                WhereWhenRow(p.whereWhen, parks) { at, place -> social.saveWhereWhen(p, at, place) }
+                            } else {
+                                Text(listOfNotNull(if (p.isMine) "You" else p.username, p.place, dateOf(p.takenOn)).joinToString(" · "),
+                                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline,
+                                    maxLines = 2, overflow = TextOverflow.Ellipsis)
+                            }
                         }
                         TextButton(onClick = { social.toggleLike(p) }, enabled = !p.isMine) {
                             Text((if (p.likedByMe) "♥ " else "♡ ") + p.likeCount)
@@ -513,7 +544,7 @@ private fun FeedCard(p: OnlinePhoto, social: SocialViewModel, onOpenDex: (String
                         color = rarityColor(p.rarity), maxLines = 1, overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.clickable(enabled = p.slug != null) { p.slug?.let(onOpenDex) })
                     if (p.url != null) p.stars?.let { Stars(it, points = p.score) }
-                    Text(listOfNotNull(if (p.isMine) "You" else p.username, p.place, dateOf(p.caughtAt)).joinToString(" · "),
+                    Text(listOfNotNull(if (p.isMine) "You" else p.username, p.place, dateOf(p.takenOn)).joinToString(" · "),
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline,
                         maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
@@ -683,7 +714,8 @@ private fun GuideTile(n: Int, e: GuideEntry) {
 // --- Photos tab when signed in: your album on the server -------------------------------------
 
 @Composable
-fun OnlinePhotosScreen(social: SocialViewModel, onOpenDex: (String) -> Unit, onDeleted: () -> Unit) {
+fun OnlinePhotosScreen(social: SocialViewModel, onOpenDex: (String) -> Unit, onDeleted: () -> Unit,
+                       parks: List<Park> = emptyList()) {
     val s by social.state.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { social.loadAlbum() }
     var confirm by remember { mutableStateOf<OnlinePhoto?>(null) }
@@ -717,7 +749,7 @@ fun OnlinePhotosScreen(social: SocialViewModel, onOpenDex: (String) -> Unit, onD
                             overflow = TextOverflow.Ellipsis, color = rarityColor(p.rarity),
                             modifier = Modifier.clickable { p.slug?.let(onOpenDex) })
                         p.stars?.let { Stars(it, points = p.score) }
-                        Text(dateOf(p.caughtAt) + if (p.likeCount > 0) " · ♥ ${p.likeCount}" else "",
+                        Text(dateOf(p.takenOn) + if (p.likeCount > 0) " · ♥ ${p.likeCount}" else "",
                             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
                         Row {
                             TextButton(onClick = { social.openComments(p) }, contentPadding = PaddingValues(0.dp)) {
@@ -732,7 +764,7 @@ fun OnlinePhotosScreen(social: SocialViewModel, onOpenDex: (String) -> Unit, onD
         }
     }
     CommentsDialog(s, social)
-    PhotoViewer(s, social)
+    PhotoViewer(s, social, parks)
     confirm?.let { p ->
         AlertDialog(
             onDismissRequest = { confirm = null },

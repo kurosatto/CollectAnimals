@@ -34,6 +34,8 @@ data class CaptureResult(
     // Signed in: the photo's stars and points, and the field notes it ticked for the bond.
     val score: PhotoScore? = null,
     val bondUp: List<String> = emptyList(),
+    // Signed in: when and where it was taken, which the player can fix.
+    val whereWhen: WhereWhen? = null,
 )
 
 /**
@@ -229,14 +231,17 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         }.also { classifier = it }
     }
 
-    /** [location] is (lat, lon) when the player lets us save where they captured it. */
-    fun capture(uri: Uri, location: Pair<Double, Double>? = null) {
+    /**
+     * [location] is where the phone is now, (lat, lon), when the player lets us save where
+     * they captured it ([savePlace]); the photo's own time and place come first.
+     */
+    fun capture(uri: Uri, location: Pair<Double, Double>? = null, savePlace: Boolean = true) {
         val info = _state.value.info ?: return
         _state.update { it.copy(busy = true, error = null) }
         viewModelScope.launch {
             try {
                 val result = if (_state.value.account != null) {
-                    captureOnline(uri, info, location)
+                    captureOnline(uri, info, location, savePlace)
                 } else {
                     withContext(Dispatchers.Default) { classify(uri, info) }
                 }
@@ -250,9 +255,11 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** Signed in: the server identifies the photo and keeps the badge, as on the website. */
-    private suspend fun captureOnline(uri: Uri, info: ModelInfo, location: Pair<Double, Double>?): CaptureResult {
+    private suspend fun captureOnline(uri: Uri, info: ModelInfo, location: Pair<Double, Double>?,
+                                      savePlace: Boolean): CaptureResult {
         val bitmap = withContext(Dispatchers.IO) { ImageLoader.load(getApplication(), uri, minShortSide = 1200) }
-        val r = Online.capture(bitmap, location?.first, location?.second)
+        val meta = withContext(Dispatchers.IO) { readPhotoMeta(getApplication(), uri) }
+        val r = Online.capture(bitmap, location?.first, location?.second, meta, savePlace)
         val result = onlineResult(r, ImageLoader.thumbnail(bitmap, 1024), info)
         runCatching { refreshCollection() }
         return result
@@ -287,6 +294,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             captureId = r.getInt("capture_id"),
             score = PhotoScore.parse(r.optJSONObject("score")),
             bondUp = r.optJSONArray("bond_up")?.let { a -> List(a.length()) { a.getString(it) } }.orEmpty(),
+            whereWhen = WhereWhen.parse(r.optJSONObject("where_when")) ?: prev?.whereWhen,
         )
     }
 
@@ -330,6 +338,28 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             },
             choices = preds.mapNotNull { p -> bySlug[p.label]?.let { RankedGuess(p.label, it.commonName, p.probability) } },
         )
+    }
+
+    /** Fixes when and where the photo on the result card was taken; an error message, or null. */
+    suspend fun saveWhereWhen(takenAt: java.time.LocalDateTime, place: Pair<Double, Double>?): String? {
+        val r = _state.value.result ?: return null
+        val id = r.captureId ?: return null
+        return try {
+            val res = Online.whereWhen(id, takenAt, place)
+            _state.update { s ->
+                s.copy(result = s.result?.let { cur ->
+                    if (cur.captureId != id) cur else cur.copy(
+                        whereWhen = WhereWhen.parse(res.getJSONObject("where_when")),
+                        score = PhotoScore.parse(res.optJSONObject("score")) ?: cur.score,
+                        bondUp = res.optJSONArray("bond_up")?.let { a -> List(a.length()) { a.getString(it) } }.orEmpty(),
+                    )
+                })
+            }
+            runCatching { refreshCollection() }
+            null
+        } catch (e: Exception) {
+            e.message ?: "Couldn't save"
+        }
     }
 
     /**

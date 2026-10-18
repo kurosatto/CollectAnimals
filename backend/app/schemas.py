@@ -123,6 +123,31 @@ class PickIn(BaseModel):
     label: str
 
 
+class WhereWhenOut(BaseModel):
+    """When and where a capture was taken, for its owner (exact place)."""
+    capture_id: int
+    # The state it counts in; edited places must be inside it.
+    state: str | None = None
+    # Local wall time, no zone (the upload time in the state's time when the photo had none).
+    taken_at: datetime
+    # "photo" (from its metadata), "upload" (no metadata: the upload time) or "edited".
+    time_source: str
+    latitude: float | None = None
+    longitude: float | None = None
+    place: str | None = None
+    # "photo", "device" (the phone's location when uploading), "edited", or None
+    # (no place, or an older capture that didn't record it).
+    place_source: str | None = None
+
+
+class WhereWhenIn(BaseModel):
+    """The player fixes when and where they took a photo. The time is local wall
+    time; leave latitude/longitude out (or null) for "no place"."""
+    taken_at: datetime
+    latitude: float | None = Field(None, ge=-90, le=90)
+    longitude: float | None = Field(None, ge=-180, le=180)
+
+
 class ScorePart(BaseModel):
     label: str
     points: int
@@ -149,6 +174,20 @@ class CaptureOut(BaseModel):
     # Points and stars for this photo (None when it didn't count for any animal).
     score: ScoreOut | None = None
     # Bond hearts with this animal after the photo, and the field notes it ticked.
+    bond: int | None = None
+    bond_up: list[str] = []
+    # For an animal with a safety rating (caution or danger): how far to stay
+    # back, its safety note and the general tip (zoom, stay with an adult).
+    safety: str = "none"
+    safe_distance: str | None = None
+    safety_note: str | None = None
+    safety_tip: str | None = None
+    where_when: WhereWhenOut | None = None
+
+
+class WhereWhenResult(BaseModel):
+    where_when: WhereWhenOut
+    score: ScoreOut | None = None
     bond: int | None = None
     bond_up: list[str] = []
 
@@ -213,6 +252,8 @@ class PhotoOut(BaseModel):
     rank: int | None = None
     score: int | None = None
     stars: int | None = None
+    # Only on your own photos: the exact time and place, to show and fix.
+    where_when: WhereWhenOut | None = None
 
 
 class CommentIn(BaseModel):
@@ -249,6 +290,8 @@ class SetOut(BaseModel):
     total: int
     complete: bool
     species: list[SetSpecies]
+    # Set when some of its animals have a safety rating.
+    safety_tip: str | None = None
 
 
 class SetsOut(BaseModel):
@@ -262,6 +305,8 @@ class ChallengeOut(BaseModel):
     progress: int
     goal: int
     done: bool
+    # Set when the animals it counts include ones with a safety rating.
+    safety_tip: str | None = None
 
 
 class ChallengesOut(BaseModel):

@@ -114,6 +114,14 @@
   .comments form button { padding:6px 10px; }
   .feed-entry .comments { padding:0 6px 8px 82px; }
   .photo img, .feed-item img { cursor:zoom-in; }
+  .ww { display:grid; gap:2px; margin-top:8px; font-size:.9rem; }
+  .ww button.link { justify-self:start; font-size:.85rem; }
+  .ww-edit { display:grid; gap:8px; margin-top:8px; }
+  .ww-edit label { display:grid; gap:4px; font-size:.85rem; }
+  .ww-edit .row { display:flex; flex-wrap:wrap; gap:6px; }
+  .ww-edit .row button.ghost { background:none; color:var(--ink); border:1px solid var(--line); padding:6px 10px; }
+  .ww-map { height:220px; border-radius:10px; overflow:hidden; z-index:0; }
+  .ww-err { color:#c0392b; font-size:.85rem; }
   /* Full-screen photo: the picture fills the screen, likes and comments sit beside it
      (below it on phones). */
   dialog#viewer { width:100vw; height:100dvh; max-width:none; max-height:none; margin:0; border:none; border-radius:0;
@@ -222,6 +230,11 @@
   .week-row.done .tick { background:var(--accent); border-color:var(--accent); }
   .week-row.done .what { color:var(--muted); text-decoration:line-through; }
   .week-row .bar { grid-column:2 / 4; }
+  .week-row .safe-tip, .set .safe-tip { grid-column:2 / 4; font-size:.8rem; color:var(--muted); }
+  .safety-box { margin-top:10px; padding:8px 10px; border-radius:10px; max-width:360px; font-size:.9rem;
+                background:#fff4d6; color:#5a4200; border:1px solid #f0d58a; }
+  .safety-box.danger { background:#ffe3dc; color:#6b1d0c; border-color:#f3b3a2; }
+  .safety-box b { display:block; margin-bottom:2px; }
   .sets { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:10px; }
   .set { border:1px solid var(--line); border-radius:10px; padding:10px; display:grid; gap:6px; }
   .set.complete { border-color:var(--legendary); }
@@ -244,6 +257,24 @@
   .hab-bubble { position:absolute; transform:translate(-50%,-100%); background:var(--card); color:var(--ink);
                 border:1px solid var(--line); border-radius:8px; padding:3px 8px; font-size:.8rem; font-weight:600;
                 white-space:nowrap; pointer-events:none; box-shadow:0 2px 6px rgba(0,0,0,.15); }
+  .auth { display:grid; gap:4px 20px; }
+  .auth-scene { position:relative; }
+  .auth-place { position:absolute; z-index:1; top:8px; left:8px; padding:2px 8px; border-radius:999px; font-size:.8rem;
+                background:rgba(0,0,0,.45); color:#fff; pointer-events:none; }
+  .auth .habitat { margin:0; }
+  .pitch-title { font-size:1.3rem; margin:12px 0 6px; line-height:1.25; }
+  .pitch { margin:0 0 4px; }
+  #auth-title { font-size:1.05rem; margin:14px 0 8px; }
+  .auth form { flex-direction:column; }
+  .pitch-list { list-style:none; padding:0; margin:12px 0 0; display:grid; gap:8px;
+                grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); font-size:.9rem; }
+  .pitch-list li { display:flex; align-items:center; gap:8px; }
+  .pitch-list img { width:24px; height:24px; image-rendering:pixelated; flex:none; }
+  @media (min-width:760px) {
+    .auth { grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); align-items:center; }
+    .pitch-title { margin-top:0; }
+    .pitch-list { grid-column:1 / -1; }
+  }
   .hab-bar { display:flex; justify-content:space-between; align-items:center; gap:8px; margin:8px 0 12px; font-size:.85rem; }
   .hab-bar button { padding:4px 10px; font-size:.8rem; white-space:nowrap; }
   /* Bonds and buddy (app/bonds.py): hearts are field notes done. */
@@ -294,7 +325,12 @@
   <button data-tab="friends"><img class="ic" src="/sprites/ui_tab_friends.png" alt="">Friends</button>
 </nav>
 
-  <section id="auth" class="card">
+  <section id="auth" class="card auth">
+    <div class="auth-scene" id="auth-scene"><span class="auth-place" id="auth-place">📍 California</span></div>
+    <div class="auth-side">
+    <h2 class="pitch-title">How many of <span id="pitch-state">California</span>'s 100 animals can you capture?</h2>
+    <p class="pitch">Spot a wild animal, snap a great photo, and it's captured in your Field Guide.
+      Then it moves into your own little pixel habitat, like the one here.</p>
     <h2 id="auth-title">Log in</h2>
     <form id="auth-form">
       <input id="email" type="email" placeholder="Email" class="hidden">
@@ -305,6 +341,13 @@
     </form>
     <p class="muted"><button class="link" id="toggle">Need an account? Sign up</button></p>
     <p id="auth-error" style="color:#c0392b"></p>
+    </div>
+    <ul class="pitch-list">
+      <li><img src="/sprites/ui_tab_capture.png" alt="">Photograph real animals and find out what you met</li>
+      <li><img src="/sprites/ui_tab_guide.png" alt="">Fill your Field Guide, from backyard birds to legendary finds</li>
+      <li><img src="/sprites/ui_tab_photos.png" alt="">Earn up to 5 stars for sharp, well framed shots</li>
+      <li><img src="/sprites/ui_tab_friends.png" alt="">Add friends and race to capture them all</li>
+    </ul>
   </section>
 
   <section id="game" class="hidden">
@@ -448,8 +491,23 @@ function setToken(t) {
   render();
 }
 
+// Logged out: the login page shows the state's scenery with one animal in it.
+// Before a state is chosen that's the last one used on this device, else California.
+let authState = "CA";
+try { authState = localStorage.getItem("state") || "CA"; } catch {}
+function authScene(code) {
+  authState = code || authState;
+  const name = (states.find((st) => st.code === authState) || {}).name || "California";
+  $("auth-place").textContent = `📍 ${name}`;
+  $("pitch-state").textContent = name;
+  $("state-name").textContent = name;
+  if (!token) habShowcase(authState, $("auth-scene"));
+}
+$("signup-state").onchange = () => authScene($("signup-state").value);
+
 $("toggle").onclick = () => {
   signup = !signup;
+  if (signup && states.some((st) => st.code === authState)) $("signup-state").value = authState;
   $("auth-title").textContent = $("auth-submit").textContent = signup ? "Sign up" : "Log in";
   $("toggle").textContent = signup ? "Have an account? Log in" : "Need an account? Sign up";
   $("email").classList.toggle("hidden", !signup);
@@ -505,6 +563,7 @@ $("upload-form").onsubmit = async (e) => {
   box.textContent = "Identifying…";
   const pos = await here();
   if (pos) { fd.append("latitude", pos.latitude); fd.append("longitude", pos.longitude); }
+  if (!$("use-location").checked) fd.append("save_place", "false");
   try {
     const r = await api("/captures", { method: "POST", body: fd });
     r.file = file;
@@ -517,6 +576,13 @@ $("upload-form").onsubmit = async (e) => {
     p.textContent = "Top guesses: " + r.top_predictions
       .map((x) => `${x.common_name || (x.label === "other" ? "not on the list" : "???")} ${(x.probability * 100).toFixed(0)}%`).join(", ");
     box.append(h, p);
+    const sb = safetyBox(r);
+    if (sb) box.append(sb);
+    if (r.where_when) box.append(whereWhen(r.where_when, (res) => {
+      if (res.score) box.querySelector(".score")?.replaceWith(scoreCard(res.score));
+      if (res.bond_up?.length) box.querySelector(".ww").append(el("div", "", `Field notes ✓ ${res.bond_up.join(", ")}`));
+      loadCollection(); loadMyPhotos(); loadFeed();
+    }));
     if (r.score) box.append(scoreCard(r.score));
     const pp = pickPanel(r, box);
     if (pp) box.append(pp);
@@ -524,6 +590,17 @@ $("upload-form").onsubmit = async (e) => {
     loadCollection(); loadFeed();
   } catch (err) { box.textContent = err.message; }
 };
+
+// Safety for animals rated caution or danger: how far back to stay, the
+// animal's own note and the general tip (zoom, stay with an adult).
+function safetyBox(r) {
+  if (!r.safety_tip) return null;
+  const box = el("div", "safety-box" + (r.safety === "danger" ? " danger" : ""));
+  box.append(el("b", "", (r.safety === "danger" ? "⚠️ " : "✋ ") +
+    (r.safe_distance ? `Stay at least ${r.safe_distance} away` : "Look, don't touch")));
+  box.append(el("span", "", [r.safety_note, r.safety_tip].filter(Boolean).join(" ")));
+  return box;
+}
 
 // Photo score: stars for the photo itself, points with the bonuses added.
 const stars = (n) => "★".repeat(n) + "☆".repeat(5 - n);
@@ -534,6 +611,114 @@ function scoreCard(sc) {
   const rows = el("div", "score-parts");
   for (const part of sc.parts) rows.append(el("span", "", part.label), el("span", "", `+${part.points}`));
   box.append(head, rows);
+  return box;
+}
+
+// When and where a photo was taken: from the photo's metadata first, else the phone's
+// location (recent photos only) and the upload time. The owner can fix either: the
+// time can't be after the upload, and the place has to be in their state.
+const WW_SOURCE = { photo: "from the photo", device: "from your phone", upload: "upload time", edited: "edited by you" };
+const fmtWhen = (iso) => new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+const localNow = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); };
+let parksFor = {};
+function whereWhen(ww, onSaved) {
+  const box = el("div", "ww");
+  const show = () => {
+    box.innerHTML = "";
+    const t = el("div", "", `📅 ${fmtWhen(ww.taken_at)}`);
+    t.append(el("span", "muted", ` · ${WW_SOURCE[ww.time_source] || ""}`));
+    const p = el("div", "", ww.place ? `📍 ${ww.place}` : "📍 No place saved");
+    if (ww.place && WW_SOURCE[ww.place_source]) p.append(el("span", "muted", ` · ${WW_SOURCE[ww.place_source]}`));
+    const edit = el("button", "link", "Edit time and place");
+    edit.type = "button";
+    edit.onclick = openEditor;
+    box.append(t, p, edit);
+  };
+  const openEditor = async () => {
+    box.innerHTML = "";
+    // The capture's own state: edited places have to be inside it.
+    const st = states.find((x) => x.code === ww.state) || myState;
+    const form = el("div", "ww-edit");
+    const whenL = el("label", "", "When you took it");
+    const when = el("input");
+    when.type = "datetime-local"; when.value = ww.taken_at.slice(0, 16); when.max = localNow();
+    whenL.append(when);
+    let pin = ww.latitude != null ? [ww.latitude, ww.longitude] : null;
+    const where = el("div", "muted");
+    const parkSel = el("select");
+    parkSel.append(new Option(`Parks in ${st.name}…`, ""));
+    const mapBox = el("div", "ww-map");
+    const row = el("div", "row");
+    const btn = (label, fn) => { const b = el("button", "ghost", label); b.type = "button"; b.onclick = fn; row.append(b); return b; };
+    let map = null, marker = null;
+    const setPin = (p, label) => {
+      pin = p;
+      where.textContent = p ? (label ? `📍 ${label}` : `📍 ${p[0].toFixed(4)}, ${p[1].toFixed(4)}`) : "📍 No place";
+      if (!map) return;
+      if (p) {
+        if (marker) marker.setLatLng(p); else {
+          marker = L.marker(p, { draggable: true }).addTo(map);
+          marker.on("dragend", () => { const ll = marker.getLatLng(); setPin([ll.lat, ll.lng]); });
+        }
+        map.setView(p, Math.max(map.getZoom() || 0, 11));
+      } else if (marker) { marker.remove(); marker = null; }
+    };
+    btn("Where I am now", (e) => {
+      if (!navigator.geolocation) return;
+      e.target.disabled = true;
+      navigator.geolocation.getCurrentPosition((g) => { e.target.disabled = false; setPin([g.coords.latitude, g.coords.longitude]); },
+        () => { e.target.disabled = false; err.textContent = "Couldn't get your location."; }, { timeout: 8000 });
+    });
+    btn("No place", () => { parkSel.value = ""; setPin(null); });
+    const err = el("div", "ww-err");
+    const actions = el("div", "row");
+    const save = el("button", "", "Save"); save.type = "button";
+    const cancel = el("button", "ghost", "Cancel"); cancel.type = "button";
+    cancel.onclick = show;
+    actions.append(save, cancel);
+    form.append(whenL, el("div", "", "Where you took it"), where, parkSel, row);
+    if (window.L) form.append(mapBox, el("div", "muted", "Tap the map to move the pin."));
+    form.append(err, actions);
+    box.append(form);
+    setPin(pin, ww.place);
+    if (window.L) {
+      map = L.map(mapBox, { scrollWheelZoom: false });
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 17,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(map);
+      const b = st.bounds;
+      map.fitBounds([[b.south, b.west], [b.north, b.east]]);
+      map.on("click", (e) => { parkSel.value = ""; setPin([e.latlng.lat, e.latlng.lng]); });
+      setPin(pin, ww.place);
+      setTimeout(() => map.invalidateSize(), 50);
+    }
+    try {
+      parksFor[st.code] ||= await api(`/hotspots?state=${st.code}`);
+      for (const h of [...parksFor[st.code]].sort((a, b) => a.name.localeCompare(b.name)))
+        parkSel.append(new Option(h.name, `${h.lat},${h.lon}`));
+    } catch {}
+    parkSel.onchange = () => {
+      if (!parkSel.value) return;
+      setPin(parkSel.value.split(",").map(Number), parkSel.selectedOptions[0].textContent);
+    };
+    save.onclick = async () => {
+      err.textContent = "";
+      if (!when.value) { err.textContent = "Pick a date and time."; return; }
+      save.disabled = true;
+      try {
+        // Untouched minutes keep the photo's own seconds, so the time isn't marked as edited.
+        const body = { taken_at: when.value === ww.taken_at.slice(0, 16) ? ww.taken_at
+                       : when.value.length === 16 ? when.value + ":00" : when.value };
+        if (pin) { body.latitude = +pin[0].toFixed(6); body.longitude = +pin[1].toFixed(6); }
+        const res = await api(`/captures/${ww.capture_id}/where-when`, { method: "PUT",
+          headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+        ww = res.where_when;
+        if (map) map.remove();
+        show();
+        onSaved?.(res);
+      } catch (e) { err.textContent = e.message; save.disabled = false; }
+    };
+  };
+  show();
   return box;
 }
 
@@ -594,7 +779,10 @@ function pickPanel(r, box) {
       wrap.remove();
       box.querySelector(".keep")?.remove();
       box.querySelector(".score")?.remove();
+      box.querySelector(".safety-box")?.remove();
       if (res.score) h.after(scoreCard(res.score));
+      const sb = safetyBox(res);
+      if (sb) h.after(sb);
       if (res.matched && !res.album_photo_id) keepWhich(res.species, r.capture_id, r.file, box, res.score && res.score.total);
       loadCollection(); loadFeed();
     } catch (err) {
@@ -644,6 +832,7 @@ async function loadChallenges() {
       bar.append(fill);
       row.append(el("span", "tick", c.done ? "✓" : ""), el("span", "what", c.title),
                  el("span", "muted", `${c.progress} / ${c.goal}`), bar);
+      if (c.safety_tip) row.append(el("span", "safe-tip", "✋ " + c.safety_tip));
       list.append(row);
     }
   } catch (err) { $("week-list").textContent = err.message; }
@@ -671,6 +860,7 @@ async function loadSets() {
         sprites.append(img);
       }
       card.append(head, bar, sprites, el("div", "desc", st.description));
+      if (st.safety_tip) card.append(el("div", "safe-tip", "✋ " + st.safety_tip));
       box.append(card);
     }
   } catch (err) { box.textContent = err.message; }
@@ -855,6 +1045,7 @@ async function loadStates() {
 
 async function useState(code) {
   myState = states.find((st) => st.code === code) || myState;
+  try { localStorage.setItem("state", myState.code); } catch {}
   $("state-name").textContent = myState.name;
   $("my-state").value = myState.code;
   const b = myState.bounds;
@@ -1062,6 +1253,16 @@ function openViewer(p, onClose) {
             el("span", "muted", [""].concat([p.place, when].filter(Boolean)).join(" · ")));
   side.append(name, by);
   if (p.score != null) side.append(el("div", "pts", `${stars(p.stars)} ${p.score.toLocaleString()} pts`));
+  if (p.is_mine && p.where_when) side.append(whereWhen(p.where_when, (res) => {
+    const ww = p.where_when = res.where_when;
+    p.taken_on = ww.taken_at.slice(0, 10);
+    p.place = ww.place;
+    p.latitude = ww.latitude != null ? +ww.latitude.toFixed(3) : null;
+    p.longitude = ww.longitude != null ? +ww.longitude.toFixed(3) : null;
+    if (res.score) { p.score = res.score.total; p.stars = res.score.stars; }
+    openViewer(p, viewerClosed);
+    loadCollection(); loadMyPhotos(); loadFeed();
+  }));
   const row = reactions(p, side);
   side.append(row);
   // Comments start open: they're half of why you'd open the photo.
@@ -1846,6 +2047,8 @@ async function render() {
   $("who").classList.toggle("hidden", !authed);
   $("tabs").classList.toggle("hidden", !authed);
   document.body.classList.toggle("authed", authed);
+  if (!authed) authScene();
+  else if (hab.visit?.showcase) habLeave();
   if (authed) {
     showTab(location.hash.slice(1));
     try {

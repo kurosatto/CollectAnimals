@@ -224,13 +224,14 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
         Box(Modifier.padding(padding).fillMaxSize()) {
             when {
                 info == null -> CircularProgressIndicator(Modifier.align(Alignment.Center))
-                TABS[tab].key == "catch" -> CatchScreen(state, vm::capture, vm::dismissResult, vm::pick) { dexSlug = it }
+                TABS[tab].key == "catch" -> CatchScreen(state, vm::capture, vm::dismissResult, vm::pick, vm::saveWhereWhen) { dexSlug = it }
                 TABS[tab].key == "feed" ->
                     SocialScreen(state, social, "feed", onSignIn = { showAccount = true }) { dexSlug = it }
                 TABS[tab].key == "social" ->
                     SocialScreen(state, social, "friends", onSignIn = { showAccount = true }) { dexSlug = it }
                 TABS[tab].key == "gallery" && state.account != null ->
-                    OnlinePhotosScreen(social, onOpenDex = { dexSlug = it }, onDeleted = vm::reloadCollection)
+                    OnlinePhotosScreen(social, onOpenDex = { dexSlug = it }, onDeleted = vm::reloadCollection,
+                        parks = state.fieldGuide?.parks.orEmpty())
                 TABS[tab].key == "collection" -> {
                     val sets = remember(state.sets, info, dex, state.stateCode) {
                         state.sets.forState(state.stateCode, info.species.map { it.slug }.toSet()) { dex?.details?.get(it)?.safety }
@@ -300,15 +301,15 @@ private val TABS = listOf(
 )
 
 @Composable
-fun CatchScreen(state: UiState, onCapture: (Uri, Pair<Double, Double>?) -> Unit, onDismiss: () -> Unit,
-                onPick: (String?) -> Unit, onOpenDex: (String) -> Unit) {
+fun CatchScreen(state: UiState, onCapture: (Uri, Pair<Double, Double>?, Boolean) -> Unit, onDismiss: () -> Unit,
+                onPick: (String?) -> Unit, onSaveWhereWhen: SaveWhereWhen, onOpenDex: (String) -> Unit) {
     val context = LocalContext.current
     var saveLocation by rememberSaveable { mutableStateOf(true) }
     val askLocation = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
         if (granted.values.none { it }) saveLocation = false
     }
     val onPhoto: (Uri) -> Unit = { uri ->
-        onCapture(uri, if (state.account != null && saveLocation) lastLocation(context) else null)
+        onCapture(uri, if (state.account != null && saveLocation) lastLocation(context) else null, saveLocation)
     }
     var pendingCameraUri by rememberSaveable { mutableStateOf<Uri?>(null) }
     val takePicture = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
@@ -358,13 +359,19 @@ fun CatchScreen(state: UiState, onCapture: (Uri, Pair<Double, Double>?) -> Unit,
             Text("Identifying…", style = MaterialTheme.typography.bodyMedium)
         }
         state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        state.result?.let { ResultCard(it, onDismiss, onPick, onOpenDex) }
+        state.result?.let { r ->
+            ResultCard(r, onDismiss, onPick, onOpenDex, state.fieldGuide?.parks.orEmpty(), onSaveWhereWhen,
+                safety = r.species?.let { state.fieldGuide?.details?.get(it.slug) }
+                    ?.takeIf { it.safety == "caution" || it.safety == "danger" })
+        }
         if (state.account != null) state.week?.let { ChallengesCard(it) }
     }
 }
 
 @Composable
-fun ResultCard(r: CaptureResult, onDismiss: () -> Unit, onPick: (String?) -> Unit, onOpenDex: (String) -> Unit) {
+fun ResultCard(r: CaptureResult, onDismiss: () -> Unit, onPick: (String?) -> Unit, onOpenDex: (String) -> Unit,
+               parks: List<Park> = emptyList(), onSaveWhereWhen: SaveWhereWhen? = null,
+               safety: SpeciesDetails? = null) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Image(r.photo.asImageBitmap(), contentDescription = "Your photo",
@@ -380,6 +387,8 @@ fun ResultCard(r: CaptureResult, onDismiss: () -> Unit, onPick: (String?) -> Uni
                 RarityTag(r.species.rarity)
             }
             Text(r.message, style = MaterialTheme.typography.bodyLarge)
+            if (r.matched && safety != null) SafetyCard(safety, tip = true)
+            if (r.whereWhen != null && onSaveWhereWhen != null) WhereWhenRow(r.whereWhen, parks, onSaveWhereWhen)
             r.score?.let { ScoreBox(it, r.bondUp) }
             Text("Top guesses", style = MaterialTheme.typography.labelLarge)
             r.guesses.forEach { g ->

@@ -24,11 +24,12 @@ from sqlalchemy import and_, delete, func, or_, select
 from sqlalchemy.orm import Session
 
 from . import goals, notices, places
+from .scoring import to_local
 from . import states
 from .auth import current_user
 from .db import get_db
 from .models import AlbumPhoto, Badge, Capture, Friendship, PhotoComment, PhotoLike, Species, StateSpecies, User
-from .schemas import (AchievementOut, AlbumOut, AlbumPick, CommentIn, CommentOut, FeedOut, ProfileOut, SuggestionOut, Tally, FriendOut, FriendRequestIn, FriendsOut,
+from .schemas import (WhereWhenOut, AchievementOut, AlbumOut, AlbumPick, CommentIn, CommentOut, FeedOut, ProfileOut, SuggestionOut, Tally, FriendOut, FriendRequestIn, FriendsOut,
                       GalleryOut, PhotoOut, SettingsIn, SpeciesOut)
 from .storage import get_storage
 
@@ -78,6 +79,20 @@ def find_species(db: Session, key: str) -> Species:
     return s
 
 
+def where_when_out(c: Capture, utc_offset: int) -> WhereWhenOut:
+    """A capture's time and place as its owner sees them (exact). Without a photo
+    time, the upload time in the state's local time."""
+    has_place = c.latitude is not None and c.longitude is not None
+    taken = c.taken_at.replace(tzinfo=None) if c.taken_at else to_local(c.created_at, utc_offset)
+    return WhereWhenOut(
+        capture_id=c.id, state=c.state, taken_at=taken.replace(microsecond=0),
+        time_source=c.time_source or ("photo" if c.taken_at else "upload"),
+        latitude=round(c.latitude, 5) if has_place else None,
+        longitude=round(c.longitude, 5) if has_place else None,
+        place=places.place_name(c.latitude, c.longitude) if has_place else None,
+        place_source=c.place_source if has_place else None)
+
+
 def photo_out(p: AlbumPhoto, viewer: User, friends: set[int], likes: int, liked: bool,
               revealed: bool = True, rank: int | None = None, show_image: bool = True,
               comments: int = 0) -> PhotoOut:
@@ -90,7 +105,9 @@ def photo_out(p: AlbumPhoto, viewer: User, friends: set[int], likes: int, liked:
         taken_on=(c.taken_at or c.created_at).date(), caught_at=c.created_at,
         latitude=loc.latitude, longitude=loc.longitude, location_precise=loc.precise,
         place=loc.place, like_count=likes, liked_by_me=liked, comment_count=comments, is_mine=mine,
-        by_friend=p.user_id in friends, rank=rank, score=c.score, stars=c.score_stars)
+        by_friend=p.user_id in friends, rank=rank, score=c.score, stars=c.score_stars,
+        where_when=where_when_out(c, (states.get(c.state or p.user.state) or states.get(None)).utc_offset)
+        if mine else None)
 
 
 def _like_info(db: Session, photo_ids: list[int], viewer_id: int) -> tuple[dict[int, int], set[int]]:

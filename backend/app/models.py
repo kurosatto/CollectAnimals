@@ -72,11 +72,16 @@ class Capture(Base):
     image_path: Mapped[str] = mapped_column(String(255))
     predicted_label: Mapped[str] = mapped_column(String(64))
     confidence: Mapped[float] = mapped_column(Float)
-    # Where and when the photo was taken: from the phone (browser location) or
-    # the photo's EXIF, read before EXIF is stripped from the saved file.
+    # Where and when the photo was taken: the photo's EXIF first (read before EXIF
+    # is stripped from the saved file), else the phone's location and the upload
+    # time. taken_at is the local wall time, with no zone, as cameras record it.
     latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     taken_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Where those came from: "photo" (EXIF), "device" (the phone's location when
+    # uploading) or "edited" (the player fixed it). None on older captures.
+    time_source: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    place_source: Mapped[str | None] = mapped_column(String(8), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     # The state the player was playing in: a capture counts only in that state's
     # Field Guide (a coyote captured in California must be captured again in

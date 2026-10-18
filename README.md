@@ -36,9 +36,13 @@ Without a trained model the API still runs; captures report that no model is loa
 - **Album.** Each player keeps one photo per species, with where and when it
   was taken. The first matching capture goes in automatically; a later one can
   replace it (`PUT /me/album/{species}`), which resets that photo's likes.
-  Location comes from the phone (the web page asks for it; "Save where I
-  caught it" can be unticked) or the photo's EXIF GPS. Saved files have EXIF
-  stripped.
+  Time and place come from the photo's EXIF first (the Android app reads it
+  before shrinking the photo and sends it along). Without EXIF GPS, the phone's
+  location is used only for recent photos; without an EXIF time, the upload
+  time. Unticking "Save where I captured it" keeps no place at all. Owners can
+  fix both (`PUT /captures/{id}/where-when`: no later than the upload, inside
+  their state); field notes and the place name follow. Photo scores never
+  depend on time or place. Saved files have EXIF stripped.
 - **Friends.** Send a request by username; when accepted you see each other's
   albums and each other's catches unlock names for you.
 - **Gallery.** `GET /species/{species}/photos?scope=all|friends&sort=top|new`

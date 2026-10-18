@@ -55,7 +55,8 @@ data class PhotoScore(val total: Int, val stars: Int, val parts: List<Pair<Strin
 }
 
 /** A themed set from species/sets.json, resolved for one state. */
-data class SetDef(val id: String, val title: String, val description: String, val slugs: List<String>)
+data class SetDef(val id: String, val title: String, val description: String, val slugs: List<String>,
+                  val careful: Boolean = false)
 
 /**
  * species/sets.json, read the way goals.sets_for() does: a state shows the sets with at
@@ -67,7 +68,8 @@ class SetCatalog(private val sets: List<JSONObject>) {
         val list = s.optJSONObject("species_by_state")?.optJSONArray(code) ?: s.optJSONArray("species") ?: JSONArray()
         val slugs = List(list.length()) { list.getString(it) }.filter { it in members && safety(it) != "danger" }
         if (slugs.size < MIN_SET_SIZE) null
-        else SetDef(s.getString("id"), s.getString("title"), s.optString("description"), slugs)
+        else SetDef(s.getString("id"), s.getString("title"), s.optString("description"), slugs,
+                    careful = slugs.any { safety(it) == "caution" })
     }
 
     companion object {
@@ -79,7 +81,8 @@ class SetCatalog(private val sets: List<JSONObject>) {
     }
 }
 
-data class Challenge(val title: String, val progress: Int, val goal: Int, val done: Boolean)
+data class Challenge(val title: String, val progress: Int, val goal: Int, val done: Boolean,
+                     val safetyTip: String? = null)
 
 /** This week's challenges for the player's state (ChallengesOut). */
 data class Week(val endsAt: Long, val challenges: List<Challenge>, val done: Int) {
@@ -88,7 +91,7 @@ data class Week(val endsAt: Long, val challenges: List<Challenge>, val done: Int
             val a = o.getJSONArray("challenges")
             return Week(Online.parseTime(o.optStringOrNull("week_end")), List(a.length()) { i ->
                 a.getJSONObject(i).let { Challenge(it.getString("title"), it.getInt("progress"), it.getInt("goal"),
-                    it.getBoolean("done")) }
+                    it.getBoolean("done"), it.optStringOrNull("safety_tip")) }
             }, o.getInt("done"))
         }
     }
@@ -189,6 +192,10 @@ fun ChallengesCard(week: Week) {
                     }
                     LinearProgressIndicator(progress = { c.progress / c.goal.coerceAtLeast(1).toFloat() },
                         modifier = Modifier.fillMaxWidth().padding(top = 2.dp))
+                    c.safetyTip?.let {
+                        Text("✋ $it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline,
+                            modifier = Modifier.padding(top = 2.dp))
+                    }
                 }
             }
         }
@@ -241,6 +248,8 @@ fun SetCard(set: SetDef, collection: Map<String, Badge>, onOpen: (String) -> Uni
                 }
             }
             Text(set.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+            if (set.careful) Text("✋ $SAFE_TIP", style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline)
         }
     }
 }
