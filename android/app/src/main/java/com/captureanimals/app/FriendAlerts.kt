@@ -21,10 +21,11 @@ import androidx.work.WorkerParameters
 import java.util.concurrent.TimeUnit
 
 /**
- * Phone notifications for friend requests, without a push service: every 15 minutes
- * (Android's shortest repeat, and only with a network) the app asks the game server
- * for its friends list and notifies about requests it hasn't shown before. It also
- * says when someone accepts a request you sent.
+ * Phone notifications for friend requests, likes and comments, without a push service:
+ * every 15 minutes (Android's shortest repeat, and only with a network) the app asks
+ * the game server for its friends list and for activity on your photos, and notifies
+ * about requests it hasn't shown before, accepted requests, and new likes and comments.
+ * Likes come grouped per photo, so a popular photo is one line, not one buzz per like.
  *
  * Requests the player has already seen in the app are remembered, so they don't pop
  * up again later. Nothing is stored on the server for this.
@@ -32,6 +33,7 @@ import java.util.concurrent.TimeUnit
 object FriendAlerts {
     const val EXTRA_TAB = "open_tab"
     private const val CHANNEL = "friend_requests"
+    private const val PHOTO_CHANNEL = "photo_activity"
     private const val WORK = "friend-alerts"
 
     fun schedule(context: Context) {
@@ -81,19 +83,34 @@ object FriendAlerts {
         return lines.takeIf { it.isNotEmpty() }?.joinToString("\n")
     }
 
+    /** Words for new likes and comments on your photos, or null when there are none. */
+    fun activityMessage(a: Activity): String? {
+        fun others(n: Int) = if (n > 0) " and $n other${if (n > 1) "s" else ""}" else ""
+        val lines = a.likes.map { "${it.usernames.firstOrNull() ?: "Someone"}${others(it.count - 1)} liked your ${it.species} photo" } +
+            a.comments.map { "${it.username} on your ${it.species}: ${it.body}" }
+        return lines.takeIf { it.isNotEmpty() }?.joinToString("\n")
+    }
+
+    /** Server time of the last likes/comments check, sent back as `since`. */
+    fun activitySince(context: Context): String? = prefs(context).getString("activity_since", null)
+    fun setActivitySince(context: Context, now: String) = prefs(context).edit().putString("activity_since", now).apply()
+
     fun canNotify(context: Context) = Build.VERSION.SDK_INT < 33 ||
         ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
 
-    fun notify(context: Context, text: String) {
+    /** Shows [text]: a friends notification, or with [photos] one about likes and comments. */
+    fun notify(context: Context, text: String, photos: Boolean = false) {
         if (!canNotify(context)) return
         val nm = context.getSystemService(NotificationManager::class.java)
-        nm.createNotificationChannel(NotificationChannel(CHANNEL, "Friend requests", NotificationManager.IMPORTANCE_DEFAULT))
+        val channel = if (photos) PHOTO_CHANNEL else CHANNEL
+        nm.createNotificationChannel(NotificationChannel(channel, if (photos) "Likes and comments" else "Friend requests",
+            NotificationManager.IMPORTANCE_DEFAULT))
         val open = Intent(context, MainActivity::class.java)
-            .putExtra(EXTRA_TAB, "social")
+            .putExtra(EXTRA_TAB, if (photos) "gallery" else "social")
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        val tap = PendingIntent.getActivity(context, 0, open,
+        val tap = PendingIntent.getActivity(context, if (photos) 1 else 0, open,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-        val n = NotificationCompat.Builder(context, CHANNEL)
+        val n = NotificationCompat.Builder(context, channel)
             .setSmallIcon(R.drawable.ic_notify)
             .setContentTitle("Capture Animals")
             .setContentText(text.lineSequence().first())
@@ -101,7 +118,7 @@ object FriendAlerts {
             .setContentIntent(tap)
             .setAutoCancel(true)
             .build()
-        try { NotificationManagerCompat.from(context).notify(1, n) } catch (_: SecurityException) {}
+        try { NotificationManagerCompat.from(context).notify(if (photos) 2 else 1, n) } catch (_: SecurityException) {}
     }
 }
 
@@ -117,6 +134,13 @@ class FriendCheckWorker(context: Context, params: WorkerParameters) : CoroutineW
         val (requests, accepted) = FriendAlerts.news(applicationContext, friends)
         FriendAlerts.message(requests, accepted)?.let { FriendAlerts.notify(applicationContext, it) }
         FriendAlerts.markSeen(applicationContext, friends)
+        // The first check only notes the server's time; later ones report what came after it.
+        runCatching { Online.activity(FriendAlerts.activitySince(applicationContext)) }.onSuccess { a ->
+            if (FriendAlerts.activitySince(applicationContext) != null) {
+                FriendAlerts.activityMessage(a)?.let { FriendAlerts.notify(applicationContext, it, photos = true) }
+            }
+            FriendAlerts.setActivitySince(applicationContext, a.now)
+        }
         return Result.success()
     }
 }

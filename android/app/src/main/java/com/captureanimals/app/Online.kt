@@ -233,6 +233,10 @@ object Online {
     // --- Friends ----------------------------------------------------------------------
 
     suspend fun friends(): Friends = Friends.parse(JSONObject(call("GET", "/friends")))
+
+    /** Likes and comments on your photos after [since] (the last answer's `now`); null gets just `now`. */
+    suspend fun activity(since: String?): Activity =
+        Activity.parse(JSONObject(call("GET", "/me/activity" + (since?.let { "?since=${q(it)}" } ?: ""))))
     suspend fun suggestions(): List<FriendEntry> {
         val a = JSONArray(call("GET", "/friends/suggestions"))
         return List(a.length()) { FriendEntry.parse(a.getJSONObject(it)) }
@@ -383,6 +387,29 @@ data class FriendGuide(val username: String, val state: String, val caught: Int,
             return FriendGuide(o.optString("username").ifEmpty { username }, state,
                 o.getInt("caught"), o.getInt("total"), List(a.length()) { GuideEntry.parse(a.getJSONObject(it)) },
                 primary, places)
+        }
+    }
+}
+
+/** GET /me/activity: likes grouped by photo, and the newest comments. */
+data class Activity(val now: String, val likes: List<Like>, val comments: List<Comment>) {
+    data class Like(val species: String, val count: Int, val usernames: List<String>)
+    data class Comment(val species: String, val username: String, val body: String)
+
+    companion object {
+        fun parse(o: JSONObject): Activity {
+            val likes = o.optJSONArray("likes") ?: JSONArray()
+            val comments = o.optJSONArray("comments") ?: JSONArray()
+            return Activity(o.getString("now"),
+                List(likes.length()) { i ->
+                    likes.getJSONObject(i).let { l ->
+                        val names = l.getJSONArray("usernames")
+                        Like(l.getString("species"), l.getInt("count"), List(names.length()) { names.getString(it) })
+                    }
+                },
+                List(comments.length()) { i ->
+                    comments.getJSONObject(i).let { Comment(it.getString("species"), it.getString("username"), it.getString("body")) }
+                })
         }
     }
 }

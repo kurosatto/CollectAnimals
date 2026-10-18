@@ -7,3 +7,4 @@ models/
 backend/uploads/
 backend/*.db
 backend/.secret_key
+backend/.vapid_private.pem
