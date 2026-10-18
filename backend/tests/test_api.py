@@ -6,6 +6,7 @@ _tmp = tempfile.mkdtemp()
 os.environ["DATABASE_URL"] = f"sqlite:///{_tmp}/test.db"
 os.environ["UPLOAD_DIR"] = f"{_tmp}/uploads"
 os.environ["MODEL_PATH"] = f"{_tmp}/missing.pt"
+os.environ["SCORE_OLD_PHOTOS"] = "0"  # tests call score_old_photos directly
 os.environ["SECRET_KEY"] = "test-secret-key-that-is-at-least-32-bytes"
 
 import pytest  # noqa: E402
@@ -191,6 +192,27 @@ def test_capture_awards_badge_once(client, fake):
     assert client.get("/me/collection", headers=signup(client, "bob")).json()["caught"] == 0
 
 
+def test_pets_and_pests_are_named_but_do_not_count(client, fake):
+    h = signup(client)
+    fake.next = [Prediction("domestic_cat", 0.95), Prediction("bobcat", 0.03), Prediction("other", 0.02)]
+    r = upload(client, h).json()
+    assert not r["matched"] and r["species"] is None and r["score"] is None
+    assert r["household"]["slug"] == "domestic_cat" and r["household"]["kind"] == "pet"
+    assert r["message"].startswith("That's a cat!") and "Field Guide" in r["message"]
+    assert r["top_predictions"][0]["common_name"] == "Cat"
+    assert all(c["slug"] != "domestic_cat" for c in r["choices"])  # can't be picked as a wild animal
+
+    fake.next = [Prediction("rock_pigeon", 0.9), Prediction("other", 0.1)]
+    r = upload(client, h).json()
+    assert r["household"]["kind"] == "pest" and "pigeon" in r["message"]
+
+    # Unsure: no name, the usual "couldn't match".
+    fake.next = [Prediction("domestic_dog", 0.5), Prediction("coyote", 0.3), Prediction("other", 0.2)]
+    r = upload(client, h).json()
+    assert r["household"] is None and not r["matched"]
+    assert client.get("/me/collection", headers=h).json()["caught"] == 0
+
+
 def test_low_confidence_and_other_do_not_match(client, fake):
     h = signup(client)
     fake.next = [Prediction("bobcat", 0.41), Prediction("gray_fox", 0.3)]
@@ -310,9 +332,83 @@ def test_collection_marks_species_in_season(client):
         dex.load(settings.details_csv, real)
 
 
-def test_california_outline(client):
-    r = client.get("/map/california")
+def test_state_outline(client):
+    r = client.get("/map/CA")
     assert r.status_code == 200 and len(r.json()["rings"][0]) > 100
+
+
+def test_new_state_without_map_data_or_art(tmp_path, fake):
+    """A state added with only its species list (the other 48 states, before their
+    maps and art) plays like any other: no outline, sighting map or parks yet, and
+    the "?" placeholder for animals with no sprite."""
+    import json
+
+    from app import states
+    from app.config import settings
+    from app.db import SessionLocal
+    from app.models import Species
+
+    real = settings.states_json
+    data = json.loads(real.read_text(encoding="utf-8"))
+    for s in data["states"]:  # absolute paths, so the copy can live elsewhere
+        for k, v in s.items():
+            if isinstance(v, str) and v.endswith((".csv", ".json")):
+                s[k] = str(real.parent / v)
+    header = (real.parent / "california_100.csv").read_text(encoding="utf-8").splitlines()[0]
+    cols = header.split(",")
+    rows = []
+    for slug, name, sci, cat in [("coyote", "Coyote", "Canis latrans", "mammal"),
+                                 ("testland_mystery_vole", "Mystery Vole", "Microtus testus", "mammal")]:
+        row = {c: "" for c in cols} | {"slug": slug, "common_name": name, "scientific_name": sci,
+                                        "category": cat, "rarity": "common"}
+        rows.append(",".join(row[c] for c in cols))
+    (tmp_path / "tl.csv").write_text("\n".join([header, *rows]) + "\n", encoding="utf-8")
+    data["states"].append({"code": "TL", "name": "Testland", "species": "tl.csv", "utc_offset": -6,
+                           "bounds": {"west": -100.0, "east": -95.0, "south": 40.0, "north": 43.0}})
+    (tmp_path / "states.json").write_text(json.dumps(data), encoding="utf-8")
+    from app.db import Base, engine
+    from app.main import app
+
+    Base.metadata.drop_all(engine)
+    settings.states_json = tmp_path / "states.json"
+    try:
+        with TestClient(app) as client:
+            st = {s["code"]: s for s in client.get("/states").json()}
+            assert st["TL"]["name"] == "Testland" and st["TL"]["species_count"] == 2
+            h = signup(client, "tess", state="TL")
+            me = client.get("/me", headers=h).json()
+            assert me["state"] == "TL" and me["unlocked_states"] == ["TL"]
+            guide = client.get("/species", params={"state": "TL"}, headers=h).json()
+            assert [s["number"] for s in guide] == sorted(s["number"] for s in guide) and len(guide) == 2
+            assert client.get("/map/TL").status_code == 404
+            assert client.get("/hotspots", params={"state": "TL"}).json() == []
+            dex_entry = client.get("/species/testland_mystery_vole/dex", params={"state": "TL"}).json()
+            assert dex_entry["state"] == "TL" and not dex_entry["hotspots"]
+            # No pixel art yet: the placeholder egg, in colour and as a silhouette.
+            placeholder = (settings.sprites_dir / "placeholder.png").read_bytes()
+            r = client.get("/sprites/testland_mystery_vole.png")
+            assert r.status_code == 200 and r.content == placeholder
+            assert r.headers["cache-control"].endswith("3600")
+            assert client.get("/sprites/testland_mystery_vole_silhouette.png").content == \
+                (settings.sprites_dir / "placeholder_silhouette.png").read_bytes()
+            with SessionLocal() as db:
+                vole = db.query(Species).filter_by(slug="testland_mystery_vole").one().id
+            assert client.get(f"/sprites/silhouette/{vole}.png").status_code == 200
+            assert client.get("/sprites/coyote.png").content != placeholder
+            # Captures count there: the model knows every state's animals, and only
+            # Testland's are kept.
+            fake.next = [Prediction("sea_otter", 0.5), Prediction("testland_mystery_vole", 0.45),
+                         Prediction("other", 0.05)]
+            r = upload(client, h)
+            assert r.status_code == 201, r.text
+            assert r.json()["species"]["slug"] == "testland_mystery_vole"
+            # Moving to another state and back works the same as for CA and NC.
+            assert client.patch("/me", headers=h, json={"state": "NC"}).json()["unlocked_states"] == ["NC", "TL"]
+    finally:
+        settings.states_json = real
+        Base.metadata.drop_all(engine)
+        with TestClient(app):
+            pass
 
 
 def test_hotspots(client, fake):
@@ -355,6 +451,46 @@ def test_login_rate_limit(client):
         assert client.post("/auth/login", data={"username": "carol", "password": "wrong-pass"}).status_code == 401
     r = client.post("/auth/login", data={"username": "carol", "password": "hunter2hunter2"})
     assert r.status_code == 429
+
+
+def test_login_limits_per_address_and_long_passwords(client):
+    signup(client, "dora")
+    # Over bcrypt's 72-byte limit: a plain wrong password, not a server error.
+    assert client.post("/auth/login", data={"username": "dora", "password": "x" * 100}).status_code == 401
+    # One address trying many accounts gets stopped too.
+    for i in range(29):
+        assert client.post("/auth/login", data={"username": f"nobody{i}", "password": "wrong-pass"}).status_code == 401
+    r = client.post("/auth/login", data={"username": "dora", "password": "hunter22!"})
+    assert r.status_code == 429
+
+
+def test_signup_limit_per_address(client):
+    for i in range(10):
+        signup(client, f"new{i}")
+    r = client.post("/auth/register", json={"email": "x@example.com", "username": "x11", "password": "hunter22!"})
+    assert r.status_code == 429
+    # Cloudflare's header counts as a different player only on connections from this machine.
+    r = client.post("/auth/register", headers={"CF-Connecting-IP": "203.0.113.9"},
+                    json={"email": "x@example.com", "username": "x11", "password": "hunter22!"})
+    assert r.status_code == 429
+
+
+def test_security_headers(client):
+    r = client.get("/health")
+    assert r.headers["X-Content-Type-Options"] == "nosniff"
+    assert r.headers["X-Frame-Options"] == "DENY"
+
+
+def test_huge_image_dimensions_rejected(client, fake):
+    h = signup(client, "erin")
+    buf = io.BytesIO()
+    Image.new("1", (20000, 20000)).save(buf, "PNG")  # a few KB on disk, 400 MP decoded
+    r = client.post("/captures", headers=h, files={"photo": ("big.png", buf.getvalue(), "image/png")})
+    assert r.status_code == 413
+    buf = io.BytesIO()
+    Image.new("1", (11000, 11000)).save(buf, "PNG")  # 121 MP: past our limit, under Pillow's
+    r = client.post("/captures", headers=h, files={"photo": ("big.png", buf.getvalue(), "image/png")})
+    assert r.status_code == 413
 
 
 def test_states_and_signup_state(client):
@@ -401,7 +537,7 @@ def test_species_per_state(client):
     assert client.get("/species", params={"state": "TX"}).status_code == 404
 
 
-def test_change_state_and_shared_badges(client, fake):
+def test_change_state_and_captures_per_state(client, fake):
     h = signup(client)
     fake.next = [Prediction("coyote", 0.95)]
     assert upload(client, h).json()["new_badge"]
@@ -409,9 +545,17 @@ def test_change_state_and_shared_badges(client, fake):
     r = client.patch("/me", headers=h, json={"state": "NC"})
     assert r.status_code == 200 and r.json()["state"] == "NC"
     col = client.get("/me/collection", headers=h).json()
-    assert col["state"] == "NC" and col["total"] == 100 and col["caught"] == 1  # coyote counts here too
+    # A California coyote doesn't count in North Carolina: capture it again there.
+    assert col["state"] == "NC" and col["total"] == 100 and col["caught"] == 0
+    coyote = next(e for e in col["entries"] if e["species"]["slug"] == "coyote")
+    assert not coyote["caught"] and coyote["species"]["revealed"]    # its name stays known
+    assert not client.get("/species/coyote/dex?state=NC", headers=h).json()["captured"]
+    fake.next = [Prediction("coyote", 0.95)]
+    assert upload(client, h).json()["new_badge"]                     # new for North Carolina
+    assert client.get("/me/collection", headers=h).json()["caught"] == 1
     ca = client.get("/me/collection", headers=h, params={"state": "CA"}).json()
     assert ca["state"] == "CA" and ca["caught"] == 1
+    assert next(e for e in ca["entries"] if e["species"]["slug"] == "coyote")["capture_count"] == 1
     assert client.patch("/me", headers=h, json={"state": "ZZ"}).status_code == 404
 
 
@@ -508,8 +652,8 @@ def test_player_picks_the_animal_when_model_is_unsure(client, fake):
     assert col["caught"] == 1
     assert next(e for e in col["entries"] if e["species"]["slug"] == "gray_fox")["caught"]
 
-    # Only animals on the player's state list can be picked, and only by the photo's owner.
-    bad = client.post(f"/captures/{r['capture_id']}/pick", json={"label": "black_bear_nope"}, headers=h)
+    # Only the model's suggestions can be picked, and only by the photo's owner.
+    bad = client.post(f"/captures/{r['capture_id']}/pick", json={"label": "mountain_lion"}, headers=h)
     assert bad.status_code == 400
     other = client.post(f"/captures/{r['capture_id']}/pick", json={"label": "bobcat"},
                         headers=signup(client, "bob"))
@@ -536,7 +680,7 @@ def test_player_corrects_a_wrong_match(client, fake):
     assert client.get("/me/collection", headers=h).json()["caught"] == 0
 
 
-def test_none_of_these_then_search_the_state_list(client, fake):
+def test_corrections_are_kept_for_retraining(client, fake):
     from app.db import SessionLocal
     from app.models import IdFeedback
 
@@ -545,28 +689,22 @@ def test_none_of_these_then_search_the_state_list(client, fake):
     r = upload(client, h).json()
     assert r["matched"]
 
-    # "None of these" > search: names only the matches, from the player's state.
-    assert client.get("/species-search?q=a", headers=h).status_code == 422
-    found = client.get("/species-search?q=bobc", headers=h).json()
-    assert [f["slug"] for f in found] == ["bobcat"] and found[0]["common_name"] == "Bobcat"
-    assert client.get("/species-search?q=lynx rufus", headers=h).json()[0]["slug"] == "bobcat"
-    assert client.get("/species-search?q=bobc").status_code == 401
+    # There's no typed search: animals the model didn't suggest can't be picked.
+    assert client.post(f"/captures/{r['capture_id']}/pick", json={"label": "bobcat"}, headers=h).status_code == 400
+    assert client.get("/species-search?q=bobc", headers=h).status_code == 404
 
-    # An animal the model never suggested can be picked from the list.
-    p = client.post(f"/captures/{r['capture_id']}/pick", json={"label": "bobcat"}, headers=h).json()
-    assert p["matched"] and p["species"]["slug"] == "bobcat" and p["new_badge"]
-    caught = [e["species"]["slug"] for e in client.get("/me/collection", headers=h).json()["entries"] if e["caught"]]
-    assert caught == ["bobcat"]
+    client.post(f"/captures/{r['capture_id']}/pick", json={"label": "gray_fox"}, headers=h)
     with SessionLocal() as db:
         fb = db.query(IdFeedback).filter_by(capture_id=r["capture_id"]).one()
         assert (fb.predicted_label, fb.rejected_labels, fb.chosen_label, fb.source) == \
-            ("coyote", "coyote,gray_fox", "bobcat", "list")
+            ("coyote", "coyote", "gray_fox", "guesses")
 
-    # Skipping instead keeps one row per photo, now with no animal.
-    client.post(f"/captures/{r['capture_id']}/pick", json={"label": "none"}, headers=h)
+    # "None of these" keeps one row per photo, now with no animal.
+    n = client.post(f"/captures/{r['capture_id']}/pick", json={"label": "none"}, headers=h).json()
+    assert not n["matched"]
     with SessionLocal() as db:
         fb = db.query(IdFeedback).filter_by(capture_id=r["capture_id"]).one()
-        assert (fb.chosen_label, fb.source) == (None, "none")
+        assert (fb.rejected_labels, fb.chosen_label, fb.source) == ("coyote,gray_fox", None, "none")
 
     # Going back to the model's own guess isn't a correction.
     client.post(f"/captures/{r['capture_id']}/pick", json={"label": "coyote"}, headers=h)
@@ -618,3 +756,106 @@ def test_mask_name():
     assert m("Take a whale-watching trip", "Humpback Whale") == "Take a ???-watching trip"
     assert m("Ursus americanus lives here", "American Black Bear", "Ursus americanus") == "??? lives here"
     assert m("", "Bobcat") == "" and m(None, "Bobcat") is None
+
+
+def test_states_unlock_by_choice(client, fake):
+    h = signup(client)
+    me = client.get("/me", headers=h).json()
+    assert me["state"] == "CA" and me["unlocked_states"] == ["CA"]
+    r = client.patch("/me", json={"state": "NC"}, headers=h).json()
+    assert r["state"] == "NC" and r["unlocked_states"] == ["CA", "NC"]
+    r = client.patch("/me", json={"state": "CA"}, headers=h).json()
+    assert r["state"] == "CA" and r["unlocked_states"] == ["CA", "NC"]   # stays unlocked
+    # Capturing an animal that's on both lists doesn't unlock the other state.
+    other = signup(client, "bob")
+    fake.next = [Prediction("coyote", 0.93)]
+    upload(client, other)
+    assert client.get("/me", headers=other).json()["unlocked_states"] == ["CA"]
+
+
+def test_older_photos_get_scored(client, fake):
+    from app.db import SessionLocal
+    from app.main import score_old_photos
+    from app.models import Capture
+
+    h = signup(client)
+    fake.next = [Prediction("coyote", 0.93), Prediction("gray_fox", 0.04)]
+    first = upload(client, h).json()
+    upload(client, h)
+    # As if both were taken before photo scores (or before lighting was judged).
+    with SessionLocal() as db:
+        caps = db.query(Capture).order_by(Capture.id).all()
+        caps[0].score = caps[0].score_stars = caps[0].score_parts = None
+        caps[1].score_parts = '[["Clarity", 400], ["Sharpness", 300], ["Framing", 300]]'
+        db.commit()
+        assert score_old_photos(db, fake) == 2
+        assert score_old_photos(db, fake) == 0  # nothing left to do
+        db.expire_all()
+        caps = db.query(Capture).order_by(Capture.id).all()
+        assert all("Lighting" in c.score_parts for c in caps)
+        # Only the first capture of the species earns the new-species bonus.
+        assert "New species" in caps[0].score_parts and "New species" not in caps[1].score_parts
+        assert caps[0].score == first["score"]["total"]
+
+    # The album photo's stars show on the Field Guide entry too.
+    coyote = next(e for e in client.get("/me/collection", headers=h).json()["entries"]
+                  if e["species"]["slug"] == "coyote")
+    assert coyote["photo_stars"] == caps[0].score_stars and coyote["photo_score"] == caps[0].score
+
+
+def test_old_captures_get_a_state(client, fake):
+    from app.db import SessionLocal
+    from app.main import fill_capture_states
+    from app.models import Capture
+    h = signup(client)
+    for _ in range(2):
+        fake.next = [Prediction("coyote", 0.95)]
+        upload(client, h)
+    with SessionLocal() as db:
+        a, b = db.query(Capture).order_by(Capture.id).all()
+        a.state = b.state = None
+        b.latitude, b.longitude = 35.6, -79.0      # in North Carolina, which lists coyotes
+        db.commit()
+        assert fill_capture_states(db) == 2
+        a, b = db.query(Capture).order_by(Capture.id).all()
+        assert (a.state, b.state) == ("CA", "NC")      # no location: the player's home state
+
+
+def test_installable_web_app(client):
+    """The manifest, service worker and icons that make the web app installable."""
+    r = client.get("/manifest.webmanifest")
+    assert r.status_code == 200 and r.headers["content-type"].startswith("application/manifest+json")
+    m = r.json()
+    assert m["name"] == "Capture Animals" and m["start_url"] == "/" and m["display"] == "standalone"
+    for icon in m["icons"]:
+        assert client.get(icon["src"]).status_code == 200, icon["src"]
+    assert {"192x192", "512x512"} <= {i["sizes"] for i in m["icons"]}
+
+    sw = client.get("/sw.js")
+    assert sw.status_code == 200 and "javascript" in sw.headers["content-type"]
+    assert sw.headers["cache-control"] == "no-cache"
+    assert client.get("/icons/apple-touch-icon.png").status_code == 200
+
+    page = client.get("/").text
+    assert 'rel="manifest"' in page and "/sw.js" in page
+
+
+def test_release_version_and_android_download(client, tmp_path, monkeypatch):
+    """release.json's version reaches the page and /app/version; the newest APK is offered."""
+    from app.config import settings
+    from app.main import release_version
+
+    v = release_version()
+    assert v != "dev"
+    assert f'<span id="version-num">{v}</span>' in client.get("/").text
+    assert client.get("/app/version").json() == {"version": v, "android": None}
+
+    for name in ("CaptureAnimals-0.9.0.apk", "CaptureAnimals-0.10.1.apk", "notes.txt"):
+        (tmp_path / name).write_bytes(b"apk")
+    monkeypatch.setattr(settings, "android_apk_dir", tmp_path)
+    assert client.get("/app/version").json()["android"] == {
+        "version": "0.10.1", "url": "/app/android/CaptureAnimals-0.10.1.apk"}
+    r = client.get("/app/android/CaptureAnimals-0.10.1.apk")
+    assert r.status_code == 200 and r.headers["content-type"] == "application/vnd.android.package-archive"
+    assert client.get("/app/android/CaptureAnimals-0.9.0.apk").status_code == 404
+    assert client.get("/app/android/notes.txt").status_code == 404

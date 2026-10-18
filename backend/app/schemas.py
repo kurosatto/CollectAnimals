@@ -7,7 +7,7 @@ class RegisterIn(BaseModel):
     email: EmailStr
     username: str = Field(min_length=3, max_length=40, pattern=r"^[A-Za-z0-9_.-]+$")
     password: str = Field(min_length=8)
-    state: str = "CA"  # where the player lives; their default Dex
+    state: str | None = None  # where the player lives; their default Dex (None: the default state)
 
     @field_validator("password")
     @classmethod
@@ -31,6 +31,8 @@ class UserOut(BaseModel):
     created_at: datetime
     show_in_feed: bool | None = True
     is_private: bool | None = False
+    # The states this player can switch to; the rest show locked until they choose one.
+    unlocked_states: list[str] = []
 
 
 class SettingsIn(BaseModel):
@@ -117,16 +119,33 @@ class ChoiceOut(BaseModel):
 
 
 class PickIn(BaseModel):
-    # A species slug (one of the capture's choices, or any animal on the player's
-    # state list found with "None of these" > search), or "none" to skip.
+    # A slug from the capture's choices, or "none" for "none of these".
     label: str
 
 
-class SpeciesMatch(BaseModel):
-    slug: str
-    common_name: str
-    scientific_name: str
-    number: int
+class WhereWhenOut(BaseModel):
+    """When and where a capture was taken, for its owner (exact place)."""
+    capture_id: int
+    # The state it counts in; edited places must be inside it.
+    state: str | None = None
+    # Local wall time, no zone (the upload time in the state's time when the photo had none).
+    taken_at: datetime
+    # "photo" (from its metadata), "upload" (no metadata: the upload time) or "edited".
+    time_source: str
+    latitude: float | None = None
+    longitude: float | None = None
+    place: str | None = None
+    # "photo", "device" (the phone's location when uploading), "edited", or None
+    # (no place, or an older capture that didn't record it).
+    place_source: str | None = None
+
+
+class WhereWhenIn(BaseModel):
+    """The player fixes when and where they took a photo. The time is local wall
+    time; leave latitude/longitude out (or null) for "no place"."""
+    taken_at: datetime
+    latitude: float | None = Field(None, ge=-90, le=90)
+    longitude: float | None = Field(None, ge=-180, le=180)
 
 
 class ScorePart(BaseModel):
@@ -138,6 +157,14 @@ class ScoreOut(BaseModel):
     total: int
     stars: int
     parts: list[ScorePart]
+
+
+class HouseholdOut(BaseModel):
+    """A pet or pest the model recognised: not a Field Guide animal, but named kindly."""
+    slug: str
+    common_name: str
+    kind: str  # "pet" or "pest"
+    note: str
 
 
 class CaptureOut(BaseModel):
@@ -157,6 +184,21 @@ class CaptureOut(BaseModel):
     # Bond hearts with this animal after the photo, and the field notes it ticked.
     bond: int | None = None
     bond_up: list[str] = []
+    # For an animal with a safety rating (caution or danger): how far to stay
+    # back and its safety note.
+    safety: str = "none"
+    safe_distance: str | None = None
+    safety_note: str | None = None
+    where_when: WhereWhenOut | None = None
+    # Set when the photo is a pet or a pest (a dog, a pigeon...) rather than a wild animal.
+    household: HouseholdOut | None = None
+
+
+class WhereWhenResult(BaseModel):
+    where_when: WhereWhenOut
+    score: ScoreOut | None = None
+    bond: int | None = None
+    bond_up: list[str] = []
 
 
 class CollectionEntry(BaseModel):
@@ -168,6 +210,9 @@ class CollectionEntry(BaseModel):
     # Whether the viewer has it (differs from `caught` on a friend's Field Guide).
     you_caught: bool = False
     photo_url: str | None = None
+    # The album photo's score and 1-5 stars (None before it's scored).
+    photo_score: int | None = None
+    photo_stars: int | None = None
     # Seen in the state this month in real sightings (or no data to say otherwise).
     in_season: bool = True
     # "day", "night" or "any": when it's awake in the Habitat scene (captured animals only).
@@ -216,6 +261,8 @@ class PhotoOut(BaseModel):
     rank: int | None = None
     score: int | None = None
     stars: int | None = None
+    # Only on your own photos: the exact time and place, to show and fix.
+    where_when: WhereWhenOut | None = None
 
 
 class CommentIn(BaseModel):
@@ -375,17 +422,3 @@ class BondOut(BaseModel):
 class BondsOut(BaseModel):
     state: str
     bonds: list[BondOut]
-
-
-class BuddyOut(BaseModel):
-    # False while the player hasn't picked one (we show their closest bond).
-    chosen: bool
-    bond: BondOut
-    mood: str
-    outing_days: int
-    line: str
-    activity: str | None = None
-
-
-class BuddyIn(BaseModel):
-    species: str

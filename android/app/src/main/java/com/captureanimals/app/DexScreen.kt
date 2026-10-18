@@ -132,7 +132,7 @@ fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: FieldGuide,
 
 /** Same wording as the web page: watch from a distance, never approach. */
 @Composable
-private fun SafetyCard(d: SpeciesDetails) {
+fun SafetyCard(d: SpeciesDetails) {
     val danger = d.safety == "danger"
     Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(
         containerColor = (if (danger) Color(0xFFD64545) else Color(0xFFE0A100)).copy(alpha = 0.15f))) {

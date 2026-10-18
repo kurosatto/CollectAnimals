@@ -27,7 +27,12 @@ from PIL import Image, ImageDraw
 
 sys.path.insert(0, str(Path(__file__).parent))
 import species_ca_tidepool  # noqa: E402,F401  (registers the drawings in these modules)
+import species_household  # noqa: E402,F401
 import species_nc  # noqa: E402,F401
+import species_tx  # noqa: E402,F401
+import species_fl  # noqa: E402,F401
+import species_ny  # noqa: E402,F401
+import species_va  # noqa: E402,F401
 from archetypes import (BLACK, NOSE, PINK, WHITE, beetle_top, bee, bird, butterfly,  # noqa: E402
                         dragonfly, duck, frog, goose, hummingbird, lizard, mammal, owl, pelican,
                         mantis, pinniped, quad, S, snake, sprite, star, turtle, vulture, wader, whale)
@@ -993,7 +998,11 @@ def main():
     rows = load_species(args.state)
     missing = [r["slug"] for r in rows if r["slug"] not in S]
     if missing:
-        sys.exit(f"no sprite drawn for: {', '.join(missing)}")
+        # Fine while a state's art is being drawn: the apps show the "?" egg
+        # (tools/make_placeholder.py) for these until then.
+        print(f"no sprite drawn yet for {len(missing)} species (placeholder shown): {', '.join(missing)}",
+              file=sys.stderr)
+        rows = [r for r in rows if r["slug"] in S]
     # Every drawing is written, listed or not, so a species can move between lists
     # (or a list branch can land later) without the art going missing.
     slugs = list(S) if not args.state else [r["slug"] for r in rows]

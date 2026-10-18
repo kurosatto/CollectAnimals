@@ -1,0 +1,32 @@
+{
+ "note": "Towns used to describe roughly where a capture happened in North Carolina (\"near Asheville\"). Approximate city-centre coordinates.",
+ "towns": [
+  ["Murphy", 35.09, -84.03], ["Franklin", 35.18, -83.38], ["Highlands", 35.05, -83.20],
+  ["Bryson City", 35.43, -83.45], ["Cherokee", 35.48, -83.32], ["Waynesville", 35.49, -82.99],
+  ["Brevard", 35.23, -82.73], ["Asheville", 35.60, -82.55], ["Hendersonville", 35.32, -82.46],
+  ["Spruce Pine", 35.92, -82.06], ["Boone", 36.22, -81.67], ["Blowing Rock", 36.14, -81.68],
+  ["Morganton", 35.75, -81.68], ["Lenoir", 35.91, -81.54], ["Hickory", 35.73, -81.34],
+  ["Wilkesboro", 36.15, -81.16], ["Mount Airy", 36.50, -80.61], ["Shelby", 35.29, -81.54],
+  ["Gastonia", 35.26, -81.19], ["Lincolnton", 35.47, -81.25], ["Charlotte", 35.23, -80.84],
+  ["Concord", 35.41, -80.58], ["Statesville", 35.78, -80.89], ["Salisbury", 35.67, -80.47],
+  ["Albemarle", 35.35, -80.20], ["Winston-Salem", 36.10, -80.24], ["High Point", 35.96, -80.01],
+  ["Greensboro", 36.07, -79.79], ["Burlington", 36.10, -79.44], ["Asheboro", 35.71, -79.81],
+  ["Chapel Hill", 35.91, -79.06], ["Durham", 35.99, -78.90], ["Raleigh", 35.78, -78.64],
+  ["Cary", 35.79, -78.78], ["Wake Forest", 35.98, -78.51], ["Henderson", 36.33, -78.40],
+  ["Sanford", 35.48, -79.18], ["Southern Pines", 35.17, -79.39], ["Laurinburg", 34.77, -79.46],
+  ["Fayetteville", 35.05, -78.88], ["Lumberton", 34.62, -79.01], ["Whiteville", 34.34, -78.70],
+  ["Roanoke Rapids", 36.46, -77.65], ["Rocky Mount", 35.94, -77.79], ["Wilson", 35.72, -77.92],
+  ["Goldsboro", 35.38, -77.99], ["Greenville", 35.61, -77.37], ["Kinston", 35.26, -77.58],
+  ["Washington", 35.55, -77.05], ["New Bern", 35.11, -77.04], ["Jacksonville", 34.75, -77.43],
+  ["Morehead City", 34.72, -76.73], ["Beaufort", 34.72, -76.66], ["Wilmington", 34.23, -77.94],
+  ["Southport", 33.92, -78.02], ["Edenton", 36.06, -76.61], ["Elizabeth City", 36.30, -76.25],
+  ["Kill Devil Hills", 36.03, -75.68], ["Manteo", 35.91, -75.67], ["Buxton", 35.27, -75.54],
+  ["Ocracoke", 35.11, -75.98]
+ ],
+ "regions": [
+  ["the Great Smoky Mountains", 35.55, -83.45], ["the Blue Ridge Mountains", 36.0, -82.0], ["the Foothills", 35.8, -81.4],
+  ["the Piedmont", 35.8, -80.3], ["the Triangle", 35.85, -78.8], ["the Sandhills", 35.1, -79.4],
+  ["the Coastal Plain", 35.4, -77.6], ["the Inner Banks", 35.9, -76.6], ["the Outer Banks", 35.5, -75.6],
+  ["the Cape Fear coast", 34.3, -78.1]
+ ]
+}

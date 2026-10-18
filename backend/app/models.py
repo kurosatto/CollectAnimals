@@ -19,14 +19,15 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(100))
     # Two-letter code from species/states.json; picks the Dex, Hotspots and maps.
     state: Mapped[str] = mapped_column(String(2), default="CA", server_default="CA")
+    # Other states the player chose to unlock, comma-separated ("NC,CA"). Their
+    # home state and any state they've captured in count as unlocked too.
+    extra_states: Mapped[str | None] = mapped_column(String(64), nullable=True)
     # Whether new catches appear in everyone's news feed (None = default, yes).
     show_in_feed: Mapped[bool | None] = mapped_column(nullable=True, default=True)
     # Built-in "bot friends" new players can add; requests to them are accepted at once.
     # Private players' photos are shown only to themselves and their friends.
     is_private: Mapped[bool | None] = mapped_column(nullable=True, default=False)
     is_bot: Mapped[bool | None] = mapped_column(nullable=True, default=False)
-    # The captured animal the player picked as their buddy (app/bonds.py).
-    buddy_species_id: Mapped[int | None] = mapped_column(ForeignKey("species.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
@@ -69,12 +70,21 @@ class Capture(Base):
     image_path: Mapped[str] = mapped_column(String(255))
     predicted_label: Mapped[str] = mapped_column(String(64))
     confidence: Mapped[float] = mapped_column(Float)
-    # Where and when the photo was taken: from the phone (browser location) or
-    # the photo's EXIF, read before EXIF is stripped from the saved file.
+    # Where and when the photo was taken: the photo's EXIF first (read before EXIF
+    # is stripped from the saved file), else the phone's location and the upload
+    # time. taken_at is the local wall time, with no zone, as cameras record it.
     latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     taken_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Where those came from: "photo" (EXIF), "device" (the phone's location when
+    # uploading) or "edited" (the player fixed it). None on older captures.
+    time_source: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    place_source: Mapped[str | None] = mapped_column(String(8), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    # The state the player was playing in: a capture counts only in that state's
+    # Field Guide (a coyote captured in California must be captured again in
+    # North Carolina).
+    state: Mapped[str | None] = mapped_column(String(2), nullable=True, index=True)
     # The model's top guesses (comma-separated slugs, best first): the animals a
     # player may pick from when they say the model got it wrong.
     top_labels: Mapped[str | None] = mapped_column(String(400), nullable=True)
@@ -106,7 +116,7 @@ class IdFeedback(Base):
     predicted_label: Mapped[str] = mapped_column(String(64))
     rejected_labels: Mapped[str] = mapped_column(String(400))
     # The player's answer, and where it came from: "guesses" (one of the model's
-    # other guesses), "list" (searched the state's list) or "none" (skipped).
+    # other guesses) or "none" ("none of these", not captured).
     chosen_label: Mapped[str | None] = mapped_column(String(64), nullable=True)
     source: Mapped[str] = mapped_column(String(16))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
@@ -187,3 +197,17 @@ class Friendship(Base):
 
     requester: Mapped[User] = relationship(foreign_keys=[requester_id])
     addressee: Mapped[User] = relationship(foreign_keys=[addressee_id])
+
+
+class PushSubscription(Base):
+    """A browser's Web Push address for a player (app/push.py). One per browser;
+    dropped when the push service says it's gone or the player logs out there."""
+
+    __tablename__ = "push_subscriptions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    endpoint: Mapped[str] = mapped_column(String(1000), unique=True)
+    p256dh: Mapped[str] = mapped_column(String(200))
+    auth: Mapped[str] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

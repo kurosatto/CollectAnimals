@@ -17,21 +17,25 @@ from __future__ import annotations
 import json
 import math
 from dataclasses import dataclass
-from pathlib import Path
 
 from . import dex
 
-_towns: list[tuple[str, float, float]] = []
-_regions: list[tuple[str, float, float]] = []
+# Per state: (name, bounds, towns, regions). A point only gets names from the
+# state it falls in, so a North Carolina photo never reads "in the California deserts".
+_states: list[tuple[str, dict, list, list]] = []
+# How far outside a state's bounding box still counts as that state (degrees).
+_MARGIN = 0.3
 
 
-def load(path: Path) -> None:
-    _towns.clear()
-    _regions.clear()
-    if path.exists():
-        data = json.loads(path.read_text(encoding="utf-8"))
-        _towns.extend(tuple(t) for t in data.get("towns", []))
-        _regions.extend(tuple(r) for r in data.get("regions", []))
+def load(states) -> None:
+    _states.clear()
+    for st in states:
+        towns, regions = [], []
+        if st.places and st.places.exists():
+            data = json.loads(st.places.read_text(encoding="utf-8"))
+            towns = [tuple(t) for t in data.get("towns", [])]
+            regions = [tuple(r) for r in data.get("regions", [])]
+        _states.append((st.name, st.bounds, towns, regions))
 
 
 def _km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -45,8 +49,19 @@ def _nearest(items, lat, lon):
     return min(((_km(lat, lon, la, lo), name) for name, la, lo in items), default=(math.inf, None))
 
 
+def _state_at(lat: float, lon: float):
+    """The state whose bounds hold the point; the one with the nearer town if two do."""
+    inside = [s for s in _states
+              if s[1]["south"] - _MARGIN <= lat <= s[1]["north"] + _MARGIN
+              and s[1]["west"] - _MARGIN <= lon <= s[1]["east"] + _MARGIN]
+    return min(inside, key=lambda s: _nearest(s[2] + s[3], lat, lon)[0], default=None)
+
+
 def region(lat: float, lon: float) -> str:
-    return _nearest(_regions, lat, lon)[1] or "California"
+    state = _state_at(lat, lon)
+    if state is None:
+        return "another state"
+    return _nearest(state[3], lat, lon)[1] or state[0]
 
 
 def park(lat: float, lon: float) -> str | None:
@@ -61,8 +76,44 @@ def place_name(lat: float, lon: float, town_km: float = 25, prefix: str = "near"
     name = park(lat, lon)
     if name:
         return name
-    dist, town = _nearest(_towns, lat, lon)
+    state = _state_at(lat, lon)
+    dist, town = _nearest(state[2], lat, lon) if state else (math.inf, None)
     return f"{prefix} {town}" if town and dist <= town_km else f"in {region(lat, lon)}"
+
+
+_outlines: dict[str, list] = {}
+# The outlines are coarse (1:50m), so a beach or an island just off them still counts.
+_COAST_KM = 5
+
+
+def in_state(state, lat: float, lon: float) -> bool:
+    """Whether a point is inside the state's outline, or just off its edge."""
+    rings = _outlines.get(state.code)
+    if rings is None:
+        rings = json.loads(state.outline.read_text(encoding="utf-8"))["rings"] if state.outline and state.outline.exists() else []
+        _outlines[state.code] = rings
+    b = state.bounds
+    if not (b["south"] - _MARGIN <= lat <= b["north"] + _MARGIN and b["west"] - _MARGIN <= lon <= b["east"] + _MARGIN):
+        return False
+    if not rings:
+        return True
+    inside = False
+    for ring in rings:
+        for (x1, y1), (x2, y2) in zip(ring, ring[1:] + ring[:1]):
+            if (y1 > lat) != (y2 > lat) and lon < x1 + (lat - y1) * (x2 - x1) / (y2 - y1):
+                inside = not inside
+    if inside:
+        return True
+    # Distance to the outline, on a flat projection (fine at a few km).
+    kx = 111.32 * math.cos(math.radians(lat))
+    for ring in rings:
+        for (x1, y1), (x2, y2) in zip(ring, ring[1:] + ring[:1]):
+            ax, ay, bx, by = (x1 - lon) * kx, (y1 - lat) * 110.57, (x2 - lon) * kx, (y2 - lat) * 110.57
+            dx, dy = bx - ax, by - ay
+            t = max(0.0, min(1.0, -(ax * dx + ay * dy) / (dx * dx + dy * dy))) if dx or dy else 0.0
+            if math.hypot(ax + t * dx, ay + t * dy) <= _COAST_KM:
+                return True
+    return False
 
 
 # Smallest radius for the "near me" feed, so it can't be narrowed down to a house.

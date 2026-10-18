@@ -34,7 +34,16 @@ data class CaptureResult(
     // Signed in: the photo's stars and points, and the field notes it ticked for the bond.
     val score: PhotoScore? = null,
     val bondUp: List<String> = emptyList(),
+    // Signed in: when and where it was taken, which the player can fix.
+    val whereWhen: WhereWhen? = null,
 )
+
+/**
+ * The states a player can switch to: their home state, the ones they chose to
+ * unlock (here or on the website), and any state they've captured in. The rest
+ * show 🔒 in the 📍 menu, as on the website.
+ */
+fun UiState.unlockedStates(): Set<String> = unlocked + stateCode + account?.unlockedStates.orEmpty()
 
 data class UiState(
     // The model with the chosen state's species list, and that state's Field Guide.
@@ -46,6 +55,8 @@ data class UiState(
     val allSpecies: List<Species> = emptyList(),
     // First launch: ask which state the player is in, like the website's sign-up.
     val needsStatePick: Boolean = false,
+    // States the player chose to unlock on this phone; see [unlockedStates].
+    val unlocked: Set<String> = emptySet(),
     val collection: Map<String, Badge> = emptyMap(),
     val busy: Boolean = false,
     val result: CaptureResult? = null,
@@ -58,9 +69,8 @@ data class UiState(
     val accountError: String? = null,
     // species/sets.json; each state shows its own sets (works offline too).
     val sets: SetCatalog = SetCatalog(emptyList()),
-    // Signed in: this week's challenges and the buddy (both live on the server).
+    // Signed in: this week's challenges (they live on the server).
     val week: Week? = null,
-    val buddy: Buddy? = null,
 )
 
 class GameViewModel(app: Application) : AndroidViewModel(app) {
@@ -79,17 +89,21 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val assets = getApplication<Application>().assets
             fun text(name: String) = assets.open(name).bufferedReader().use { it.readText() }
-            val (base, states, collection) = withContext(Dispatchers.IO) {
-                Triple(ModelInfo.parse(text("model.json")),
-                       States.load { name -> runCatching { text(name) }.getOrNull() },
-                       store.load())
+            val (base, states) = withContext(Dispatchers.IO) {
+                ModelInfo.parse(text("model.json")) to States.load { name -> runCatching { text(name) }.getOrNull() }
             }
             val sets = withContext(Dispatchers.IO) { SetCatalog.parse(runCatching { text("sets.json") }.getOrNull()) }
             model = base
             val (default, list) = states
             val saved = prefs.getString("state", null)?.takeIf { code -> list.any { it.code == code } }
+            val unlocked = prefs.getStringSet("unlocked", emptySet()).orEmpty()
+            withContext(Dispatchers.IO) {
+                store.migrate(saved ?: default)
+                // Read the starting state's Field Guide here rather than on the main thread.
+                list.firstOrNull { it.code == (saved ?: default) }?.fieldGuide
+            }
             _state.update {
-                it.copy(states = list, collection = collection, needsStatePick = saved == null, sets = sets,
+                it.copy(states = list, needsStatePick = saved == null, sets = sets, unlocked = unlocked,
                     allSpecies = list.flatMap { s -> s.species }.distinctBy { s -> s.slug })
             }
             select(saved ?: default)
@@ -114,7 +128,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 refreshCollection()
             } catch (e: Online.ApiError) {
                 // Signed out by the server (401): back to the badges saved on this phone.
-                if (!Online.signedIn) _state.update { it.copy(account = null, collection = store.load(), week = null, buddy = null) }
+                if (!Online.signedIn) _state.update { it.copy(account = null, collection = store.load(it.stateCode), week = null) }
             }
         }
     }
@@ -125,20 +139,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         _state.update { it.copy(collection = c) }
         // Extras: the game works without them if the server can't send them.
         val week = runCatching { Online.challenges() }.getOrNull()
-        val buddy = runCatching { Online.buddy() }.getOrNull()
-        _state.update { it.copy(week = week, buddy = buddy) }
-    }
-
-    /** "Make my buddy" on a captured animal's page. */
-    fun setBuddy(slug: String) {
-        viewModelScope.launch {
-            try {
-                val b = Online.setBuddy(slug)
-                _state.update { it.copy(buddy = b) }
-            } catch (e: Exception) {
-                _state.update { it.copy(error = e.message) }
-            }
-        }
+        _state.update { it.copy(week = week) }
     }
 
     fun signIn(ident: String, password: String) = account { Online.login(ident.trim(), password) }
@@ -169,7 +170,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     /** Back to playing offline, with the badges saved on this phone. */
     fun signOut() {
         Online.logout()
-        _state.update { it.copy(account = null, collection = store.load(), result = null, week = null, buddy = null) }
+        _state.update { it.copy(account = null, collection = store.load(it.stateCode), result = null, week = null) }
     }
 
     fun setServer(url: String?) {
@@ -192,18 +193,22 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     private fun select(code: String) {
         val base = model ?: return
         val st = _state.value.states.firstOrNull { it.code == code } ?: return
-        _state.update { it.copy(stateCode = st.code, info = base.withSpecies(st.species), fieldGuide = st.fieldGuide) }
+        // Offline, the phone keeps each state's catches apart; signed in, they come from the server.
+        _state.update { it.copy(stateCode = st.code, info = base.withSpecies(st.species), fieldGuide = st.fieldGuide,
+            collection = if (it.account == null) store.load(st.code) else it.collection) }
     }
 
-    /** The player's state: its 100 species, Field Guide and parks. Badges carry over. */
+    /** The player's state: its 100 species, Field Guide and parks. Captures count only in the state they were made in. */
     fun chooseState(code: String) {
-        prefs.edit().putString("state", code).apply()
-        _state.update { it.copy(needsStatePick = false, result = null) }
+        val unlocked = _state.value.unlocked + code
+        prefs.edit().putString("state", code).putStringSet("unlocked", unlocked).apply()
+        _state.update { it.copy(needsStatePick = false, result = null, unlocked = unlocked) }
         select(code)
         if (_state.value.account != null) viewModelScope.launch {
             runCatching {
                 Online.setState(code)
-                _state.update { it.copy(account = it.account?.copy(state = code)) }
+                _state.update { it.copy(account = it.account?.let { a -> a.copy(state = code,
+                    unlockedStates = (a.unlockedStates + code).distinct()) }) }
                 refreshCollection()
             }
         }
@@ -216,14 +221,17 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         }.also { classifier = it }
     }
 
-    /** [location] is (lat, lon) when the player lets us save where they captured it. */
-    fun capture(uri: Uri, location: Pair<Double, Double>? = null) {
+    /**
+     * [location] is where the phone is now, (lat, lon), when the player lets us save where
+     * they captured it ([savePlace]); the photo's own time and place come first.
+     */
+    fun capture(uri: Uri, location: Pair<Double, Double>? = null, savePlace: Boolean = true) {
         val info = _state.value.info ?: return
         _state.update { it.copy(busy = true, error = null) }
         viewModelScope.launch {
             try {
                 val result = if (_state.value.account != null) {
-                    captureOnline(uri, info, location)
+                    captureOnline(uri, info, location, savePlace)
                 } else {
                     withContext(Dispatchers.Default) { classify(uri, info) }
                 }
@@ -237,9 +245,11 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** Signed in: the server identifies the photo and keeps the badge, as on the website. */
-    private suspend fun captureOnline(uri: Uri, info: ModelInfo, location: Pair<Double, Double>?): CaptureResult {
+    private suspend fun captureOnline(uri: Uri, info: ModelInfo, location: Pair<Double, Double>?,
+                                      savePlace: Boolean): CaptureResult {
         val bitmap = withContext(Dispatchers.IO) { ImageLoader.load(getApplication(), uri, minShortSide = 1200) }
-        val r = Online.capture(bitmap, location?.first, location?.second)
+        val meta = withContext(Dispatchers.IO) { readPhotoMeta(getApplication(), uri) }
+        val r = Online.capture(bitmap, location?.first, location?.second, meta, savePlace)
         val result = onlineResult(r, ImageLoader.thumbnail(bitmap, 1024), info)
         runCatching { refreshCollection() }
         return result
@@ -274,6 +284,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             captureId = r.getInt("capture_id"),
             score = PhotoScore.parse(r.optJSONObject("score")),
             bondUp = r.optJSONArray("bond_up")?.let { a -> List(a.length()) { a.getString(it) } }.orEmpty(),
+            whereWhen = WhereWhen.parse(r.optJSONObject("where_when")) ?: prev?.whereWhen,
         )
     }
 
@@ -294,7 +305,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         if (matched) {
             val thumb = ImageLoader.thumbnail(bitmap, 512)
             val (updated, isNew) = withContext(Dispatchers.IO) {
-                store.addCatch(_state.value.collection, species!!.slug, thumb)
+                store.addCatch(_state.value.stateCode, _state.value.collection, species!!.slug, thumb)
             }
             newBadge = isNew
             _state.update { it.copy(collection = updated) }
@@ -317,6 +328,28 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             },
             choices = preds.mapNotNull { p -> bySlug[p.label]?.let { RankedGuess(p.label, it.commonName, p.probability) } },
         )
+    }
+
+    /** Fixes when and where the photo on the result card was taken; an error message, or null. */
+    suspend fun saveWhereWhen(takenAt: java.time.LocalDateTime, place: Pair<Double, Double>?): String? {
+        val r = _state.value.result ?: return null
+        val id = r.captureId ?: return null
+        return try {
+            val res = Online.whereWhen(id, takenAt, place)
+            _state.update { s ->
+                s.copy(result = s.result?.let { cur ->
+                    if (cur.captureId != id) cur else cur.copy(
+                        whereWhen = WhereWhen.parse(res.getJSONObject("where_when")),
+                        score = PhotoScore.parse(res.optJSONObject("score")) ?: cur.score,
+                        bondUp = res.optJSONArray("bond_up")?.let { a -> List(a.length()) { a.getString(it) } }.orEmpty(),
+                    )
+                })
+            }
+            runCatching { refreshCollection() }
+            null
+        } catch (e: Exception) {
+            e.message ?: "Couldn't save"
+        }
     }
 
     /**
@@ -344,10 +377,10 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             var newBadge = false
             withContext(Dispatchers.IO) {
                 if (r.matched && r.species != null && r.species.slug != slug) {
-                    collection = store.removeCatch(collection, r.species.slug)
+                    collection = store.removeCatch(_state.value.stateCode, collection, r.species.slug)
                 }
                 if (species != null && r.species?.slug != species.slug) {
-                    val (updated, isNew) = store.addCatch(collection, species.slug, ImageLoader.thumbnail(r.photo, 512))
+                    val (updated, isNew) = store.addCatch(_state.value.stateCode, collection, species.slug, ImageLoader.thumbnail(r.photo, 512))
                     collection = updated
                     newBadge = isNew
                 }
@@ -367,7 +400,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     /** "Delete photo": removes the photo and the catch, as on the website. */
     fun deleteCatch(slug: String) {
         viewModelScope.launch {
-            val updated = withContext(Dispatchers.IO) { store.forget(_state.value.collection, slug) }
+            val updated = withContext(Dispatchers.IO) { store.forget(_state.value.stateCode, _state.value.collection, slug) }
             _state.update { it.copy(collection = updated) }
         }
     }

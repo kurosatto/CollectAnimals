@@ -23,12 +23,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import and_, delete, func, or_, select
 from sqlalchemy.orm import Session
 
-from . import goals, places
+from . import goals, notices, places
+from .scoring import to_local
 from . import states
 from .auth import current_user
 from .db import get_db
 from .models import AlbumPhoto, Badge, Capture, Friendship, PhotoComment, PhotoLike, Species, StateSpecies, User
-from .schemas import (AchievementOut, AlbumOut, AlbumPick, CommentIn, CommentOut, FeedOut, ProfileOut, SuggestionOut, Tally, FriendOut, FriendRequestIn, FriendsOut,
+from .schemas import (WhereWhenOut, AchievementOut, AlbumOut, AlbumPick, CommentIn, CommentOut, FeedOut, ProfileOut, SuggestionOut, Tally, FriendOut, FriendRequestIn, FriendsOut,
                       GalleryOut, PhotoOut, SettingsIn, SpeciesOut)
 from .storage import get_storage
 
@@ -78,6 +79,20 @@ def find_species(db: Session, key: str) -> Species:
     return s
 
 
+def where_when_out(c: Capture, utc_offset: int) -> WhereWhenOut:
+    """A capture's time and place as its owner sees them (exact). Without a photo
+    time, the upload time in the state's local time."""
+    has_place = c.latitude is not None and c.longitude is not None
+    taken = c.taken_at.replace(tzinfo=None) if c.taken_at else to_local(c.created_at, utc_offset)
+    return WhereWhenOut(
+        capture_id=c.id, state=c.state, taken_at=taken.replace(microsecond=0),
+        time_source=c.time_source or ("photo" if c.taken_at else "upload"),
+        latitude=round(c.latitude, 5) if has_place else None,
+        longitude=round(c.longitude, 5) if has_place else None,
+        place=places.place_name(c.latitude, c.longitude) if has_place else None,
+        place_source=c.place_source if has_place else None)
+
+
 def photo_out(p: AlbumPhoto, viewer: User, friends: set[int], likes: int, liked: bool,
               revealed: bool = True, rank: int | None = None, show_image: bool = True,
               comments: int = 0) -> PhotoOut:
@@ -90,7 +105,9 @@ def photo_out(p: AlbumPhoto, viewer: User, friends: set[int], likes: int, liked:
         taken_on=(c.taken_at or c.created_at).date(), caught_at=c.created_at,
         latitude=loc.latitude, longitude=loc.longitude, location_precise=loc.precise,
         place=loc.place, like_count=likes, liked_by_me=liked, comment_count=comments, is_mine=mine,
-        by_friend=p.user_id in friends, rank=rank, score=c.score, stars=c.score_stars)
+        by_friend=p.user_id in friends, rank=rank, score=c.score, stars=c.score_stars,
+        where_when=where_when_out(c, (states.get(c.state or p.user.state) or states.get(None)).utc_offset)
+        if mine else None)
 
 
 def _like_info(db: Session, photo_ids: list[int], viewer_id: int) -> tuple[dict[int, int], set[int]]:
@@ -128,6 +145,26 @@ def ensure_album_photo(db: Session, capture: Capture) -> AlbumPhoto | None:
     db.add(photo)
     db.flush()
     return photo
+
+
+# --- captures per state ------------------------------------------------------
+
+def catches_in(db: Session, user_id: int, state: str) -> dict[int, tuple[int, datetime]]:
+    """What a player has captured in one state: species id -> (how many times,
+    first capture). Captures count only in the state they were made in."""
+    return {sid: (n, first) for sid, n, first in db.execute(
+        select(Capture.species_id, func.count(), func.min(Capture.created_at))
+        .where(Capture.user_id == user_id, Capture.state == state, Capture.species_id.is_not(None))
+        .group_by(Capture.species_id))}
+
+
+def caught_counts(db: Session, users: list[User]) -> dict[int, int]:
+    """How many species each player has captured in their own state."""
+    out: dict[int, int] = {}
+    for u in users:
+        out[u.id] = db.scalar(select(func.count(func.distinct(Capture.species_id))).where(
+            Capture.user_id == u.id, Capture.state == u.state, Capture.species_id.is_not(None))) or 0
+    return out
 
 
 # --- albums -----------------------------------------------------------------
@@ -288,8 +325,7 @@ def user_profile(username: str, user: User = Depends(current_user), db: Session 
     # Counted against the owner's state list, with that state's rarities.
     members = db.scalars(select(StateSpecies).where(StateSpecies.state == owner.state)
                          .order_by(StateSpecies.position)).all()
-    all_caught = set(db.scalars(select(Badge.species_id).where(Badge.user_id == owner.id)))
-    caught_ids = {m.species_id for m in members} & all_caught
+    caught_ids = {m.species_id for m in members} & set(catches_in(db, owner.id, owner.state))
     by_rarity = {r: Tally(caught=0, total=0) for r in RARITIES}
     by_category: dict[str, Tally] = {}
     for m in members:
@@ -457,6 +493,7 @@ def like_photo(photo_id: int, user: User = Depends(current_user), db: Session = 
                                              PhotoLike.user_id == user.id)):
         db.add(PhotoLike(photo_id=photo.id, user_id=user.id))
         db.commit()
+        notices.liked(db, photo, user)
     return Response(status_code=204)
 
 
@@ -509,6 +546,7 @@ def add_comment(photo_id: int, body: CommentIn, user: User = Depends(current_use
     db.add(c)
     db.commit()
     db.refresh(c)
+    notices.commented(db, photo, user, text_)
     return comment_out(c, photo, user)
 
 
@@ -566,8 +604,7 @@ def list_friends(user: User = Depends(current_user), db: Session = Depends(get_d
     rows = db.scalars(select(Friendship).where(or_(Friendship.requester_id == user.id,
                                                    Friendship.addressee_id == user.id))).all()
     ids = {f.requester_id if f.addressee_id == user.id else f.addressee_id for f in rows}
-    caught = dict(db.execute(select(Badge.user_id, func.count()).where(Badge.user_id.in_(ids))
-                             .group_by(Badge.user_id)).all()) if ids else {}
+    caught = caught_counts(db, [f.requester if f.addressee_id == user.id else f.addressee for f in rows])
     out = FriendsOut(friends=[], incoming=[], outgoing=[])
     for f in sorted(rows, key=lambda f: f.created_at):
         other = f.requester if f.addressee_id == user.id else f.addressee
@@ -601,6 +638,10 @@ def send_friend_request(body: FriendRequestIn, user: User = Depends(current_user
     else:
         db.add(Friendship(requester_id=user.id, addressee_id=other.id, accepted=bool(other.is_bot)))
     db.commit()
+    if f:
+        notices.friend_accepted(other, user)
+    elif not other.is_bot:
+        notices.friend_request(other, user)
     return {"status": "friends" if f or other.is_bot else "requested"}
 
 
@@ -612,8 +653,7 @@ def friend_suggestions(user: User = Depends(current_user), db: Session = Depends
             or_(Friendship.requester_id == user.id, Friendship.addressee_id == user.id)))}
     bots = db.scalars(select(User).where(User.is_bot, User.id != user.id,
                                          User.id.not_in(linked)).order_by(User.username)).all()
-    caught = dict(db.execute(select(Badge.user_id, func.count()).where(
-        Badge.user_id.in_([b.id for b in bots])).group_by(Badge.user_id)).all()) if bots else {}
+    caught = caught_counts(db, list(bots))
     return [SuggestionOut(username=b.username, caught=caught.get(b.id, 0), is_bot=True) for b in bots]
 
 
@@ -625,8 +665,11 @@ def accept_friend_request(username: str, user: User = Depends(current_user),
                                            Friendship.addressee_id == user.id))
     if not f:
         raise HTTPException(404, "No friend request from that user")
+    newly = not f.accepted
     f.accepted = True
     db.commit()
+    if newly:
+        notices.friend_accepted(other, user)
     return {"status": "friends"}
 
 

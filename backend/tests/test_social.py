@@ -237,6 +237,12 @@ def test_place_names(client):
     assert places.place_name(37.7694, -122.4862) == "Golden Gate Park & Presidio"
     assert places.place_name(36.9741, -122.0308) == "near Santa Cruz"
     assert places.place_name(41.0, -121.0).startswith("in ")
+    # Each state names its own towns and regions; none fall back to California's.
+    assert places.place_name(35.73, -81.34) == "near Hickory"
+    assert places.place_name(35.25, -76.2) == "in the Outer Banks"
+    assert places.region(34.8, -116.0) == "the California deserts"
+    assert places.region(35.6, -82.5) == "the Blue Ridge Mountains"
+    assert places.region(40.7, -74.0) == "another state"
 
 
 def test_local_feed(client, fake):
@@ -521,8 +527,8 @@ def test_friend_field_guide_uses_their_state(client, fake):
     by = {e["species"]["slug"]: e for e in g["entries"] if e["species"]["revealed"]}
     bear = by["american_black_bear"]
     assert bear["caught"] and not bear["you_caught"] and bear["photo_url"]
-    coyote = by["coyote"]                  # ana's own capture: named, but not nina's
-    assert not coyote["caught"] and coyote["you_caught"]
+    coyote = by["coyote"]                  # ana's California capture: named, but not caught here
+    assert not coyote["caught"] and not coyote["you_caught"]
     assert "bobcat" not in by              # zed is nobody's friend, so it stays "???"
     assert sum(not e["species"]["revealed"] for e in g["entries"]) == g["total"] - 2
     # Friendship works both ways, in the viewer's own state.
@@ -537,6 +543,11 @@ def test_friend_field_guide_places(client, fake):
     assert g["primary_state"] == "NC"
     assert [p["state"] for p in g["places"]] == ["NC"]      # primary state is always a place
     catch(client, fake, nina, "american_black_bear")         # on both state lists
+    g = client.get("/users/nina/collection", headers=ana).json()
+    assert [(p["state"], p["caught"]) for p in g["places"]] == [("NC", 1)]   # counts only where captured
+    client.patch("/me", json={"state": "CA"}, headers=nina)
+    catch(client, fake, nina, "american_black_bear")
+    client.patch("/me", json={"state": "NC"}, headers=nina)
     g = client.get("/users/nina/collection", headers=ana).json()
     places = {p["state"]: p for p in g["places"]}
     assert places["NC"]["caught"] == 1 and places["CA"]["caught"] == 1 and places["CA"]["name"]

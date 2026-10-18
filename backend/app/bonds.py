@@ -9,9 +9,9 @@ Repeats only count when something is new, so a burst of photos in one sitting
 ticks at most one note. Nothing asks for a closer photo: "Great shot" uses the
 photo score, which never rewards getting close (see scoring.py).
 
-The buddy is one captured animal the player picks to keep them company. Its
-mood comes from recent outings and never drops below napping: no hunger, no
-guilt.
+Animals with a safety rating (caution or danger, from details.csv) only get the
+notes that don't send a player back to them: "First meeting" and "Great shot".
+No repeat visits, no night outings, no tracking one down somewhere else.
 """
 
 from __future__ import annotations
@@ -40,6 +40,8 @@ NOTES = [
     ("star", "Great shot", f"Take a {GREAT_SHOT_STARS}-star photo of it"),
 ]
 NOTE_TITLES = {n[0]: n[1] for n in NOTES}
+# The notes for animals with a safety rating.
+SAFE_NOTES = {"first", "star"}
 GOALS = {"first": 1, "days": DAYS_GOAL, "times": TIMES_GOAL, "places": PLACES_GOAL,
          "seasons": SEASONS_GOAL, "star": 1}
 
@@ -110,8 +112,14 @@ def _places(sightings: list[Sighting]) -> int:
     return len(spots)
 
 
-def notes(sightings: list[Sighting]) -> list[Note]:
-    """The six field notes for one species, from the player's captures of it."""
+def careful(safety: str | None) -> bool:
+    """Whether the animal has a safety rating (caution or danger)."""
+    return safety in ("caution", "danger")
+
+
+def notes(sightings: list[Sighting], safety: str | None = "none") -> list[Note]:
+    """The field notes for one species, from the player's captures of it: all
+    six, or just the safe ones for an animal with a safety rating."""
     progress = {
         "first": 1 if sightings else 0,
         "days": len({s.local.date() for s in sightings}),
@@ -120,7 +128,8 @@ def notes(sightings: list[Sighting]) -> list[Note]:
         "seasons": len({season(s.local) for s in sightings}),
         "star": 1 if any((s.stars or 0) >= GREAT_SHOT_STARS for s in sightings) else 0,
     }
-    return [Note(i, title, hint, min(progress[i], GOALS[i]), GOALS[i]) for i, title, hint in NOTES]
+    keep = SAFE_NOTES if careful(safety) else set(GOALS)
+    return [Note(i, title, hint, min(progress[i], GOALS[i]), GOALS[i]) for i, title, hint in NOTES if i in keep]
 
 
 def level(ns: list[Note]) -> int:
@@ -131,39 +140,7 @@ def title(lvl: int) -> str | None:
     return TITLES[lvl - 1] if lvl > 0 else None
 
 
-def newly_done(before: list[Sighting], after: list[Sighting]) -> list[str]:
+def newly_done(before: list[Sighting], after: list[Sighting], safety: str | None = "none") -> list[str]:
     """Titles of the notes the latest capture ticked."""
-    was = {n.id for n in notes(before) if n.done}
-    return [n.title for n in notes(after) if n.done and n.id not in was and n.id != "first"]
-
-
-# --- buddy ----------------------------------------------------------------------
-
-def mood(outing_days: int) -> str:
-    """From the number of days with a capture in the last 7."""
-    return "napping" if outing_days == 0 else "happy" if outing_days < 3 else "excited"
-
-
-def buddy_line(mood_: str, ns: list[Note], suggestion: str | None = None) -> str:
-    """What the buddy says: a nudge towards its next field note, or another
-    animal to look for once its own notes are done."""
-    if mood_ == "napping":
-        opener = "Zzz... oh, hi! Take me outside sometime?"
-    elif mood_ == "excited":
-        opener = "What a week of outings!"
-    else:
-        opener = "That was a nice outing."
-    todo = next((n for n in ns if not n.done), None)
-    if todo is None:
-        if suggestion:
-            return f"{opener} We're lifelong friends now. Have you met {suggestion} yet? It's around this month."
-        return f"{opener} We're lifelong friends now."
-    ask = {
-        "days": f"Come find me on another day: {todo.progress} of {todo.goal} days so far.",
-        "times": "I'd love a photo of me at a different time of day.",
-        "places": "Let's look for me somewhere new, at least a kilometer away.",
-        "seasons": "Visit me again in another season.",
-        "star": f"Try for a {GREAT_SHOT_STARS}-star photo of me. Steady hands, good light.",
-        "first": "Let's go outside!",
-    }[todo.id]
-    return f"{opener} {ask}"
+    was = {n.id for n in notes(before, safety) if n.done}
+    return [n.title for n in notes(after, safety) if n.done and n.id not in was and n.id != "first"]

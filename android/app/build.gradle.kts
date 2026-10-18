@@ -6,6 +6,8 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+val releaseVersion: String = (groovy.json.JsonSlurper().parse(rootProject.file("../release.json")) as Map<*, *>)["version"] as String
+
 android {
     namespace = "com.captureanimals.app"
     compileSdk = 36
@@ -15,8 +17,11 @@ android {
         applicationId = "com.captureanimals.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 8
-        versionName = "0.8.0"
+        // The release version lives in release.json at the repo root, shared with the web app
+        // (bumped by hand for major updates). 0.9.0 -> versionCode 900, so it always increases.
+        versionName = releaseVersion
+        versionCode = releaseVersion.split(".").map(String::toInt)
+            .let { (major, minor, patch) -> major * 10_000 + minor * 100 + patch }
         // Phones are arm64; leaving out other ABIs keeps the APK ~15 MB smaller.
         ndk { abiFilters += listOf("arm64-v8a") }
     }
@@ -73,6 +78,8 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
     implementation("androidx.exifinterface:exifinterface:1.3.7")
+    // Checks for friend requests in the background (see FriendAlerts.kt).
+    implementation("androidx.work:work-runtime-ktx:2.10.0")
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.22.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
 

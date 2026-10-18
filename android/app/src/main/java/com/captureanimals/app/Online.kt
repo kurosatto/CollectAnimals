@@ -137,18 +137,36 @@ object Online {
 
     // --- Captures ---------------------------------------------------------------------
 
-    /** Uploads a photo for the server to identify, as the website's capture form does. */
-    suspend fun capture(photo: Bitmap, lat: Double?, lon: Double?): JSONObject = withContext(Dispatchers.IO) {
+    /**
+     * Uploads a photo for the server to identify, as the website's capture form does.
+     * The shrunk photo has no EXIF, so what the original said ([meta]) goes along;
+     * [lat]/[lon] is where the phone is now, used only if the photo has no place and is
+     * recent. [savePlace] false keeps no place at all.
+     */
+    suspend fun capture(photo: Bitmap, lat: Double?, lon: Double?, meta: PhotoMeta? = null,
+                        savePlace: Boolean = true): JSONObject = withContext(Dispatchers.IO) {
         val boundary = "----captureanimals${System.nanoTime()}"
         val out = ByteArrayOutputStream()
         fun part(name: String, value: String) = out.write(
             "--$boundary\r\nContent-Disposition: form-data; name=\"$name\"\r\n\r\n$value\r\n".toByteArray())
         if (lat != null && lon != null) { part("latitude", lat.toString()); part("longitude", lon.toString()) }
+        if (meta?.latitude != null && meta.longitude != null) {
+            part("photo_latitude", meta.latitude.toString()); part("photo_longitude", meta.longitude.toString())
+        }
+        meta?.takenAt?.let { part("photo_taken_at", it.toString()) }
+        if (!savePlace) part("save_place", "false")
         out.write(("--$boundary\r\nContent-Disposition: form-data; name=\"photo\"; filename=\"photo.jpg\"\r\n" +
             "Content-Type: image/jpeg\r\n\r\n").toByteArray())
         jpeg(ImageLoader.thumbnail(photo, 1600), out)
         out.write("\r\n--$boundary--\r\n".toByteArray())
         JSONObject(request("POST", "/captures", out.toByteArray(), "multipart/form-data; boundary=$boundary"))
+    }
+
+    /** Fixes when ([takenAt], local time) and where ([place], or null for none) a photo was taken. */
+    suspend fun whereWhen(captureId: Int, takenAt: java.time.LocalDateTime, place: Pair<Double, Double>?): JSONObject {
+        val body = JSONObject().put("taken_at", takenAt.withNano(0).toString())
+        place?.let { body.put("latitude", it.first).put("longitude", it.second) }
+        return JSONObject(call("PUT", "/captures/$captureId/where-when", body))
     }
 
     suspend fun pick(captureId: Int, label: String): JSONObject =
@@ -174,20 +192,13 @@ object Online {
         FriendGuide.parse(username, JSONObject(call("GET", "/users/${q(username)}/collection" +
             (state?.let { "?state=${q(it)}" } ?: ""))))
 
-    // --- Challenges, bonds, buddy ------------------------------------------------------
+    // --- Challenges and bonds ------------------------------------------------------------
 
     suspend fun challenges(): Week = Week.parse(JSONObject(call("GET", "/me/challenges")))
 
     /** Bond and field notes for one captured animal, or null when it isn't captured. */
     suspend fun bond(slug: String): Bond? =
         JSONObject(call("GET", "/me/bonds?species=${q(slug)}")).getJSONArray("bonds").optJSONObject(0)?.let { Bond.parse(it) }
-
-    /** The buddy, or null before the first capture. */
-    suspend fun buddy(): Buddy? = call("GET", "/me/buddy").trim().takeIf { it != "null" }?.let { Buddy.parse(JSONObject(it)) }
-
-    suspend fun setBuddy(slug: String): Buddy? =
-        call("PUT", "/me/buddy", JSONObject().put("species", slug)).trim().takeIf { it != "null" }
-            ?.let { Buddy.parse(JSONObject(it)) }
 
     // --- Photos, feed, likes -----------------------------------------------------------
 
@@ -215,6 +226,10 @@ object Online {
     // --- Friends ----------------------------------------------------------------------
 
     suspend fun friends(): Friends = Friends.parse(JSONObject(call("GET", "/friends")))
+
+    /** Likes and comments on your photos after [since] (the last answer's `now`); null gets just `now`. */
+    suspend fun activity(since: String?): Activity =
+        Activity.parse(JSONObject(call("GET", "/me/activity" + (since?.let { "?since=${q(it)}" } ?: ""))))
     suspend fun suggestions(): List<FriendEntry> {
         val a = JSONArray(call("GET", "/friends/suggestions"))
         return List(a.length()) { FriendEntry.parse(a.getJSONObject(it)) }
@@ -231,14 +246,15 @@ object Online {
         override fun sizeOf(key: String, value: Bitmap) = value.byteCount
     }
 
-    suspend fun image(path: String, maxSide: Int = 800): Bitmap? = images.get(path) ?: withContext(Dispatchers.IO) {
+    /** Cached per size, so the full-screen copy doesn't replace the thumbnail or vice versa. */
+    suspend fun image(path: String, maxSide: Int = 800): Bitmap? = images.get("$maxSide $path") ?: withContext(Dispatchers.IO) {
         runCatching {
             val c = URL(absolute(path)).openConnection() as HttpURLConnection
             token?.let { c.setRequestProperty("Authorization", "Bearer $it") }
             c.connectTimeout = 15_000; c.readTimeout = 30_000
             val bytes = c.inputStream.use { it.readBytes() }
             val b = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return@runCatching null
-            ImageLoader.thumbnail(b, maxSide).also { images.put(path, it) }
+            ImageLoader.thumbnail(b, maxSide).also { images.put("$maxSide $path", it) }
         }.getOrNull()
     }
 
@@ -257,10 +273,12 @@ object Online {
 fun JSONObject.optStringOrNull(key: String): String? = if (isNull(key) || !has(key)) null else getString(key)
 fun JSONObject.optIntOrNull(key: String): Int? = if (isNull(key) || !has(key)) null else getInt(key)
 
-data class Account(val username: String, val email: String, val state: String, val showInFeed: Boolean) {
+data class Account(val username: String, val email: String, val state: String, val showInFeed: Boolean,
+                   val unlockedStates: List<String> = emptyList()) {
     companion object {
         fun parse(o: JSONObject) = Account(o.getString("username"), o.getString("email"), o.getString("state"),
-            o.isNull("show_in_feed") || o.optBoolean("show_in_feed", true))
+            o.isNull("show_in_feed") || o.optBoolean("show_in_feed", true),
+            o.optJSONArray("unlocked_states")?.let { a -> List(a.length()) { a.getString(it) } } ?: emptyList())
     }
 }
 
@@ -273,25 +291,36 @@ data class OnlinePhoto(
     val commonName: String?,
     val rarity: String,
     val category: String,
-    val caughtAt: Long,
+    // When the photo was taken (its date), shown under it.
+    val takenOn: Long,
     val place: String?,
     val likeCount: Int,
     val likedByMe: Boolean,
     val commentCount: Int,
     val isMine: Boolean,
     val byFriend: Boolean,
-    // The photo's own 1-5 stars (null for photos from before scoring).
+    // The photo's own 1-5 stars and points (null until it's scored).
     val stars: Int? = null,
+    val score: Int? = null,
+    // Only on your own photos: the exact time and place, to show and fix.
+    val whereWhen: WhereWhen? = null,
 ) {
     companion object {
         fun parse(o: JSONObject): OnlinePhoto {
             val s = o.getJSONObject("species")
             return OnlinePhoto(o.getInt("id"), o.optStringOrNull("url"), o.getString("username"),
                 s.optStringOrNull("slug"), s.optStringOrNull("common_name"), s.getString("rarity"),
-                s.getString("category"), Online.parseTime(o.optStringOrNull("caught_at")), o.optStringOrNull("place"),
+                s.getString("category"), takenOn(o), o.optStringOrNull("place"),
                 o.optInt("like_count"), o.optBoolean("liked_by_me"), o.optInt("comment_count"),
-                o.optBoolean("is_mine"), o.optBoolean("by_friend"), o.optIntOrNull("stars"))
+                o.optBoolean("is_mine"), o.optBoolean("by_friend"), o.optIntOrNull("stars"),
+                o.optIntOrNull("score"), WhereWhen.parse(o.optJSONObject("where_when")))
         }
+
+        /** Midday on the photo's date (so it shows the same day in any zone), else the upload time. */
+        fun takenOn(o: JSONObject): Long = o.optStringOrNull("taken_on")?.let {
+            runCatching { java.time.LocalDate.parse(it).atTime(12, 0).atZone(java.time.ZoneId.systemDefault())
+                .toInstant().toEpochMilli() }.getOrNull()
+        } ?: Online.parseTime(o.optStringOrNull("caught_at"))
 
         fun list(a: JSONArray) = List(a.length()) { parse(a.getJSONObject(it)) }
     }
@@ -323,13 +352,13 @@ data class Friends(val friends: List<FriendEntry>, val incoming: List<FriendEntr
 /** One animal on a friend's Field Guide. Names stay "???" until you or a friend captured it. */
 data class GuideEntry(val number: Int, val slug: String?, val commonName: String?, val rarity: String,
                       val category: String, val caught: Boolean, val youCaught: Boolean,
-                      val activity: String? = null) {
+                      val activity: String? = null, val photoStars: Int? = null) {
     companion object {
         fun parse(o: JSONObject): GuideEntry {
             val s = o.getJSONObject("species")
             return GuideEntry(s.getInt("number"), s.optStringOrNull("slug"), s.optStringOrNull("common_name"),
                 s.getString("rarity"), s.getString("category"), o.getBoolean("caught"), o.optBoolean("you_caught"),
-                o.optStringOrNull("activity"))
+                o.optStringOrNull("activity"), o.optIntOrNull("photo_stars"))
         }
     }
 }
@@ -351,6 +380,29 @@ data class FriendGuide(val username: String, val state: String, val caught: Int,
             return FriendGuide(o.optString("username").ifEmpty { username }, state,
                 o.getInt("caught"), o.getInt("total"), List(a.length()) { GuideEntry.parse(a.getJSONObject(it)) },
                 primary, places)
+        }
+    }
+}
+
+/** GET /me/activity: likes grouped by photo, and the newest comments. */
+data class Activity(val now: String, val likes: List<Like>, val comments: List<Comment>) {
+    data class Like(val species: String, val count: Int, val usernames: List<String>)
+    data class Comment(val species: String, val username: String, val body: String)
+
+    companion object {
+        fun parse(o: JSONObject): Activity {
+            val likes = o.optJSONArray("likes") ?: JSONArray()
+            val comments = o.optJSONArray("comments") ?: JSONArray()
+            return Activity(o.getString("now"),
+                List(likes.length()) { i ->
+                    likes.getJSONObject(i).let { l ->
+                        val names = l.getJSONArray("usernames")
+                        Like(l.getString("species"), l.getInt("count"), List(names.length()) { names.getString(it) })
+                    }
+                },
+                List(comments.length()) { i ->
+                    comments.getJSONObject(i).let { Comment(it.getString("species"), it.getString("username"), it.getString("body")) }
+                })
         }
     }
 }

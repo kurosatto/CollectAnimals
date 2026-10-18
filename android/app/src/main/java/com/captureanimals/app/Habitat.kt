@@ -26,6 +26,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.ByteArrayInputStream
+import java.net.HttpURLConnection
+import java.net.URL
 
 /** One animal for the habitat scene. */
 data class HabitatAnimal(val number: Int, val slug: String, val name: String, val category: String,
@@ -64,6 +67,16 @@ fun Habitat(view: HabitatWebView, animals: List<HabitatAnimal>, state: String, m
     )
 }
 
+/** Before you log in: [state]'s scenery with one featured animal, as a taste of the game. */
+@Composable
+fun HabitatShowcase(view: HabitatWebView, state: String, placeName: String, modifier: Modifier = Modifier) {
+    LaunchedEffect(state, placeName) { view.showcase(state, placeName) }
+    AndroidView(
+        factory = { view.also { (it.parent as? ViewGroup)?.removeView(it) } },
+        modifier = modifier.fillMaxWidth().height(view.heightDp.dp),
+    )
+}
+
 @Composable
 fun rememberHabitatView(): HabitatWebView {
     val context = LocalContext.current
@@ -95,6 +108,12 @@ class HabitatWebView(context: Context) : WebView(context) {
 
     fun show(json: String, state: String, visitor: String?) {
         val call = "setAnimals($json, ${JSONObject.quote(state)}, ${visitor?.let(JSONObject::quote) ?: "null"})"
+        runJs(call)
+    }
+
+    fun showcase(state: String, placeName: String) = runJs("showcase(${JSONObject.quote(state)}, ${JSONObject.quote(placeName)})")
+
+    private fun runJs(call: String) {
         if (ready) evaluateJavascript(call, null) else pending = call
     }
 
@@ -121,11 +140,31 @@ class AssetClient(private val context: Context) : WebViewClient() {
     override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
         val url = request.url
         if (url.host != "appassets.androidplatform.net") return null
-        val path = url.path.orEmpty().trimStart('/')
+        val raw = url.path.orEmpty().trimStart('/')
+        if (raw.startsWith("weather/")) return weather(raw, url.getQueryParameter("here") == "1")
+        // An animal without pixel art yet gets the placeholder egg, as on the website.
+        val path = if (raw.startsWith("sprites/") && raw.endsWith(".png"))
+            spriteAsset(raw, spriteFiles(context)) else raw
         return runCatching {
             WebResourceResponse(mimeType(path), if (mimeType(path).startsWith("text") ||
                 path.endsWith(".js") || path.endsWith(".json")) "utf-8" else null, context.assets.open(path))
         }.getOrElse { WebResourceResponse("text/plain", "utf-8", 404, "Not found", emptyMap(), null) }
+    }
+
+    /** The real weather for the scene comes from the game server ("null" when offline).
+     *  For your own scene ([here]) it's for roughly where you are (to about 10 km),
+     *  when the app may know your location. */
+    private fun weather(path: String, here: Boolean): WebResourceResponse {
+        val spot = if (here) lastLocation(context) else null
+        val q = spot?.let { (lat, lon) -> "?lat=%.1f&lon=%.1f".format(java.util.Locale.US, lat, lon) }.orEmpty()
+        val body = Online.base?.let { base ->
+            runCatching {
+                val c = URL("$base/$path$q").openConnection() as HttpURLConnection
+                c.connectTimeout = 6000; c.readTimeout = 8000
+                c.inputStream.use { it.readBytes() }
+            }.getOrNull()
+        } ?: "null".toByteArray()
+        return WebResourceResponse("application/json", "utf-8", ByteArrayInputStream(body))
     }
 
     private fun mimeType(path: String) = when (path.substringAfterLast('.').lowercase()) {

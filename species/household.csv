@@ -1,0 +1,15 @@
+slug,common_name,scientific_name,kind,note
+domestic_dog,Dog,Canis familiaris,pet,Someone's best friend. Ask before you pet a dog you don't know.
+domestic_cat,Cat,Felis catus,pet,"Cats are great at hiding, so a good cat photo takes patience."
+domestic_rabbit,Rabbit,Oryctolagus cuniculus,pet,Pet rabbits are relatives of the wild cottontails and jackrabbits.
+golden_hamster,Hamster,Mesocricetus auratus,pet,Hamsters stuff food in their cheek pouches to carry it home.
+budgerigar,Budgie,Melopsittacus undulatus,pet,Budgies are small parrots from Australia that can learn words.
+domestic_chicken,Chicken,Gallus gallus,pet,Chickens are birds that live on farms and in backyards.
+horse,Horse,Equus caballus,pet,Horses sleep standing up some of the time.
+goldfish,Goldfish,Carassius auratus,pet,Goldfish are a kind of carp kept as pets for over a thousand years.
+brown_rat,Rat,Rattus norvegicus,pest,Don't touch: rats can carry germs. Tell an adult if you see them indoors.
+house_mouse,House mouse,Mus musculus,pest,Don't touch: wild mice can carry germs.
+rock_pigeon,Pigeon,Columba livia,pest,City pigeons came from wild rock doves that nest on cliffs.
+american_cockroach,American cockroach,Periplaneta americana,pest,"Despite the name, it came from Africa."
+german_cockroach,German cockroach,Blattella germanica,pest,The most common cockroach in kitchens.
+house_fly,House fly,Musca domestica,pest,House flies taste with their feet.

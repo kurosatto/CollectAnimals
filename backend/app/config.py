@@ -36,8 +36,6 @@ class Settings:
         "DETAILS_CSV", ROOT / "species" / "details.csv")))
     sets_json: Path = field(default_factory=lambda: Path(os.getenv(
         "SETS_JSON", ROOT / "species" / "sets.json")))
-    places_json: Path = field(default_factory=lambda: Path(os.getenv(
-        "PLACES_JSON", ROOT / "species" / "ca_places.json")))
     sprites_dir: Path = field(default_factory=lambda: Path(os.getenv(
         "SPRITES_DIR", ROOT / "species" / "sprites")))
     model_path: Path = field(default_factory=lambda: Path(os.getenv(
@@ -48,6 +46,14 @@ class Settings:
     storage_backend: str = field(default_factory=lambda: os.getenv("STORAGE_BACKEND", "local"))
     # A capture only counts if the model is at least this confident.
     match_threshold: float = field(default_factory=lambda: float(os.getenv("MATCH_THRESHOLD", "0.7")))
+    # Score older photos (taken before photo scores, or before lighting was
+    # judged) in the background after startup; SCORE_OLD_PHOTOS=0 turns it off.
+    score_old_photos: bool = field(default_factory=lambda: os.getenv("SCORE_OLD_PHOTOS", "1") not in ("", "0", "false"))
+    # The release version (bumped by hand for major updates) and the folder of built
+    # Android APKs (CaptureAnimals-<version>.apk) offered to phones on older versions.
+    release_json: Path = field(default_factory=lambda: Path(os.getenv("RELEASE_JSON", ROOT / "release.json")))
+    android_apk_dir: Path | None = field(default_factory=lambda: Path(os.environ["ANDROID_APK_DIR"])
+                                         if os.getenv("ANDROID_APK_DIR") else None)
     max_upload_mb: int = field(default_factory=lambda: int(os.getenv("MAX_UPLOAD_MB", "15")))
 
 

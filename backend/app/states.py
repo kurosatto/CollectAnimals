@@ -20,14 +20,18 @@ class State:
     species_csv: Path
     # Per-state Dex text (where_to_find, overrides of the shared facts, caution).
     dex_csv: Path | None
-    outline: Path
-    ranges: Path
-    hotspots: Path
+    # Map files are optional: a newly added state works without them (no outline
+    # on its maps, no sighting map, no Parks) until its data is built.
+    outline: Path | None
+    ranges: Path | None
+    hotspots: Path | None
     bounds: dict
     # Sightings by month and hour (ml/build_seasons.py); optional.
     seasons: Path | None = None
     # Hours from UTC (standard time), for "this month" in the state.
     utc_offset: int = 0
+    # Towns and regions for place names ("near Asheville"); optional.
+    places: Path | None = None
 
 
 _states: dict[str, State] = {}
@@ -40,12 +44,11 @@ def load(states_json: Path) -> None:
     root = states_json.parent
     _states.clear()
     for s in data["states"]:
+        opt = lambda key: root / s[key] if s.get(key) else None  # noqa: E731
         _states[s["code"]] = State(
-            code=s["code"], name=s["name"], species_csv=root / s["species"],
-            dex_csv=root / s["dex"] if s.get("dex") else None,
-            outline=root / s["outline"], ranges=root / s["ranges"], hotspots=root / s["hotspots"],
-            bounds=s["bounds"], seasons=root / s["seasons"] if s.get("seasons") else None,
-            utc_offset=s.get("utc_offset", 0))
+            code=s["code"], name=s["name"], species_csv=root / s["species"], dex_csv=opt("dex"),
+            outline=opt("outline"), ranges=opt("ranges"), hotspots=opt("hotspots"),
+            bounds=s["bounds"], seasons=opt("seasons"), utc_offset=s.get("utc_offset", 0), places=opt("places"))
     default_code = data.get("default", next(iter(_states)))
 
 

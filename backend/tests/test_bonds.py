@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 from app import bonds
+from app import states
 from app.classifier import Prediction
 from app.db import SessionLocal
 from app.models import Capture
@@ -34,11 +35,9 @@ def test_each_note():
     assert bonds.level(bonds.notes(all_six)) == 6 and bonds.title(6) == "Lifelong friend"
 
 
-def test_newly_done_and_buddy_lines():
+def test_newly_done():
     before = [S(2026, 10, 16, 9)]
     assert bonds.newly_done(before, before + [S(2026, 10, 16, 19)]) == ["Early and late"]
-    assert bonds.mood(0) == "napping" and bonds.mood(2) == "happy" and bonds.mood(5) == "excited"
-    assert "outside" in bonds.buddy_line("napping", bonds.notes(before))
 
 
 def test_local_time_uses_exif_or_state_time():
@@ -46,29 +45,50 @@ def test_local_time_uses_exif_or_state_time():
     assert bonds.local_time(None, datetime(2026, 10, 16, 20, tzinfo=timezone.utc), -8).hour == 12
 
 
-def test_bonds_buddy_api(client, fake):
+def test_bonds_api(client, fake):
     h = signup(client)
-    assert client.get("/me/buddy", headers=h).json() is None
-    fake.next = [Prediction("coyote", 0.95)]
+    assert client.get("/me/bonds", headers=h).json()["bonds"] == []
+    fake.next = [Prediction("western_gray_squirrel", 0.95)]
     r = upload(client, h).json()
     assert r["bond"] == 1 and r["bond_up"] == []
-    # A second photo "taken" on another day and time of day.
+    # A second photo "taken" on another day and time of day. The new upload's time
+    # is now, so date the first one at a time of day that differs from now.
+    now = bonds.local_time(None, datetime.now(timezone.utc), states.get("CA").utc_offset)
     with SessionLocal() as db:
         c = db.get(Capture, r["capture_id"])
-        c.taken_at = datetime(2026, 1, 3, 6)
+        c.taken_at = datetime(2026, 1, 3, 22 if bonds.time_of_day(now) == "morning" else 6)
         db.commit()
-    fake.next = [Prediction("coyote", 0.95)]
+    fake.next = [Prediction("western_gray_squirrel", 0.95)]
     r2 = upload(client, h).json()
     assert r2["bond"] >= 3 and "Early and late" in r2["bond_up"] and "Bond with the" in r2["message"]
 
     b = client.get("/me/bonds", headers=h).json()["bonds"]
-    assert b[0]["species"]["slug"] == "coyote" and b[0]["level"] == r2["bond"]
+    assert b[0]["species"]["slug"] == "western_gray_squirrel" and b[0]["level"] == r2["bond"]
     entry = next(e for e in client.get("/me/collection", headers=h).json()["entries"]
-                 if e["species"]["slug"] == "coyote")
+                 if e["species"]["slug"] == "western_gray_squirrel")
     assert entry["bond"] == r2["bond"]
+    assert client.get("/me/buddy", headers=h).status_code == 404
 
-    buddy = client.get("/me/buddy", headers=h).json()
-    assert buddy["chosen"] is False and buddy["bond"]["species"]["slug"] == "coyote"
-    assert buddy["mood"] == "happy" and buddy["line"]
-    assert client.put("/me/buddy", headers=h, json={"species": "raccoon"}).status_code == 400
-    assert client.put("/me/buddy", headers=h, json={"species": "coyote"}).json()["chosen"] is True
+
+def test_animals_with_a_safety_rating_get_only_safe_notes():
+    # No repeat visits, night outings or new places for a bear or a coyote.
+    lots = [S(2026, 10, 16, 9, 37.0, -122.0), S(2026, 10, 17, 22, 37.05, -122.0), S(2027, 1, 5, 9)]
+    for safety in ("caution", "danger"):
+        ns = bonds.notes(lots, safety)
+        assert [n.id for n in ns] == ["first", "star"] and bonds.level(ns) == 1
+        assert "adult" not in ns[1].hint
+        assert bonds.newly_done(lots[:1], lots, safety) == []
+    assert len(bonds.notes(lots, "none")) == 6
+
+
+def test_capture_screen_shows_safety(client, fake):
+    h = signup(client)
+    fake.next = [Prediction("american_black_bear", 0.95)]
+    r = upload(client, h).json()
+    assert r["safety"] == "danger" and r["safe_distance"] == "50 yards (45 m)"
+    assert "bear" in r["safety_note"] and "safety_tip" not in r
+    b = client.get("/me/bonds", headers=h).json()["bonds"][0]
+    assert b["max_level"] == 2 and {n["id"] for n in b["notes"]} == {"first", "star"}
+    fake.next = [Prediction("western_gray_squirrel", 0.95)]
+    r = upload(client, h).json()
+    assert r["safety"] == "none" and r["safety_note"] is None

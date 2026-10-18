@@ -1,7 +1,10 @@
 package com.captureanimals.app
 
+import android.Manifest
 import android.graphics.BitmapFactory
+import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -36,9 +39,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -57,6 +60,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -85,10 +89,13 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        FriendAlerts.schedule(this)
+        // A friend request notification opens the Friends tab.
+        val openTab = intent?.getStringExtra(FriendAlerts.EXTRA_TAB)
         setContent {
             MaterialTheme(colorScheme = if (isSystemInDarkTheme()) darkColorScheme(primary = Forest80)
                                         else lightColorScheme(primary = Forest40)) {
-                App()
+                App(openTab = openTab)
             }
         }
     }
@@ -106,12 +113,42 @@ fun rarityColor(rarity: String): Color = when (rarity) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel()) {
+fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), openTab: String? = null) {
     val state by vm.state.collectAsStateWithLifecycle()
-    var tabChoice by rememberSaveable { mutableIntStateOf(0) }
+    val socialState by social.state.collectAsStateWithLifecycle()
+    var tabChoice by rememberSaveable { mutableIntStateOf(TABS.indexOfFirst { it.key == openTab }.coerceAtLeast(0)) }
     var showAccount by rememberSaveable { mutableStateOf(false) }
-    // A different player (or none) sees nothing of the last one's feed and album.
-    androidx.compose.runtime.LaunchedEffect(state.account?.username) { social.clear() }
+    // Android 13+ asks before showing notifications; ask once a player has signed in.
+    val askNotify = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    val context = LocalContext.current
+    // A different player (or none) sees nothing of the last one's feed and album. While
+    // the app is open, friend requests are checked every minute for the tab's badge.
+    LaunchedEffect(state.account?.username) {
+        social.clear()
+        if (state.account == null) return@LaunchedEffect
+        if (Build.VERSION.SDK_INT >= 33 && !FriendAlerts.canNotify(context)) askNotify.launch(Manifest.permission.POST_NOTIFICATIONS)
+        while (true) {
+            social.checkRequests()
+            kotlinx.coroutines.delay(60_000)
+        }
+    }
+    // A newer app version (a major update) on the game server: offer it once per version.
+    var update by remember { mutableStateOf<Updates.Available?>(null) }
+    LaunchedEffect(state.server) { if (state.server != null) update = Updates.check(context) }
+    update?.let { u ->
+        AlertDialog(onDismissRequest = { update = null },
+            title = { Text("A new version is available") },
+            text = { Text("Capture Animals ${u.version} is out (you have ${BuildConfigCompat.version(context)}). " +
+                "Download it, then open the file to install it over this one. Your captures stay.") },
+            confirmButton = {
+                Button(onClick = {
+                    update = null
+                    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(u.url))) }
+                }) { Text("Download") }
+            },
+            dismissButton = { TextButton(onClick = { Updates.skip(context, u.version); update = null }) { Text("Later") } })
+    }
+    val requests = socialState.friends?.incoming?.size ?: 0
     if (showAccount) AccountDialog(state, vm) { showAccount = false }
     var dexSlug by rememberSaveable { mutableStateOf<String?>(null) }
     val info = state.info
@@ -131,7 +168,7 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel()) 
                 val badge = state.collection[entry.slug]
                 DexEntryScreen(info.dexNumber(entry.slug), entry, badge, entryDex, bond = {
                     if (state.account != null && badge != null) {
-                        BondPanel(entry.slug, state.buddy?.takeIf { it.chosen }?.bond?.slug, vm::setBuddy)
+                        BondPanel(entry.slug)
                     }
                 }) { dexSlug = null }
             }
@@ -148,7 +185,7 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel()) 
     Scaffold(topBar = {
         Column {
             TopAppBar(title = { Text(if (tab == 0) "Capture Animals" else TABS[tab].title) }, actions = {
-                if (state.states.size > 1) StateMenu(state.states, state.stateCode, vm::chooseState)
+                if (state.states.size > 1) StateMenu(state.states, state.stateCode, state.unlockedStates(), vm::chooseState)
                 TextButton(onClick = { showAccount = true }) {
                     Text(state.account?.let { "👤 ${it.username}" } ?: "Log in", maxLines = 1,
                         overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 120.dp))
@@ -171,23 +208,33 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel()) 
         NavigationBar {
             TABS.forEachIndexed { i, t ->
                 if (t.key == "hotspots" && dex?.parks.isNullOrEmpty()) return@forEachIndexed
+                // Six tabs: one line of small text each, so "Field Guide" doesn't wrap.
                 NavigationBarItem(selected = tab == i, onClick = { tabChoice = i },
-                    icon = { TabIcon(t.icon, Modifier.size(28.dp)) }, label = { Text(t.title) })
+                    icon = {
+                        BadgedBox(badge = { if (t.key == "social" && requests > 0) Badge { Text("$requests") } }) {
+                            TabIcon(t.icon, Modifier.size(28.dp))
+                        }
+                    },
+                    label = { Text(t.title, maxLines = 1, softWrap = false, fontSize = 11.sp) })
             }
         }
     }) { padding ->
         Box(Modifier.padding(padding).fillMaxSize()) {
             when {
                 info == null -> CircularProgressIndicator(Modifier.align(Alignment.Center))
-                TABS[tab].key == "catch" -> CatchScreen(state, vm::capture, vm::dismissResult, vm::pick) { dexSlug = it }
-                TABS[tab].key == "social" -> SocialScreen(state, social, onSignIn = { showAccount = true }) { dexSlug = it }
+                TABS[tab].key == "catch" -> CatchScreen(state, vm::capture, vm::dismissResult, vm::pick, vm::saveWhereWhen) { dexSlug = it }
+                TABS[tab].key == "feed" ->
+                    SocialScreen(state, social, "feed", onSignIn = { showAccount = true }) { dexSlug = it }
+                TABS[tab].key == "social" ->
+                    SocialScreen(state, social, "friends", onSignIn = { showAccount = true }) { dexSlug = it }
                 TABS[tab].key == "gallery" && state.account != null ->
-                    OnlinePhotosScreen(social, onOpenDex = { dexSlug = it }, onDeleted = vm::reloadCollection)
+                    OnlinePhotosScreen(social, onOpenDex = { dexSlug = it }, onDeleted = vm::reloadCollection,
+                        parks = state.fieldGuide?.parks.orEmpty())
                 TABS[tab].key == "collection" -> {
                     val sets = remember(state.sets, info, dex, state.stateCode) {
                         state.sets.forState(state.stateCode, info.species.map { it.slug }.toSet()) { dex?.details?.get(it)?.safety }
                     }
-                    CollectionScreen(info, dex, state.stateCode, state.collection, state.buddy, sets) { dexSlug = it }
+                    CollectionScreen(info, dex, state.stateCode, state.collection, sets) { dexSlug = it }
                 }
                 TABS[tab].key == "gallery" -> GalleryScreen(state.allSpecies, state.collection, onOpenDex = { dexSlug = it },
                     onDelete = vm::deleteCatch)
@@ -197,35 +244,6 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel()) 
     }
 }
 
-/** "📍 NC" in the top bar; switching changes the Field Guide, parks and which animals count. */
-@Composable
-private fun StateMenu(states: List<StateInfo>, current: String, onPick: (String) -> Unit) {
-    var open by remember { mutableStateOf(false) }
-    Box {
-        TextButton(onClick = { open = true }) { Text("📍 $current") }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            states.forEach { s ->
-                DropdownMenuItem(text = { Text(s.name) }, onClick = { open = false; onPick(s.code) })
-            }
-        }
-    }
-}
-
-/** First launch: which state are you in? Same question as the website's sign-up. */
-@Composable
-private fun StatePicker(states: List<StateInfo>, onDismiss: () -> Unit, onPick: (String) -> Unit) {
-    AlertDialog(onDismissRequest = onDismiss, confirmButton = {},
-        title = { Text("Which state are you in?") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Your Field Guide and parks follow your state. You can change it any time with 📍 at the top.")
-                states.forEach { s ->
-                    OutlinedButton(onClick = { onPick(s.code) }, modifier = Modifier.fillMaxWidth()) { Text(s.name) }
-                }
-            }
-        })
-}
-
 // Icons are the website's 16x16 pixel-art tab icons (species/sprites/ui_tab_*.png).
 private class AppTab(val key: String, val title: String, val icon: String)
 
@@ -233,20 +251,21 @@ private val TABS = listOf(
     AppTab("catch", "Capture", "ui_tab_capture"),
     AppTab("collection", "Field Guide", "ui_tab_guide"),
     AppTab("gallery", "Photos", "ui_tab_photos"),
-    AppTab("social", "Friends", "ui_tab_friends"),
+    AppTab("feed", "Feed", "ui_tab_feed"),
     AppTab("hotspots", "Parks", "ui_tab_parks"),
+    AppTab("social", "Friends", "ui_tab_friends"),
 )
 
 @Composable
-fun CatchScreen(state: UiState, onCapture: (Uri, Pair<Double, Double>?) -> Unit, onDismiss: () -> Unit,
-                onPick: (String?) -> Unit, onOpenDex: (String) -> Unit) {
+fun CatchScreen(state: UiState, onCapture: (Uri, Pair<Double, Double>?, Boolean) -> Unit, onDismiss: () -> Unit,
+                onPick: (String?) -> Unit, onSaveWhereWhen: SaveWhereWhen, onOpenDex: (String) -> Unit) {
     val context = LocalContext.current
     var saveLocation by rememberSaveable { mutableStateOf(true) }
     val askLocation = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
         if (granted.values.none { it }) saveLocation = false
     }
     val onPhoto: (Uri) -> Unit = { uri ->
-        onCapture(uri, if (state.account != null && saveLocation) lastLocation(context) else null)
+        onCapture(uri, if (state.account != null && saveLocation) lastLocation(context) else null, saveLocation)
     }
     var pendingCameraUri by rememberSaveable { mutableStateOf<Uri?>(null) }
     val takePicture = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
@@ -296,14 +315,19 @@ fun CatchScreen(state: UiState, onCapture: (Uri, Pair<Double, Double>?) -> Unit,
             Text("Identifying…", style = MaterialTheme.typography.bodyMedium)
         }
         state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        state.result?.let { ResultCard(it, state.info?.species.orEmpty(), onDismiss, onPick, onOpenDex) }
+        state.result?.let { r ->
+            ResultCard(r, onDismiss, onPick, onOpenDex, state.fieldGuide?.parks.orEmpty(), onSaveWhereWhen,
+                safety = r.species?.let { state.fieldGuide?.details?.get(it.slug) }
+                    ?.takeIf { it.safety == "caution" || it.safety == "danger" })
+        }
         if (state.account != null) state.week?.let { ChallengesCard(it) }
     }
 }
 
 @Composable
-fun ResultCard(r: CaptureResult, stateSpecies: List<Species>, onDismiss: () -> Unit, onPick: (String?) -> Unit,
-               onOpenDex: (String) -> Unit) {
+fun ResultCard(r: CaptureResult, onDismiss: () -> Unit, onPick: (String?) -> Unit, onOpenDex: (String) -> Unit,
+               parks: List<Park> = emptyList(), onSaveWhereWhen: SaveWhereWhen? = null,
+               safety: SpeciesDetails? = null) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Image(r.photo.asImageBitmap(), contentDescription = "Your photo",
@@ -312,6 +336,7 @@ fun ResultCard(r: CaptureResult, stateSpecies: List<Species>, onDismiss: () -> U
                     .clip(RoundedCornerShape(12.dp)),
                 contentScale = ContentScale.Crop)
             if (r.matched && r.species != null) {
+                if (r.newBadge) CaptureReveal(r.species.slug, Modifier.size(120.dp).align(Alignment.CenterHorizontally))
                 Text(if (r.newBadge) "New badge!" else "Captured again",
                     style = MaterialTheme.typography.labelLarge, color = rarityColor(r.species.rarity))
                 Text(r.species.commonName, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
@@ -319,6 +344,8 @@ fun ResultCard(r: CaptureResult, stateSpecies: List<Species>, onDismiss: () -> U
                 RarityTag(r.species.rarity)
             }
             Text(r.message, style = MaterialTheme.typography.bodyLarge)
+            if (r.matched && safety != null) SafetyCard(safety)
+            if (r.whereWhen != null && onSaveWhereWhen != null) WhereWhenRow(r.whereWhen, parks, onSaveWhereWhen)
             r.score?.let { ScoreBox(it, r.bondUp) }
             Text("Top guesses", style = MaterialTheme.typography.labelLarge)
             r.guesses.forEach { g ->
@@ -327,7 +354,7 @@ fun ResultCard(r: CaptureResult, stateSpecies: List<Species>, onDismiss: () -> U
                     Text("${(g.probability * 100).toInt()}%")
                 }
             }
-            if (!r.picked) PickPanel(r, stateSpecies, onPick)
+            if (!r.picked) PickPanel(r, onPick)
             Row(Modifier.align(Alignment.End)) {
                 if (r.matched && r.species != null) {
                     TextButton(onClick = { onOpenDex(r.species.slug) }) { Text("Field Guide entry") }
@@ -340,44 +367,22 @@ fun ResultCard(r: CaptureResult, stateSpecies: List<Species>, onDismiss: () -> U
 
 /**
  * "Wrong animal?": the player picks one of the model's other guesses, or says
- * "None of these" and searches the state's list (or skips the photo). We trust them.
+ * "None of these" and the photo doesn't count for any animal. We trust them.
  */
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
-fun PickPanel(r: CaptureResult, stateSpecies: List<Species>, onPick: (String?) -> Unit) {
+fun PickPanel(r: CaptureResult, onPick: (String?) -> Unit) {
     val guesses = r.choices.filter { !(r.matched && it.label == r.species?.slug) }
-    var searching by remember(r) { mutableStateOf(guesses.isEmpty()) }
-    var query by remember(r) { mutableStateOf("") }
+    if (!r.matched && guesses.isEmpty()) return
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(when {
-            r.matched -> "Wrong animal?"
-            guesses.isNotEmpty() -> "Know what it is?"
-            else -> "Know what it is? Find it below."
-        }, style = MaterialTheme.typography.labelLarge)
-        if (guesses.isNotEmpty()) {
-            androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                guesses.forEach { c ->
-                    OutlinedButton(onClick = { onPick(c.label) }) {
-                        Text("${c.name} · ${(c.probability * 100).toInt()}%")
-                    }
+        Text(if (r.matched) "Wrong animal?" else "Know what it is?", style = MaterialTheme.typography.labelLarge)
+        androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            guesses.forEach { c ->
+                OutlinedButton(onClick = { onPick(c.label) }) {
+                    Text("${c.name} · ${(c.probability * 100).toInt()}%")
                 }
-                if (!searching) TextButton(onClick = { searching = true }) { Text("None of these") }
             }
-        }
-        if (searching) {
-            androidx.compose.material3.OutlinedTextField(query, { query = it }, singleLine = true,
-                placeholder = { Text("Type the animal's name") }, modifier = Modifier.fillMaxWidth())
-            val hits = remember(query, stateSpecies) { searchSpecies(stateSpecies, query) }
-            if (query.trim().length >= 2 && hits.isEmpty()) {
-                Text("No animal on your state's list matches \"${query.trim()}\".",
-                    style = MaterialTheme.typography.bodyMedium)
-            }
-            androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                hits.forEach { s -> OutlinedButton(onClick = { onPick(s.slug) }) { Text(s.commonName) } }
-            }
-            TextButton(onClick = { onPick(null) }) {
-                Text(if (r.matched) "Skip: don't capture it" else "Skip this photo")
-            }
+            TextButton(onClick = { onPick(null) }) { Text("None of these") }
         }
     }
 }
@@ -391,11 +396,11 @@ fun RarityTag(rarity: String) {
 
 /** Field Guide groups, like the website: captured, then the rest with animals seen this
  *  month before ones not around this time of year (split by a plain line, no label). */
-private val SECTIONS = listOf("Captured", "Not captured yet", null)
+private val SECTIONS = listOf("Captured", "Not captured yet")
 
 @Composable
 fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, stateCode: String, collection: Map<String, Badge>,
-                     buddy: Buddy?, sets: List<SetDef>, onOpen: (String) -> Unit) {
+                     sets: List<SetDef>, onOpen: (String) -> Unit) {
     // The live habitat sits above the list, as on the website; one WebView for the screen.
     val habitat = rememberHabitatView()
     val animals = remember(info, dex, collection) { habitatAnimals(info, dex, collection) }
@@ -403,19 +408,13 @@ fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, stateCode: String, colle
     var category by rememberSaveable { mutableStateOf("all") }
     val month = remember { java.util.Calendar.getInstance().get(java.util.Calendar.MONTH) + 1 }
     val shown = info.dexOrder.filter { category == "all" || it.category == category }
-    // dexOrder is already common to legendary, so each section keeps that order.
-    val sections = shown.groupBy { s ->
-        when {
-            s.slug in collection -> 0
-            dex?.inSeason(s.slug, month) != false -> 1
-            else -> 2
-        }
-    }
+    // dexOrder is already common to legendary, so each section keeps that order
+    // and shows each rarity heading once.
+    val sections = shown.groupBy { s -> if (s.slug in collection) 0 else 1 }
 
     LazyVerticalGrid(columns = GridCells.Adaptive(72.dp), modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(8.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        if (buddy != null) item(span = { GridItemSpan(maxLineSpan) }, key = "buddy") { BuddyCard(buddy, onOpen) }
         item(span = { GridItemSpan(maxLineSpan) }, key = "habitat") {
             Habitat(habitat, animals, stateCode, Modifier.padding(bottom = 4.dp), onOpen = onOpen)
         }
@@ -429,11 +428,9 @@ fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, stateCode: String, colle
         }
         SECTIONS.forEachIndexed { i, title ->
             val list = sections[i] ?: return@forEachIndexed
-            // The last group only gets the heading when nothing is in season.
-            val heading = title ?: "Not captured yet".takeIf { sections[1] == null }
             item(span = { GridItemSpan(maxLineSpan) }, key = "section-$i") {
                 Column(Modifier.padding(top = 12.dp)) {
-                    if (heading != null) Text(heading, style = MaterialTheme.typography.titleMedium)
+                    Text(title, style = MaterialTheme.typography.titleMedium)
                     HorizontalDivider()
                 }
             }
@@ -442,7 +439,8 @@ fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, stateCode: String, colle
                     Text(rarity.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.labelMedium,
                         color = rarityColor(rarity), modifier = Modifier.padding(top = 4.dp))
                 }
-                items(tier, key = { it.slug }) { s ->
+                // Within a rarity, animals around this month come first.
+                items(tier.sortedBy { dex?.inSeason(it.slug, month) == false }, key = { it.slug }) { s ->
                     SpeciesTile(info.dexNumber(s.slug), s, collection[s.slug]) { onOpen(s.slug) }
                 }
             }

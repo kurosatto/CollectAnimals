@@ -4,6 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Capture Animals</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#2f7d4f">
+<meta name="description" content="Photograph wild animals and capture them in your Field Guide.">
+<link rel="icon" type="image/png" href="/icons/favicon-32.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Capture Animals">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <style>
   :root { --bg:#f6f4ee; --card:#fff; --ink:#1d2a22; --muted:#6b7a70; --accent:#2f7d4f; --line:#e3e0d6;
           --common:#7a8a80; --uncommon:#2f7d4f; --rare:#2d5fa8; --legendary:#b7791f; }
@@ -13,6 +22,10 @@
   body { margin:0; font-family:system-ui,sans-serif; background:var(--bg); color:var(--ink); }
   main { max-width:960px; margin:0 auto; padding:16px; }
   header { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+  .head-right { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:4px 12px; }
+  #update { display:flex; width:100%; justify-content:center; gap:8px; margin:8px 0 0; border-radius:10px; }
+  #version { text-align:center; font-size:.8rem; margin:24px 0 8px; }
+  #offline { font-size:.85rem; padding:2px 8px; border-radius:999px; background:var(--line); }
   #who label { display:inline-flex; align-items:center; gap:4px; white-space:nowrap; }
   #who:not(.hidden) { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:4px 12px; }
   h1 { font-size:1.5rem; margin:.5rem 0; }
@@ -35,8 +48,6 @@
   .pick .none { border-style:dashed; }
   .pick-panel { margin-top:10px; }
   .pick-panel > p { margin:0; }
-  .pick-search { margin-top:10px; display:grid; gap:8px; }
-  .pick-search .ghost { justify-self:start; }
   .tile { cursor:pointer; }
   .tile:hover { border-color:var(--accent); }
   .hidden, .off { display:none !important; }
@@ -52,6 +63,13 @@
   dialog { border:1px solid var(--line); border-radius:14px; background:var(--card); color:var(--ink);
            padding:0; width:min(560px, calc(100vw - 32px)); }
   dialog::backdrop { background:rgba(0,0,0,.45); }
+  #state-search { width:100%; box-sizing:border-box; margin:12px 0 8px; }
+  .state-list { max-height:min(420px, 60dvh); overflow-y:auto; display:grid; gap:2px; }
+  .state-list button { text-align:left; padding:9px 10px; border-radius:8px; border:none; background:transparent;
+                       color:var(--ink); cursor:pointer; display:flex; justify-content:space-between; gap:8px; }
+  .state-list button:hover, .state-list button:focus-visible { background:var(--line); }
+  .state-list button.on { font-weight:600; color:var(--accent); }
+  .state-list .sep { font-size:.75rem; color:var(--muted); padding:8px 10px 2px; text-transform:uppercase; letter-spacing:.04em; }
   .dex { padding:16px; }
   .dex-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
   .dex-head h2 { margin:0; }
@@ -69,9 +87,16 @@
   .zoom-map { height:360px; border-radius:10px; overflow:hidden; z-index:0; }
   @media (max-width:640px) { .zoom-map { height:300px; } }
   .locate-btn { width:34px; height:34px; background:#fff; cursor:pointer; font-size:1rem; padding:0; }
-  .hot-list { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
-  .hot-list button { background:var(--bg); color:var(--ink); border:1px solid var(--line); padding:6px 10px; font-size:.85rem; }
-  .hot-list button.on { border-color:var(--accent); color:var(--accent); }
+  .hot-list { display:flex; flex-direction:column; gap:6px; margin-top:12px; }
+  .hot-head { margin:0 0 2px; }
+  .hot-head .linkish { background:none; border:0; padding:0; color:var(--accent); text-decoration:underline; font:inherit; cursor:pointer; }
+  .hot-row { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:12px; align-items:center; text-align:left;
+    background:var(--bg); color:var(--ink); border:1px solid var(--line); padding:10px 12px; font-size:.95rem; }
+  .hot-row.on { border-color:var(--accent); }
+  .hot-row .hot-name { overflow:hidden; text-overflow:ellipsis; }
+  .hot-row .hot-new { font-weight:600; color:var(--accent); }
+  .hot-row .hot-far { min-width:4.5em; text-align:right; font-size:.85rem; }
+  .hot-list > button.ghost { align-self:flex-start; }
   .hot-species { display:flex; flex-wrap:wrap; gap:6px; padding:0; list-style:none; }
   .hot-species li { border:1px solid var(--line); border-radius:999px; padding:3px 10px; font-size:.85rem; cursor:pointer; }
   .hot-species li.caught { border-color:var(--accent); }
@@ -95,6 +120,32 @@
   .comments form input { flex:1 1 120px; width:0; min-width:0; padding:6px 8px; }
   .comments form button { padding:6px 10px; }
   .feed-entry .comments { padding:0 6px 8px 82px; }
+  .photo img, .feed-item img { cursor:zoom-in; }
+  .ww { display:grid; gap:2px; margin-top:8px; font-size:.9rem; }
+  .ww button.link { justify-self:start; font-size:.85rem; }
+  .ww-edit { display:grid; gap:8px; margin-top:8px; }
+  .ww-edit label { display:grid; gap:4px; font-size:.85rem; }
+  .ww-edit .row { display:flex; flex-wrap:wrap; gap:6px; }
+  .ww-edit .row button.ghost { background:none; color:var(--ink); border:1px solid var(--line); padding:6px 10px; }
+  .ww-map { height:220px; border-radius:10px; overflow:hidden; z-index:0; }
+  .ww-err { color:#c0392b; font-size:.85rem; }
+  /* Full-screen photo: the picture fills the screen, likes and comments sit beside it
+     (below it on phones). */
+  dialog#viewer { width:100vw; height:100dvh; max-width:none; max-height:none; margin:0; border:none; border-radius:0;
+                  background:#000; color:#fff; }
+  #viewer .wrap { display:grid; grid-template-columns:minmax(0,1fr) 340px; height:100%; }
+  #viewer .pic { position:relative; min-height:0; display:grid; place-items:center; }
+  #viewer .pic img { max-width:100%; max-height:100%; object-fit:contain; display:block; }
+  #viewer .shut { position:absolute; top:max(8px, env(safe-area-inset-top)); right:8px; background:rgba(0,0,0,.55);
+               color:#fff; border:none; font-size:1.6rem; line-height:1; width:40px; height:40px; border-radius:50%; padding:0; }
+  #viewer .side { background:var(--card); color:var(--ink); padding:14px 16px calc(14px + env(safe-area-inset-bottom));
+                  overflow-y:auto; display:grid; align-content:start; gap:6px; font-size:.9rem; }
+  #viewer .side h3 { margin:0; font-size:1.1rem; }
+  #viewer .side .pts { color:var(--legendary); font-weight:600; }
+  @media (max-width:760px) {
+    #viewer .wrap { grid-template-columns:1fr; grid-template-rows:minmax(0,1fr) auto; }
+    #viewer .side { max-height:45dvh; }
+  }
   .like.on { border-color:#c0392b; color:#c0392b; }
   .seg { display:flex; gap:6px; flex-wrap:wrap; margin-top:12px; }
   .seg button { background:none; color:var(--ink); border:1px solid var(--line); padding:4px 10px; font-size:.85rem; }
@@ -125,8 +176,15 @@
   nav#tabs button.on .ic { opacity:1; transform:translateY(-1px); }
   nav#tabs button { white-space:nowrap; }
   nav#tabs button.on { color:var(--accent); font-weight:600; }
+  nav#tabs button { position:relative; }
+  nav#tabs .badge { position:absolute; top:3px; left:calc(50% + 6px); min-width:18px; padding:0 5px; border-radius:9px;
+                    background:#d2423a; color:#fff; font-size:.7rem; font-weight:700; line-height:18px; }
+  #toast { position:fixed; left:50%; top:12px; transform:translateX(-50%); z-index:20; width:max-content; max-width:calc(100% - 32px);
+           background:var(--card); color:var(--ink); border:1px solid var(--line); border-radius:12px;
+           padding:10px 14px; box-shadow:0 4px 16px rgba(0,0,0,.15); cursor:pointer; white-space:pre-line; }
   body.authed main { padding-bottom:84px; }
   @media (min-width:720px) {
+    nav#tabs .badge { position:static; }
     nav#tabs { position:sticky; top:0; bottom:auto; margin:12px 0 0; border:1px solid var(--line);
                border-radius:12px; }
     nav#tabs button { grid-auto-flow:column; justify-content:center; gap:6px; font-size:.95rem; padding:10px; }
@@ -161,7 +219,6 @@
   .guide .section { grid-column:1 / -1; margin:16px 0 0; font-weight:700; font-size:.95rem;
                    border-bottom:1px solid var(--line); padding-bottom:3px; }
   .guide .section:first-child { margin-top:0; }
-  .guide .divider { grid-column:1 / -1; border-top:1px dashed var(--line); margin:12px 0 0; }
   .status.mine { color:var(--accent); }
   .status.friend { color:var(--muted); }
   .sprite.shadow { opacity:.55; }
@@ -180,6 +237,10 @@
   .week-row.done .tick { background:var(--accent); border-color:var(--accent); }
   .week-row.done .what { color:var(--muted); text-decoration:line-through; }
   .week-row .bar { grid-column:2 / 4; }
+  .safety-box { margin-top:10px; padding:8px 10px; border-radius:10px; max-width:360px; font-size:.9rem;
+                background:#fff4d6; color:#5a4200; border:1px solid #f0d58a; }
+  .safety-box.danger { background:#ffe3dc; color:#6b1d0c; border-color:#f3b3a2; }
+  .safety-box b { display:block; margin-bottom:2px; }
   .sets { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:10px; }
   .set { border:1px solid var(--line); border-radius:10px; padding:10px; display:grid; gap:6px; }
   .set.complete { border-color:var(--legendary); }
@@ -190,6 +251,7 @@
   .set-sprites img.missing { opacity:.4; }
   .score { margin-top:12px; border:1px solid var(--line); border-radius:10px; padding:10px 12px; max-width:320px; }
   .score-head { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+  .tile-stars { color:var(--legendary); font-size:.75rem; letter-spacing:0; }
   .score-stars { color:var(--legendary); font-size:1.3rem; letter-spacing:1px; }
   .score-total { font-weight:700; font-size:1.1rem; }
   .score-parts { display:grid; grid-template-columns:1fr auto; gap:2px 12px; margin-top:6px; font-size:.85rem; color:var(--muted); }
@@ -201,23 +263,43 @@
   .hab-bubble { position:absolute; transform:translate(-50%,-100%); background:var(--card); color:var(--ink);
                 border:1px solid var(--line); border-radius:8px; padding:3px 8px; font-size:.8rem; font-weight:600;
                 white-space:nowrap; pointer-events:none; box-shadow:0 2px 6px rgba(0,0,0,.15); }
+  .auth { display:grid; gap:4px 20px; }
+  .auth-scene { position:relative; }
+  .auth-place { position:absolute; z-index:1; top:8px; left:8px; padding:2px 8px; border-radius:999px; font-size:.8rem;
+                background:rgba(0,0,0,.45); color:#fff; pointer-events:none; }
+  .auth .habitat { margin:0; }
+  .pitch-title { font-size:1.3rem; margin:12px 0 6px; line-height:1.25; }
+  .pitch { margin:0 0 4px; }
+  #auth-title { font-size:1.05rem; margin:14px 0 8px; }
+  .auth form { flex-direction:column; }
+  .pitch-list { list-style:none; padding:0; margin:12px 0 0; display:grid; gap:8px;
+                grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); font-size:.9rem; }
+  .pitch-list li { display:flex; align-items:center; gap:8px; }
+  .pitch-list img { width:24px; height:24px; image-rendering:pixelated; flex:none; }
+  @media (min-width:760px) {
+    .auth { grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); align-items:center; }
+    .pitch-title { margin-top:0; }
+    .pitch-list { grid-column:1 / -1; }
+  }
   .hab-bar { display:flex; justify-content:space-between; align-items:center; gap:8px; margin:8px 0 12px; font-size:.85rem; }
   .hab-bar button { padding:4px 10px; font-size:.8rem; white-space:nowrap; }
-  /* Bonds and buddy (app/bonds.py): hearts are field notes done. */
+  /* Bonds (app/bonds.py): hearts are field notes done. */
   .hearts { color:#d6455d; letter-spacing:.02em; white-space:nowrap; }
   .hearts .off { color:var(--line); }
   .guide .tile .status .hearts { font-size:.6rem; letter-spacing:0; }
-  .buddy { display:flex; gap:12px; align-items:center; border:1px solid var(--line); border-radius:12px;
-           padding:10px 12px; margin-bottom:10px; background:var(--bg); }
-  .buddy img { width:64px; height:64px; image-rendering:pixelated; flex:none; cursor:pointer;
-               animation:buddy-bob 1.6s ease-in-out infinite; }
-  .buddy.napping img { animation:none; filter:saturate(.6) brightness(.9); }
-  .buddy.excited img { animation-duration:.7s; }
-  @keyframes buddy-bob { 50% { transform:translateY(-4px); } }
-  @media (prefers-reduced-motion: reduce) { .buddy img { animation:none; } }
-  .buddy .who { font-weight:600; display:flex; flex-wrap:wrap; gap:4px 8px; align-items:baseline; }
-  .buddy .say { margin:4px 0 0; font-size:.9rem; }
-  .buddy .say::before { content:"“"; } .buddy .say::after { content:"”"; }
+  /* New capture: the silhouette, then the colour pixel art wipes in row by row. */
+  .reveal { position:relative; width:120px; height:120px; margin:4px auto 10px; }
+  .reveal img { position:absolute; inset:0; width:100%; height:100%; image-rendering:pixelated; }
+  .reveal .color { clip-path:inset(100% 0 0 0); animation:reveal-wipe 1.2s steps(20, end) .7s forwards; }
+  .reveal .sil { animation:reveal-shake .5s ease-in-out .1s 1; }
+  .reveal::after { content:""; position:absolute; inset:-14px; border-radius:50%; pointer-events:none; opacity:0;
+                   background:radial-gradient(circle, rgba(255,215,90,.55), rgba(255,215,90,0) 65%);
+                   animation:reveal-glow 1s ease-out 1.9s 1; }
+  @keyframes reveal-wipe { to { clip-path:inset(0 0 0 0); } }
+  @keyframes reveal-shake { 25% { transform:rotate(-6deg); } 75% { transform:rotate(6deg); } }
+  @keyframes reveal-glow { 30% { opacity:1; transform:scale(1.1); } to { opacity:0; transform:scale(1.25); } }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal .color { animation:none; clip-path:none; } .reveal .sil, .reveal::after { animation:none; } }
   .bond { margin-top:12px; border-top:1px solid var(--line); padding-top:10px; }
   .bond-head { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:6px 12px; }
   .bond-head button { padding:4px 10px; font-size:.8rem; }
@@ -230,11 +312,16 @@
 </head>
 <body>
 <main>
+  <button id="update" class="hidden"></button>
   <header>
-    <h1>Capture Animals <span class="muted" style="font-size:1rem" id="state-name">California</span></h1>
+    <h1>Capture Animals <span class="muted" style="font-size:1rem" id="state-name"></span></h1>
+    <div class="head-right">
+    <span id="offline" class="hidden" title="No connection: your Field Guide and habitat still work, new captures need the internet">Offline</span>
+    <button class="link hidden" id="install">Install app</button>
     <div id="who" class="hidden"><button class="link" id="username"></button>
-      <label title="Your primary location: your Field Guide, Parks and maps follow it, and friends see it first">📍 <select id="my-state" aria-label="Primary location"></select></label>
+      <button class="link" id="my-state" title="Your primary location: your Field Guide, Parks and maps follow it, and friends see it first">📍</button>
       <button class="link" id="logout">Log out</button></div>
+    </div>
   </header>
 
 <nav id="tabs" class="hidden">
@@ -246,17 +333,29 @@
   <button data-tab="friends"><img class="ic" src="/sprites/ui_tab_friends.png" alt="">Friends</button>
 </nav>
 
-  <section id="auth" class="card">
+  <section id="auth" class="card auth">
+    <div class="auth-scene" id="auth-scene"><span class="auth-place" id="auth-place">📍</span></div>
+    <div class="auth-side">
+    <h2 class="pitch-title">How many of <span id="pitch-state">your state</span>'s <span id="pitch-count">100</span> animals can you capture?</h2>
+    <p class="pitch">Spot a wild animal, snap a great photo, and it's captured in your Field Guide.
+      Then it moves into your own little pixel habitat, like the one here.</p>
     <h2 id="auth-title">Log in</h2>
     <form id="auth-form">
       <input id="email" type="email" placeholder="Email" class="hidden">
       <input id="ident" placeholder="Email or username" required>
       <input id="password" type="password" placeholder="Password (8+ chars)" required>
-      <select id="signup-state" class="hidden" aria-label="Your state"></select>
+      <button type="button" class="photo-btn hidden" id="signup-state">📍 Choose your state</button>
       <button type="submit" id="auth-submit">Log in</button>
     </form>
     <p class="muted"><button class="link" id="toggle">Need an account? Sign up</button></p>
     <p id="auth-error" style="color:#c0392b"></p>
+    </div>
+    <ul class="pitch-list">
+      <li><img src="/sprites/ui_tab_capture.png" alt="">Photograph real animals and find out what you met</li>
+      <li><img src="/sprites/ui_tab_guide.png" alt="">Fill your Field Guide, from backyard birds to legendary finds</li>
+      <li><img src="/sprites/ui_tab_photos.png" alt="">Earn up to 5 stars for sharp, well framed shots</li>
+      <li><img src="/sprites/ui_tab_friends.png" alt="">Add friends and race to capture them all</li>
+    </ul>
   </section>
 
   <section id="game" class="hidden">
@@ -290,7 +389,7 @@
     </div>
     <div class="card off" id="hotspots-card" data-tab="parks">
       <h2>Hotspots</h2>
-      <p class="muted" style="margin-top:0">Parks where you can spot lots of the 100. Tap a park to see which ones.</p>
+      <p class="muted" style="margin-top:0">Parks worth a trip for animals you haven't captured yet. Tap a park to see what lives there.</p>
       <div class="hot-wrap">
         <div class="dex-map" id="hot-map"></div>
         <div id="hot-detail"><p class="muted">Pick a park on the map or the list.</p></div>
@@ -299,12 +398,11 @@
     </div>
     <div class="card off" data-tab="dex">
       <h2>Field Guide <span id="progress" class="muted"></span></h2>
-      <div id="buddy" class="buddy hidden"></div>
       <div id="habitat" class="habitat">
         <canvas id="hab-canvas" width="480" height="270" aria-label="Your habitat: the animals you've captured"></canvas>
         <div id="hab-bubble" class="hab-bubble hidden"></div>
       </div>
-      <div class="hab-bar" id="hab-bar"><span id="hab-note" class="muted"></span><button class="ghost" id="hab-peek"></button></div>
+      <div class="hab-bar" id="hab-bar"><span id="hab-note" class="muted"></span><button class="ghost" id="hab-wx-here" hidden>📍 My weather</button><button class="ghost" id="hab-peek"></button></div>
       <div id="grid" class="grid guide"></div>
     </div>
     <div class="card off" data-tab="dex">
@@ -325,10 +423,13 @@
         <button type="submit">Add friend</button>
       </form>
       <p id="friend-msg" class="muted"></p>
+      <button id="notify-on" class="ghost hidden">🔔 Notify me about friend requests, likes and comments</button>
       <div id="friend-lists"></div>
     </div>
   </section>
+  <p id="version" class="muted">Capture Animals <span id="version-num">__RELEASE_VERSION__</span></p>
 </main>
+<div id="toast" class="hidden"></div>
 <dialog id="dex"><div class="dex">
   <div class="dex-head">
     <img class="sprite dex-sprite" id="dex-sprite" alt="">
@@ -355,6 +456,18 @@
 </div>
 <div class="dex-photos" id="dex-photos"></div>
 </dialog>
+<dialog id="viewer"><div class="wrap">
+  <div class="pic"><img id="viewer-img" alt=""><button class="shut" id="viewer-close" aria-label="Close">×</button></div>
+  <div class="side" id="viewer-side"></div>
+</div></dialog>
+<dialog id="state-pick"><div class="dex">
+  <div class="dex-head">
+    <div><h2 id="state-pick-title"></h2><div class="muted" id="state-pick-note"></div></div>
+    <button class="close" id="state-pick-close" aria-label="Close">×</button>
+  </div>
+  <input id="state-search" type="search" placeholder="Search states" aria-label="Search states" autocomplete="off">
+  <div id="state-list" class="state-list"></div>
+</div></dialog>
 <dialog id="album"><div class="dex">
   <div class="dex-head">
     <div><h2 id="album-title"></h2><div class="muted" id="album-sub"></div></div>
@@ -386,16 +499,37 @@ async function api(path, opts = {}) {
 
 function setToken(t) {
   token = t;
+  knownRequests = null;
+  activitySince = null;
   try { t ? localStorage.setItem("token", t) : localStorage.removeItem("token"); } catch {}
+  if (!t) forgetOfflineData();
   render();
+}
+
+// Logged out: the login page shows the state's scenery with one animal in it.
+// Before a state is chosen that's the last one used on this device, else the
+// first state in states.json.
+let savedState = null;
+try { savedState = localStorage.getItem("state"); } catch {}
+let authState = savedState;
+function authScene(code) {
+  authState = code || (states.some((st) => st.code === authState) ? authState : (states[0] || {}).code);
+  const name = (states.find((st) => st.code === authState) || {}).name || "";
+  $("auth-place").textContent = `📍 ${name}`;
+  $("pitch-state").textContent = name || "your state";
+  $("pitch-count").textContent = (states.find((st) => st.code === authState) || {}).species_count || 100;
+  $("state-name").textContent = name;
+  if (!token) habShowcase(authState, $("auth-scene"));
 }
 
 $("toggle").onclick = () => {
   signup = !signup;
+  // The state last used on this device (not a guess) starts out chosen.
+  if (signup && !signupState && states.some((st) => st.code === savedState)) setSignupState(savedState);
   $("auth-title").textContent = $("auth-submit").textContent = signup ? "Sign up" : "Log in";
   $("toggle").textContent = signup ? "Have an account? Log in" : "Need an account? Sign up";
   $("email").classList.toggle("hidden", !signup);
-  $("signup-state").classList.toggle("hidden", !signup);
+  $("signup-state").classList.toggle("hidden", !signup || states.length < 2);
   $("email").required = signup;
   $("ident").placeholder = signup ? "Username" : "Email or username";
 };
@@ -406,9 +540,12 @@ $("auth-form").onsubmit = async (e) => {
   try {
     let r;
     if (signup) {
+      // Where they live decides their Field Guide, so ask rather than assume.
+      if (!signupState && states.length > 1) await chooseSignupState();
+      if (!signupState && states.length > 1) return;
       r = await api("/auth/register", { method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: $("email").value, username: $("ident").value, password: $("password").value,
-                               state: $("signup-state").value }) });
+                               state: signupState || undefined }) });
     } else {
       r = await api("/auth/login", { method: "POST",
         body: new URLSearchParams({ username: $("ident").value, password: $("password").value }) });
@@ -417,7 +554,7 @@ $("auth-form").onsubmit = async (e) => {
   } catch (err) { $("auth-error").textContent = err.message; }
 };
 
-$("logout").onclick = () => setToken(null);
+$("logout").onclick = async () => { await pushUnsubscribe(); setToken(null); };
 $("username").onclick = () => openProfile($("username").textContent);
 
 function here() {
@@ -447,6 +584,7 @@ $("upload-form").onsubmit = async (e) => {
   box.textContent = "Identifying…";
   const pos = await here();
   if (pos) { fd.append("latitude", pos.latitude); fd.append("longitude", pos.longitude); }
+  if (!$("use-location").checked) fd.append("save_place", "false");
   try {
     const r = await api("/captures", { method: "POST", body: fd });
     r.file = file;
@@ -458,13 +596,33 @@ $("upload-form").onsubmit = async (e) => {
     p.className = "muted";
     p.textContent = "Top guesses: " + r.top_predictions
       .map((x) => `${x.common_name || (x.label === "other" ? "not on the list" : "???")} ${(x.probability * 100).toFixed(0)}%`).join(", ");
+    if (r.new_badge && r.species?.slug) box.append(captureReveal(r.species.slug));
     box.append(h, p);
+    const sb = safetyBox(r);
+    if (sb) box.append(sb);
+    if (r.where_when) box.append(whereWhen(r.where_when, (res) => {
+      if (res.score) box.querySelector(".score")?.replaceWith(scoreCard(res.score));
+      if (res.bond_up?.length) box.querySelector(".ww").append(el("div", "", `Field notes ✓ ${res.bond_up.join(", ")}`));
+      loadCollection(); loadMyPhotos(); loadFeed();
+    }));
     if (r.score) box.append(scoreCard(r.score));
-    box.append(pickPanel(r, box));
+    const pp = pickPanel(r, box);
+    if (pp) box.append(pp);
     if (r.matched && !r.album_photo_id) keepWhich(r.species, r.capture_id, file, box, r.score && r.score.total);
     loadCollection(); loadFeed();
   } catch (err) { box.textContent = err.message; }
 };
+
+// Safety for animals rated caution or danger: how far back to stay, the
+// and the animal's own note.
+function safetyBox(r) {
+  if (!r.safety || r.safety === "none") return null;
+  const box = el("div", "safety-box" + (r.safety === "danger" ? " danger" : ""));
+  box.append(el("b", "", (r.safety === "danger" ? "⚠️ " : "✋ ") +
+    (r.safe_distance ? `Stay at least ${r.safe_distance} away` : "Look, don't touch")));
+  if (r.safety_note) box.append(el("span", "", r.safety_note));
+  return box;
+}
 
 // Photo score: stars for the photo itself, points with the bonuses added.
 const stars = (n) => "★".repeat(n) + "☆".repeat(5 - n);
@@ -475,6 +633,114 @@ function scoreCard(sc) {
   const rows = el("div", "score-parts");
   for (const part of sc.parts) rows.append(el("span", "", part.label), el("span", "", `+${part.points}`));
   box.append(head, rows);
+  return box;
+}
+
+// When and where a photo was taken: from the photo's metadata first, else the phone's
+// location (recent photos only) and the upload time. The owner can fix either: the
+// time can't be after the upload, and the place has to be in their state.
+const WW_SOURCE = { photo: "from the photo", device: "from your phone", upload: "upload time", edited: "edited by you" };
+const fmtWhen = (iso) => new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+const localNow = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); };
+let parksFor = {};
+function whereWhen(ww, onSaved) {
+  const box = el("div", "ww");
+  const show = () => {
+    box.innerHTML = "";
+    const t = el("div", "", `📅 ${fmtWhen(ww.taken_at)}`);
+    t.append(el("span", "muted", ` · ${WW_SOURCE[ww.time_source] || ""}`));
+    const p = el("div", "", ww.place ? `📍 ${ww.place}` : "📍 No place saved");
+    if (ww.place && WW_SOURCE[ww.place_source]) p.append(el("span", "muted", ` · ${WW_SOURCE[ww.place_source]}`));
+    const edit = el("button", "link", "Edit time and place");
+    edit.type = "button";
+    edit.onclick = openEditor;
+    box.append(t, p, edit);
+  };
+  const openEditor = async () => {
+    box.innerHTML = "";
+    // The capture's own state: edited places have to be inside it.
+    const st = states.find((x) => x.code === ww.state) || myState;
+    const form = el("div", "ww-edit");
+    const whenL = el("label", "", "When you took it");
+    const when = el("input");
+    when.type = "datetime-local"; when.value = ww.taken_at.slice(0, 16); when.max = localNow();
+    whenL.append(when);
+    let pin = ww.latitude != null ? [ww.latitude, ww.longitude] : null;
+    const where = el("div", "muted");
+    const parkSel = el("select");
+    parkSel.append(new Option(`Parks in ${st.name}…`, ""));
+    const mapBox = el("div", "ww-map");
+    const row = el("div", "row");
+    const btn = (label, fn) => { const b = el("button", "ghost", label); b.type = "button"; b.onclick = fn; row.append(b); return b; };
+    let map = null, marker = null;
+    const setPin = (p, label) => {
+      pin = p;
+      where.textContent = p ? (label ? `📍 ${label}` : `📍 ${p[0].toFixed(4)}, ${p[1].toFixed(4)}`) : "📍 No place";
+      if (!map) return;
+      if (p) {
+        if (marker) marker.setLatLng(p); else {
+          marker = L.marker(p, { draggable: true }).addTo(map);
+          marker.on("dragend", () => { const ll = marker.getLatLng(); setPin([ll.lat, ll.lng]); });
+        }
+        map.setView(p, Math.max(map.getZoom() || 0, 11));
+      } else if (marker) { marker.remove(); marker = null; }
+    };
+    btn("Where I am now", (e) => {
+      if (!navigator.geolocation) return;
+      e.target.disabled = true;
+      navigator.geolocation.getCurrentPosition((g) => { e.target.disabled = false; setPin([g.coords.latitude, g.coords.longitude]); },
+        () => { e.target.disabled = false; err.textContent = "Couldn't get your location."; }, { timeout: 8000 });
+    });
+    btn("No place", () => { parkSel.value = ""; setPin(null); });
+    const err = el("div", "ww-err");
+    const actions = el("div", "row");
+    const save = el("button", "", "Save"); save.type = "button";
+    const cancel = el("button", "ghost", "Cancel"); cancel.type = "button";
+    cancel.onclick = show;
+    actions.append(save, cancel);
+    form.append(whenL, el("div", "", "Where you took it"), where, parkSel, row);
+    if (window.L) form.append(mapBox, el("div", "muted", "Tap the map to move the pin."));
+    form.append(err, actions);
+    box.append(form);
+    setPin(pin, ww.place);
+    if (window.L) {
+      map = L.map(mapBox, { scrollWheelZoom: false });
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 17,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(map);
+      const b = st.bounds;
+      map.fitBounds([[b.south, b.west], [b.north, b.east]]);
+      map.on("click", (e) => { parkSel.value = ""; setPin([e.latlng.lat, e.latlng.lng]); });
+      setPin(pin, ww.place);
+      setTimeout(() => map.invalidateSize(), 50);
+    }
+    try {
+      parksFor[st.code] ||= await api(`/hotspots?state=${st.code}`);
+      for (const h of [...parksFor[st.code]].sort((a, b) => a.name.localeCompare(b.name)))
+        parkSel.append(new Option(h.name, `${h.lat},${h.lon}`));
+    } catch {}
+    parkSel.onchange = () => {
+      if (!parkSel.value) return;
+      setPin(parkSel.value.split(",").map(Number), parkSel.selectedOptions[0].textContent);
+    };
+    save.onclick = async () => {
+      err.textContent = "";
+      if (!when.value) { err.textContent = "Pick a date and time."; return; }
+      save.disabled = true;
+      try {
+        // Untouched minutes keep the photo's own seconds, so the time isn't marked as edited.
+        const body = { taken_at: when.value === ww.taken_at.slice(0, 16) ? ww.taken_at
+                       : when.value.length === 16 ? when.value + ":00" : when.value };
+        if (pin) { body.latitude = +pin[0].toFixed(6); body.longitude = +pin[1].toFixed(6); }
+        const res = await api(`/captures/${ww.capture_id}/where-when`, { method: "PUT",
+          headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+        ww = res.where_when;
+        if (map) map.remove();
+        show();
+        onSaved?.(res);
+      } catch (e) { err.textContent = e.message; save.disabled = false; }
+    };
+  };
+  show();
   return box;
 }
 
@@ -516,15 +782,16 @@ async function keepWhich(species, captureId, file, box, newScore) {
   if (old.like_count) wrap.append(el("p", "muted", `Your album photo has ${old.like_count} like${old.like_count > 1 ? "s" : ""}. They reset if you switch.`));
 }
 
-// "Wrong animal?": the player picks from the model's other guesses, or says
-// "None of these" and searches their state's list (or skips). We trust them.
+// "Wrong animal?": the player picks one of the model's other guesses, or says
+// "None of these" and the photo doesn't count for any animal. We trust them.
 function pickPanel(r, box) {
-  const wrap = el("div", "pick-panel");
   const guesses = (r.choices || []).filter((c) => !(r.matched && r.species && c.slug === r.species.slug));
-  wrap.append(el("p", "muted", r.matched ? "Wrong animal?" : guesses.length ? "Know what it is?" : "Know what it is? Find it below."));
+  if (!r.matched && !guesses.length) return null;
+  const wrap = el("div", "pick-panel");
+  wrap.append(el("p", "muted", r.matched ? "Wrong animal?" : "Know what it is?"));
   const list = el("div", "pick");
   const choose = async (label, b) => {
-    wrap.querySelectorAll("button, input").forEach((x) => { x.disabled = true; });
+    list.querySelectorAll("button").forEach((x) => { x.disabled = true; });
     try {
       const res = await api(`/captures/${r.capture_id}/pick`, { method: "POST",
         headers: { "Content-Type": "application/json" }, body: JSON.stringify({ label }) });
@@ -534,12 +801,17 @@ function pickPanel(r, box) {
       wrap.remove();
       box.querySelector(".keep")?.remove();
       box.querySelector(".score")?.remove();
+      box.querySelector(".reveal")?.remove();
+      if (res.new_badge && res.species?.slug) h.before(captureReveal(res.species.slug));
+      box.querySelector(".safety-box")?.remove();
       if (res.score) h.after(scoreCard(res.score));
+      const sb = safetyBox(res);
+      if (sb) h.after(sb);
       if (res.matched && !res.album_photo_id) keepWhich(res.species, r.capture_id, r.file, box, res.score && res.score.total);
       loadCollection(); loadFeed();
     } catch (err) {
       b.textContent = err.message;
-      wrap.querySelectorAll("button, input").forEach((x) => { x.disabled = false; });
+      list.querySelectorAll("button").forEach((x) => { x.disabled = false; });
     }
   };
   for (const c of guesses) {
@@ -548,39 +820,11 @@ function pickPanel(r, box) {
     b.onclick = () => choose(c.slug, b);
     list.append(b);
   }
-  // "None of these": search the state's list by name, or skip this photo.
-  const search = el("div", "pick-search" + (guesses.length ? " hidden" : ""));
-  const q = el("input");
-  q.type = "search"; q.placeholder = "Type the animal's name"; q.autocomplete = "off";
-  const found = el("div", "pick");
-  const skip = el("button", "ghost", r.matched ? "Skip: don't capture it" : "Skip this photo");
-  skip.type = "button";
-  skip.onclick = () => choose("none", skip);
-  let seq = 0;
-  q.oninput = async () => {
-    const text = q.value.trim(), mine = ++seq;
-    if (text.length < 2) { found.textContent = ""; return; }
-    let hits = [];
-    try { hits = await api(`/species-search?q=${encodeURIComponent(text)}`); } catch {}
-    if (mine !== seq) return;
-    found.textContent = "";
-    if (!hits.length) found.append(el("span", "muted", `No animal on your state's list matches "${text}".`));
-    for (const s of hits) {
-      const b = el("button", "", s.common_name);
-      b.type = "button"; b.title = s.scientific_name;
-      b.onclick = () => choose(s.slug, b);
-      found.append(b);
-    }
-  };
-  search.append(q, found, skip);
-  if (guesses.length) {
-    const none = el("button", "none", "None of these");
-    none.type = "button";
-    none.onclick = () => { none.remove(); search.classList.remove("hidden"); q.focus(); };
-    list.append(none);
-    wrap.append(list);
-  }
-  wrap.append(search);
+  const none = el("button", "none", "None of these");
+  none.type = "button";
+  none.onclick = () => choose("none", none);
+  list.append(none);
+  wrap.append(list);
   return wrap;
 }
 
@@ -646,7 +890,7 @@ async function loadSets() {
 
 async function loadCollection() {
   const c = await api("/me/collection");
-  loadSets(); loadChallenges(); loadBuddy();
+  loadSets(); loadChallenges();
   const entries = [...c.entries].sort((a, b) => dexSort(a.species, b.species));
   caughtNums = new Set(entries.filter((e) => e.caught).map((e) => e.species.number));
   if (hab.visit) hab.visit.home = entries; else habitatSet(entries);
@@ -659,13 +903,13 @@ async function loadCollection() {
 
 // The Field Guide grid: yours, or a friend's (`owner`, shown in their own state).
 function fillGuide(grid, entries, owner = null) {
-  // Captured first, then the rest: animals seen this month before ones that aren't
-  // around this time of year (split by a plain line, no label). Inside each group,
-  // common to legendary; the numbers keep the full Field Guide order.
+  // Captured first, then the rest. Inside each group, common to legendary with each
+  // rarity heading once; among the ones not captured yet, animals seen this month
+  // come before ones that aren't around this time of year. The numbers keep the
+  // full Field Guide order.
   const GROUPS = [
     ["Captured", (e) => e.caught],
-    ["Not captured yet", (e) => !e.caught && e.in_season !== false],
-    [null, (e) => !e.caught && e.in_season === false],
+    ["Not captured yet", (e) => !e.caught],
   ];
   // A friend's guide shows only what they've captured (numbers still follow the full list).
   if (owner) {
@@ -673,13 +917,11 @@ function fillGuide(grid, entries, owner = null) {
     if (!entries.some((e) => e.caught)) grid.append(el("p", "muted", `${owner.username} hasn't captured any animals yet.`));
   }
   const numbered = entries.map((e, i) => [e, i]);
-  let uncaughtShown = false;
+  const rank = ([e]) => RARITY_ORDER.indexOf(e.species.rarity) * 2 + (e.in_season === false ? 1 : 0);
   for (const [title, keep] of GROUPS) {
-    const list = numbered.filter(([e]) => keep(e));
+    const list = numbered.filter(([e]) => keep(e)).sort((a, b) => rank(a) - rank(b));
     if (!list.length) continue;
-    if (title) grid.append(el("div", "section", title));
-    else grid.append(el("div", uncaughtShown ? "divider" : "section", uncaughtShown ? "" : "Not captured yet"));
-    if (title === "Not captured yet") uncaughtShown = true;
+    grid.append(el("div", "section", title));
     let tier = null;
     list.forEach(([e, i]) => addTile(grid, e, i, tier !== e.species.rarity && (tier = e.species.rarity), owner));
   }
@@ -707,7 +949,11 @@ function addTile(grid, e, i, tier, owner = null) {
   const st = t.querySelector(".status");
   if (owner) {
     // A friend's guide: ✓ is theirs; also say when you have one they don't.
-    if (e.caught) { st.textContent = "✓"; st.classList.add("mine"); t.title = `Captured by ${owner.username}`; }
+    if (e.caught) {
+      st.textContent = e.photo_stars ? stars(e.photo_stars) : "✓";
+      st.classList.add(e.photo_stars ? "tile-stars" : "mine");
+      t.title = `Captured by ${owner.username}` + (e.photo_score != null ? `: ${e.photo_score.toLocaleString()} pts photo` : "");
+    }
     else if (e.you_caught) { st.textContent = "You have it"; st.classList.add("friend"); t.title = `${owner.username} hasn't captured it yet`; }
     t.onclick = () => openDex(s.number, i + 1, e.you_caught, owner.state);
     grid.append(t);
@@ -715,7 +961,9 @@ function addTile(grid, e, i, tier, owner = null) {
   }
   if (state === "mine") {
     st.append(heartsEl(e.bond || 1));
-    t.title = `Captured. Bond: ${BOND_TITLES[(e.bond || 1) - 1]}`;
+    if (e.photo_stars) st.append(el("div", "tile-stars", stars(e.photo_stars)));
+    t.title = `Captured. Bond: ${BOND_TITLES[(e.bond || 1) - 1]}` +
+      (e.photo_score != null ? `. Album photo: ${e.photo_score.toLocaleString()} pts` : "");
   }
   else if (state === "friend") {
     st.textContent = `👥 ${e.friends_caught}`;
@@ -726,8 +974,7 @@ function addTile(grid, e, i, tier, owner = null) {
   grid.append(t);
 }
 
-// Bonds: six field notes per captured animal, each a heart (app/bonds.py). The
-// buddy is the animal the player keeps closest; its mood follows recent outings.
+// Bonds: six field notes per captured animal, each a heart (app/bonds.py).
 const BOND_MAX = 6;
 const BOND_TITLES = ["Met", "Familiar", "Regular", "Friend", "Good friend", "Lifelong friend"];
 function heartsEl(n, max = BOND_MAX) {
@@ -736,30 +983,6 @@ function heartsEl(n, max = BOND_MAX) {
   if (max > n) h.append(el("span", "off", "♥".repeat(max - n)));
   h.setAttribute("aria-label", `Bond ${n} of ${max}`);
   return h;
-}
-
-async function loadBuddy() {
-  const box = $("buddy");
-  let b = null;
-  try { b = await api("/me/buddy"); } catch { /* the Field Guide works without it */ }
-  box.classList.toggle("hidden", !b);
-  if (!b) return;
-  const s = b.bond.species;
-  box.className = `buddy ${b.mood}`;
-  box.innerHTML = "";
-  const img = el("img");
-  img.src = spriteUrl(s.slug, true);
-  img.alt = s.common_name;
-  img.title = "Open its page";
-  img.onclick = () => openDex(s.number, dexNumbers[s.number], true);
-  const text = el("div");
-  const who = el("div", "who");
-  const MOOD = { napping: "napping 💤", happy: "happy", excited: "excited!" };
-  who.append(el("span", "", (b.chosen ? "Your buddy: " : "") + s.common_name), heartsEl(b.bond.level, b.bond.max_level),
-             el("span", "muted", `${b.bond.title} · ${MOOD[b.mood] || b.mood}`));
-  text.append(who, el("p", "say", b.line));
-  if (!b.chosen) text.append(el("div", "muted", "Pick any animal you've captured as your buddy from its page."));
-  box.append(img, text);
 }
 
 async function showBond(number) {
@@ -774,18 +997,7 @@ async function showBond(number) {
   const head = el("div", "bond-head");
   const left = el("div");
   left.append(el("strong", "", `Bond: ${b.title} `), heartsEl(b.level, b.max_level));
-  const pick = el("button", "ghost", "Make my buddy");
-  pick.onclick = async () => {
-    pick.disabled = true;
-    try { await api("/me/buddy", { method: "PUT", headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ species: String(number) }) });
-          pick.textContent = "Your buddy ✓"; loadBuddy(); }
-    catch (err) { pick.textContent = err.message; }
-  };
-  api("/me/buddy").then((me) => {
-    if (me && me.chosen && me.bond.species.number === number) { pick.textContent = "Your buddy ✓"; pick.disabled = true; }
-  }).catch(() => {});
-  head.append(left, pick);
+  head.append(left);
   const list = el("ul", "notes");
   for (const n of b.notes) {
     const li = el("li", n.done ? "done" : "");
@@ -798,29 +1010,40 @@ async function showBond(number) {
   box.classList.remove("hidden");
 }
 
+// A new animal in the Field Guide: its silhouette, then the colour pixel art.
+function captureReveal(slug) {
+  const box = el("div", "reveal");
+  const sil = el("img", "sil"), color = el("img", "color");
+  sil.src = spriteUrl(slug, false); color.src = spriteUrl(slug, true);
+  sil.alt = ""; color.alt = "";
+  box.append(sil, color);
+  return box;
+}
+
 // Colour pixel art once caught, a silhouette until then.
 const spriteUrl = (slug, caught) => `/sprites/${encodeURIComponent(slug)}${caught ? "" : "_silhouette"}.png`;
 
 // The player's state (from /me) picks the Dex, Hotspots and map. Outline rings
 // are [lon, lat] from /map/<state>; the map is scaled so every state is ~430 px wide.
 let states = [];
-let myState = { code: "CA", name: "California", bounds: { west: -124.6, east: -113.9, south: 32.3, north: 42.2 } };
+// Until /states and /me answer: no state, and a map of the lower 48.
+let myState = { code: "", name: "", bounds: { west: -124.8, east: -66.9, south: 24.5, north: 49.4 } };
 let OUTLINE = [];
 let MAP = {};
 const px = (lon, lat) => [(lon - MAP.lon0) * MAP.kx, (MAP.lat1 - lat) * MAP.ky];
 
 async function loadStates() {
   try { states = await api("/states"); } catch { states = []; }
-  for (const id of ["signup-state", "my-state"]) {
-    $(id).innerHTML = "";
-    for (const st of states) $(id).append(new Option(st.name, st.code));
-  }
+  if (!myState.code && states.length) myState = states[0];
+  $("signup-state").classList.toggle("hidden", !signup || states.length < 2);
 }
 
 async function useState(code) {
   myState = states.find((st) => st.code === code) || myState;
-  $("state-name").textContent = myState.name;
-  $("my-state").value = myState.code;
+  try { localStorage.setItem("state", myState.code); } catch {}
+  $("state-name").textContent = myState.name || "";
+  $("my-state").textContent = `📍 ${myState.name || ""}`;
+  $("my-state").classList.toggle("hidden", states.length < 2);
   const b = myState.bounds;
   const k = Math.cos((b.south + b.north) / 2 * Math.PI / 180);
   const scale = 430 / ((b.east - b.west) * k);
@@ -829,12 +1052,89 @@ async function useState(code) {
   try { OUTLINE = (await api(`/map/${myState.code}`)).rings || []; } catch {}
 }
 
-$("my-state").onchange = async () => {
+// Picking a state from all 50: a searchable list, the player's own states first.
+// Resolves to the chosen code, or null when closed.
+function pickState({ title, note = "", current = null, mine = [] }) {
+  const dlg = $("state-pick"), list = $("state-list"), search = $("state-search");
+  $("state-pick-title").textContent = title;
+  $("state-pick-note").textContent = note;
+  search.value = "";
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = (code) => { if (done) return; done = true; dlg.close(); resolve(code); };
+    const draw = () => {
+      const q = search.value.trim().toLowerCase();
+      // The start of the name or of any word in it ("carolina", "new y"), or the code ("nc").
+      const hit = (st) => !q || st.code.toLowerCase() === q
+        || st.name.toLowerCase().split(" ").some((_, i, w) => w.slice(i).join(" ").startsWith(q));
+      const own = states.filter((st) => mine.includes(st.code) && hit(st));
+      const rest = states.filter((st) => !mine.includes(st.code) && hit(st))
+        .sort((a, b) => a.name.localeCompare(b.name));
+      list.innerHTML = "";
+      const row = (st, locked) => {
+        const b = el("button", st.code === current ? "on" : "");
+        b.type = "button";
+        b.append(el("span", "", (locked ? "🔒 " : "") + st.name),
+                 el("span", "muted", st.code === current ? "✓" : ""));
+        b.onclick = () => finish(st.code);
+        list.append(b);
+      };
+      if (own.length && mine.length) list.append(el("div", "sep", "Your states"));
+      own.forEach((st) => row(st, false));
+      if (own.length && rest.length) list.append(el("div", "sep", "Other states"));
+      rest.forEach((st) => row(st, mine.length > 0));
+      if (!own.length && !rest.length) list.append(el("p", "muted", "No state matches."));
+    };
+    search.oninput = draw;
+    // Enter picks the only (or first) match.
+    search.onkeydown = (e) => {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      const first = list.querySelector("button");
+      if (first) first.click();
+    };
+    $("state-pick-close").onclick = () => finish(null);
+    dlg.onclose = () => finish(null);
+    draw();
+    dlg.showModal();
+    search.focus();
+  });
+}
+
+// Sign-up: which state they live in.
+let signupState = null;
+async function chooseSignupState() {
+  const code = await pickState({ title: "Which state are you in?", current: signupState,
+    note: "Your Field Guide and parks follow your state. You can unlock others later." });
+  if (code) setSignupState(code);
+}
+function setSignupState(code) {
+  signupState = code;
+  $("signup-state").textContent = `📍 ${(states.find((x) => x.code === code) || {}).name || code}`;
+  authScene(code);
+}
+$("signup-state").onclick = chooseSignupState;
+
+// Players start with their home state; other states show 🔒 until they choose
+// to unlock one.
+let unlocked = [];
+function markLocked(list) {
+  unlocked = list || unlocked;
+}
+
+$("my-state").onclick = async () => {
+  const code = await pickState({ title: "Primary location", current: myState.code, mine: unlocked,
+    note: "Your Field Guide, parks and challenges follow it." });
+  if (!code || code === myState.code) return;
+  const st = states.find((x) => x.code === code) || { name: code };
+  if (!unlocked.includes(code) && !confirm(`Unlock ${st.name}? Its Field Guide, parks and challenges will open, ` +
+      `and your captures will count there while it's your state.`)) return;
   try {
-    await api("/me", { method: "PATCH", headers: { "Content-Type": "application/json" },
-                       body: JSON.stringify({ state: $("my-state").value }) });
+    const me = await api("/me", { method: "PATCH", headers: { "Content-Type": "application/json" },
+                       body: JSON.stringify({ state: code }) });
+    markLocked(me.unlocked_states);
     hotSelected = null;
-    await useState($("my-state").value);
+    await useState(code);
     loadCollection();
   } catch (err) { alert(err.message); }
 };
@@ -985,9 +1285,55 @@ function photoCard(p, { showSpecies = false, onChange } = {}) {
     };
     meta.append(del);
   }
+  // Tap the photo to see it full screen; the like count here catches up when it closes.
+  img.onclick = () => openViewer(p, () => meta.querySelector(".reacts")?.replaceWith(reactions(p, meta, onChange)));
   card.append(img, meta);
   return card;
 }
+
+// One photo full screen, at the size it's stored (up to 1600 px), with its likes and
+// comments. Only photos the server already sends a url for get here, so private
+// players and unrevealed animals stay hidden exactly as in the feed and galleries.
+let viewerClosed = null;
+function openViewer(p, onClose) {
+  const v = $("viewer"), side = $("viewer-side"), img = $("viewer-img");
+  img.src = p.url;
+  img.alt = p.species.common_name || "Animal photo";
+  side.innerHTML = "";
+  const name = el("h3", "", p.species.common_name || "Animal photo");
+  if (p.species.rarity) name.style.color = `var(--${p.species.rarity})`;
+  const by = el("div");
+  const when = p.taken_on ? fmtDate(p.taken_on) : p.caught_at ? ago(p.caught_at) : null;
+  by.append(p.is_mine ? el("strong", "", "You") : userLink(p.username),
+            el("span", "muted", [""].concat([p.place, when].filter(Boolean)).join(" · ")));
+  side.append(name, by);
+  if (p.score != null) side.append(el("div", "pts", `${stars(p.stars)} ${p.score.toLocaleString()} pts`));
+  if (p.is_mine && p.where_when) side.append(whereWhen(p.where_when, (res) => {
+    const ww = p.where_when = res.where_when;
+    p.taken_on = ww.taken_at.slice(0, 10);
+    p.place = ww.place;
+    p.latitude = ww.latitude != null ? +ww.latitude.toFixed(3) : null;
+    p.longitude = ww.longitude != null ? +ww.longitude.toFixed(3) : null;
+    if (res.score) { p.score = res.score.total; p.stars = res.score.stars; }
+    openViewer(p, viewerClosed);
+    loadCollection(); loadMyPhotos(); loadFeed();
+  }));
+  const row = reactions(p, side);
+  side.append(row);
+  // Comments start open: they're half of why you'd open the photo.
+  row.lastChild.click();
+  viewerClosed = onClose || null;
+  if (!v.open) v.showModal();
+}
+$("viewer-close").onclick = () => $("viewer").close();
+$("viewer").addEventListener("close", () => {
+  $("viewer-img").removeAttribute("src");
+  const done = viewerClosed; viewerClosed = null; done?.();
+});
+// Tapping the dark area around the photo closes it, and so does opening someone's profile.
+$("viewer").addEventListener("click", (e) => {
+  if (e.target.classList.contains("pic") || e.target.closest(".user")) $("viewer").close();
+}, true);
 
 // Like and comment buttons for any photo you can see, friend's or stranger's.
 // The comment list opens inside host.
@@ -1283,7 +1629,15 @@ function ago(iso) {
 function feedItem(p) {
   const s = p.species;
   const row = el("div", "feed-item");
-  if (p.url) { const img = el("img"); img.src = p.url; img.alt = s.common_name || ""; img.loading = "lazy"; row.append(img); }
+  if (p.url) {
+    const img = el("img"); img.src = p.url; img.alt = s.common_name || ""; img.loading = "lazy";
+    // The photo opens full screen; the rest of the row opens the Field Guide entry.
+    img.onclick = (e) => {
+      e.stopPropagation();
+      openViewer(p, () => entry.querySelector(".reacts")?.replaceWith(reactions(p, entry)));
+    };
+    row.append(img);
+  }
   else row.append(el("div", "mystery", "?"));
   const what = el("div", "what");
   const line = el("div");
@@ -1361,6 +1715,7 @@ $("share-feed").onchange = async (e) => {
 
 async function loadFriends() {
   const f = await api("/friends");
+  friendAlerts(f);
   const box = $("friend-lists");
   box.innerHTML = "";
   const section = (title, people, actions) => {
@@ -1401,6 +1756,107 @@ async function loadFriends() {
   section("Bot friends to add 🤖", bots, [["Add", "", (u) => api("/friends/requests", { method: "POST",
     headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: u }) })]]);
 }
+
+// --- notifications -------------------------------------------------------------
+// Friend requests, likes and comments on your photos. The Friends tab counts waiting
+// requests, and while the site is open a check every minute pops up a note for anything
+// new. With notifications turned on, the server also pushes them (Web Push, shown by
+// sw.js) so they arrive with the site closed; without push, a hidden tab shows them.
+let knownRequests = null;  // usernames of requests already shown; null until the first load
+let activitySince = null;  // server time of the last likes/comments check
+let pushOn = false;
+
+function friendAlerts(f) {
+  const names = f.incoming.map((p) => p.username);
+  const btn = document.querySelector('#tabs button[data-tab="friends"]');
+  btn.querySelector(".badge")?.remove();
+  if (names.length) btn.append(el("span", "badge", String(names.length)));
+  document.title = (names.length ? `(${names.length}) ` : "") + "Capture Animals";
+  const fresh = knownRequests ? names.filter((n) => !knownRequests.has(n)) : [];
+  knownRequests = new Set(names);
+  if (fresh.length) alertNote([fresh.length === 1 ? `👋 ${fresh[0]} sent you a friend request`
+    : `👋 ${fresh.length} new friend requests`], "friends");
+  $("notify-on").classList.toggle("hidden", !("Notification" in window) || Notification.permission !== "default");
+}
+
+const others = (n) => n > 0 ? ` and ${n} other${n > 1 ? "s" : ""}` : "";
+
+async function checkActivity() {
+  const a = await api("/me/activity" + (activitySince ? `?since=${encodeURIComponent(activitySince)}` : ""));
+  const first = !activitySince;
+  activitySince = a.now;
+  if (first) return;
+  const lines = [
+    ...a.likes.map((l) => `❤️ ${l.usernames[0]}${others(l.count - 1)} liked your ${l.species} photo`),
+    ...a.comments.map((c) => `💬 ${c.username} on your ${c.species}: ${c.body}`)];
+  if (lines.length) { alertNote(lines, "photos"); loadMyPhotos(); }
+}
+
+function alertNote(lines, tab) {
+  const shown = lines.length > 3 ? [...lines.slice(0, 3), `and ${lines.length - 3} more`] : lines;
+  const toast = $("toast");
+  toast.textContent = shown.join("\n");
+  toast.classList.remove("hidden");
+  toast.onclick = () => { toast.classList.add("hidden"); showTab(tab); };
+  clearTimeout(alertNote.timer);
+  alertNote.timer = setTimeout(() => toast.classList.add("hidden"), 8000);
+  // Pushed notifications already reach a hidden tab; this covers browsers without push.
+  if (document.hidden && !pushOn && "Notification" in window && Notification.permission === "granted") {
+    const n = new Notification("Capture Animals", { body: shown.join("\n").replace(/^[^\p{L}\s]+ /gmu, ""),
+                                                    icon: "/icons/icon-192.png", tag: tab });
+    n.onclick = () => { window.focus(); showTab(tab); n.close(); };
+  }
+}
+
+const keyBytes = (k) => Uint8Array.from(atob(k.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
+
+// Registers this browser for pushes to whoever is logged in.
+async function pushSubscribe() {
+  if (!token || !window.isSecureContext || !("PushManager" in window) || !navigator.serviceWorker) return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      const { key } = await api("/push/key");
+      sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(key) });
+    }
+    const { endpoint, keys } = sub.toJSON();
+    await api("/push/subscribe", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ endpoint, p256dh: keys.p256dh, auth: keys.auth }) });
+    pushOn = true;
+  } catch {}
+}
+
+// Logging out stops this browser's notifications.
+async function pushUnsubscribe() {
+  pushOn = false;
+  try {
+    const reg = await navigator.serviceWorker?.getRegistration();
+    const sub = await reg?.pushManager?.getSubscription();
+    if (!sub) return;
+    await api("/push/unsubscribe", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ endpoint: sub.endpoint }) }).catch(() => {});
+    await sub.unsubscribe();
+  } catch {}
+}
+
+$("notify-on").onclick = async () => {
+  const p = await Notification.requestPermission().catch(() => "default");
+  $("notify-on").classList.add("hidden");
+  if (p === "granted") pushSubscribe();
+};
+
+// Check every minute; the friends list only redraws when a request arrived.
+setInterval(async () => {
+  if (!token) return;
+  try {
+    const f = await api("/friends");
+    const before = knownRequests;
+    friendAlerts(f);
+    if (before && f.incoming.some((p) => !before.has(p.username))) loadFriends();
+  } catch {}
+  checkActivity().catch(() => {});
+}, 60_000);
 
 // New players start with the example bots as friends; say so plainly, once.
 async function botWelcome(username) {
@@ -1448,6 +1904,9 @@ let hotSelected = null;
 async function loadHotspots() {
   try { hotspots = await api(`/hotspots?state=${myState.code}`); } catch { hotspots = []; }
   $("hotspots-card").classList.toggle("hidden", !hotspots.length);
+  // A state whose park data isn't built yet has no Parks tab, as in the app.
+  document.querySelector('#tabs [data-tab="parks"]').classList.toggle("hidden", !hotspots.length);
+  if (!hotspots.length && location.hash === "#parks") showTab("dex");
   if (hotspots.length) drawHotspots();
 }
 
@@ -1527,6 +1986,7 @@ async function showMeOnMap() {
   if (meMarker) meMarker.remove();
   meMarker = L.circleMarker([pos.lat, pos.lon], { radius: 7, weight: 3, color: "#fff", fillColor: "#2a7de1",
     fillOpacity: 1 }).bindTooltip("You are here").addTo(hotMap);
+  drawHotList();
   const b = myState.bounds;
   if (pos.lat >= b.south && pos.lat <= b.north && pos.lon >= b.west && pos.lon <= b.east)
     hotMap.setView([pos.lat, pos.lon], Math.max(hotMap.getZoom(), 9));
@@ -1549,16 +2009,68 @@ function drawHotspots() {
   drawHotList();
 }
 
+// The list shows the few parks most worth a trip: the most animals the player
+// hasn't captured yet, weighed against how far away the park is (when we know
+// where they are). "Show all parks" opens the rest.
+const HOT_TOP = 8;
+let hotShowAll = false;
+
+function milesBetween(a, b) {
+  const r = Math.PI / 180, dLat = (b.lat - a.lat) * r, dLon = (b.lon - a.lon) * r;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLon / 2) ** 2;
+  return 3958.8 * 2 * Math.asin(Math.sqrt(h));
+}
+
+// A park twice as far needs about twice as many new animals once past ~40 miles.
+function rankHotspots(pos) {
+  return hotspots.map((h, i) => {
+    const fresh = h.species.filter((s) => !caughtNums.has(s.number)).length;
+    const miles = pos ? milesBetween(pos, h) : null;
+    return { h, i, fresh, miles, score: pos ? fresh / (1 + miles / 40) : fresh };
+  }).sort((a, b) => b.score - a.score || b.h.species.length - a.h.species.length);
+}
+
+function fmtMiles(m) {
+  return m < 1 ? "under 1 mi" : m < 10 ? `${m.toFixed(1)} mi` : `${Math.round(m)} mi`;
+}
+
 function drawHotList() {
   const list = $("hot-list");
   list.innerHTML = "";
-  hotspots.forEach((h, i) => {
+  const ranked = rankHotspots(feedPos);
+  const head = document.createElement("p");
+  head.className = "muted hot-head";
+  head.textContent = feedPos ? "Best parks near you for animals you haven't captured yet."
+    : "Parks with the most animals you haven't captured yet.";
+  if (!feedPos && navigator.geolocation) {
+    const near = document.createElement("button");
+    near.className = "linkish"; near.type = "button"; near.textContent = "Use my location";
+    near.onclick = async () => {
+      if (await myPosition()) { drawHotList(); showMeOnMap(); }
+      else alert("Couldn't get your location. Check that location is allowed for this site.");
+    };
+    head.append(" ", near);
+  }
+  list.append(head);
+  for (const r of hotShowAll ? ranked : ranked.slice(0, HOT_TOP)) {
     const b = document.createElement("button");
-    b.className = hotSelected === i ? "on" : "";
-    b.textContent = `${h.name} · ${h.species.length}`;
-    b.onclick = () => selectHotspot(i);
+    b.type = "button";
+    b.className = "hot-row" + (hotSelected === r.i ? " on" : "");
+    b.innerHTML = `<span class="hot-name"></span><span class="hot-new"></span><span class="hot-far muted"></span>`;
+    b.querySelector(".hot-name").textContent = r.h.name;
+    b.querySelector(".hot-new").textContent = r.fresh ? `${r.fresh} new animal${r.fresh === 1 ? "" : "s"}`
+      : "All captured";
+    b.querySelector(".hot-far").textContent = r.miles == null ? "" : fmtMiles(r.miles);
+    b.onclick = () => selectHotspot(r.i);
     list.append(b);
-  });
+  }
+  if (ranked.length > HOT_TOP) {
+    const more = document.createElement("button");
+    more.className = "ghost"; more.type = "button";
+    more.textContent = hotShowAll ? "Show fewer" : `Show all ${ranked.length} parks`;
+    more.onclick = () => { hotShowAll = !hotShowAll; drawHotList(); };
+    list.append(more);
+  }
 }
 
 function selectHotspot(i) {
@@ -1593,6 +2105,8 @@ async function render() {
   $("who").classList.toggle("hidden", !authed);
   $("tabs").classList.toggle("hidden", !authed);
   document.body.classList.toggle("authed", authed);
+  if (!authed) authScene();
+  else if (hab.visit?.showcase) habLeave();
   if (authed) {
     showTab(location.hash.slice(1));
     try {
@@ -1600,10 +2114,64 @@ async function render() {
       $("username").textContent = me.username;
       $("share-feed").checked = me.show_in_feed !== false;
       await useState(me.state);
+      markLocked(me.unlocked_states);
       loadCollection(); loadFriends(); loadFeed(); botWelcome(me.username);
+      checkActivity().catch(() => {});
+      if ("Notification" in window && Notification.permission === "granted") pushSubscribe();
     } catch {}
   }
 }
+// Progressive web app: offline support (sw.js) and an "Install app" button.
+function forgetOfflineData() {
+  // Saved game data belongs to whoever was logged in; drop it on log out.
+  navigator.serviceWorker?.controller?.postMessage("logout");
+  if (window.caches) caches.delete("api-v1").catch(() => {});
+}
+if ("serviceWorker" in navigator && window.isSecureContext) {
+  addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
+}
+const showOffline = () => $("offline").classList.toggle("hidden", navigator.onLine);
+addEventListener("online", showOffline); addEventListener("offline", showOffline); showOffline();
+const installed = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+let installPrompt = null;
+addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault(); installPrompt = e; $("install").classList.remove("hidden");
+});
+addEventListener("appinstalled", () => { installPrompt = null; $("install").classList.add("hidden"); });
+// iPhone and iPad Safari have no install prompt; the button explains the Share menu instead.
+const iosSafari = /iP(hone|ad|od)/.test(navigator.userAgent) && !/CriOS|FxiOS|EdgiOS/.test(navigator.userAgent);
+if (iosSafari && !installed()) $("install").classList.remove("hidden");
+$("install").onclick = async () => {
+  if (installPrompt) {
+    installPrompt.prompt();
+    await installPrompt.userChoice;
+    installPrompt = null;  // one use; the browser offers it again later if declined
+    $("install").classList.add("hidden");
+  } else if (iosSafari) {
+    alert("To install Capture Animals, tap the Share button, then \"Add to Home Screen\".");
+  }
+};
+
+// A new release (release.json bumped for a major update) gets a notice; smaller changes
+// arrive silently, since the page is always fetched fresh when online.
+const RELEASE = $("version-num").textContent;
+async function checkRelease() {
+  if (!navigator.onLine || RELEASE.startsWith("__")) return;
+  let v;
+  try { v = await (await fetch("/app/version", { cache: "no-store" })).json(); } catch { return; }
+  if (!v.version || v.version === RELEASE) return;
+  $("update").textContent = `✨ Capture Animals ${v.version} is here. Tap to update`;
+  $("update").classList.remove("hidden");
+}
+$("update").onclick = async () => {
+  $("update").disabled = true;
+  try { await (await navigator.serviceWorker?.getRegistration())?.update(); } catch {}
+  location.reload();
+};
+checkRelease();
+setInterval(checkRelease, 30 * 60_000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) checkRelease(); });
+
 habInit();
 loadStates().then(render);
 </script>

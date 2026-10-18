@@ -25,12 +25,10 @@ from pathlib import Path
 
 import requests
 
-CATCHES = {"trailblazer": 3, "tidepooler": 3, "birdnerd": 6}  # per state
+CATCHES = {"birdnerd": 3}  # per state
+# Each bot's primary location: where its profile and live habitat open for friends.
+HOME = {"birdnerd": "CA"}
 PLAYERS = {  # name: {state: species to try in order; later ones are spares}
-    "trailblazer": {"CA": ["mule_deer", "elk", "california_ground_squirrel", "bighorn_sheep", "black_tailed_jackrabbit"],
-                    "NC": ["white_tailed_deer", "elk", "eastern_gray_squirrel", "eastern_cottontail", "groundhog"]},
-    "tidepooler": {"CA": ["ochre_sea_star", "harbor_seal", "sea_otter", "california_sea_lion", "giant_green_anemone"],
-                   "NC": ["atlantic_ghost_crab", "royal_tern", "black_skimmer", "atlantic_sand_fiddler_crab", "atlantic_horseshoe_crab"]},
     "birdnerd": {"CA": ["annas_hummingbird", "acorn_woodpecker", "california_quail", "western_bluebird",
                         "california_scrub_jay", "black_phoebe", "stellers_jay", "red_tailed_hawk",
                         "great_egret", "white_crowned_sparrow", "house_finch", "northern_flicker"],
@@ -40,7 +38,8 @@ PLAYERS = {  # name: {state: species to try in order; later ones are spares}
 }
 # Former North Carolina bots: re-running clears their photos and friends and
 # stops listing them as bots.
-RETIRED = ["blueridger", "outerbanker", "cardinalfan"]
+# Bots that were removed from the demo; a rerun empties them if they still exist.
+RETIRED = ["trailblazer", "tidepooler", "blueridger", "outerbanker", "cardinalfan"]
 # Fallback spots for species without a hotspot park.
 SPOTS = [(36.49, -121.18), (38.07, -122.88), (36.82, -121.76), (34.09, -118.83), (37.74, -119.59)]
 NC_SPOTS = [(35.63, -83.09), (35.85, -78.75), (35.91, -75.60), (34.21, -77.89)]
@@ -145,7 +144,8 @@ def main():
                 else:
                     print(f"{name}: couldn't get {slug}, trying the next one")
             print(f"{name}: {len(owned & set(slugs))}/{CATCHES[name]} in {state}")
-        requests.patch(f"{args.url}/me", json={"state": "CA"}, headers=h)
+        # Seeding switches states to capture; leave the bot in its home state.
+        requests.patch(f"{args.url}/me", json={"state": HOME[name]}, headers=h)
     if args.db:
         with sqlite3.connect(args.db) as con:
             cols = {r[1] for r in con.execute("PRAGMA table_info(users)")}

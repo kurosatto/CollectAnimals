@@ -36,9 +36,13 @@ Without a trained model the API still runs; captures report that no model is loa
 - **Album.** Each player keeps one photo per species, with where and when it
   was taken. The first matching capture goes in automatically; a later one can
   replace it (`PUT /me/album/{species}`), which resets that photo's likes.
-  Location comes from the phone (the web page asks for it; "Save where I
-  caught it" can be unticked) or the photo's EXIF GPS. Saved files have EXIF
-  stripped.
+  Time and place come from the photo's EXIF first (the Android app reads it
+  before shrinking the photo and sends it along). Without EXIF GPS, the phone's
+  location is used only for recent photos; without an EXIF time, the upload
+  time. Unticking "Save where I captured it" keeps no place at all. Owners can
+  fix both (`PUT /captures/{id}/where-when`: no later than the upload, inside
+  their state); field notes and the place name follow. Photo scores never
+  depend on time or place. Saved files have EXIF stripped.
 - **Friends.** Send a request by username; when accepted you see each other's
   albums and each other's catches unlock names for you.
 - **Gallery.** `GET /species/{species}/photos?scope=all|friends&sort=top|new`
@@ -75,7 +79,8 @@ Without a trained model the API still runs; captures report that no model is loa
   mammal" with no photo. Players can turn off "Show my catches in this feed"
   (`PATCH /me/settings`).
 - **Locations others see** (`backend/app/places.py`): a hotspot park name,
-  "near <town>" (`species/ca_places.json`) or a region, never exact GPS.
+  "near <town>" (each state's places file in `species/states.json`) or a
+  region of the state the photo was taken in, never exact GPS.
   Common and uncommon animals also get coordinates rounded to about 10 km
   (about 100 m for friends). Rare animals get only a park or "around <town>",
   and legendary ones only a region, for everyone but you.
@@ -171,6 +176,17 @@ Needs JDK 17 and the Android SDK (platform 36; set `sdk.dir` in
 answer on 11% of photos, so it ships in float32. `PreprocessTest` checks the
 Kotlin resize/crop against PIL/torchvision; `ClassifierTest` runs the real
 model through it when `data/images` is present.
+
+### New versions
+
+`release.json` holds the release version for the web app and the Android app. Bump it only
+for a major update; smaller changes reach the website silently on the next page load.
+
+- Website: open pages notice the new version and show "Capture Animals X is here. Tap to update".
+- Android: the next APK build takes the version from `release.json` (versionCode is
+  major×10000 + minor×100 + patch). Copy it to the folder in `ANDROID_APK_DIR` as
+  `CaptureAnimals-<version>.apk`; phones on an older version are offered the download from
+  `/app/android/...`, once per version.
 
 ### Release build for Google Play
 
