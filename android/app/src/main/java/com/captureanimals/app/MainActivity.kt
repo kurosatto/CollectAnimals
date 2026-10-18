@@ -380,6 +380,7 @@ fun ResultCard(r: CaptureResult, onDismiss: () -> Unit, onPick: (String?) -> Uni
                     .clip(RoundedCornerShape(12.dp)),
                 contentScale = ContentScale.Crop)
             if (r.matched && r.species != null) {
+                if (r.newBadge) CaptureReveal(r.species.slug, Modifier.size(120.dp).align(Alignment.CenterHorizontally))
                 Text(if (r.newBadge) "New badge!" else "Captured again",
                     style = MaterialTheme.typography.labelLarge, color = rarityColor(r.species.rarity))
                 Text(r.species.commonName, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)

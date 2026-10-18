@@ -289,6 +289,19 @@
   .buddy.excited img { animation-duration:.7s; }
   @keyframes buddy-bob { 50% { transform:translateY(-4px); } }
   @media (prefers-reduced-motion: reduce) { .buddy img { animation:none; } }
+  /* New capture: the silhouette, then the colour pixel art wipes in row by row. */
+  .reveal { position:relative; width:120px; height:120px; margin:4px auto 10px; }
+  .reveal img { position:absolute; inset:0; width:100%; height:100%; image-rendering:pixelated; }
+  .reveal .color { clip-path:inset(100% 0 0 0); animation:reveal-wipe 1.2s steps(20, end) .7s forwards; }
+  .reveal .sil { animation:reveal-shake .5s ease-in-out .1s 1; }
+  .reveal::after { content:""; position:absolute; inset:-14px; border-radius:50%; pointer-events:none; opacity:0;
+                   background:radial-gradient(circle, rgba(255,215,90,.55), rgba(255,215,90,0) 65%);
+                   animation:reveal-glow 1s ease-out 1.9s 1; }
+  @keyframes reveal-wipe { to { clip-path:inset(0 0 0 0); } }
+  @keyframes reveal-shake { 25% { transform:rotate(-6deg); } 75% { transform:rotate(6deg); } }
+  @keyframes reveal-glow { 30% { opacity:1; transform:scale(1.1); } to { opacity:0; transform:scale(1.25); } }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal .color { animation:none; clip-path:none; } .reveal .sil, .reveal::after { animation:none; } }
   .buddy .who { font-weight:600; display:flex; flex-wrap:wrap; gap:4px 8px; align-items:baseline; }
   .buddy .say { margin:4px 0 0; font-size:.9rem; }
   .buddy .say::before { content:"“"; } .buddy .say::after { content:"”"; }
@@ -574,6 +587,7 @@ $("upload-form").onsubmit = async (e) => {
     p.className = "muted";
     p.textContent = "Top guesses: " + r.top_predictions
       .map((x) => `${x.common_name || (x.label === "other" ? "not on the list" : "???")} ${(x.probability * 100).toFixed(0)}%`).join(", ");
+    if (r.new_badge && r.species?.slug) box.append(captureReveal(r.species.slug));
     box.append(h, p);
     const sb = safetyBox(r);
     if (sb) box.append(sb);
@@ -778,6 +792,8 @@ function pickPanel(r, box) {
       wrap.remove();
       box.querySelector(".keep")?.remove();
       box.querySelector(".score")?.remove();
+      box.querySelector(".reveal")?.remove();
+      if (res.new_badge && res.species?.slug) h.before(captureReveal(res.species.slug));
       box.querySelector(".safety-box")?.remove();
       if (res.score) h.after(scoreCard(res.score));
       const sb = safetyBox(res);
@@ -1021,6 +1037,16 @@ async function showBond(number) {
   }
   box.append(head, list);
   box.classList.remove("hidden");
+}
+
+// A new animal in the Field Guide: its silhouette, then the colour pixel art.
+function captureReveal(slug) {
+  const box = el("div", "reveal");
+  const sil = el("img", "sil"), color = el("img", "color");
+  sil.src = spriteUrl(slug, false); color.src = spriteUrl(slug, true);
+  sil.alt = ""; color.alt = "";
+  box.append(sil, color);
+  return box;
 }
 
 // Colour pixel art once caught, a silhouette until then.
