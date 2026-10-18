@@ -165,6 +165,8 @@ function habNote() {
     : `${n} animal${n > 1 ? "s" : ""} live${n > 1 ? "" : "s"} ${hab.visit ? "in " + who : "here"}` + (asleep ? `, ${asleep} asleep` : "")
       + (hab.wx ? ". " + habWxLine() : ". Tap one to say hi.");
   const night = phase === "night";
+  const here = document.getElementById("hab-wx-here");
+  if (here) here.hidden = !(hab.wxAsk && hab.wx && !hab.visit);
   $("hab-peek").textContent = hab.peek ? "Back to now" : night || phase === "dusk" ? "☀️ Peek at daytime" : "🌙 Peek at night";
 }
 
@@ -760,17 +762,37 @@ function habWeather() {
   if (state === hab.wxKey && now - hab.wxAt < 15 * 60e3) return;
   if (state !== hab.wxKey) { hab.wx = null; hab.drops = []; }
   hab.wxKey = state; hab.wxAt = now;
-  // Your own scene uses roughly where you are, when the page already knows it;
-  // a friend's uses their state's big city.
-  const pos = !hab.visit && typeof feedPos !== "undefined" && feedPos;
-  const q = pos ? `?lat=${pos.lat.toFixed(1)}&lon=${pos.lon.toFixed(1)}` : "";
-  fetch(`/weather/${state}${q}`).then((r) => (r.ok ? r.json() : null)).catch(() => null).then((w) => {
+  // Your own scene uses roughly where you are (to about 10 km) when you've let
+  // the page know; a friend's uses their state's big city. In the Android app
+  // the app adds your rough position itself (here=1).
+  const own = !hab.visit;
+  habWxSpot(own).then((pos) => {
+    const q = pos ? `?lat=${pos.lat.toFixed(1)}&lon=${pos.lon.toFixed(1)}` : own ? "?here=1" : "";
+    return fetch(`/weather/${state}${q}`);
+  }).then((r) => (r.ok ? r.json() : null)).catch(() => null).then((w) => {
     if (hab.wxKey !== state) return;
     hab.wx = w && w.sky ? w : null;
     hab.drops = [];
     habNote();
     if (habStill) habDraw();
   });
+}
+
+// Your position for the weather: known already, or the browser has said yes before.
+// Otherwise null, and the scene offers a "📍 My weather" button instead of asking
+// out of the blue.
+async function habWxSpot(own) {
+  hab.wxAsk = false;
+  if (!own || typeof myPosition === "undefined" || !navigator.geolocation) return null;
+  if (typeof feedPos !== "undefined" && feedPos) return feedPos;
+  let st = "prompt";
+  try { st = (await navigator.permissions.query({ name: "geolocation" })).state; } catch {}
+  if (st === "granted") return myPosition();
+  hab.wxAsk = st !== "denied";
+  return null;
+}
+function habWxHere() {
+  myPosition().then((pos) => { if (pos) { hab.wxKey = null; habWeather(); } });
 }
 
 // The wind across the scene in px/s, + to the right (a west wind).
@@ -791,7 +813,7 @@ function habWxLine() {
   const w = hab.wx, moon = habPhase() === "night" && (w.sky === "clear" || w.sky === "partly");
   let line = `${moon ? "🌙" : HAB_WX_ICON[w.sky]} ${HAB_WX_WORDS[w.sky]}`;
   if (w.wind === "windy") line += " and windy";
-  if (w.place) line += ` in ${w.place}`;
+  if (w.place) line += ` ${w.near ? "near" : "in"} ${w.place}`;
   if (w.temp_f != null) line += `, ${w.temp_f}°F`;
   return line + ".";
 }
@@ -1844,6 +1866,7 @@ function habAmbient(c, L, phase) {
 
 function habInit() {
   $("hab-canvas").addEventListener("click", habTap);
+  if (document.getElementById("hab-wx-here")) $("hab-wx-here").onclick = habWxHere;
   $("hab-peek").onclick = () => { hab.peek = !hab.peek; habNote(); if (habStill) habDraw(); };
   if (!habStill) requestAnimationFrame(habLoop);
 }

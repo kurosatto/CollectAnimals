@@ -451,7 +451,10 @@ def get_weather(request: Request, state: str, lat: float | None = Query(None), l
         else:
             limits.weather_spots_by_ip.hit(ip)
     where = weather.spot(s.code, lat, lon, s.bounds)
-    return JSONResponse(weather.current(where) if where else None, headers={"Cache-Control": "private, max-age=600"})
+    w = weather.current(where) if where else None
+    if w and where != weather.CITIES.get(s.code):
+        w = {**w, "near": True}  # the player's own spot: "Rain near Hoboken"
+    return JSONResponse(w, headers={"Cache-Control": "private, max-age=600"})
 
 
 @app.get("/map/{state}")

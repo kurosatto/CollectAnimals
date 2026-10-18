@@ -141,7 +141,7 @@ class AssetClient(private val context: Context) : WebViewClient() {
         val url = request.url
         if (url.host != "appassets.androidplatform.net") return null
         val raw = url.path.orEmpty().trimStart('/')
-        if (raw.startsWith("weather/")) return weather(raw)
+        if (raw.startsWith("weather/")) return weather(raw, url.getQueryParameter("here") == "1")
         // An animal without pixel art yet gets the placeholder egg, as on the website.
         val path = if (raw.startsWith("sprites/") && raw.endsWith(".png"))
             spriteAsset(raw, spriteFiles(context)) else raw
@@ -151,11 +151,15 @@ class AssetClient(private val context: Context) : WebViewClient() {
         }.getOrElse { WebResourceResponse("text/plain", "utf-8", 404, "Not found", emptyMap(), null) }
     }
 
-    /** The real weather for the scene comes from the game server ("null" when offline). */
-    private fun weather(path: String): WebResourceResponse {
+    /** The real weather for the scene comes from the game server ("null" when offline).
+     *  For your own scene ([here]) it's for roughly where you are (to about 10 km),
+     *  when the app may know your location. */
+    private fun weather(path: String, here: Boolean): WebResourceResponse {
+        val spot = if (here) lastLocation(context) else null
+        val q = spot?.let { (lat, lon) -> "?lat=%.1f&lon=%.1f".format(java.util.Locale.US, lat, lon) }.orEmpty()
         val body = Online.base?.let { base ->
             runCatching {
-                val c = URL("$base/$path").openConnection() as HttpURLConnection
+                val c = URL("$base/$path$q").openConnection() as HttpURLConnection
                 c.connectTimeout = 6000; c.readTimeout = 8000
                 c.inputStream.use { it.readBytes() }
             }.getOrNull()
