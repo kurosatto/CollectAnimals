@@ -26,6 +26,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.ByteArrayInputStream
+import java.net.HttpURLConnection
+import java.net.URL
 
 /** One animal for the habitat scene. */
 data class HabitatAnimal(val number: Int, val slug: String, val name: String, val category: String,
@@ -138,6 +141,7 @@ class AssetClient(private val context: Context) : WebViewClient() {
         val url = request.url
         if (url.host != "appassets.androidplatform.net") return null
         val raw = url.path.orEmpty().trimStart('/')
+        if (raw.startsWith("weather/")) return weather(raw)
         // An animal without pixel art yet gets the placeholder egg, as on the website.
         val path = if (raw.startsWith("sprites/") && raw.endsWith(".png"))
             spriteAsset(raw, spriteFiles(context)) else raw
@@ -145,6 +149,18 @@ class AssetClient(private val context: Context) : WebViewClient() {
             WebResourceResponse(mimeType(path), if (mimeType(path).startsWith("text") ||
                 path.endsWith(".js") || path.endsWith(".json")) "utf-8" else null, context.assets.open(path))
         }.getOrElse { WebResourceResponse("text/plain", "utf-8", 404, "Not found", emptyMap(), null) }
+    }
+
+    /** The real weather for the scene comes from the game server ("null" when offline). */
+    private fun weather(path: String): WebResourceResponse {
+        val body = Online.base?.let { base ->
+            runCatching {
+                val c = URL("$base/$path").openConnection() as HttpURLConnection
+                c.connectTimeout = 6000; c.readTimeout = 8000
+                c.inputStream.use { it.readBytes() }
+            }.getOrNull()
+        } ?: "null".toByteArray()
+        return WebResourceResponse("application/json", "utf-8", ByteArrayInputStream(body))
     }
 
     private fun mimeType(path: String) = when (path.substringAfterLast('.').lowercase()) {
