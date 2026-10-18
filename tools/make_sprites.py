@@ -993,7 +993,11 @@ def main():
     rows = load_species(args.state)
     missing = [r["slug"] for r in rows if r["slug"] not in S]
     if missing:
-        sys.exit(f"no sprite drawn for: {', '.join(missing)}")
+        # Fine while a state's art is being drawn: the apps show the "?" egg
+        # (tools/make_placeholder.py) for these until then.
+        print(f"no sprite drawn yet for {len(missing)} species (placeholder shown): {', '.join(missing)}",
+              file=sys.stderr)
+        rows = [r for r in rows if r["slug"] in S]
     # Every drawing is written, listed or not, so a species can move between lists
     # (or a list branch can land later) without the art going missing.
     slugs = list(S) if not args.state else [r["slug"] for r in rows]

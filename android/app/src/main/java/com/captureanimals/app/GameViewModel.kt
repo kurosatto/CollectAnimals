@@ -98,7 +98,11 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             val (default, list) = states
             val saved = prefs.getString("state", null)?.takeIf { code -> list.any { it.code == code } }
             val unlocked = prefs.getStringSet("unlocked", emptySet()).orEmpty()
-            withContext(Dispatchers.IO) { store.migrate(saved ?: default) }
+            withContext(Dispatchers.IO) {
+                store.migrate(saved ?: default)
+                // Read the starting state's Field Guide here rather than on the main thread.
+                list.firstOrNull { it.code == (saved ?: default) }?.fieldGuide
+            }
             _state.update {
                 it.copy(states = list, needsStatePick = saved == null, sets = sets, unlocked = unlocked,
                     allSpecies = list.flatMap { s -> s.species }.distinctBy { s -> s.slug })

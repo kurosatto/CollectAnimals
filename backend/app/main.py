@@ -243,10 +243,11 @@ def silhouette_by_number(number: int, db: Session = Depends(get_db)):
     """The silhouette for a species that's still hidden, by Dex number, so the
     URL doesn't give away its name."""
     s = db.get(Species, number)
-    path = settings.sprites_dir / f"{s.slug}_silhouette.png" if s else None
-    if not path or not path.is_file():
+    if s is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "No such sprite")
-    return FileResponse(path, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
+    path = _sprite_or_placeholder(f"{s.slug}_silhouette")
+    age = 86400 if path.stem == f"{s.slug}_silhouette" else 3600
+    return FileResponse(path, media_type="image/png", headers={"Cache-Control": f"public, max-age={age}"})
 
 
 @app.get("/sprites/anim/index.json", include_in_schema=False)
@@ -268,13 +269,30 @@ def sprite_anim(slug: str):
 
 
 @app.get("/sprites/{name}.png", include_in_schema=False)
-def sprite(name: str):
+def sprite(name: str, db: Session = Depends(get_db)):
     """Pixel-art sprites: `{slug}.png` in colour, `{slug}_silhouette.png` until caught."""
     slug = name.removesuffix("_silhouette")
-    path = settings.sprites_dir / f"{name}.png"
-    if not slug.replace("_", "").isalnum() or not path.is_file():
+    if not slug.replace("_", "").isalnum():
         raise HTTPException(status.HTTP_404_NOT_FOUND, "No such sprite")
-    return FileResponse(path, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
+    path = settings.sprites_dir / f"{name}.png"
+    if not path.is_file() and db.scalar(select(Species.id).where(Species.slug == slug)) is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No such sprite")
+    path = _sprite_or_placeholder(name)
+    # A placeholder is cached briefly, so the real art shows up soon after it's drawn.
+    age = 86400 if path.stem == name else 3600
+    return FileResponse(path, media_type="image/png", headers={"Cache-Control": f"public, max-age={age}"})
+
+
+def _sprite_or_placeholder(name: str) -> Path:
+    """The sprite file, or the "?" egg (tools/make_placeholder.py) for an animal
+    that has no pixel art yet, as in the states added before their art."""
+    path = settings.sprites_dir / f"{name}.png"
+    if path.is_file():
+        return path
+    path = settings.sprites_dir / ("placeholder_silhouette.png" if name.endswith("_silhouette") else "placeholder.png")
+    if not path.is_file():
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No such sprite")
+    return path
 
 
 @app.get("/health")
@@ -401,17 +419,11 @@ def get_species(key: str, state: str | None = Query(None), user: User | None = D
     return species_out(s, s.id in revealed_species_ids(db, user), m)
 
 
-@app.get("/map/california")
-def california_outline():
-    """Outline rings ([[lon, lat], ...]) for drawing range maps."""
-    return state_outline("CA")
-
-
 @app.get("/map/{state}")
 def state_outline(state: str):
     """A state's outline rings ([[lon, lat], ...]) for drawing range maps."""
     path = state_or_404(state).outline
-    if not path.exists():
+    if not path or not path.exists():
         raise HTTPException(404, "No outline")
     return FileResponse(path, media_type="application/json")
 
