@@ -76,7 +76,7 @@ def test_animals_with_a_safety_rating_get_only_safe_notes():
     for safety in ("caution", "danger"):
         ns = bonds.notes(lots, safety)
         assert [n.id for n in ns] == ["first", "star"] and bonds.level(ns) == 1
-        assert "zoom" in ns[1].hint and "adult" in ns[1].hint
+        assert "adult" not in ns[1].hint
         assert bonds.newly_done(lots[:1], lots, safety) == []
     assert len(bonds.notes(lots, "none")) == 6
 
@@ -86,9 +86,9 @@ def test_capture_screen_shows_safety(client, fake):
     fake.next = [Prediction("american_black_bear", 0.95)]
     r = upload(client, h).json()
     assert r["safety"] == "danger" and r["safe_distance"] == "50 yards (45 m)"
-    assert "bear" in r["safety_note"] and "adult" in r["safety_tip"]
+    assert "bear" in r["safety_note"] and "safety_tip" not in r
     b = client.get("/me/bonds", headers=h).json()["bonds"][0]
     assert b["max_level"] == 2 and {n["id"] for n in b["notes"]} == {"first", "star"}
     fake.next = [Prediction("western_gray_squirrel", 0.95)]
     r = upload(client, h).json()
-    assert r["safety"] == "none" and r["safety_tip"] is None
+    assert r["safety"] == "none" and r["safety_note"] is None

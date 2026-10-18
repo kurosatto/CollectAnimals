@@ -130,19 +130,14 @@ fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: FieldGuide,
     }
 }
 
-/** The general tip for animals with a safety rating, as on the website. */
-const val SAFE_TIP = "Watch from far away with zoom, and stay with an adult."
-
-/** Same wording as the web page: watch from a distance, never approach. With
- *  [tip] (the capture result), the general zoom-and-adult tip follows. */
+/** Same wording as the web page: watch from a distance, never approach. */
 @Composable
-fun SafetyCard(d: SpeciesDetails, tip: Boolean = false) {
+fun SafetyCard(d: SpeciesDetails) {
     val danger = d.safety == "danger"
     Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(
         containerColor = (if (danger) Color(0xFFD64545) else Color(0xFFE0A100)).copy(alpha = 0.15f))) {
         Text((if (danger) "⚠️ Dangerous: " else "✋ ") + d.safetyNote +
-            (if (d.safeDistance.isNotBlank()) " Stay at least ${d.safeDistance} away." else "") +
-            (if (tip) " $SAFE_TIP" else ""),
+            (if (d.safeDistance.isNotBlank()) " Stay at least ${d.safeDistance} away." else ""),
             Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
     }
 }
