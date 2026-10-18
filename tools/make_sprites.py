@@ -27,6 +27,7 @@ from PIL import Image, ImageDraw
 
 sys.path.insert(0, str(Path(__file__).parent))
 import species_ca_tidepool  # noqa: E402,F401  (registers the drawings in these modules)
+import species_household  # noqa: E402,F401
 import species_nc  # noqa: E402,F401
 import species_tx  # noqa: E402,F401
 import species_fl  # noqa: E402,F401

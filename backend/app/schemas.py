@@ -159,6 +159,14 @@ class ScoreOut(BaseModel):
     parts: list[ScorePart]
 
 
+class HouseholdOut(BaseModel):
+    """A pet or pest the model recognised: not a Field Guide animal, but named kindly."""
+    slug: str
+    common_name: str
+    kind: str  # "pet" or "pest"
+    note: str
+
+
 class CaptureOut(BaseModel):
     capture_id: int
     matched: bool
@@ -182,6 +190,8 @@ class CaptureOut(BaseModel):
     safe_distance: str | None = None
     safety_note: str | None = None
     where_when: WhereWhenOut | None = None
+    # Set when the photo is a pet or a pest (a dog, a pigeon...) rather than a wild animal.
+    household: HouseholdOut | None = None
 
 
 class WhereWhenResult(BaseModel):
