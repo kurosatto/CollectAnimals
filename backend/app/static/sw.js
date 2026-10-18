@@ -6,7 +6,7 @@
 //   with the last answer as the offline fallback. The page clears it on log out.
 // - Everything else (photos, galleries, the feed, uploads, any POST) goes straight to the network,
 //   so other players' photos never fill up the phone.
-const VERSION = "1";
+const VERSION = "2";
 const SHELL = `shell-v${VERSION}`;
 const ASSETS = "assets-v1";
 const API = "api-v1";
@@ -26,6 +26,39 @@ self.addEventListener("activate", (e) => {
 
 self.addEventListener("message", (e) => {
   if (e.data === "logout") e.waitUntil(caches.delete(API));
+});
+
+// Notifications from the game server (Web Push, see backend/app/notices.py): friend requests,
+// likes and comments. Skipped while the game is open in front of you; the page shows those itself.
+self.addEventListener("push", (e) => {
+  let d = {};
+  try { d = e.data.json(); } catch {}
+  e.waitUntil((async () => {
+    const open = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    if (open.some((c) => c.focused && c.visibilityState === "visible")) return;
+    await self.registration.showNotification(d.title || "Capture Animals", {
+      body: d.body || "", tag: d.tag, renotify: !!d.tag, data: { url: d.url || "/" },
+      icon: "/icons/icon-192.png", badge: "/icons/favicon-32.png" });
+  })());
+});
+
+// The game server's address changes when the PC restarts, so a notification sent to an old
+// address opens the current one, published on the repo's server-url branch.
+const SERVER_JSON = "https://raw.githubusercontent.com/kurosatto/CollectAnimals/server-url/server.json";
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const path = e.notification.data?.url || "/";
+  e.waitUntil((async () => {
+    for (const c of await self.clients.matchAll({ type: "window", includeUncontrolled: true })) {
+      if (new URL(c.url).origin === location.origin) { await c.focus(); return c.navigate(path).catch(() => {}); }
+    }
+    let base = location.origin;
+    try {
+      const ok = await fetch("/manifest.webmanifest", { cache: "no-store" }).then((r) => r.ok, () => false);
+      if (!ok) base = (await (await fetch(SERVER_JSON, { cache: "no-store" })).json()).url.replace(/\/$/, "");
+    } catch {}
+    return self.clients.openWindow(base + path);
+  })());
 });
 
 const isAsset = (p) => /^\/(sprites|icons|vendor)\//.test(p);

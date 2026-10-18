@@ -23,7 +23,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import and_, delete, func, or_, select
 from sqlalchemy.orm import Session
 
-from . import goals, places
+from . import goals, notices, places
 from .scoring import to_local
 from . import states
 from .auth import current_user
@@ -493,6 +493,7 @@ def like_photo(photo_id: int, user: User = Depends(current_user), db: Session = 
                                              PhotoLike.user_id == user.id)):
         db.add(PhotoLike(photo_id=photo.id, user_id=user.id))
         db.commit()
+        notices.liked(db, photo, user)
     return Response(status_code=204)
 
 
@@ -545,6 +546,7 @@ def add_comment(photo_id: int, body: CommentIn, user: User = Depends(current_use
     db.add(c)
     db.commit()
     db.refresh(c)
+    notices.commented(db, photo, user, text_)
     return comment_out(c, photo, user)
 
 
@@ -636,6 +638,10 @@ def send_friend_request(body: FriendRequestIn, user: User = Depends(current_user
     else:
         db.add(Friendship(requester_id=user.id, addressee_id=other.id, accepted=bool(other.is_bot)))
     db.commit()
+    if f:
+        notices.friend_accepted(other, user)
+    elif not other.is_bot:
+        notices.friend_request(other, user)
     return {"status": "friends" if f or other.is_bot else "requested"}
 
 
@@ -659,8 +665,11 @@ def accept_friend_request(username: str, user: User = Depends(current_user),
                                            Friendship.addressee_id == user.id))
     if not f:
         raise HTTPException(404, "No friend request from that user")
+    newly = not f.accepted
     f.accepted = True
     db.commit()
+    if newly:
+        notices.friend_accepted(other, user)
     return {"status": "friends"}
 
 
