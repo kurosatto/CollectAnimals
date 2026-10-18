@@ -33,14 +33,14 @@ const HAB_ROLES = [
   [/dolphin|whale|manatee|garibaldi|red_drum|snapper|sculpin|sea_hare|loggerhead/, "swim"],
   [/seal|sea_lion|crab/, "beach"],
   [/star|anemone|mussel|barnacle|limpet|urchin|turban_snail|hopkins|scotch_bonnet/, "reef"],
-  [/mallard|wood_duck|whistling_duck|shoveler|coot|gallinule|goose|swan|trout|bluegill|sunfish|bass|cichlid|gar$|mosquitofish|hellbender|beaver|coypu|river_otter|alligator/, "paddle"],
-  [/pond_slider|pond_turtle|snapping|terrapin|cooter|softshell|crayfish|newt|salamander|ensatina/, "shore"],
+  [/mallard|wood_duck|whistling_duck|shoveler|coot|gallinule|goose|swan|trout|bluegill|sunfish|bass|cichlid|gar$|mosquitofish|hellbender|beaver|coypu|muskrat|river_otter|alligator/, "paddle"],
+  [/pond_slider|pond_turtle|painted_turtle|snapping|terrapin|cooter|softshell|crayfish|newt|salamander|ensatina/, "shore"],
   [/heron|egret|ibis|crane|stork|spoonbill|limpkin|oystercatcher/, "wade"],
   [/sanderling|willet|turnstone|killdeer/, "beach"],
   [/hawk|eagle|vulture|condor|osprey|kestrel/, "soar"],
   [/hummingbird/, "hover"],
   [/quail|turkey|roadrunner/, "walk"],
-  [/firefly|swallowtail|monarch|painted_lady|mourning_cloak|fritillary|luna_moth|flame_skimmer|honey_bee|bumble_bee|queen|buckeye|hairstreak|white_peacock|longwing|salt_marsh_moth|pondhawk|dasher|pennant|_bat$/, "flutter"],
+  [/firefly|swallowtail|monarch|painted_lady|mourning_cloak|fritillary|luna_moth|flame_skimmer|honey_bee|bumble_bee|queen|buckeye|hairstreak|white_peacock|longwing|salt_marsh_moth|pondhawk|dasher|pennant|_bat$|carpenter_bee|lanternfly|spongy_moth|small_white|skipper/, "flutter"],
   [/spider|widow|orbweaver/, "dangle"],
   [/frog|toad|peeper|grasshopper/, "hop"],
 ];
@@ -194,7 +194,17 @@ function habPerches(L, state) {
     const mx = L.sea + Math.round((L.w - L.sea) * .45), top = L.water - 14;
     return [[mx - 12, top + 3], [mx - 3, top], [mx + 7, top + 1], [mx + 15, top + 4]];
   }
+  if (state === "NY") {
+    // The Statue of Liberty: the pedestal's top corners and the star fort's.
+    const { sx, ftop, ptop } = habLiberty(L);
+    return [[sx - 5, ptop], [sx + 5, ptop], [sx - 12, ftop], [sx + 12, ftop]];
+  }
   return [];
+}
+// Where the Statue of Liberty stands on its island in the harbor.
+function habLiberty(L) {
+  const sx = L.sea + Math.round((L.w - L.sea) * .55), ftop = L.water - 4, ptop = ftop - 15;
+  return { sx, ftop, ptop, torch: [sx - 7, ptop - 31] };
 }
 
 // A free perch for this bird (keeping the one it has), or null.
@@ -687,6 +697,7 @@ const HAB_SHOWCASE = {
   NC: { slug: "northern_cardinal", common_name: "Northern Cardinal", category: "bird", rarity: "common" },
   TX: { slug: "northern_mockingbird", common_name: "Northern Mockingbird", category: "bird", rarity: "common" },
   FL: { slug: "roseate_spoonbill", common_name: "Roseate Spoonbill", category: "bird", rarity: "uncommon" },
+  NY: { slug: "black_capped_chickadee", common_name: "Black-capped Chickadee", category: "bird", rarity: "common" },
   // States without their own pick yet: a robin, found in every state.
   default: { slug: "american_robin", common_name: "American Robin", category: "bird", rarity: "common" },
 };
@@ -1096,7 +1107,9 @@ function habTinted(img, slug, phase) {
 // flat-topped mesas over Hill Country, a live oak, bluebonnets and Indian
 // paintbrush, prickly pear and a ranch windmill by the Gulf; Florida is flat
 // sawgrass with cypress domes and cabbage palms, coreopsis, a palm for the
-// roosting tree, a mangrove island offshore and a rocket on its launch pad.
+// roosting tree, a mangrove island offshore and a rocket on its launch pad; New
+// York is fall color, with the Manhattan skyline beyond the hills, a sugar maple
+// and the Statue of Liberty out in the harbor.
 const HAB_SCENES = {
   CA: { far: ["#c99b48", "#dcb35e", "#ecc875", "#f7dc95"], near: ["#7d8a3c", "#97a24a", "#aeb65a", "#c6c977"],
         meadow: ["#5f9a3d", "#77b04a", "#8fc35a", "#a8d36d"], dots: "oak", tree: "oak",
@@ -1110,6 +1123,9 @@ const HAB_SCENES = {
   FL: { far: ["#6f8f5a", "#7f9f63", "#90ae6e", "#a3bf7c"], near: ["#7a9a48", "#8eac52", "#a2bd5e", "#b8cd70"],
         meadow: ["#5f9a3d", "#76ae48", "#8cc156", "#a3d26a"], dots: "palm", tree: "palm", flat: true,
         flowers: [["#ffd23a", "#c8641e"], ["#ffd23a", "#c8641e"], ["#f27aa8", "#ffe0ec"], ["#b48cff", "#f0e8ff"]] },
+  NY: { far: ["#9a7a52", "#b08a5a", "#c49c66", "#d6b078"], near: ["#7a7a3a", "#8e8a42", "#a49a4c", "#b8ac5a"],
+        meadow: ["#5f9a3d", "#77b04a", "#8fc35a", "#a8d36d"], dots: "maple", tree: "maple",
+        flowers: [["#9a6ad8", "#ffd84d"], ["#9a6ad8", "#ffd84d"], ["#ffd23a", "#c8641e"], ["#ffffff", "#ffe9a0"]] },
   default: { far: ["#6f9e60", "#82b370", "#97c483", "#b0d69a"], near: ["#4f8d43", "#62a250", "#78b55e", "#90c771"],
              meadow: ["#5f9a3d", "#77b04a", "#8fc35a", "#a8d36d"], dots: "round", tree: "round",
              flowers: [["#ffffff", "#ffe9a0"], ["#ffd84d", "#fff2a0"], ["#f27aa8", "#ffc4dc"], ["#b48cff", "#e0d0ff"]] },
@@ -1231,6 +1247,28 @@ function habBackground(L, phase, state) {
       for (const [dx, dy] of [[-3, 1], [-2, 0], [-1, -1], [1, -1], [2, 0], [3, 1], [0, -2], [-4, 2], [4, 2]])
         img.set(x + dx, y0 - h + dy, atmo(pf[dy < 0 ? 1 : 0], .2));
     }
+  } else if (state === "NY") {
+    // The Manhattan skyline, hazy in the distance, with the Empire State Building
+    // in the middle; its windows light up at night.
+    const bld = P("#6a7894", "#7e8ca6", "#95a2ba", "#aab5ca"), lit = P("#ffe9a0", "#ffd36a");
+    const x0 = Math.round(coastEnd * .18), x1 = Math.round(coastEnd * .78), es = Math.round((x0 + x1) / 2);
+    for (let x = x0, i = 0; x < x1; i++) {
+      const w = 4 + Math.floor(hash2(i, 61) * 6), h = 12 + Math.floor(hash2(i, 62) * 22 * (1 - Math.abs(x - es) / (x1 - x0)));
+      for (let dx = 0; dx < w && x + dx < x1; dx++) for (let y = 138 - h; y < 140; y++) {
+        const edge = dx === 0 ? 2 : dx === w - 1 ? 0 : 1;
+        const win = dx % 2 === 1 && dx < w - 1 && (y - 138 + h) % 3 === 1 && y > 138 - h + 1;
+        if (win && night && hash2(x + dx, y, 63) > .55) img.set(x + dx, y, lit[hash2(x, y, 64) > .5 ? 0 : 1], 1);
+        else img.set(x + dx, y, atmo(win ? bld[3] : bld[edge], .3));
+      }
+      x += w + (hash2(i, 65) > .7 ? 1 : 0);
+    }
+    // The Empire State Building: setbacks and a spire.
+    for (const [hw, y0, y1] of [[4, 100, 140], [3, 92, 100], [2, 86, 92], [1, 80, 86], [0, 70, 80]])
+      for (let y = y0; y < y1; y++) for (let dx = -hw; dx <= hw; dx++) {
+        const win = hw > 1 && dx % 2 === 0 && dx !== -hw && y % 3 === 0;
+        if (win && night && hash2(dx, y, 66) > .5) img.set(es + dx, y, lit[0], 1);
+        else img.set(es + dx, y, atmo(bld[dx < 0 ? 2 : dx > 0 ? 0 : 1], .25));
+      }
   } else if (state === "TX") {
     // Mesas and buttes: flat caprock tops over red-and-tan banded cliffs.
     const rock = P("#9a5e44", "#b47456", "#c98c68", "#dca77f"), cap = P("#b88e6a", "#e6cba4");
@@ -1269,7 +1307,11 @@ function habBackground(L, phase, state) {
     }
     // Trees on the hills: little oaks, a dense forest, or round trees.
     const dots = sc.dots, tl = pxLayer(W, H), tr = mulberry(31 + li);
-    const n = dots === "forest" ? (li ? 70 : 90) : dots === "oak" ? (li ? 14 : 9) : dots === "palm" ? (li ? 12 : 8) : (li ? 10 : 6);
+    const n = dots === "forest" ? (li ? 70 : 90) : dots === "oak" ? (li ? 14 : 9) : dots === "palm" ? (li ? 12 : 8)
+      : dots === "maple" ? (li ? 34 : 46) : (li ? 10 : 6);
+    // Fall color: red, orange and gold maples among a few green ones.
+    const fall = [P("#7a2216", "#9a2e1a", "#bc4222", "#d85a2a"), P("#9a4a14", "#bc5e18", "#d8781e", "#ec9a30"),
+                  P("#9a7a14", "#bc9a1e", "#d8b82a", "#ecd048"), P("#2f6a34", "#3f7f41", "#55964f", "#6dad60")];
     const leaf = dots === "oak" ? P("#3f5a26", "#526f30", "#67853b", "#7f9c4a")
       : dots === "forest" ? P("#1f4f2c", "#2b6236", "#387542", "#4a8a4f") : P("#2f6a34", "#3f7f41", "#55964f", "#6dad60");
     for (let i = 0; i < n; i++) {
@@ -1292,6 +1334,8 @@ function habBackground(L, phase, state) {
         for (let j = 0; j < h; j++) tl.set(x, y - j, P("#7a6a52"));
         for (const [dx, dy] of [[-4, 1], [-3, 0], [-2, -1], [-1, -1], [1, -1], [2, -1], [3, 0], [4, 1], [0, -2], [-1, -3], [1, -3], [-5, 2], [5, 2]])
           tl.set(x + dx, y - h + dy, leaf[dy < -1 ? 3 : dy < 0 ? 2 : 1]);
+      } else if (dots === "maple") {
+        pxBlob(tl, x, y - 1, Math.round(3 * s + 1), Math.round(3 * s + 1), fall[Math.floor(tr() * fall.length)], { rough: .5, seed: i });
       } else pxBlob(tl, x, y - 2, Math.round(4 * s + 1), Math.round(4 * s + 1), leaf, { rough: .4, seed: i });
     }
     tl.onto(img, li ? P("#22401f") : undefined);
@@ -1502,6 +1546,44 @@ function habBackground(L, phase, state) {
     for (const ay of [rtop + 16, rtop + 34]) for (let x = rx + 5; x < gx - 3; x++) rk.set(x, ay, steel[0]);
     for (let dx = -10; dx <= 18; dx++) for (let y = pad; y < pad + 3; y++) rk.set(rx + dx, y, ramp(P("#7a7a80", "#9a9aa0", "#b8b8bc"), .8 - (y - pad) * .3, rx + dx, y));
     rk.onto(img, P("#1e1e24"));
+  } else if (state === "NY") {
+    // Fallen leaves scattered on the meadow.
+    const lv = [P("#c8441c"), P("#e8782a"), P("#e8b82a"), P("#9a2a16")];
+    for (let i = 0; i < 90; i++) {
+      const x = Math.floor(hash2(i, 71) * (L.land - 6)) + 2, y = L.water + 10 + Math.floor(hash2(i, 72) * (HAB_H - L.water - 12));
+      if (((x - L.pond.x) / (L.pond.rx + 4)) ** 2 + ((y - L.pond.y) / (L.pond.ry + 4)) ** 2 < 1) continue;
+      img.set(x, y, lv[i % 4]); if (hash2(i, 73) > .5) img.set(x + 1, y, lv[(i + 1) % 4]);
+    }
+    // The Statue of Liberty on its island: a star fort, the stone pedestal, and
+    // the copper-green statue holding up her torch.
+    const lib = pxLayer(W, H), { sx, ftop, ptop, torch } = habLiberty(L);
+    const isle = P("#4a6a3a", "#5a7e44", "#6e9450"), stone = P("#8a7e6a", "#a89a82", "#c4b69c", "#dccfb4");
+    const fort = P("#7a7466", "#948e7e", "#aea896"), cu = P("#2f6a58", "#3f7f6a", "#5a9e86", "#7dbca2", "#a6d6c0");
+    pxBlob(lib, sx, L.water + 3, 22, 5, isle, { flat: true, rough: .4, seed: 7 });
+    for (let y = ftop; y < L.water + 1; y++) for (let dx = -13 - (y - ftop); dx <= 13 + (y - ftop); dx++)
+      lib.set(sx + dx, y, ramp(fort, .8 - (dx + 16) / 32 * .6 - (y === ftop ? -.2 : 0), sx + dx, y));
+    for (let y = ptop; y < ftop; y++) {
+      const hw = y < ptop + 3 ? 6 : 5 + (y > ftop - 4 ? 1 : 0);
+      for (let dx = -hw; dx <= hw; dx++) lib.set(sx + dx, y, ramp(stone, .85 - (dx + hw) / (2 * hw + 1) * .7 + (y === ptop + 2 ? -.3 : 0), sx + dx, y));
+    }
+    // her robe, widening to the feet
+    const top = ptop - 22;
+    for (let y = top + 6; y < ptop; y++) {
+      const hw = Math.round(1.5 + (y - top - 6) * .14);
+      for (let dx = -hw; dx <= hw; dx++) lib.set(sx + dx, y, ramp(cu, .85 - (dx + hw) / (2 * hw + 1) * .75 + ((y + dx) % 4 === 0 ? -.2 : 0), sx + dx, y));
+    }
+    pxBlob(lib, sx, top + 3, 2, 2, cu, { seed: 3 });  // head
+    for (const [dx, dy] of [[-3, -1], [-2, -2], [0, -3], [2, -2], [3, -1]]) lib.set(sx + dx, top + 2 + dy, cu[3]);  // crown spikes
+    // the raised arm and the torch with its gold flame
+    for (let k = 0; k <= 9; k++) lib.set(sx - 2 - Math.round(k * .5), top + 6 - k, cu[k > 6 ? 3 : 2]);
+    lib.set(torch[0] + 1, torch[1] + 2, cu[1]); lib.set(torch[0], torch[1] + 1, cu[2]); lib.set(torch[0] + 1, torch[1] + 1, cu[2]);
+    for (const [dx, dy, c] of [[0, 0, "#ffd84a"], [1, 0, "#ffb02a"], [0, -1, "#ffe98a"], [1, -1, "#ffd84a"], [0, -2, "#fff4c0"]])
+      lib.set(torch[0] + dx, torch[1] + dy, P(c), night ? 1 : 0);
+    // the tablet in her other arm
+    for (let y = top + 8; y < top + 12; y++) for (let dx = 2; dx <= 3; dx++) lib.set(sx + dx, y, cu[dx === 2 ? 3 : 1]);
+    lib.onto(img, P("#1a2a24"));
+    const foam = P("#e9f6ff");
+    for (let dx = -26; dx <= 26; dx++) if (hash2(dx, 74) > .45) img.set(sx + dx, L.water + 6 + (hash2(dx, 75) > .7 ? 1 : 0), foam);
   } else if (state === "TX") {
     // Prickly pear: clumps of flat pads with yellow flowers and red fruit.
     const pad = P("#3d6a32", "#4f8240", "#669a4c", "#82b45e"), cac = pxLayer(W, H);
@@ -1615,6 +1697,7 @@ function habBackground(L, phase, state) {
     limb(tx + 2, 133, tx + 18, 130, 2, 1);
     // California's coast live oak is a darker, olive green.
     const leaf = kind === "oak" ? P("#24391c", "#344f25", "#486b2f", "#62893c", "#86ab55")
+      : kind === "maple" ? P("#6a1a12", "#9a2a16", "#c8441c", "#e8702a", "#f6b040")  // a sugar maple in fall
       : P("#22492a", "#2f6633", "#41863d", "#5aa548", "#84c55c");
     const crown = [[-20, 88, 12], [22, 86, 13], [-8, 74, 14], [12, 70, 13], [2, 58, 11], [0, 92, 18],
                    [-18, 104, 13], [17, 101, 14], [-4, 112, 9], [27, 106, 8]];
@@ -1701,6 +1784,11 @@ function habAmbient(c, L, phase) {
         if (j % 9 === 4) { c.fillStyle = light; c.fillRect(x + (j % 18 ? 2 : -3), y, 3, 1); c.fillStyle = dark; c.fillRect(x + (j % 18 ? 2 : -3), y + 1, 3, 1); }
       }
     }
+  } else if (habState() === "NY" && phase !== "day") {
+    // Liberty's torch glows after sundown.
+    const [lx, ly] = habLiberty(L).torch, k = .25 + Math.sin(t * 3.1) * .05 + Math.sin(t * 7.3) * .03;
+    c.fillStyle = `rgba(255,220,120,${k.toFixed(3)})`; c.fillRect(lx - 4, ly - 5, 10, 8);
+    c.fillStyle = `rgba(255,220,120,${(k * .5).toFixed(3)})`; c.fillRect(lx - 8, ly - 3, 18, 4);
   } else if (habState() === "NC" && phase !== "day") {
     // The lighthouse lamp flashes after sundown.
     const on = Math.sin(t * 2.4) > .2, lx = L.sea - 12, ly = L.water - 62;
