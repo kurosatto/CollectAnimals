@@ -1,9 +1,0 @@
-slug,common_name,scientific_name,category,rarity
-domestic_dog,Dog,Canis familiaris,pet,common
-domestic_cat,Cat,Felis catus,pet,common
-domestic_rabbit,Rabbit,Oryctolagus cuniculus,pet,common
-domestic_horse,Horse,Equus caballus,pet,common
-domestic_chicken,Chicken,Gallus gallus,pet,common
-brown_rat,Brown Rat,Rattus norvegicus,pest,common
-house_mouse,House Mouse,Mus musculus,pest,common
-rock_pigeon,Rock Pigeon,Columba livia,pest,common

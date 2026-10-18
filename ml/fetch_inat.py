@@ -37,6 +37,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -67,7 +68,8 @@ def api_get(path: str, **params) -> dict:
     global _last_call
     resp = None
     for attempt in range(6):
-        wait = 1.05 - (time.monotonic() - _last_call)
+        # INAT_MIN_INTERVAL slows long batch jobs down when iNaturalist is throttling.
+        wait = float(os.getenv("INAT_MIN_INTERVAL", "1.05")) - (time.monotonic() - _last_call)
         if wait > 0:
             time.sleep(wait)
         _last_call = time.monotonic()

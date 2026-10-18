@@ -150,7 +150,10 @@ def main():
     taxon_ids = ",".join(str(t) for t in slug_by_taxon)
 
     parks = []
-    for pid, name, lat, lon, radius, blurb in PARKS[state["code"]]:
+    # States without a hand-made list above use species/parks.json:
+    # {"AL": [[id, name, lat, lon, radius_km, blurb], ...], ...}
+    extra = json.loads((Path(__file__).resolve().parents[1] / "species" / "parks.json").read_text(encoding="utf-8"))
+    for pid, name, lat, lon, radius, blurb in PARKS.get(state["code"]) or extra[state["code"]]:
         data = api_get("/observations/species_counts", lat=lat, lng=lon, radius=radius,
                        taxon_id=taxon_ids, quality_grade="research", per_page=500)
         counts = {}
