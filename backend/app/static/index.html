@@ -60,6 +60,21 @@
   .photo-btn { display:inline-flex; align-items:center; padding:10px 12px; border-radius:8px; border:1px solid var(--line);
                background:var(--card); color:var(--ink); cursor:pointer; }
   #photo-name { align-self:center; font-size:.85rem; }
+  /* Crop: the photo with a box the player drags; outside the box is dimmed. */
+  .crop { margin-top:12px; }
+  .crop-stage { position:relative; display:inline-block; max-width:100%; overflow:hidden; border-radius:8px;
+                touch-action:none; user-select:none; -webkit-user-select:none; line-height:0; }
+  .crop-stage img { display:block; max-width:100%; max-height:60vh; pointer-events:none; }
+  .crop-box { position:absolute; box-sizing:border-box; border:2px solid #fff; cursor:move;
+              box-shadow:0 0 0 9999px rgba(0,0,0,.5); }
+  .crop-box::before, .crop-box::after { content:""; position:absolute; border:0 solid rgba(255,255,255,.45); pointer-events:none; }
+  .crop-box::before { left:33.3%; right:33.3%; top:0; bottom:0; border-width:0 1px; }
+  .crop-box::after { top:33.3%; bottom:33.3%; left:0; right:0; border-width:1px 0; }
+  .crop-box i { position:absolute; width:22px; height:22px; border:4px solid #fff; z-index:1; }
+  .crop-box i[data-h="nw"] { left:-2px; top:-2px; border-width:4px 0 0 4px; cursor:nwse-resize; }
+  .crop-box i[data-h="ne"] { right:-2px; top:-2px; border-width:4px 4px 0 0; cursor:nesw-resize; }
+  .crop-box i[data-h="sw"] { left:-2px; bottom:-2px; border-width:0 0 4px 4px; cursor:nesw-resize; }
+  .crop-box i[data-h="se"] { right:-2px; bottom:-2px; border-width:0 4px 4px 0; cursor:nwse-resize; }
   dialog { border:1px solid var(--line); border-radius:14px; background:var(--card); color:var(--ink);
            padding:0; width:min(560px, calc(100vw - 32px)); }
   dialog::backdrop { background:rgba(0,0,0,.45); }
@@ -377,6 +392,17 @@
         <button type="submit">Identify</button>
         <label class="inline"><input type="checkbox" id="use-location" checked> Save where I captured it</label>
       </form>
+      <div id="crop" class="crop hidden">
+        <p class="muted" style="margin:0 0 6px">Drag the box or its corners to crop to the animal.</p>
+        <div class="crop-stage" id="crop-stage"><img id="crop-img" alt="Your photo">
+          <div class="crop-box" id="crop-box"><i data-h="nw"></i><i data-h="ne"></i><i data-h="sw"></i><i data-h="se"></i></div>
+        </div>
+        <div class="seg" id="crop-seg">
+          <button type="button" data-mode="free" class="on">Free</button>
+          <button type="button" data-mode="square">Square</button>
+          <button type="button" data-mode="whole">Whole photo</button>
+        </div>
+      </div>
       <div id="result" class="card hidden"></div>
     </div>
     <div class="card" data-tab="catch" id="week-card">
@@ -575,15 +601,96 @@ for (const id of ["photo-camera", "photo-library"]) {
   $(id).onchange = () => {
     chosenPhoto = $(id).files[0] || null;
     $("photo-name").textContent = chosenPhoto ? chosenPhoto.name : "";
+    cropOpen(chosenPhoto);
   };
+}
+
+// Crop before identifying: the box is kept as fractions of the upright photo and
+// sent along, so the server crops the original and its time and place still count.
+const crop = { box: { x: 0, y: 0, w: 1, h: 1 }, square: false, url: null };
+const CROP_MIN = 32; // px on screen
+
+function cropOpen(file) {
+  if (crop.url) URL.revokeObjectURL(crop.url);
+  crop.url = file ? URL.createObjectURL(file) : null;
+  $("crop").classList.toggle("hidden", !file);
+  if (!file) return;
+  $("crop-img").onload = () => { crop.box = { x: 0, y: 0, w: 1, h: 1 }; cropMode(crop.square ? "square" : "free"); };
+  $("crop-img").src = crop.url;
+}
+
+function cropDraw() {
+  const b = crop.box, s = $("crop-box").style;
+  s.left = `${b.x * 100}%`; s.top = `${b.y * 100}%`; s.width = `${b.w * 100}%`; s.height = `${b.h * 100}%`;
+}
+
+function cropMode(mode) {
+  const { width: W, height: H } = $("crop-stage").getBoundingClientRect();
+  crop.square = mode === "square";
+  if (mode === "square" && W && H) {
+    // The biggest square that fits in the current box, kept centred on it.
+    const b = crop.box, side = Math.min(b.w * W, b.h * H);
+    crop.box = { x: b.x + (b.w * W - side) / 2 / W, y: b.y + (b.h * H - side) / 2 / H, w: side / W, h: side / H };
+  } else if (mode === "whole") {
+    crop.box = { x: 0, y: 0, w: 1, h: 1 };
+  }
+  for (const b of $("crop-seg").children) b.classList.toggle("on", b.dataset.mode === (crop.square ? "square" : "free"));
+  cropDraw();
+}
+for (const b of $("crop-seg").children) b.onclick = () => cropMode(b.dataset.mode);
+
+$("crop-box").onpointerdown = (e) => {
+  e.preventDefault();
+  const stage = $("crop-stage").getBoundingClientRect();
+  const W = stage.width, H = stage.height;
+  const start = { ...crop.box }, px = e.clientX, py = e.clientY;
+  const handle = e.target.dataset.h; // nw/ne/sw/se, or none to move the box
+  const box = $("crop-box");
+  box.setPointerCapture(e.pointerId);
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  box.onpointermove = (m) => {
+    if (!handle) {
+      crop.box = { ...start,
+        x: clamp(start.x + (m.clientX - px) / W, 0, 1 - start.w),
+        y: clamp(start.y + (m.clientY - py) / H, 0, 1 - start.h) };
+    } else {
+      // The opposite corner stays put; the dragged one follows the finger.
+      const dx = handle.includes("e") ? 1 : -1, dy = handle.includes("s") ? 1 : -1;
+      const ax = (dx > 0 ? start.x : start.x + start.w) * W, ay = (dy > 0 ? start.y : start.y + start.h) * H;
+      const roomX = dx > 0 ? W - ax : ax, roomY = dy > 0 ? H - ay : ay;
+      let w = clamp((m.clientX - stage.left - ax) * dx, CROP_MIN, roomX);
+      let h = clamp((m.clientY - stage.top - ay) * dy, CROP_MIN, roomY);
+      if (crop.square) w = h = Math.max(CROP_MIN, Math.min(Math.max(w, h), roomX, roomY));
+      crop.box = { x: (dx > 0 ? ax : ax - w) / W, y: (dy > 0 ? ay : ay - h) / H, w: w / W, h: h / H };
+    }
+    cropDraw();
+  };
+  box.onpointerup = box.onpointercancel = () => { box.onpointermove = box.onpointerup = box.onpointercancel = null; };
+};
+
+const cropped = () => { const b = crop.box; return b.x > 0.002 || b.y > 0.002 || b.w < 0.996 || b.h < 0.996; };
+
+// The cropped part as an image, for showing next to the album photo.
+function croppedBlob() {
+  const img = $("crop-img"), b = crop.box;
+  const W = img.naturalWidth, H = img.naturalHeight;
+  const c = document.createElement("canvas");
+  c.width = Math.max(1, Math.round(b.w * W)); c.height = Math.max(1, Math.round(b.h * H));
+  c.getContext("2d").drawImage(img, b.x * W, b.y * H, c.width, c.height, 0, 0, c.width, c.height);
+  return new Promise((ok) => c.toBlob((blob) => ok(blob || chosenPhoto), "image/jpeg", 0.9));
 }
 
 $("upload-form").onsubmit = async (e) => {
   e.preventDefault();
   if (!chosenPhoto) { $("photo-name").textContent = "Pick a photo first"; return; }
   const fd = new FormData();
-  const file = chosenPhoto;
+  let file = chosenPhoto;
   fd.append("photo", file);
+  if (cropped()) {
+    const b = crop.box;
+    for (const [k, v] of Object.entries({ crop_x: b.x, crop_y: b.y, crop_w: b.w, crop_h: b.h })) fd.append(k, v.toFixed(4));
+    file = await croppedBlob();
+  }
   const box = $("result");
   box.classList.remove("hidden", "win");
   box.textContent = "Identifying…";

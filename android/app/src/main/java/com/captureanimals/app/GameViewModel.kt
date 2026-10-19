@@ -231,15 +231,15 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
      * [location] is where the phone is now, (lat, lon), when the player lets us save where
      * they captured it ([savePlace]); the photo's own time and place come first.
      */
-    fun capture(uri: Uri, location: Pair<Double, Double>? = null, savePlace: Boolean = true) {
+    fun capture(uri: Uri, location: Pair<Double, Double>? = null, savePlace: Boolean = true, crop: CropBox? = null) {
         val info = _state.value.info ?: return
         _state.update { it.copy(busy = true, error = null) }
         viewModelScope.launch {
             try {
                 val result = if (_state.value.account != null) {
-                    captureOnline(uri, info, location, savePlace)
+                    captureOnline(uri, info, location, savePlace, crop)
                 } else {
-                    withContext(Dispatchers.Default) { classify(uri, info, if (savePlace) location else null) }
+                    withContext(Dispatchers.Default) { classify(uri, info, if (savePlace) location else null, crop) }
                 }
                 _state.update { it.copy(busy = false, result = result) }
             } catch (e: Online.ApiError) {
@@ -252,8 +252,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Signed in: the server identifies the photo and keeps the badge, as on the website. */
     private suspend fun captureOnline(uri: Uri, info: ModelInfo, location: Pair<Double, Double>?,
-                                      savePlace: Boolean): CaptureResult {
-        val bitmap = withContext(Dispatchers.IO) { ImageLoader.load(getApplication(), uri, minShortSide = 1200) }
+                                      savePlace: Boolean, crop: CropBox?): CaptureResult {
+        val bitmap = withContext(Dispatchers.IO) { ImageLoader.load(getApplication(), uri, minShortSide = if (crop == null) 1200 else 2400).cropTo(crop) }
         val meta = withContext(Dispatchers.IO) { readPhotoMeta(getApplication(), uri) }
         val r = Online.capture(bitmap, location?.first, location?.second, meta, savePlace)
         val result = onlineResult(r, ImageLoader.thumbnail(bitmap, 1024), info)
@@ -301,7 +301,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     // Same rules as the backend's POST /captures, including counting the photo in
     // the state it was taken in (from its EXIF, or [location] if it's recent).
-    private suspend fun classify(uri: Uri, mainInfo: ModelInfo, location: Pair<Double, Double>?): CaptureResult {
+    private suspend fun classify(uri: Uri, mainInfo: ModelInfo, location: Pair<Double, Double>?,
+                                 crop: CropBox? = null): CaptureResult {
         val app = getApplication<Application>()
         val ui = _state.value
         val meta = readPhotoMeta(app, uri)
@@ -316,7 +317,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             prefs.edit().putStringSet("unlocked", unlocked).apply()
             _state.update { it.copy(unlocked = unlocked) }
         }
-        val bitmap = ImageLoader.load(app, uri, minShortSide = info.resize)
+        // Cropping keeps a part, so decode bigger to keep enough pixels for the model.
+        val bitmap = ImageLoader.load(app, uri, minShortSide = if (crop == null) info.resize else info.resize * 3).cropTo(crop)
         // Five guesses: three are shown, all five are offered if the player corrects the model.
         // Only the chosen state's animals count, as on the website.
         val allowed = info.species.map { it.slug }.toSet() + info.otherLabel
