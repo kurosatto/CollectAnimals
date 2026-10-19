@@ -403,9 +403,9 @@ def test_new_state_without_map_data_or_art(tmp_path, fake):
             assert r.status_code == 201, r.text
             assert r.json()["species"]["slug"] == "testland_mystery_vole"
             # A photo taken there unlocks a state, as for CA and NC. Testland has no
-            # outline, so its bounding box decides.
+            # outline, so a real state's outline over the same spot wins.
             assert client.patch("/me", headers=h, json={"state": "NC"}).status_code == 403
-            assert client.get("/states/at", params={"lat": 41.5, "lon": -97.5}).json() == {"code": "TL"}
+            assert client.get("/states/at", params={"lat": 41.5, "lon": -97.5}).json() == {"code": "NE"}
     finally:
         settings.states_json = real
         Base.metadata.drop_all(engine)
@@ -798,8 +798,8 @@ def test_state_at():
         return here.code if here else None
     assert at(34.05, -118.24) == "CA" and at(35.6, -82.55) == "NC"
     # Reno is inside California's bounding box but not its outline.
-    assert at(39.53, -119.81) is None
-    assert at(40.7, -74.0) is None
+    assert at(39.53, -119.81) == "NV" and at(40.7, -74.0) == "NY"
+    assert at(51.5, -0.1) is None
 
 
 def test_state_at_endpoint(client):
