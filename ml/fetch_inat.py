@@ -44,6 +44,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -75,7 +76,8 @@ def api_get(path: str, **params) -> dict:
     global _last_call
     resp = None
     for attempt in range(6):
-        wait = 1.05 - (time.monotonic() - _last_call)
+        # INAT_MIN_INTERVAL slows long batch jobs down when iNaturalist is throttling.
+        wait = float(os.getenv("INAT_MIN_INTERVAL", "1.05")) - (time.monotonic() - _last_call)
         if wait > 0:
             time.sleep(wait)
         _last_call = time.monotonic()
@@ -260,7 +262,8 @@ def main():
         lists, all_lists = load_states(only=args.states), load_states()
         if not lists:
             raise SystemExit(f"no states match {args.states}")
-        for st in lists:
+        # Pets and pests come from the whole US, so the states' places aren't used.
+        for st in lists if not args.only_household else []:
             check_place(st["inat_place_id"], st["name"])
 
     # Every listed species in every state (so "other" never includes one), with
