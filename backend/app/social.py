@@ -100,12 +100,13 @@ def photo_out(p: AlbumPhoto, viewer: User, friends: set[int], likes: int, liked:
     mine = p.user_id == viewer.id
     c = p.capture
     loc = places.for_viewer(c.latitude, c.longitude, p.species.rarity, mine, p.user_id in friends)
+    st = states.get(c.state or p.user.state)
     return PhotoOut(
         id=p.id, url=get_storage().url(c.image_path) if show_image else None,
         username=p.user.username, species=species_out(p.species, revealed),
         taken_on=(c.taken_at or c.created_at).date(), caught_at=c.created_at,
         latitude=loc.latitude, longitude=loc.longitude, location_precise=loc.precise,
-        place=loc.place, like_count=likes, liked_by_me=liked, comment_count=comments, is_mine=mine,
+        place=loc.place, state=st.name if st else None, like_count=likes, liked_by_me=liked, comment_count=comments, is_mine=mine,
         by_friend=p.user_id in friends, rank=rank, score=c.score, stars=c.score_stars,
         where_when=where_when_out(c, (states.get(c.state or p.user.state) or states.get(None)).utc_offset)
         if mine else None)

@@ -1899,6 +1899,7 @@ function feedItem(p) {
   const name = el("strong", "", s.revealed ? article(s.common_name) : `a mystery ${s.category}`);
   name.style.color = `var(--${s.rarity})`;
   line.append(name);
+  if (p.state) line.append(` in ${p.state}`);
   const when = el("div", "when", [p.place, ago(p.caught_at)].filter(Boolean).join(" · "));
   what.append(line, when);
   row.append(what);

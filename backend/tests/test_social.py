@@ -215,6 +215,7 @@ def test_news_feed(client, fake):
              for p in feed["photos"]}
     coyote = items["bob:coyote"]
     assert coyote["place"] == "near Santa Cruz" and coyote["latitude"] == 37.0
+    assert coyote["state"] == "California"
     assert coyote["url"] and coyote["caught_at"]
     # ana hasn't unlocked the bobcat or the ringtail: no name, no photo.
     hidden = [p for p in feed["photos"] if p["username"] == "cyd"]
