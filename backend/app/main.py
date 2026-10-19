@@ -635,7 +635,9 @@ async def create_capture(photo: UploadFile = File(...),
                          photo_latitude: float | None = Form(None, ge=-90, le=90),
                          photo_longitude: float | None = Form(None, ge=-180, le=180),
                          photo_taken_at: str | None = Form(None),
-                         save_place: bool = Form(True),
+                         # A string, not a bool: FastAPI 0.147+ reads a missing bool form
+                         # field as False (an unticked checkbox), which dropped every place.
+                         save_place: str | None = Form(None),
                          crop_x: float | None = Form(None, ge=0, le=1),
                          crop_y: float | None = Form(None, ge=0, le=1),
                          crop_w: float | None = Form(None, gt=0, le=1),
@@ -669,7 +671,7 @@ async def create_capture(photo: UploadFile = File(...),
     if taken_at is not None and not (datetime(1990, 1, 1) <= taken_at <= now + timedelta(days=1)):
         taken_at = None  # the camera's clock was wrong
     time_source = "photo" if taken_at is not None else None
-    if not save_place:
+    if (save_place or "").strip().lower() in ("false", "0", "off", "no"):
         latitude = longitude = place_source = None
     elif exif_lat is not None:
         latitude, longitude, place_source = exif_lat, exif_lon, "photo"
