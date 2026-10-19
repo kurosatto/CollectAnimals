@@ -197,6 +197,12 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch { runCatching { Online.setShowInFeed(on) } }
     }
 
+    fun setAvatar(n: Int) {
+        val acct = _state.value.account ?: return
+        _state.update { it.copy(account = acct.copy(avatar = n)) }
+        viewModelScope.launch { runCatching { Online.setAvatar(n) } }
+    }
+
     /** After the Photos tab deletes an album photo, the badge may be gone too. */
     fun reloadCollection() {
         viewModelScope.launch { runCatching { refreshCollection() } }

@@ -136,6 +136,7 @@ object Online {
     suspend fun me(): Account = Account.parse(JSONObject(call("GET", "/me")))
     suspend fun setState(code: String) { call("PATCH", "/me", JSONObject().put("state", code)) }
     suspend fun setShowInFeed(on: Boolean) { call("PATCH", "/me/settings", JSONObject().put("show_in_feed", on)) }
+    suspend fun setAvatar(n: Int) { call("PATCH", "/me/settings", JSONObject().put("avatar", n)) }
 
     // --- Captures ---------------------------------------------------------------------
 

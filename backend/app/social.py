@@ -473,6 +473,8 @@ def update_settings(body: SettingsIn, user: User = Depends(current_user),
         user.show_in_feed = body.show_in_feed
     if body.is_private is not None:
         user.is_private = body.is_private
+    if body.avatar is not None:
+        user.avatar = body.avatar
     db.commit()
     return {"show_in_feed": user.show_in_feed is not False, "is_private": bool(user.is_private)}
 

@@ -40,6 +40,11 @@ def test_profile_pictures(client):
     friend = client.get("/friends", headers=a).json()["friends"][0]
     assert friend["username"] == "ben" and friend["avatar"] == client.get("/me", headers=b).json()["avatar"]
     assert client.get("/users/ben", headers=a).json()["avatar"] == friend["avatar"]
+    # Players pick their own picture.
+    assert client.patch("/me/settings", json={"avatar": 7}, headers=b).status_code == 200
+    assert client.get("/me", headers=b).json()["avatar"] == 7
+    assert client.get("/friends", headers=a).json()["friends"][0]["avatar"] == 7
+    assert client.patch("/me/settings", json={"avatar": 11}, headers=b).status_code == 422
 
 
 def test_friend_requests(client):

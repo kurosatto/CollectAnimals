@@ -40,6 +40,8 @@ class UserOut(BaseModel):
 class SettingsIn(BaseModel):
     show_in_feed: bool | None = None
     is_private: bool | None = None
+    # Profile picture 1-10 (app/avatars.py).
+    avatar: int | None = Field(None, ge=1, le=10)
 
 
 class UserUpdate(BaseModel):
