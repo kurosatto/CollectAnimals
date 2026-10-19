@@ -262,7 +262,8 @@ def main():
         lists, all_lists = load_states(only=args.states), load_states()
         if not lists:
             raise SystemExit(f"no states match {args.states}")
-        for st in lists:
+        # Pets and pests come from the whole US, so the states' places aren't used.
+        for st in lists if not args.only_household else []:
             check_place(st["inat_place_id"], st["name"])
 
     # Every listed species in every state (so "other" never includes one), with
