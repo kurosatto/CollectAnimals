@@ -590,3 +590,23 @@ def test_crop_keeps_part_and_metadata(client, fake):
     r = client.post("/captures", headers=ana, data={"crop_x": "0", "crop_y": "0", "crop_w": "0.1", "crop_h": "0.1"},
                     files={"photo": ("p.jpg", buf.getvalue(), "image/jpeg")})
     assert r.status_code == 400
+
+
+def test_crop_uses_the_upright_photo(client, fake):
+    # Stored sideways (EXIF orientation 6 = turn 90° clockwise to view): 100x200 on
+    # disk shows as 200x100. The crop box is in the upright picture's terms.
+    im = Image.new("RGB", (100, 200), "red")
+    im.paste((0, 0, 255), (0, 0, 100, 100))  # top on disk = right side upright
+    exif = Image.Exif()
+    exif[0x0112] = 6
+    buf = io.BytesIO()
+    im.save(buf, "JPEG", exif=exif)
+    seen = []
+    fake.predict = lambda image, k=3: seen.append(image) or [Prediction("coyote", 0.95)]
+    r = client.post("/captures", headers=signup(client, "ana"),
+                    data={"crop_x": "0.5", "crop_y": "0", "crop_w": "0.5", "crop_h": "1"},
+                    files={"photo": ("p.jpg", buf.getvalue(), "image/jpeg")})
+    assert r.status_code == 201, r.text
+    assert seen[0].size == (100, 100)
+    red, _, blue = seen[0].getpixel((50, 50))
+    assert blue > 200 and red < 50

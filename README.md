@@ -14,6 +14,7 @@ slug, so a badge counts in every state that lists it.
   data, the shared Dex facts (`details.csv`), and per-state Dex text (`<state>_dex.csv`)
 - `species/sprites/` — a 32×32 pixel-art sprite and silhouette per species, shared by all
   states (drawn by `tools/make_sprites.py`; a new species needs a drawing added there, then rerun it)
+- `HANDOVER.md` — start here if you are new to the project (current state, how it runs, conventions)
 - `ml/` — dataset download from iNaturalist, fine-tuning, and a predict CLI
 - `backend/` — FastAPI app: accounts, photo captures, badges, collection, friends, photo albums and galleries, and a minimal web page
 - `android/` — offline Android app: runs the model on the phone, badges stored on the device

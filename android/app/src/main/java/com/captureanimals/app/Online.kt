@@ -86,12 +86,14 @@ object Online {
         c.connectTimeout = 15_000
         c.readTimeout = 60_000
         if (auth) token?.let { c.setRequestProperty("Authorization", "Bearer $it") }
-        if (body != null) {
-            c.doOutput = true
-            contentType?.let { c.setRequestProperty("Content-Type", it) }
-            c.outputStream.use { it.write(body) }
-        }
-        val code = try { c.responseCode } catch (e: java.io.IOException) {
+        val code = try {
+            if (body != null) {
+                c.doOutput = true
+                contentType?.let { c.setRequestProperty("Content-Type", it) }
+                c.outputStream.use { it.write(body) }
+            }
+            c.responseCode
+        } catch (e: java.io.IOException) {
             throw ApiError(0, "Can't reach the game server. Is the PC on?")
         }
         val text = (if (code < 400) c.inputStream else c.errorStream)?.bufferedReader()?.use { it.readText() }.orEmpty()
