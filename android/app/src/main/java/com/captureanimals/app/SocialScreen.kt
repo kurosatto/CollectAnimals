@@ -352,6 +352,19 @@ fun AccountDialog(state: UiState, vm: GameViewModel, onDismiss: () -> Unit) {
                     Text(if (signUp) "Have an account? Log in" else "Need an account? Sign up")
                 }
             } else {
+                // Your profile picture: tap one of the ten to switch.
+                Text("Your picture", style = MaterialTheme.typography.titleSmall)
+                for (row in listOf(1..5, 6..10)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        for (n in row) {
+                            val on = n == acct.avatar
+                            Avatar(n, Modifier.size(44.dp).clip(RoundedCornerShape(50))
+                                .border(if (on) 3.dp else 0.dp, if (on) MaterialTheme.colorScheme.primary
+                                    else Color.Transparent, RoundedCornerShape(50))
+                                .clickable { vm.setAvatar(n) })
+                        }
+                    }
+                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Show my captures in the news feed", Modifier.weight(1f))
                     Switch(acct.showInFeed, onCheckedChange = vm::setShowInFeed)

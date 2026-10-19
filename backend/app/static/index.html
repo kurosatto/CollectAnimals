@@ -293,6 +293,9 @@
   .avatar { width:36px; height:36px; image-rendering:pixelated; flex:none; vertical-align:middle; }
   .avatar.big { width:56px; height:56px; }
   .avatar.small { width:24px; height:24px; }
+  .avatar-pick { display:flex; flex-wrap:wrap; gap:6px; margin:6px 0 4px; }
+  .avatar-pick button { padding:3px; border-radius:50%; line-height:0; }
+  .avatar-pick button.on { border:2px solid var(--accent); background:var(--card); }
   ul.people .who { display:flex; align-items:center; gap:8px; }
   ul.people .who > span { min-width:0; overflow:hidden; text-overflow:ellipsis; }
   .album-head { display:flex; align-items:center; gap:10px; }
@@ -605,6 +608,7 @@ $("auth-form").onsubmit = async (e) => {
 
 $("logout").onclick = async () => { await pushUnsubscribe(); setToken(null); };
 $("username").onclick = () => openProfile($("username").textContent);
+$("username").title = "Your profile and picture";
 
 const CAPTURE_TIMEOUT_MS = 90000;
 
@@ -1754,6 +1758,28 @@ async function openProfile(username) {
   else if (u.friendship === "friends") act.append(el("span", "muted", "✓ Friends"));
   if (u.is_bot) act.append(el("p", "muted", "A bot friend: a sample player who comes with the game."));
   if (act.childNodes.length) box.append(act);
+  // Your own profile: pick your picture.
+  if (u.friendship === "self") {
+    box.append(el("h3", "", "Your picture"));
+    const row = el("div", "avatar-pick");
+    for (let n = 1; n <= 10; n++) {
+      const b = el("button", "ghost" + (n === u.avatar ? " on" : ""));
+      b.title = `Picture ${n}`;
+      b.append(avatarImg(n));
+      b.onclick = async () => {
+        try {
+          await api("/me/settings", { method: "PATCH", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ avatar: n }) });
+          row.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
+          $("album-avatar").src = `/sprites/avatar_${n}.png`;
+          $("username").replaceChildren(avatarImg(n, "small"), u.username);
+          loadFriends();
+        } catch (err) { alert(err.message); }
+      };
+      row.append(b);
+    }
+    box.append(row);
+  }
 
   const sec = (title) => { const h = el("h3", "", title); box.append(h); return h; };
   // Friends see each other's whole Field Guide. It opens on the owner's primary
