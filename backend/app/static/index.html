@@ -698,45 +698,66 @@ $("upload-form").onsubmit = async (e) => {
   if (pos) { fd.append("latitude", pos.latitude); fd.append("longitude", pos.longitude); }
   if (!$("use-location").checked) fd.append("save_place", "false");
   try {
-    const r = await api("/captures", { method: "POST", body: fd });
-    r.file = file;
-    box.classList.toggle("win", r.matched);
-    box.innerHTML = "";
-    const h = document.createElement("strong");
-    h.textContent = (r.new_badge ? "🏅 " : "") + r.message;
-    const p = document.createElement("p");
-    p.className = "muted";
-    p.textContent = "Top guesses: " + r.top_predictions
-      .map((x) => `${x.common_name || (x.label === "other" ? "not on the list" : "???")} ${(x.probability * 100).toFixed(0)}%`).join(", ");
-    if (r.new_badge && r.species?.slug) box.append(captureReveal(r.species.slug));
-    box.append(h, p);
-    if (r.unlocked_state) {
-      markLocked([...unlocked, r.unlocked_state]);
-      const st = states.find((x) => x.code === r.unlocked_state);
-      if (st && st.code !== myState.code) {
-        const b = el("button", "photo-btn", `★ Make ${st.name} my main state`);
-        b.type = "button";
-        b.onclick = async () => {
-          try { await setMainState(st.code); b.replaceWith(el("p", "muted", `${st.name} is now your main state.`)); }
-          catch (err) { alert(err.message); }
-        };
-        box.append(b);
-      }
-    }
-    const sb = safetyBox(r);
-    if (sb) box.append(sb);
-    if (r.where_when) box.append(whereWhen(r.where_when, (res) => {
-      if (res.score) box.querySelector(".score")?.replaceWith(scoreCard(res.score));
-      if (res.bond_up?.length) box.querySelector(".ww").append(el("div", "", `Field notes ✓ ${res.bond_up.join(", ")}`));
-      loadCollection(); loadMyPhotos(); loadFeed();
-    }));
-    if (r.score) box.append(scoreCard(r.score));
-    const pp = pickPanel(r, box);
-    if (pp) box.append(pp);
-    if (r.matched && !r.album_photo_id) keepWhich(r.species, r.capture_id, file, box, r.score && r.score.total);
-    loadCollection(); loadFeed();
+    showCapture(await api("/captures", { method: "POST", body: fd }), file, box);
   } catch (err) { box.textContent = err.message; }
 };
+
+function showCapture(r, file, box) {
+  r.file = file;
+  box.classList.toggle("win", r.matched);
+  box.innerHTML = "";
+  const h = document.createElement("strong");
+  h.textContent = (r.new_badge ? "🏅 " : "") + r.message;
+  const p = document.createElement("p");
+  p.className = "muted";
+  p.textContent = "Top guesses: " + r.top_predictions
+    .map((x) => `${x.common_name || (x.label === "other" ? "not on the list" : "???")} ${(x.probability * 100).toFixed(0)}%`).join(", ");
+  if (r.new_badge && r.species?.slug) box.append(captureReveal(r.species.slug));
+  box.append(h, p);
+  if (r.unlocked_state) {
+    markLocked([...unlocked, r.unlocked_state]);
+    const st = states.find((x) => x.code === r.unlocked_state);
+    if (st && st.code !== myState.code) {
+      const b = el("button", "photo-btn", `★ Make ${st.name} my main state`);
+      b.type = "button";
+      b.onclick = async () => {
+        try { await setMainState(st.code); b.replaceWith(el("p", "muted", `${st.name} is now your main state.`)); }
+        catch (err) { alert(err.message); }
+      };
+      box.append(b);
+    }
+  }
+  const sb = safetyBox(r);
+  if (sb) box.append(sb);
+  if (r.where_when) box.append(whereWhen(r.where_when, (res) => {
+    if (res.score) box.querySelector(".score")?.replaceWith(scoreCard(res.score));
+    if (res.bond_up?.length) box.querySelector(".ww").append(el("div", "", `Field notes ✓ ${res.bond_up.join(", ")}`));
+    loadCollection(); loadMyPhotos(); loadFeed();
+  }));
+  if (r.score) box.append(scoreCard(r.score));
+  const pp = pickPanel(r, box);
+  if (pp) box.append(pp);
+  if (r.matched && !r.album_photo_id) keepWhich(r.species, r.capture_id, file, box, r.score && r.score.total);
+  if (r.can_change_state) {
+    // No place in a game state (no GPS in the file, or taken elsewhere): the
+    // player can say where it was taken and it's identified again there.
+    const b = el("button", "photo-btn", "📍 Taken in another state?");
+    b.type = "button";
+    b.onclick = async () => {
+      const code = await pickState({ title: "Where was this photo taken?", current: r.state,
+        note: "The photo has no location we can use, so it was checked against " +
+              `${(states.find((x) => x.code === r.state) || {}).name || "your state"}'s animals.` });
+      if (!code || code === r.state) return;
+      box.textContent = "Identifying…";
+      try {
+        showCapture(await api(`/captures/${r.capture_id}/state`, { method: "POST",
+          headers: { "Content-Type": "application/json" }, body: JSON.stringify({ state: code }) }), file, box);
+      } catch (err) { box.textContent = err.message; }
+    };
+    p.after(b);
+  }
+  loadCollection(); loadFeed();
+}
 
 // Safety for animals rated caution or danger: how far back to stay, the
 // and the animal's own note.

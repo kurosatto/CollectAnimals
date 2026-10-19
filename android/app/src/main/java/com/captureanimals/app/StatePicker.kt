@@ -135,3 +135,24 @@ fun StatePicker(states: List<StateInfo>, onDismiss: () -> Unit, onPick: (String)
             }
         })
 }
+
+/** Every state A to Z, to say where a photo was taken. */
+@Composable
+fun StateListDialog(states: List<StateInfo>, title: String, note: String, onDismiss: () -> Unit, onPick: (String) -> Unit) {
+    val rows = remember(states) { StateList.alphabetical(states) }
+    AlertDialog(onDismissRequest = onDismiss, confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Close") } },
+        title = { Text(title) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(note, style = MaterialTheme.typography.bodyMedium)
+                LazyColumn(Modifier.heightIn(max = 360.dp)) {
+                    items(rows, key = { it.code }) { st ->
+                        Row(Modifier.fillMaxWidth().clickable { onPick(st.code) }.padding(vertical = 10.dp, horizontal = 4.dp)) {
+                            Text(st.name)
+                        }
+                    }
+                }
+            }
+        })
+}

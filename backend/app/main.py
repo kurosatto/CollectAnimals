@@ -677,13 +677,35 @@ async def create_capture(photo: UploadFile = File(...),
         latitude = longitude = place_source = None
     # A photo counts in the state it was taken in, which unlocks that state if
     # it's the player's first photo from there. Without a place, the home state.
-    if latitude is not None and (here := places.state_at(st.all_states(), latitude, longitude)) is not None:
+    here = places.state_at(st.all_states(), latitude, longitude) if latitude is not None else None
+    if here is not None:
         state = here
     newly_unlocked = state.code not in unlocked_states(db, user)
     # Phone photos are often rotated via EXIF; apply it before classifying.
     image = _crop(ImageOps.exif_transpose(raw).convert("RGB"), crop_x, crop_y, crop_w, crop_h)
 
-    # Only the player's state counts: drop the other states' species and rescale,
+    # Re-encode before saving: normalizes the format and strips EXIF (incl. GPS).
+    name = f"{uuid.uuid4().hex}.jpg"
+
+    def save(small: Image.Image) -> None:
+        buf = io.BytesIO()
+        small.save(buf, "JPEG", quality=88)
+        get_storage().put(name, buf.getvalue(), "image/jpeg")
+
+    capture = Capture(user_id=user.id, image_path=name, predicted_label=OTHER_LABEL, confidence=0.0,
+                      latitude=latitude, longitude=longitude, taken_at=taken_at, state=state.code,
+                      time_source=time_source, place_source=place_source)
+    db.add(capture)
+    db.flush()
+    return _identify(db, user, model, capture, image, state, newly_unlocked, save=save,
+                     place_outside=latitude is not None and here is None)
+
+
+def _identify(db: Session, user: User, model, capture: Capture, image: Image.Image, state: st.State,
+              newly_unlocked: bool, save=None, place_outside: bool = False) -> CaptureOut:
+    """Identify the photo against one state's animals, count it there and commit.
+    `save` stores the shrunk photo before the commit."""
+    # Only the photo's state counts: drop the other states' species and rescale,
     # so e.g. a bluebird photo in North Carolina isn't split between the eastern
     # and western bluebird. Five guesses: the first three are shown, all five are
     # offered if the player says the model got it wrong.
@@ -698,19 +720,13 @@ async def create_capture(photo: UploadFile = File(...),
     species = species_by_slug.get(top.label)
     matched = species is not None and top.probability >= settings.match_threshold
 
-    # Re-encode before saving: normalizes the format and strips EXIF (incl. GPS).
-    name = f"{uuid.uuid4().hex}.jpg"
     image.thumbnail((1600, 1600))
-    buf = io.BytesIO()
-    image.save(buf, "JPEG", quality=88)
-    get_storage().put(name, buf.getvalue(), "image/jpeg")
-
-    capture = Capture(user_id=user.id, species_id=species.id if matched else None,
-                      image_path=name, predicted_label=top.label, confidence=top.probability,
-                      latitude=latitude, longitude=longitude, taken_at=taken_at, state=state.code,
-                      time_source=time_source, place_source=place_source,
-                      top_labels=",".join(p.label for p in preds if p.label in species_by_slug))
-    db.add(capture)
+    if save:
+        save(image)
+    capture.state = state.code
+    capture.species_id = species.id if matched else None
+    capture.predicted_label, capture.confidence = top.label, top.probability
+    capture.top_labels = ",".join(p.label for p in preds if p.label in species_by_slug)
     db.flush()
 
     new_badge = False
@@ -750,6 +766,9 @@ async def create_capture(photo: UploadFile = File(...),
         message = f"📍 You unlocked {state.name}! " + message
     elif state.code != user.state and matched:
         message += f" It counts in your {state.name} Field Guide."
+    if place_outside:
+        message = (f"This photo was taken outside the states in the game, so it was checked "
+                   f"against {state.name}. " + message)
 
     return CaptureOut(
         capture_id=capture.id,
@@ -782,7 +801,42 @@ async def create_capture(photo: UploadFile = File(...),
         if pet else None,
         state=state.code,
         unlocked_state=state.code if newly_unlocked else None,
+        can_change_state=_state_unknown(capture),
     )
+
+
+def _state_unknown(capture: Capture) -> bool:
+    """Whether the player may say which state a photo was taken in: it has no
+    place, or its place isn't in any state in the game."""
+    return capture.latitude is None or places.state_at(st.all_states(), capture.latitude, capture.longitude) is None
+
+
+@app.post("/captures/{capture_id}/state", response_model=CaptureOut)
+def set_capture_state(capture_id: int, body: UserUpdate, user: User = Depends(current_user),
+                      db: Session = Depends(get_db)):
+    """"Taken in another state?": identify the photo again against that state's
+    animals. Only for photos with no place in a game state; a known place decides."""
+    capture = db.get(Capture, capture_id)
+    if capture is None or capture.user_id != user.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Capture not found")
+    state = state_or_404(body.state)
+    if not _state_unknown(capture):
+        raise HTTPException(status.HTTP_409_CONFLICT, "This photo's place already says which state it's from")
+    model = clf.get_classifier()
+    if model is None:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, clf.classifier_status() or "Model not loaded")
+    data = get_storage().get(capture.image_path) if capture.image_path else None
+    if data is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "The photo is no longer stored")
+    image = Image.open(io.BytesIO(data)).convert("RGB")
+    _unassign_capture(db, capture)
+    capture.user_picked = None
+    db.flush()
+    # Unlocked before this photo counted there (the photo itself doesn't count).
+    capture.state = None
+    db.flush()
+    newly_unlocked = state.code not in unlocked_states(db, user)
+    return _identify(db, user, model, capture, image, state, newly_unlocked)
 
 
 def _safety_out(slug: str, state_code: str | None) -> dict:

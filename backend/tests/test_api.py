@@ -790,6 +790,40 @@ def test_states_unlock_with_photos(client, fake):
     assert client.patch("/me", json={"state": "CA"}, headers=h).json()["state"] == "CA"
 
 
+def test_pick_the_state_for_a_photo_without_a_place(client, fake):
+    h = signup(client)
+    # A cardinal photo with no place is checked against California, which lacks it.
+    fake.next = [Prediction("northern_cardinal", 0.9), Prediction("other", 0.1)]
+    r = upload(client, h).json()
+    assert not r["matched"] and r["state"] == "CA" and r["can_change_state"]
+    # "Taken in another state?": North Carolina has it, and the photo unlocks it.
+    r2 = client.post(f"/captures/{r['capture_id']}/state", headers=h, json={"state": "NC"}).json()
+    assert r2["matched"] and r2["species"]["slug"] == "northern_cardinal" and r2["new_badge"]
+    assert r2["state"] == "NC" and r2["unlocked_state"] == "NC"
+    assert client.get("/me", headers=h).json()["unlocked_states"] == ["CA", "NC"]
+    # Moving it again takes the badge back from North Carolina.
+    r3 = client.post(f"/captures/{r['capture_id']}/state", headers=h, json={"state": "CA"}).json()
+    assert not r3["matched"] and r3["state"] == "CA"
+    nc = client.get("/me/collection", headers=h, params={"state": "NC"}).json()
+    assert nc["caught"] == 0
+    # A photo whose place is in a game state can't be moved; nor can someone else's.
+    fake.next = [Prediction("coyote", 0.95)]
+    placed = client.post("/captures", headers=h, data={"latitude": 34.05, "longitude": -118.24},
+                         files={"photo": ("p.jpg", jpeg_bytes(), "image/jpeg")}).json()
+    assert not placed["can_change_state"]
+    assert client.post(f"/captures/{placed['capture_id']}/state", headers=h, json={"state": "NC"}).status_code == 409
+    other = signup(client, "bob")
+    assert client.post(f"/captures/{r['capture_id']}/state", headers=other, json={"state": "NC"}).status_code == 404
+
+
+def test_photo_from_outside_the_game_says_so(client, fake):
+    h = signup(client)
+    fake.next = [Prediction("coyote", 0.95)]
+    r = client.post("/captures", headers=h, data={"latitude": 51.5, "longitude": -0.1},
+                    files={"photo": ("p.jpg", jpeg_bytes(), "image/jpeg")}).json()
+    assert r["state"] == "CA" and r["can_change_state"] and "outside the states in the game" in r["message"]
+
+
 def test_state_at():
     from app import places
     from app import states as st
