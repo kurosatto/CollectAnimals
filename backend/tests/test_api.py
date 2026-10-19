@@ -263,9 +263,11 @@ def test_dex_entry(client, fake):
     upload(client, h)
     r = client.get("/species/coyote/dex", headers=h).json()
     assert r["species"]["common_name"] == "Coyote" and r["fun_fact"] and r["where_to_find"]
+    # Every fun fact for the habitat's speech bubble: the main one first, then the extras.
+    assert r["facts"][0] == r["fun_fact"] and len(r["facts"]) >= 3
 
     r = client.get("/species/bobcat/dex", headers=h).json()
-    assert r["fun_fact"] is None and r["range"] is None and r["size"]
+    assert r["fun_fact"] is None and r["range"] is None and r["size"] and r["facts"] == []
     assert client.get("/species/nope/dex").status_code == 404
 
 

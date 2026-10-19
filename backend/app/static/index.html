@@ -284,6 +284,24 @@
   .hab-bubble { position:absolute; transform:translate(-50%,-100%); background:var(--card); color:var(--ink);
                 border:1px solid var(--line); border-radius:8px; padding:3px 8px; font-size:.8rem; font-weight:600;
                 white-space:nowrap; pointer-events:none; box-shadow:0 2px 6px rgba(0,0,0,.15); }
+  .hab-bubble.below { transform:translate(-50%,0); }
+  .hab-bubble.wide { white-space:normal; width:max-content; max-width:min(260px,90%); }
+  .hab-fact { font-weight:400; margin-top:2px; line-height:1.3; }
+  .hab-more { font-weight:400; font-size:.72rem; color:var(--muted); margin-top:3px; }
+  .hab-more a { pointer-events:auto; color:var(--accent); font-weight:600; text-decoration:none; }
+  ul.facts { margin:0; padding-left:1.1em; display:grid; gap:4px; }
+  .avatar { width:36px; height:36px; image-rendering:pixelated; flex:none; vertical-align:middle; }
+  .avatar.big { width:56px; height:56px; }
+  .avatar.small { width:24px; height:24px; }
+  ul.people .who { display:flex; align-items:center; gap:8px; }
+  ul.people .who > span { min-width:0; overflow:hidden; text-overflow:ellipsis; }
+  .album-head { display:flex; align-items:center; gap:10px; }
+  #username { display:inline-flex; align-items:center; gap:6px; }
+  .photos.compact { grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; }
+  .photos.compact .photo { border-radius:8px; cursor:pointer; }
+  .photos.compact .meta { padding:3px 5px; gap:0; }
+  .photos.compact .who { font-size:.72rem; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .photos.compact .pts { font-size:.65rem; white-space:nowrap; overflow:hidden; }
   .auth { display:grid; gap:4px 20px; }
   .auth-scene { position:relative; }
   .auth-place { position:absolute; z-index:1; top:8px; left:8px; padding:2px 8px; border-radius:999px; font-size:.8rem;
@@ -445,7 +463,7 @@
     <div class="card off" data-tab="photos">
       <h2>My photos</h2>
       <p class="muted" style="margin-top:0">Your album: one photo for each animal you captured.</p>
-      <div id="my-photos" class="photos"></div>
+      <div id="my-photos" class="photos compact"></div>
     </div>
     <div class="card off" data-tab="friends">
       <h2>Friends</h2>
@@ -482,7 +500,7 @@
       <dt>Hotspots</dt><dd id="dex-hotspots"></dd>
       <dt>Size</dt><dd id="dex-size"></dd>
       <dt>Weight</dt><dd id="dex-weight"></dd>
-      <dt>Fun fact</dt><dd id="dex-fact"></dd>
+      <dt>Fun facts</dt><dd id="dex-fact"></dd>
     </dl>
   </div>
 </div>
@@ -501,7 +519,7 @@
 </div></dialog>
 <dialog id="album"><div class="dex">
   <div class="dex-head">
-    <div><h2 id="album-title"></h2><div class="muted" id="album-sub"></div></div>
+    <div class="album-head"><img id="album-avatar" class="avatar big hidden" alt=""><div><h2 id="album-title"></h2><div class="muted" id="album-sub"></div></div></div>
     <button class="close" id="album-close" aria-label="Close">×</button>
   </div>
   <div id="album-photos"></div>
@@ -1188,6 +1206,14 @@ function captureReveal(slug) {
 
 // Colour pixel art once caught, a silhouette until then.
 const spriteUrl = (slug, caught) => `/sprites/${encodeURIComponent(slug)}${caught ? "" : "_silhouette"}.png`;
+// Fun facts a tapped habitat animal tells you (habitat.js); the server sends them once it's revealed.
+const animalFacts = (s) => api(`/species/${s.number}/dex?state=${habState()}`).then((d) => d.facts || []);
+// A player's profile picture (1-10, tools/make_avatars.py).
+function avatarImg(n, cls = "") {
+  const img = el("img", "avatar " + cls);
+  img.src = `/sprites/avatar_${n || 1}.png`; img.alt = ""; img.loading = "lazy";
+  return img;
+}
 
 // The player's state (from /me) picks the Dex, Hotspots and map. Outline rings
 // are [lon, lat] from /map/<state>; the map is scaled so every state is ~430 px wide.
@@ -1413,7 +1439,14 @@ async function openDex(key, num, caught, stateCode = myState.code) {
   $("dex-hotspots").textContent = d.hotspots.length ? d.hotspots.join(", ") : "—";
   $("dex-size").textContent = d.size || "Unknown";
   $("dex-weight").textContent = d.weight || "Unknown";
-  $("dex-fact").textContent = d.fun_fact || "🔒";
+  const facts = d.facts?.length ? d.facts : d.fun_fact ? [d.fun_fact] : [];
+  $("dex-fact").innerHTML = "";
+  if (!facts.length) $("dex-fact").textContent = "🔒";
+  else {
+    const ul = el("ul", "facts");
+    ul.append(...facts.map((f) => el("li", "", f)));
+    $("dex-fact").append(ul);
+  }
   drawSeason(d.season);
   showBond(d.captured && stateCode === myState.code ? s.number : null);
   gallery = { species: s, scope: "all", sort: "top" };
@@ -1433,9 +1466,18 @@ const el = (tag, cls, text) => {
 const fmtDate = (d) => new Date(d + "T12:00:00").toLocaleDateString(undefined,
   { year: "numeric", month: "short", day: "numeric" });
 
-function photoCard(p, { showSpecies = false, onChange } = {}) {
+function photoCard(p, { showSpecies = false, onChange, compact = false } = {}) {
   const card = el("div", "photo");
   const img = el("img"); img.src = p.url; img.alt = p.species.common_name || "Animal photo"; img.loading = "lazy";
+  if (compact) {
+    // Four to a row (My photos): the photo, its name and stars; the rest is one tap away.
+    const meta = el("div", "meta");
+    meta.append(el("div", "who", p.species.common_name || "???"));
+    if (p.stars != null) meta.append(el("span", "pts", stars(p.stars)));
+    card.onclick = () => openViewer(p, null, () => card.remove());
+    card.append(img, meta);
+    return card;
+  }
   const meta = el("div", "meta");
   const who = el("div", "who");
   who.append(showSpecies ? el("span", "", p.species.common_name || "???")
@@ -1469,7 +1511,7 @@ function photoCard(p, { showSpecies = false, onChange } = {}) {
 // comments. Only photos the server already sends a url for get here, so private
 // players and unrevealed animals stay hidden exactly as in the feed and galleries.
 let viewerClosed = null;
-function openViewer(p, onClose) {
+function openViewer(p, onClose, onDeleted) {
   const v = $("viewer"), side = $("viewer-side"), img = $("viewer-img");
   img.src = p.url;
   img.alt = p.species.common_name || "Animal photo";
@@ -1494,6 +1536,15 @@ function openViewer(p, onClose) {
   }));
   const row = reactions(p, side);
   side.append(row);
+  if (p.is_mine && onDeleted) {
+    const del = el("button", "like ghost", "Delete photo");
+    del.onclick = async () => {
+      if (!confirm("Delete this photo? It disappears from your album, the gallery and the feed, " +
+                   "and its likes are lost. The animal also leaves your collection until you capture it again.")) return;
+      try { await deletePhoto(p.id); onDeleted(); $("viewer").close(); } catch (err) { alert(err.message); }
+    };
+    side.append(del);
+  }
   // Comments start open: they're half of why you'd open the photo.
   row.lastChild.click();
   viewerClosed = onClose || null;
@@ -1598,7 +1649,7 @@ async function loadMyPhotos() {
     const a = await api("/me/album");
     grid.innerHTML = "";
     if (!a.photos.length) grid.append(el("p", "muted", "No photos yet. Capture an animal to start your album."));
-    a.photos.forEach((p) => grid.append(photoCard(p, { showSpecies: true })));
+    a.photos.forEach((p) => grid.append(photoCard(p, { compact: true })));
   } catch (err) { grid.textContent = err.message; }
 }
 
@@ -1671,6 +1722,7 @@ async function openProfile(username) {
   const box = $("album-photos");
   box.innerHTML = "";
   $("album-title").textContent = username;
+  $("album-avatar").classList.add("hidden");
   $("album-sub").textContent = "Loading…";
   if (!$("album").open) $("album").showModal();
   let u;
@@ -1678,6 +1730,8 @@ async function openProfile(username) {
   catch (err) { $("album-sub").textContent = err.message; return; }
   const joined = new Date(u.joined).toLocaleDateString(undefined, { month: "short", year: "numeric" });
   $("album-title").textContent = (u.friendship === "self" ? `${u.username} (you)` : u.username) + (u.is_bot ? " 🤖" : "");
+  $("album-avatar").src = `/sprites/avatar_${u.avatar || 1}.png`;
+  $("album-avatar").classList.remove("hidden");
   const home = (states.find((x) => x.code === u.state) || {}).name || u.state;
   $("album-sub").textContent = (home ? `📍 ${home} · ` : "") +
     `${u.caught} / ${u.total} captured · ♥ ${u.likes_received} · joined ${joined}`;
@@ -1900,7 +1954,9 @@ async function loadFriends() {
       const li = el("li");
       const who = el("span");
       who.className = "who";
-      who.append(p.is_bot ? "🤖 " : "", userLink(p.username), p.caught ? ` · ${p.caught} captured` : "");
+      const line = el("span");
+      line.append(p.is_bot ? "🤖 " : "", userLink(p.username), p.caught ? ` · ${p.caught} captured` : "");
+      who.append(avatarImg(p.avatar), line);
       li.append(who);
       const btns = el("span");
       for (const [label, cls, fn] of actions) {
@@ -2285,7 +2341,7 @@ async function render() {
     showTab(location.hash.slice(1));
     try {
       const me = await api("/me");
-      $("username").textContent = me.username;
+      $("username").replaceChildren(avatarImg(me.avatar, "small"), me.username);
       $("share-feed").checked = me.show_in_feed !== false;
       await useState(me.state);
       markLocked(me.unlocked_states);

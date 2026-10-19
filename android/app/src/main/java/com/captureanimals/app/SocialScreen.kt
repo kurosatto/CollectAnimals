@@ -320,7 +320,12 @@ fun AccountDialog(state: UiState, vm: GameViewModel, onDismiss: () -> Unit) {
     }, dismissButton = {
         if (acct == null) TextButton(onClick = onDismiss) { Text("Cancel") }
         else TextButton(onClick = { vm.signOut(); onDismiss() }) { Text("Log out") }
-    }, title = { Text(acct?.let { "Signed in as ${it.username}" } ?: if (signUp) "Create an account" else "Log in") },
+    }, title = {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            acct?.let { Avatar(it.avatar, Modifier.size(40.dp)); Spacer(Modifier.size(10.dp)) }
+            Text(acct?.let { "Signed in as ${it.username}" } ?: if (signUp) "Create an account" else "Log in")
+        }
+    },
     text = {
         Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (acct == null) {
@@ -448,7 +453,8 @@ private fun Comments(s: SocialState, social: SocialViewModel, p: OnlinePhoto) {
  * private players and animals you haven't unlocked stay hidden as in the feed.
  */
 @Composable
-fun PhotoViewer(s: SocialState, social: SocialViewModel, parks: List<Park> = emptyList()) {
+fun PhotoViewer(s: SocialState, social: SocialViewModel, parks: List<Park> = emptyList(),
+                onDelete: ((OnlinePhoto) -> Unit)? = null) {
     val p = s.viewing ?: return
     Dialog(onDismissRequest = social::closePhoto, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Column(Modifier.fillMaxSize().background(Color.Black).imePadding()) {
@@ -488,6 +494,9 @@ fun PhotoViewer(s: SocialState, social: SocialViewModel, parks: List<Park> = emp
                         TextButton(onClick = { social.toggleLike(p) }, enabled = !p.isMine) {
                             Text((if (p.likedByMe) "♥ " else "♡ ") + p.likeCount)
                         }
+                    }
+                    if (p.isMine && onDelete != null) {
+                        TextButton(onClick = { onDelete(p) }, contentPadding = PaddingValues(0.dp)) { Text("Delete photo") }
                     }
                     HorizontalDivider()
                     Comments(s, social, p)
@@ -615,6 +624,8 @@ private fun androidx.compose.foundation.lazy.LazyListScope.section(
 private fun FriendRow(u: FriendEntry, onOpen: ((String) -> Unit)?, actions: @Composable () -> Unit) {
     Row(Modifier.fillMaxWidth().height(48.dp).let { m -> onOpen?.let { m.clickable { it(u.username) } } ?: m },
         verticalAlignment = Alignment.CenterVertically) {
+        Avatar(u.avatar, Modifier.size(36.dp))
+        Spacer(Modifier.size(10.dp))
         Text((if (u.isBot) "🤖 " else "") + u.username, Modifier.weight(1f), maxLines = 1,
             overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyLarge)
         if (u.caught > 0) Text("${u.caught} captured", style = MaterialTheme.typography.bodySmall,
@@ -732,46 +743,38 @@ fun OnlinePhotosScreen(social: SocialViewModel, onOpenDex: (String) -> Unit, onD
         }
         return
     }
-    LazyVerticalGrid(columns = GridCells.Adaptive(150.dp), modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(12.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    // Four to a row: the photo, its name and stars. Tap one for the full photo, its
+    // likes and comments, and deleting it.
+    LazyVerticalGrid(columns = GridCells.Fixed(4), modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         item(span = { GridItemSpan(maxLineSpan) }) {
             Text("${album.size} photo${if (album.size == 1) "" else "s"}",
                 style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.outline)
         }
         items(album, key = { it.id }) { p ->
-            Card(shape = RoundedCornerShape(12.dp)) {
+            Card(shape = RoundedCornerShape(8.dp), modifier = Modifier.clickable { social.openPhoto(p) }) {
                 Column {
                     RemoteImage(p.url, p.commonName, Modifier.fillMaxWidth().aspectRatio(1f)
-                        .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
-                        .clickable { social.openPhoto(p) }, maxSide = 512)
-                    Column(Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
-                        Text(p.commonName ?: "", style = MaterialTheme.typography.titleSmall, maxLines = 1,
-                            overflow = TextOverflow.Ellipsis, color = rarityColor(p.rarity),
-                            modifier = Modifier.clickable { p.slug?.let(onOpenDex) })
-                        p.stars?.let { Stars(it, points = p.score) }
-                        Text(dateOf(p.takenOn) + if (p.likeCount > 0) " · ♥ ${p.likeCount}" else "",
-                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
-                        Row {
-                            TextButton(onClick = { social.openComments(p) }, contentPadding = PaddingValues(0.dp)) {
-                                Text("💬 ${p.commentCount}")
-                            }
-                            Spacer(Modifier.size(8.dp))
-                            TextButton(onClick = { confirm = p }, contentPadding = PaddingValues(0.dp)) { Text("Delete photo") }
-                        }
+                        .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)), maxSide = 256)
+                    Column(Modifier.padding(horizontal = 4.dp, vertical = 3.dp)) {
+                        Text(p.commonName ?: "", style = MaterialTheme.typography.labelSmall, maxLines = 1,
+                            overflow = TextOverflow.Ellipsis, color = rarityColor(p.rarity))
+                        p.stars?.let { Text(stars(it), style = MaterialTheme.typography.labelSmall, color = Gold, maxLines = 1) }
                     }
                 }
             }
         }
     }
     CommentsDialog(s, social)
-    PhotoViewer(s, social, parks)
+    PhotoViewer(s, social, parks, onDelete = { confirm = it })
     confirm?.let { p ->
         AlertDialog(
             onDismissRequest = { confirm = null },
             title = { Text("Delete this photo?") },
             text = { Text("The ${p.commonName ?: "animal"} also leaves your collection. Capture it again to get it back.") },
-            confirmButton = { TextButton(onClick = { social.deletePhoto(p, onDeleted); confirm = null }) { Text("Delete") } },
+            confirmButton = { TextButton(onClick = {
+                social.deletePhoto(p, onDeleted); social.closePhoto(); confirm = null }) { Text("Delete") } },
             dismissButton = { TextButton(onClick = { confirm = null }) { Text("Cancel") } },
         )
     }

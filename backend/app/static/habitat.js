@@ -2,18 +2,21 @@
 // Android app (android/app/src/main/assets/habitat.html shows it in a WebView).
 // The page defines $, myState, spriteUrl, openDex, caughtNums and dexNumbers,
 // has the #habitat, #hab-canvas, #hab-bubble, #hab-note and #hab-peek elements,
-// and calls habInit() once they exist. Sprites load from /sprites/.
+// and calls habInit() once they exist. Sprites load from /sprites/. It may also
+// define animalFacts(species) -> list (or promise of a list) of fun facts that a
+// tapped animal tells you.
 // Habitat: the animals you've captured, living in one small pixel scene at the top
 // of the Field Guide. Each one gets a way of moving from what it is (walkers,
 // hoppers, fliers, swimmers, tide pool animals...) and is awake by day, by night
 // or both (`activity` from /me/collection). The scene follows the phone's clock,
-// and a button peeks at the other half of the day. Tap an animal for its name,
-// tap again for its Field Guide page. The sky follows the real weather outside
+// and a button peeks at the other half of the day. Tap an animal and it tells
+// you its name and a fun fact; tap it again for another fact, or the bubble's
+// link for its Field Guide page. The sky follows the real weather outside
 // (rain, snow, fog, wind, storms) and the animals react to it.
 const HAB_H = 270;
 // While you look at a friend's profile, the scene moves into it and shows their
 // animals in their state's scenery (`visit`); closing the profile brings yours back.
-const hab = { w: 0, L: null, animals: [], peek: false, picked: null, pickedUntil: 0, last: 0, bg: null, bgKey: "", t: 0,
+const hab = { w: 0, L: null, animals: [], peek: false, picked: null, pickedUntil: 0, factIdx: 0, last: 0, bg: null, bgKey: "", t: 0,
               fx: [], visit: null };
 const habState = () => (hab.visit ? hab.visit.state : myState.code);
 const habImgs = {};
@@ -647,10 +650,71 @@ function habBubble(poses) {
   const b = $("hab-bubble");
   const p = hab.picked && performance.now() < hab.pickedUntil && poses.find((q) => q.a === hab.picked);
   if (!p) { b.classList.add("hidden"); if (hab.picked && !p) hab.picked = null; return; }
-  const scale = $("hab-canvas").clientWidth / hab.L.w;
+  const cw = $("hab-canvas").clientWidth, scale = cw / hab.L.w;
   b.classList.remove("hidden");
-  b.style.left = `${Math.min(Math.max(p.x * scale, 60), $("hab-canvas").clientWidth - 60)}px`;
-  b.style.top = `${(p.y - 34) * scale}px`;
+  const half = Math.min(b.offsetWidth / 2, cw / 2);
+  b.style.left = `${Math.min(Math.max(p.x * scale, half), cw - half)}px`;
+  // Above the animal, or below it when there's no room (a bird high in the sky).
+  const above = (p.y - 34) * scale >= b.offsetHeight;
+  b.classList.toggle("below", !above);
+  b.style.top = `${(above ? p.y - 34 : p.y + 4) * scale}px`;
+}
+
+// Fun facts per species number, fetched once from the page's animalFacts().
+const habFactCache = {};
+function habFacts(a) {
+  const n = a.s.number;
+  if (habFactCache[n] === undefined) {
+    habFactCache[n] = [];
+    if (typeof animalFacts === "function") {
+      Promise.resolve(animalFacts(a.s)).then((list) => {
+        habFactCache[n] = (list || []).filter(Boolean);
+        if (hab.picked === a) habSay(a);
+      }).catch(() => {});
+    }
+  }
+  return habFactCache[n];
+}
+
+// The tapped animal's speech bubble: its name (and mood), then a fun fact.
+function habSay(a) {
+  const b = $("hab-bubble");
+  const awake = habAwake(a, habPhase());
+  const mood = habWxMood(a, awake);
+  const facts = habFacts(a);
+  b.innerHTML = "";
+  const name = document.createElement("div");
+  name.className = "hab-name";
+  name.textContent = a.s.common_name + (mood ? ` · ${mood}` : awake ? "" : " 💤");
+  b.append(name);
+  if (facts.length) {
+    const fact = document.createElement("div");
+    fact.className = "hab-fact";
+    fact.textContent = facts[hab.factIdx % facts.length];
+    b.append(fact);
+  }
+  if (!hab.visit?.showcase) {
+    const more = document.createElement("div");
+    more.className = "hab-more";
+    if (facts.length > 1) more.append(document.createTextNode("Tap again for another fact · "));
+    const link = document.createElement("a");
+    link.href = "#";
+    link.textContent = "Field Guide ›";
+    link.onclick = (ev) => { ev.preventDefault(); ev.stopPropagation(); habOpen(a); };
+    more.append(link);
+    b.append(more);
+  }
+  b.classList.toggle("wide", facts.length > 0);
+  // Long enough to read the fact.
+  hab.pickedUntil = performance.now() + (facts.length ? 9000 : 4000);
+  if (habStill) habDraw();
+}
+
+function habOpen(a) {
+  hab.picked = null;
+  if (hab.visit) openDex(a.s.number, a.num, caughtNums.has(a.s.number), hab.visit.state);
+  else openDex(a.s.number, dexNumbers[a.s.number], true);
+  habDraw();
 }
 
 function habTap(ev) {
@@ -668,18 +732,16 @@ function habTap(ev) {
   }).filter((h) => Math.abs(x - h.px) <= 18 && y >= h.py - 34 && y <= h.py + 4).sort((p, q) => q.z - p.z);
   if (!hits.length) { hab.picked = null; habDraw(); return; }
   const h = hits[0];
-  if (hab.picked === h.a && performance.now() < hab.pickedUntil && !hab.visit?.showcase) {
-    if (hab.visit) openDex(h.a.s.number, h.a.num, caughtNums.has(h.a.s.number), hab.visit.state);
-    else openDex(h.a.s.number, dexNumbers[h.a.s.number], true);
+  if (hab.picked === h.a && performance.now() < hab.pickedUntil) {
+    // Again: the next fact, or (with no facts to tell) its Field Guide page.
+    if (habFacts(h.a).length > 1) { hab.factIdx++; habSay(h.a); }
+    else if (!habFacts(h.a).length && !hab.visit?.showcase) habOpen(h.a);
     return;
   }
   hab.picked = h.a;
-  hab.pickedUntil = performance.now() + 4000;
-  const b = $("hab-bubble");
-  const mood = habWxMood(h.a, h.awake);
-  b.textContent = h.a.s.common_name + (mood ? ` · ${mood}` : h.awake ? "" : " 💤");
-  b.title = hab.visit?.showcase ? "" : "Tap again to open its page";
-  if (habStill) habDraw();
+  // A different fact first each time you come back to it.
+  hab.factIdx = Math.floor(Math.random() * 3);
+  habSay(h.a);
 }
 
 // Show a friend's animals (their Field Guide entries) in their state's scenery,

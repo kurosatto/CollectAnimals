@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -100,10 +101,17 @@ fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: FieldGuide,
             Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(
                 containerColor = rarityColor(s.rarity).copy(alpha = 0.12f))) {
                 Column(Modifier.padding(16.dp)) {
-                    Text("Fun fact", style = MaterialTheme.typography.labelLarge, color = rarityColor(s.rarity))
-                    // Same as the web page: the fact is the reward for catching it.
-                    Text(if (badge != null) details.funFact else "🔒",
-                        style = MaterialTheme.typography.bodyLarge)
+                    Text("Fun facts", style = MaterialTheme.typography.labelLarge, color = rarityColor(s.rarity))
+                    // Same as the web page: the facts are the reward for catching it.
+                    if (badge == null) Text("🔒", style = MaterialTheme.typography.bodyLarge)
+                    else {
+                        val context = LocalContext.current
+                        val facts = remember(s.slug, details.funFact) {
+                            listOf(details.funFact).filter { it.isNotBlank() } + FunFacts.of(context, s.slug)
+                        }
+                        facts.forEach { Text("• $it", style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(top = 4.dp)) }
+                    }
                 }
             }
         }
