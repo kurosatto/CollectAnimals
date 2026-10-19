@@ -1,0 +1,2008 @@
+{
+ "source": "iNaturalist research-grade observations (species_counts by radius)",
+ "min_observations": 3,
+ "parks": [
+  {
+   "id": "great_basin_national_park",
+   "name": "Great Basin National Park",
+   "lat": 38.98,
+   "lon": -114.3,
+   "radius_km": 20,
+   "blurb": "Mountains, bristlecone pines and caves; mule deer, pikas, bats and marmots.",
+   "species": [
+    {
+     "slug": "mule_deer",
+     "observations": 292
+    },
+    {
+     "slug": "gopher_snake",
+     "observations": 186
+    },
+    {
+     "slug": "common_sagebrush_lizard",
+     "observations": 167
+    },
+    {
+     "slug": "western_fence_lizard",
+     "observations": 163
+    },
+    {
+     "slug": "uinta_chipmunk",
+     "observations": 126
+    },
+    {
+     "slug": "great_basin_spadefoot",
+     "observations": 71
+    },
+    {
+     "slug": "american_robin",
+     "observations": 62
+    },
+    {
+     "slug": "dark_eyed_junco",
+     "observations": 60
+    },
+    {
+     "slug": "side_blotched_lizard",
+     "observations": 59
+    },
+    {
+     "slug": "rock_squirrel",
+     "observations": 52
+    },
+    {
+     "slug": "elk",
+     "observations": 49
+    },
+    {
+     "slug": "common_golden_mantled_ground_squirrel",
+     "observations": 47
+    },
+    {
+     "slug": "pronghorn",
+     "observations": 43
+    },
+    {
+     "slug": "desert_horned_lizard",
+     "observations": 42
+    },
+    {
+     "slug": "yellow_rumped_warbler",
+     "observations": 41
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 40
+    },
+    {
+     "slug": "black_tailed_jackrabbit",
+     "observations": 40
+    },
+    {
+     "slug": "white_lined_sphinx",
+     "observations": 34
+    },
+    {
+     "slug": "western_whiptail",
+     "observations": 31
+    },
+    {
+     "slug": "yellow_bellied_marmot",
+     "observations": 31
+    },
+    {
+     "slug": "northern_flicker",
+     "observations": 29
+    },
+    {
+     "slug": "painted_lady",
+     "observations": 23
+    },
+    {
+     "slug": "seven_spotted_lady_beetle",
+     "observations": 23
+    },
+    {
+     "slug": "says_phoebe",
+     "observations": 20
+    },
+    {
+     "slug": "long_nosed_leopard_lizard",
+     "observations": 20
+    },
+    {
+     "slug": "common_raven",
+     "observations": 18
+    },
+    {
+     "slug": "white_crowned_sparrow",
+     "observations": 17
+    },
+    {
+     "slug": "mormon_cricket",
+     "observations": 17
+    },
+    {
+     "slug": "american_kestrel",
+     "observations": 14
+    },
+    {
+     "slug": "great_horned_owl",
+     "observations": 13
+    },
+    {
+     "slug": "lesser_goldfinch",
+     "observations": 10
+    },
+    {
+     "slug": "coyote",
+     "observations": 9
+    },
+    {
+     "slug": "coopers_hawk",
+     "observations": 9
+    },
+    {
+     "slug": "mourning_dove",
+     "observations": 8
+    },
+    {
+     "slug": "house_finch",
+     "observations": 8
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 7
+    },
+    {
+     "slug": "house_sparrow",
+     "observations": 7
+    },
+    {
+     "slug": "white_tailed_antelope_squirrel",
+     "observations": 7
+    },
+    {
+     "slug": "desert_cottontail",
+     "observations": 6
+    },
+    {
+     "slug": "northern_mockingbird",
+     "observations": 5
+    },
+    {
+     "slug": "bighorn_sheep",
+     "observations": 5
+    },
+    {
+     "slug": "brook_trout",
+     "observations": 5
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 4
+    },
+    {
+     "slug": "western_black_widow",
+     "observations": 4
+    },
+    {
+     "slug": "monarch",
+     "observations": 4
+    },
+    {
+     "slug": "western_pygmy_blue",
+     "observations": 4
+    },
+    {
+     "slug": "variegated_meadowhawk",
+     "observations": 4
+    },
+    {
+     "slug": "killdeer",
+     "observations": 3
+    },
+    {
+     "slug": "american_beaver",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "valley_of_fire_state_park",
+   "name": "Valley of Fire State Park",
+   "lat": 36.48,
+   "lon": -114.53,
+   "radius_km": 10,
+   "blurb": "Red sandstone desert; desert bighorn sheep, desert tortoises, lizards and roadrunners.",
+   "species": [
+    {
+     "slug": "bighorn_sheep",
+     "observations": 948
+    },
+    {
+     "slug": "side_blotched_lizard",
+     "observations": 430
+    },
+    {
+     "slug": "white_tailed_antelope_squirrel",
+     "observations": 315
+    },
+    {
+     "slug": "common_chuckwalla",
+     "observations": 246
+    },
+    {
+     "slug": "house_sparrow",
+     "observations": 147
+    },
+    {
+     "slug": "desert_iguana",
+     "observations": 143
+    },
+    {
+     "slug": "western_whiptail",
+     "observations": 137
+    },
+    {
+     "slug": "common_raven",
+     "observations": 116
+    },
+    {
+     "slug": "house_finch",
+     "observations": 93
+    },
+    {
+     "slug": "gambels_quail",
+     "observations": 92
+    },
+    {
+     "slug": "white_crowned_sparrow",
+     "observations": 78
+    },
+    {
+     "slug": "zebra_tailed_lizard",
+     "observations": 59
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 47
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 45
+    },
+    {
+     "slug": "pallid_winged_grasshopper",
+     "observations": 44
+    },
+    {
+     "slug": "large_creosote_gall_midge",
+     "observations": 41
+    },
+    {
+     "slug": "says_phoebe",
+     "observations": 40
+    },
+    {
+     "slug": "phainopepla",
+     "observations": 40
+    },
+    {
+     "slug": "desert_horned_lizard",
+     "observations": 32
+    },
+    {
+     "slug": "variegated_meadowhawk",
+     "observations": 29
+    },
+    {
+     "slug": "desert_tortoise",
+     "observations": 26
+    },
+    {
+     "slug": "black_tailed_jackrabbit",
+     "observations": 18
+    },
+    {
+     "slug": "red_spotted_toad",
+     "observations": 16
+    },
+    {
+     "slug": "white_lined_sphinx",
+     "observations": 13
+    },
+    {
+     "slug": "western_pygmy_blue",
+     "observations": 10
+    },
+    {
+     "slug": "desert_cottontail",
+     "observations": 9
+    },
+    {
+     "slug": "seven_spotted_lady_beetle",
+     "observations": 9
+    },
+    {
+     "slug": "verdin",
+     "observations": 8
+    },
+    {
+     "slug": "painted_lady",
+     "observations": 8
+    },
+    {
+     "slug": "northern_mockingbird",
+     "observations": 7
+    },
+    {
+     "slug": "western_black_widow",
+     "observations": 6
+    },
+    {
+     "slug": "monarch",
+     "observations": 6
+    },
+    {
+     "slug": "long_nosed_leopard_lizard",
+     "observations": 6
+    },
+    {
+     "slug": "greater_roadrunner",
+     "observations": 4
+    },
+    {
+     "slug": "mourning_dove",
+     "observations": 3
+    },
+    {
+     "slug": "great_tailed_grackle",
+     "observations": 3
+    },
+    {
+     "slug": "great_horned_owl",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "red_rock_canyon_national_conservation_area",
+   "name": "Red Rock Canyon National Conservation Area",
+   "lat": 36.13,
+   "lon": -115.43,
+   "radius_km": 15,
+   "blurb": "Desert canyons near Las Vegas; wild burros, bighorn sheep, tortoises and lizards.",
+   "species": [
+    {
+     "slug": "side_blotched_lizard",
+     "observations": 1128
+    },
+    {
+     "slug": "white_tailed_antelope_squirrel",
+     "observations": 486
+    },
+    {
+     "slug": "white_crowned_sparrow",
+     "observations": 346
+    },
+    {
+     "slug": "phainopepla",
+     "observations": 270
+    },
+    {
+     "slug": "gambels_quail",
+     "observations": 249
+    },
+    {
+     "slug": "desert_cottontail",
+     "observations": 237
+    },
+    {
+     "slug": "house_finch",
+     "observations": 228
+    },
+    {
+     "slug": "western_whiptail",
+     "observations": 227
+    },
+    {
+     "slug": "large_creosote_gall_midge",
+     "observations": 216
+    },
+    {
+     "slug": "annas_hummingbird",
+     "observations": 202
+    },
+    {
+     "slug": "pacific_chorus_frog",
+     "observations": 201
+    },
+    {
+     "slug": "northern_mockingbird",
+     "observations": 183
+    },
+    {
+     "slug": "painted_lady",
+     "observations": 181
+    },
+    {
+     "slug": "mourning_dove",
+     "observations": 167
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 165
+    },
+    {
+     "slug": "great_tailed_grackle",
+     "observations": 159
+    },
+    {
+     "slug": "common_chuckwalla",
+     "observations": 159
+    },
+    {
+     "slug": "says_phoebe",
+     "observations": 155
+    },
+    {
+     "slug": "white_lined_sphinx",
+     "observations": 151
+    },
+    {
+     "slug": "desert_tortoise",
+     "observations": 144
+    },
+    {
+     "slug": "house_sparrow",
+     "observations": 137
+    },
+    {
+     "slug": "lesser_goldfinch",
+     "observations": 134
+    },
+    {
+     "slug": "red_spotted_toad",
+     "observations": 125
+    },
+    {
+     "slug": "black_phoebe",
+     "observations": 116
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 115
+    },
+    {
+     "slug": "greater_roadrunner",
+     "observations": 114
+    },
+    {
+     "slug": "american_robin",
+     "observations": 110
+    },
+    {
+     "slug": "common_raven",
+     "observations": 104
+    },
+    {
+     "slug": "gopher_snake",
+     "observations": 104
+    },
+    {
+     "slug": "verdin",
+     "observations": 101
+    },
+    {
+     "slug": "black_tailed_jackrabbit",
+     "observations": 101
+    },
+    {
+     "slug": "dark_eyed_junco",
+     "observations": 99
+    },
+    {
+     "slug": "coopers_hawk",
+     "observations": 89
+    },
+    {
+     "slug": "pallid_winged_grasshopper",
+     "observations": 87
+    },
+    {
+     "slug": "mallard",
+     "observations": 85
+    },
+    {
+     "slug": "long_nosed_leopard_lizard",
+     "observations": 71
+    },
+    {
+     "slug": "desert_collared_lizard",
+     "observations": 66
+    },
+    {
+     "slug": "rock_squirrel",
+     "observations": 66
+    },
+    {
+     "slug": "yellow_rumped_warbler",
+     "observations": 64
+    },
+    {
+     "slug": "monarch",
+     "observations": 63
+    },
+    {
+     "slug": "desert_horned_lizard",
+     "observations": 63
+    },
+    {
+     "slug": "variegated_meadowhawk",
+     "observations": 61
+    },
+    {
+     "slug": "seven_spotted_lady_beetle",
+     "observations": 59
+    },
+    {
+     "slug": "mule_deer",
+     "observations": 55
+    },
+    {
+     "slug": "bighorn_sheep",
+     "observations": 54
+    },
+    {
+     "slug": "american_coot",
+     "observations": 52
+    },
+    {
+     "slug": "ring_necked_duck",
+     "observations": 39
+    },
+    {
+     "slug": "western_fence_lizard",
+     "observations": 39
+    },
+    {
+     "slug": "western_pygmy_blue",
+     "observations": 36
+    },
+    {
+     "slug": "western_black_widow",
+     "observations": 35
+    },
+    {
+     "slug": "coyote",
+     "observations": 33
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 28
+    },
+    {
+     "slug": "great_horned_owl",
+     "observations": 27
+    },
+    {
+     "slug": "black_crowned_night_heron",
+     "observations": 22
+    },
+    {
+     "slug": "northern_flicker",
+     "observations": 22
+    },
+    {
+     "slug": "american_kestrel",
+     "observations": 18
+    },
+    {
+     "slug": "common_desert_centipede",
+     "observations": 17
+    },
+    {
+     "slug": "common_pill_woodlouse",
+     "observations": 17
+    },
+    {
+     "slug": "ruddy_duck",
+     "observations": 15
+    },
+    {
+     "slug": "zebra_tailed_lizard",
+     "observations": 14
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 10
+    },
+    {
+     "slug": "bobcat",
+     "observations": 9
+    },
+    {
+     "slug": "woodhouses_toad",
+     "observations": 7
+    },
+    {
+     "slug": "killdeer",
+     "observations": 6
+    },
+    {
+     "slug": "white_faced_ibis",
+     "observations": 5
+    },
+    {
+     "slug": "desert_iguana",
+     "observations": 5
+    },
+    {
+     "slug": "red_swamp_crayfish",
+     "observations": 5
+    },
+    {
+     "slug": "elk",
+     "observations": 4
+    },
+    {
+     "slug": "western_mosquitofish",
+     "observations": 3
+    },
+    {
+     "slug": "cinnamon_teal",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "lake_mead_national_recreation_area",
+   "name": "Lake Mead National Recreation Area",
+   "lat": 36.15,
+   "lon": -114.4,
+   "radius_km": 25,
+   "blurb": "Desert reservoir; desert bighorn sheep, roadrunners, herons and coyotes.",
+   "species": [
+    {
+     "slug": "bighorn_sheep",
+     "observations": 72
+    },
+    {
+     "slug": "side_blotched_lizard",
+     "observations": 62
+    },
+    {
+     "slug": "relict_leopard_frog",
+     "observations": 29
+    },
+    {
+     "slug": "desert_horned_lizard",
+     "observations": 23
+    },
+    {
+     "slug": "common_chuckwalla",
+     "observations": 18
+    },
+    {
+     "slug": "zebra_tailed_lizard",
+     "observations": 18
+    },
+    {
+     "slug": "western_whiptail",
+     "observations": 17
+    },
+    {
+     "slug": "desert_tortoise",
+     "observations": 13
+    },
+    {
+     "slug": "american_coot",
+     "observations": 12
+    },
+    {
+     "slug": "common_raven",
+     "observations": 12
+    },
+    {
+     "slug": "large_creosote_gall_midge",
+     "observations": 11
+    },
+    {
+     "slug": "greater_roadrunner",
+     "observations": 9
+    },
+    {
+     "slug": "mallard",
+     "observations": 9
+    },
+    {
+     "slug": "coyote",
+     "observations": 9
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 9
+    },
+    {
+     "slug": "pallid_winged_grasshopper",
+     "observations": 9
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 8
+    },
+    {
+     "slug": "black_tailed_jackrabbit",
+     "observations": 8
+    },
+    {
+     "slug": "white_tailed_antelope_squirrel",
+     "observations": 8
+    },
+    {
+     "slug": "european_carp",
+     "observations": 8
+    },
+    {
+     "slug": "white_lined_sphinx",
+     "observations": 7
+    },
+    {
+     "slug": "mourning_dove",
+     "observations": 6
+    },
+    {
+     "slug": "desert_iguana",
+     "observations": 6
+    },
+    {
+     "slug": "variegated_meadowhawk",
+     "observations": 6
+    },
+    {
+     "slug": "verdin",
+     "observations": 5
+    },
+    {
+     "slug": "red_spotted_toad",
+     "observations": 5
+    },
+    {
+     "slug": "woodhouses_toad",
+     "observations": 5
+    },
+    {
+     "slug": "gambels_quail",
+     "observations": 4
+    },
+    {
+     "slug": "white_crowned_sparrow",
+     "observations": 4
+    },
+    {
+     "slug": "great_tailed_grackle",
+     "observations": 4
+    },
+    {
+     "slug": "says_phoebe",
+     "observations": 4
+    },
+    {
+     "slug": "seven_spotted_lady_beetle",
+     "observations": 4
+    },
+    {
+     "slug": "desert_collared_lizard",
+     "observations": 4
+    },
+    {
+     "slug": "long_nosed_leopard_lizard",
+     "observations": 4
+    },
+    {
+     "slug": "house_finch",
+     "observations": 4
+    },
+    {
+     "slug": "killdeer",
+     "observations": 3
+    },
+    {
+     "slug": "western_black_widow",
+     "observations": 3
+    },
+    {
+     "slug": "painted_lady",
+     "observations": 3
+    },
+    {
+     "slug": "western_pygmy_blue",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "desert_national_wildlife_refuge",
+   "name": "Desert National Wildlife Refuge",
+   "lat": 36.44,
+   "lon": -115.36,
+   "radius_km": 25,
+   "blurb": "Mojave mountains; desert bighorn sheep, tortoises, kit foxes and chukars.",
+   "species": [
+    {
+     "slug": "phainopepla",
+     "observations": 600
+    },
+    {
+     "slug": "coopers_hawk",
+     "observations": 555
+    },
+    {
+     "slug": "northern_mockingbird",
+     "observations": 387
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 383
+    },
+    {
+     "slug": "side_blotched_lizard",
+     "observations": 373
+    },
+    {
+     "slug": "black_crowned_night_heron",
+     "observations": 368
+    },
+    {
+     "slug": "great_tailed_grackle",
+     "observations": 352
+    },
+    {
+     "slug": "white_crowned_sparrow",
+     "observations": 322
+    },
+    {
+     "slug": "mallard",
+     "observations": 311
+    },
+    {
+     "slug": "american_coot",
+     "observations": 301
+    },
+    {
+     "slug": "yellow_rumped_warbler",
+     "observations": 268
+    },
+    {
+     "slug": "common_raven",
+     "observations": 267
+    },
+    {
+     "slug": "house_finch",
+     "observations": 259
+    },
+    {
+     "slug": "says_phoebe",
+     "observations": 245
+    },
+    {
+     "slug": "verdin",
+     "observations": 235
+    },
+    {
+     "slug": "american_robin",
+     "observations": 199
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 179
+    },
+    {
+     "slug": "pied_billed_grebe",
+     "observations": 168
+    },
+    {
+     "slug": "greater_roadrunner",
+     "observations": 165
+    },
+    {
+     "slug": "mourning_dove",
+     "observations": 161
+    },
+    {
+     "slug": "lesser_goldfinch",
+     "observations": 161
+    },
+    {
+     "slug": "double_crested_cormorant",
+     "observations": 159
+    },
+    {
+     "slug": "dark_eyed_junco",
+     "observations": 147
+    },
+    {
+     "slug": "annas_hummingbird",
+     "observations": 145
+    },
+    {
+     "slug": "black_phoebe",
+     "observations": 144
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 143
+    },
+    {
+     "slug": "large_creosote_gall_midge",
+     "observations": 141
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 135
+    },
+    {
+     "slug": "great_egret",
+     "observations": 135
+    },
+    {
+     "slug": "american_kestrel",
+     "observations": 129
+    },
+    {
+     "slug": "western_whiptail",
+     "observations": 123
+    },
+    {
+     "slug": "northern_flicker",
+     "observations": 120
+    },
+    {
+     "slug": "painted_lady",
+     "observations": 119
+    },
+    {
+     "slug": "desert_cottontail",
+     "observations": 113
+    },
+    {
+     "slug": "ruddy_duck",
+     "observations": 112
+    },
+    {
+     "slug": "great_horned_owl",
+     "observations": 102
+    },
+    {
+     "slug": "western_pygmy_blue",
+     "observations": 98
+    },
+    {
+     "slug": "cinnamon_teal",
+     "observations": 98
+    },
+    {
+     "slug": "red_swamp_crayfish",
+     "observations": 92
+    },
+    {
+     "slug": "variegated_meadowhawk",
+     "observations": 92
+    },
+    {
+     "slug": "white_tailed_antelope_squirrel",
+     "observations": 89
+    },
+    {
+     "slug": "monarch",
+     "observations": 88
+    },
+    {
+     "slug": "pallid_winged_grasshopper",
+     "observations": 86
+    },
+    {
+     "slug": "gambels_quail",
+     "observations": 81
+    },
+    {
+     "slug": "northern_shoveler",
+     "observations": 81
+    },
+    {
+     "slug": "white_lined_sphinx",
+     "observations": 79
+    },
+    {
+     "slug": "desert_tortoise",
+     "observations": 78
+    },
+    {
+     "slug": "desert_horned_lizard",
+     "observations": 61
+    },
+    {
+     "slug": "black_tailed_jackrabbit",
+     "observations": 52
+    },
+    {
+     "slug": "gopher_snake",
+     "observations": 51
+    },
+    {
+     "slug": "blue_dasher",
+     "observations": 51
+    },
+    {
+     "slug": "seven_spotted_lady_beetle",
+     "observations": 50
+    },
+    {
+     "slug": "ring_necked_duck",
+     "observations": 47
+    },
+    {
+     "slug": "woodhouses_toad",
+     "observations": 44
+    },
+    {
+     "slug": "white_faced_ibis",
+     "observations": 41
+    },
+    {
+     "slug": "yellow_headed_blackbird",
+     "observations": 38
+    },
+    {
+     "slug": "common_chuckwalla",
+     "observations": 38
+    },
+    {
+     "slug": "western_black_widow",
+     "observations": 36
+    },
+    {
+     "slug": "zebra_tailed_lizard",
+     "observations": 35
+    },
+    {
+     "slug": "coyote",
+     "observations": 35
+    },
+    {
+     "slug": "long_nosed_leopard_lizard",
+     "observations": 34
+    },
+    {
+     "slug": "killdeer",
+     "observations": 30
+    },
+    {
+     "slug": "house_sparrow",
+     "observations": 29
+    },
+    {
+     "slug": "desert_collared_lizard",
+     "observations": 28
+    },
+    {
+     "slug": "common_pill_woodlouse",
+     "observations": 24
+    },
+    {
+     "slug": "bobcat",
+     "observations": 15
+    },
+    {
+     "slug": "common_desert_centipede",
+     "observations": 13
+    },
+    {
+     "slug": "red_spotted_toad",
+     "observations": 12
+    },
+    {
+     "slug": "western_fence_lizard",
+     "observations": 8
+    },
+    {
+     "slug": "bighorn_sheep",
+     "observations": 8
+    },
+    {
+     "slug": "common_sagebrush_lizard",
+     "observations": 6
+    },
+    {
+     "slug": "western_mosquitofish",
+     "observations": 6
+    },
+    {
+     "slug": "rock_squirrel",
+     "observations": 6
+    },
+    {
+     "slug": "mule_deer",
+     "observations": 5
+    },
+    {
+     "slug": "american_bullfrog",
+     "observations": 5
+    },
+    {
+     "slug": "desert_iguana",
+     "observations": 3
+    },
+    {
+     "slug": "relict_leopard_frog",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "ruby_lake_national_wildlife_refuge",
+   "name": "Ruby Lake National Wildlife Refuge",
+   "lat": 40.2,
+   "lon": -115.5,
+   "radius_km": 15,
+   "blurb": "Mountain marshes; trumpeter swans, sandhill cranes, ducks and mule deer.",
+   "species": [
+    {
+     "slug": "pronghorn",
+     "observations": 33
+    },
+    {
+     "slug": "gopher_snake",
+     "observations": 32
+    },
+    {
+     "slug": "yellow_headed_blackbird",
+     "observations": 31
+    },
+    {
+     "slug": "western_fence_lizard",
+     "observations": 22
+    },
+    {
+     "slug": "white_faced_ibis",
+     "observations": 21
+    },
+    {
+     "slug": "american_coot",
+     "observations": 20
+    },
+    {
+     "slug": "ruddy_duck",
+     "observations": 16
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 14
+    },
+    {
+     "slug": "cinnamon_teal",
+     "observations": 14
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 13
+    },
+    {
+     "slug": "mallard",
+     "observations": 10
+    },
+    {
+     "slug": "coyote",
+     "observations": 10
+    },
+    {
+     "slug": "american_robin",
+     "observations": 9
+    },
+    {
+     "slug": "mule_deer",
+     "observations": 9
+    },
+    {
+     "slug": "muskrat",
+     "observations": 9
+    },
+    {
+     "slug": "monarch",
+     "observations": 7
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 6
+    },
+    {
+     "slug": "yellow_bellied_marmot",
+     "observations": 6
+    },
+    {
+     "slug": "mourning_dove",
+     "observations": 5
+    },
+    {
+     "slug": "mormon_cricket",
+     "observations": 5
+    },
+    {
+     "slug": "northern_shoveler",
+     "observations": 5
+    },
+    {
+     "slug": "largemouth_bass",
+     "observations": 5
+    },
+    {
+     "slug": "pied_billed_grebe",
+     "observations": 4
+    },
+    {
+     "slug": "black_crowned_night_heron",
+     "observations": 4
+    },
+    {
+     "slug": "northern_flicker",
+     "observations": 4
+    },
+    {
+     "slug": "double_crested_cormorant",
+     "observations": 4
+    },
+    {
+     "slug": "white_crowned_sparrow",
+     "observations": 3
+    },
+    {
+     "slug": "rainbow_trout",
+     "observations": 3
+    },
+    {
+     "slug": "great_egret",
+     "observations": 3
+    },
+    {
+     "slug": "yellow_rumped_warbler",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "stillwater_national_wildlife_refuge",
+   "name": "Stillwater National Wildlife Refuge",
+   "lat": 39.52,
+   "lon": -118.5,
+   "radius_km": 15,
+   "blurb": "Desert wetlands; white-faced ibis, pelicans, ducks and avocets.",
+   "species": [
+    {
+     "slug": "yellow_headed_blackbird",
+     "observations": 43
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 38
+    },
+    {
+     "slug": "black_crowned_night_heron",
+     "observations": 38
+    },
+    {
+     "slug": "american_coot",
+     "observations": 37
+    },
+    {
+     "slug": "white_faced_ibis",
+     "observations": 36
+    },
+    {
+     "slug": "great_horned_owl",
+     "observations": 31
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 30
+    },
+    {
+     "slug": "killdeer",
+     "observations": 27
+    },
+    {
+     "slug": "cinnamon_teal",
+     "observations": 27
+    },
+    {
+     "slug": "great_egret",
+     "observations": 24
+    },
+    {
+     "slug": "white_crowned_sparrow",
+     "observations": 23
+    },
+    {
+     "slug": "ruddy_duck",
+     "observations": 23
+    },
+    {
+     "slug": "pied_billed_grebe",
+     "observations": 22
+    },
+    {
+     "slug": "gopher_snake",
+     "observations": 21
+    },
+    {
+     "slug": "northern_shoveler",
+     "observations": 18
+    },
+    {
+     "slug": "long_nosed_leopard_lizard",
+     "observations": 16
+    },
+    {
+     "slug": "variegated_meadowhawk",
+     "observations": 16
+    },
+    {
+     "slug": "american_kestrel",
+     "observations": 15
+    },
+    {
+     "slug": "coyote",
+     "observations": 14
+    },
+    {
+     "slug": "yellow_rumped_warbler",
+     "observations": 14
+    },
+    {
+     "slug": "northern_mockingbird",
+     "observations": 12
+    },
+    {
+     "slug": "says_phoebe",
+     "observations": 12
+    },
+    {
+     "slug": "northern_flicker",
+     "observations": 11
+    },
+    {
+     "slug": "mourning_dove",
+     "observations": 10
+    },
+    {
+     "slug": "american_robin",
+     "observations": 10
+    },
+    {
+     "slug": "monarch",
+     "observations": 10
+    },
+    {
+     "slug": "mule_deer",
+     "observations": 7
+    },
+    {
+     "slug": "pronghorn",
+     "observations": 7
+    },
+    {
+     "slug": "desert_cottontail",
+     "observations": 7
+    },
+    {
+     "slug": "blue_dasher",
+     "observations": 7
+    },
+    {
+     "slug": "desert_horned_lizard",
+     "observations": 7
+    },
+    {
+     "slug": "double_crested_cormorant",
+     "observations": 7
+    },
+    {
+     "slug": "mallard",
+     "observations": 5
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 5
+    },
+    {
+     "slug": "common_raven",
+     "observations": 5
+    },
+    {
+     "slug": "house_sparrow",
+     "observations": 5
+    },
+    {
+     "slug": "western_whiptail",
+     "observations": 5
+    },
+    {
+     "slug": "muskrat",
+     "observations": 5
+    },
+    {
+     "slug": "black_phoebe",
+     "observations": 4
+    },
+    {
+     "slug": "black_tailed_jackrabbit",
+     "observations": 4
+    },
+    {
+     "slug": "white_tailed_antelope_squirrel",
+     "observations": 4
+    },
+    {
+     "slug": "white_lined_sphinx",
+     "observations": 4
+    },
+    {
+     "slug": "western_pygmy_blue",
+     "observations": 4
+    },
+    {
+     "slug": "desert_collared_lizard",
+     "observations": 4
+    },
+    {
+     "slug": "american_bullfrog",
+     "observations": 4
+    },
+    {
+     "slug": "side_blotched_lizard",
+     "observations": 3
+    },
+    {
+     "slug": "pallid_winged_grasshopper",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "lake_tahoe_nevada_state_park",
+   "name": "Lake Tahoe Nevada State Park",
+   "lat": 39.2,
+   "lon": -119.93,
+   "radius_km": 5,
+   "blurb": "Alpine lake and pines; Steller's jays, black bears, ospreys and mule deer.",
+   "species": [
+    {
+     "slug": "western_fence_lizard",
+     "observations": 128
+    },
+    {
+     "slug": "california_ground_squirrel",
+     "observations": 96
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 55
+    },
+    {
+     "slug": "common_golden_mantled_ground_squirrel",
+     "observations": 43
+    },
+    {
+     "slug": "mallard",
+     "observations": 32
+    },
+    {
+     "slug": "signal_crayfish",
+     "observations": 30
+    },
+    {
+     "slug": "american_robin",
+     "observations": 29
+    },
+    {
+     "slug": "dark_eyed_junco",
+     "observations": 17
+    },
+    {
+     "slug": "northern_flicker",
+     "observations": 15
+    },
+    {
+     "slug": "american_black_bear",
+     "observations": 13
+    },
+    {
+     "slug": "common_sagebrush_lizard",
+     "observations": 13
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 9
+    },
+    {
+     "slug": "seven_spotted_lady_beetle",
+     "observations": 7
+    },
+    {
+     "slug": "western_gray_squirrel",
+     "observations": 6
+    },
+    {
+     "slug": "yellow_rumped_warbler",
+     "observations": 6
+    },
+    {
+     "slug": "common_raven",
+     "observations": 5
+    },
+    {
+     "slug": "monarch",
+     "observations": 5
+    },
+    {
+     "slug": "pacific_chorus_frog",
+     "observations": 4
+    },
+    {
+     "slug": "coyote",
+     "observations": 4
+    },
+    {
+     "slug": "white_lined_sphinx",
+     "observations": 4
+    },
+    {
+     "slug": "brook_trout",
+     "observations": 4
+    },
+    {
+     "slug": "bobcat",
+     "observations": 3
+    },
+    {
+     "slug": "mule_deer",
+     "observations": 3
+    },
+    {
+     "slug": "painted_lady",
+     "observations": 3
+    },
+    {
+     "slug": "variegated_meadowhawk",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "clark_county_wetlands_park",
+   "name": "Clark County Wetlands Park",
+   "lat": 36.1,
+   "lon": -115.03,
+   "radius_km": 5,
+   "blurb": "Las Vegas wash wetlands; herons, ducks, turtles and coyotes.",
+   "species": [
+    {
+     "slug": "american_coot",
+     "observations": 692
+    },
+    {
+     "slug": "ruddy_duck",
+     "observations": 663
+    },
+    {
+     "slug": "desert_cottontail",
+     "observations": 621
+    },
+    {
+     "slug": "greater_roadrunner",
+     "observations": 557
+    },
+    {
+     "slug": "blue_dasher",
+     "observations": 516
+    },
+    {
+     "slug": "yellow_rumped_warbler",
+     "observations": 516
+    },
+    {
+     "slug": "great_tailed_grackle",
+     "observations": 509
+    },
+    {
+     "slug": "northern_shoveler",
+     "observations": 509
+    },
+    {
+     "slug": "cinnamon_teal",
+     "observations": 485
+    },
+    {
+     "slug": "gambels_quail",
+     "observations": 480
+    },
+    {
+     "slug": "white_faced_ibis",
+     "observations": 474
+    },
+    {
+     "slug": "verdin",
+     "observations": 470
+    },
+    {
+     "slug": "mallard",
+     "observations": 446
+    },
+    {
+     "slug": "black_phoebe",
+     "observations": 418
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 417
+    },
+    {
+     "slug": "pied_billed_grebe",
+     "observations": 412
+    },
+    {
+     "slug": "white_crowned_sparrow",
+     "observations": 395
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 384
+    },
+    {
+     "slug": "annas_hummingbird",
+     "observations": 303
+    },
+    {
+     "slug": "black_crowned_night_heron",
+     "observations": 249
+    },
+    {
+     "slug": "great_egret",
+     "observations": 243
+    },
+    {
+     "slug": "northern_mockingbird",
+     "observations": 237
+    },
+    {
+     "slug": "says_phoebe",
+     "observations": 232
+    },
+    {
+     "slug": "ring_necked_duck",
+     "observations": 221
+    },
+    {
+     "slug": "coopers_hawk",
+     "observations": 209
+    },
+    {
+     "slug": "killdeer",
+     "observations": 207
+    },
+    {
+     "slug": "northern_flicker",
+     "observations": 196
+    },
+    {
+     "slug": "double_crested_cormorant",
+     "observations": 195
+    },
+    {
+     "slug": "mourning_dove",
+     "observations": 191
+    },
+    {
+     "slug": "yellow_headed_blackbird",
+     "observations": 168
+    },
+    {
+     "slug": "western_whiptail",
+     "observations": 154
+    },
+    {
+     "slug": "coyote",
+     "observations": 136
+    },
+    {
+     "slug": "american_bullfrog",
+     "observations": 129
+    },
+    {
+     "slug": "phainopepla",
+     "observations": 129
+    },
+    {
+     "slug": "western_pygmy_blue",
+     "observations": 128
+    },
+    {
+     "slug": "side_blotched_lizard",
+     "observations": 126
+    },
+    {
+     "slug": "house_finch",
+     "observations": 116
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 105
+    },
+    {
+     "slug": "great_horned_owl",
+     "observations": 94
+    },
+    {
+     "slug": "monarch",
+     "observations": 88
+    },
+    {
+     "slug": "european_carp",
+     "observations": 79
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 75
+    },
+    {
+     "slug": "variegated_meadowhawk",
+     "observations": 71
+    },
+    {
+     "slug": "zebra_tailed_lizard",
+     "observations": 69
+    },
+    {
+     "slug": "painted_lady",
+     "observations": 64
+    },
+    {
+     "slug": "american_kestrel",
+     "observations": 52
+    },
+    {
+     "slug": "pallid_winged_grasshopper",
+     "observations": 52
+    },
+    {
+     "slug": "american_beaver",
+     "observations": 51
+    },
+    {
+     "slug": "seven_spotted_lady_beetle",
+     "observations": 51
+    },
+    {
+     "slug": "raccoon",
+     "observations": 46
+    },
+    {
+     "slug": "large_creosote_gall_midge",
+     "observations": 44
+    },
+    {
+     "slug": "lesser_goldfinch",
+     "observations": 42
+    },
+    {
+     "slug": "western_mosquitofish",
+     "observations": 34
+    },
+    {
+     "slug": "white_tailed_antelope_squirrel",
+     "observations": 33
+    },
+    {
+     "slug": "largemouth_bass",
+     "observations": 30
+    },
+    {
+     "slug": "house_sparrow",
+     "observations": 29
+    },
+    {
+     "slug": "gopher_snake",
+     "observations": 28
+    },
+    {
+     "slug": "woodhouses_toad",
+     "observations": 28
+    },
+    {
+     "slug": "red_swamp_crayfish",
+     "observations": 24
+    },
+    {
+     "slug": "common_pill_woodlouse",
+     "observations": 23
+    },
+    {
+     "slug": "white_lined_sphinx",
+     "observations": 21
+    },
+    {
+     "slug": "black_tailed_jackrabbit",
+     "observations": 19
+    },
+    {
+     "slug": "common_raven",
+     "observations": 16
+    },
+    {
+     "slug": "dark_eyed_junco",
+     "observations": 13
+    },
+    {
+     "slug": "american_robin",
+     "observations": 7
+    },
+    {
+     "slug": "desert_tortoise",
+     "observations": 6
+    },
+    {
+     "slug": "bobcat",
+     "observations": 6
+    },
+    {
+     "slug": "common_desert_centipede",
+     "observations": 6
+    },
+    {
+     "slug": "desert_iguana",
+     "observations": 4
+    },
+    {
+     "slug": "desert_horned_lizard",
+     "observations": 4
+    },
+    {
+     "slug": "common_chuckwalla",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "cathedral_gorge_state_park",
+   "name": "Cathedral Gorge State Park",
+   "lat": 37.8,
+   "lon": -114.4,
+   "radius_km": 4,
+   "blurb": "Clay spires and desert; ravens, lizards, coyotes and jackrabbits.",
+   "species": [
+    {
+     "slug": "western_whiptail",
+     "observations": 14
+    },
+    {
+     "slug": "desert_horned_lizard",
+     "observations": 13
+    },
+    {
+     "slug": "black_tailed_jackrabbit",
+     "observations": 5
+    },
+    {
+     "slug": "long_nosed_leopard_lizard",
+     "observations": 5
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 3
+    },
+    {
+     "slug": "says_phoebe",
+     "observations": 3
+    },
+    {
+     "slug": "gopher_snake",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "sheldon_national_wildlife_refuge",
+   "name": "Sheldon National Wildlife Refuge",
+   "lat": 41.85,
+   "lon": -119.05,
+   "radius_km": 25,
+   "blurb": "High desert; pronghorn, bighorn sheep, wild horses and sage-grouse.",
+   "species": [
+    {
+     "slug": "desert_collared_lizard",
+     "observations": 30
+    },
+    {
+     "slug": "side_blotched_lizard",
+     "observations": 29
+    },
+    {
+     "slug": "yellow_headed_blackbird",
+     "observations": 22
+    },
+    {
+     "slug": "gopher_snake",
+     "observations": 18
+    },
+    {
+     "slug": "long_nosed_leopard_lizard",
+     "observations": 16
+    },
+    {
+     "slug": "desert_horned_lizard",
+     "observations": 11
+    },
+    {
+     "slug": "pronghorn",
+     "observations": 10
+    },
+    {
+     "slug": "american_coot",
+     "observations": 8
+    },
+    {
+     "slug": "blue_dasher",
+     "observations": 8
+    },
+    {
+     "slug": "says_phoebe",
+     "observations": 7
+    },
+    {
+     "slug": "mule_deer",
+     "observations": 7
+    },
+    {
+     "slug": "killdeer",
+     "observations": 6
+    },
+    {
+     "slug": "coyote",
+     "observations": 6
+    },
+    {
+     "slug": "black_tailed_jackrabbit",
+     "observations": 6
+    },
+    {
+     "slug": "pacific_chorus_frog",
+     "observations": 5
+    },
+    {
+     "slug": "ruddy_duck",
+     "observations": 5
+    },
+    {
+     "slug": "white_faced_ibis",
+     "observations": 4
+    },
+    {
+     "slug": "american_bullfrog",
+     "observations": 4
+    },
+    {
+     "slug": "western_fence_lizard",
+     "observations": 3
+    },
+    {
+     "slug": "western_whiptail",
+     "observations": 3
+    },
+    {
+     "slug": "largemouth_bass",
+     "observations": 3
+    }
+   ]
+  }
+ ]
+}
