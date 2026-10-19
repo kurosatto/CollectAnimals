@@ -1,6 +1,7 @@
 package com.captureanimals.app
 
 import android.graphics.BitmapFactory
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -39,6 +40,7 @@ import androidx.compose.ui.unit.dp
  * Your captures' photos, newest first, four to a row. Tapping a photo opens its Field
  * Guide page; holding it offers to delete it, which un-captures the animal, as on the website.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun GalleryScreen(species: List<Species>, collection: Map<String, Badge>, onOpenDex: (String) -> Unit,
                   onDelete: (String) -> Unit) {
