@@ -1,0 +1,1343 @@
+{
+ "source": "iNaturalist research-grade observations (species_counts by radius)",
+ "min_observations": 3,
+ "parks": [
+  {
+   "id": "glacier_national_park",
+   "name": "Glacier National Park",
+   "lat": 48.7,
+   "lon": -113.8,
+   "radius_km": 25,
+   "blurb": "Mountains, lakes and forest; grizzly bears, mountain goats, bighorn sheep and moose.",
+   "species": [
+    {
+     "slug": "mountain_goat",
+     "observations": 1634
+    },
+    {
+     "slug": "columbian_ground_squirrel",
+     "observations": 1581
+    },
+    {
+     "slug": "bighorn_sheep",
+     "observations": 1343
+    },
+    {
+     "slug": "hoary_marmot",
+     "observations": 880
+    },
+    {
+     "slug": "common_golden_mantled_ground_squirrel",
+     "observations": 728
+    },
+    {
+     "slug": "american_black_bear",
+     "observations": 597
+    },
+    {
+     "slug": "mule_deer",
+     "observations": 589
+    },
+    {
+     "slug": "moose",
+     "observations": 500
+    },
+    {
+     "slug": "white_tailed_deer",
+     "observations": 325
+    },
+    {
+     "slug": "stellers_jay",
+     "observations": 273
+    },
+    {
+     "slug": "american_red_squirrel",
+     "observations": 234
+    },
+    {
+     "slug": "western_tent_caterpillar_moth",
+     "observations": 216
+    },
+    {
+     "slug": "common_merganser",
+     "observations": 199
+    },
+    {
+     "slug": "dusky_grouse",
+     "observations": 197
+    },
+    {
+     "slug": "spotted_tussock_moth",
+     "observations": 175
+    },
+    {
+     "slug": "american_dipper",
+     "observations": 170
+    },
+    {
+     "slug": "california_tortoiseshell",
+     "observations": 129
+    },
+    {
+     "slug": "western_terrestrial_garter_snake",
+     "observations": 124
+    },
+    {
+     "slug": "white_spotted_sawyer",
+     "observations": 122
+    },
+    {
+     "slug": "american_robin",
+     "observations": 115
+    },
+    {
+     "slug": "western_toad",
+     "observations": 111
+    },
+    {
+     "slug": "lorquins_admiral",
+     "observations": 105
+    },
+    {
+     "slug": "mourning_cloak",
+     "observations": 94
+    },
+    {
+     "slug": "cedar_waxwing",
+     "observations": 91
+    },
+    {
+     "slug": "red_fox",
+     "observations": 81
+    },
+    {
+     "slug": "dark_eyed_junco",
+     "observations": 77
+    },
+    {
+     "slug": "western_tanager",
+     "observations": 70
+    },
+    {
+     "slug": "common_raven",
+     "observations": 65
+    },
+    {
+     "slug": "pine_siskin",
+     "observations": 63
+    },
+    {
+     "slug": "bald_eagle",
+     "observations": 58
+    },
+    {
+     "slug": "columbia_spotted_frog",
+     "observations": 57
+    },
+    {
+     "slug": "chipping_sparrow",
+     "observations": 47
+    },
+    {
+     "slug": "mountain_bluebird",
+     "observations": 45
+    },
+    {
+     "slug": "american_beaver",
+     "observations": 43
+    },
+    {
+     "slug": "american_crow",
+     "observations": 35
+    },
+    {
+     "slug": "yellow_bellied_marmot",
+     "observations": 33
+    },
+    {
+     "slug": "elk",
+     "observations": 33
+    },
+    {
+     "slug": "red_breasted_nuthatch",
+     "observations": 32
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 30
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 26
+    },
+    {
+     "slug": "osprey",
+     "observations": 23
+    },
+    {
+     "slug": "westslope_cutthroat_trout",
+     "observations": 23
+    },
+    {
+     "slug": "mallard",
+     "observations": 22
+    },
+    {
+     "slug": "northern_flicker",
+     "observations": 22
+    },
+    {
+     "slug": "two_striped_grasshopper",
+     "observations": 22
+    },
+    {
+     "slug": "tree_swallow",
+     "observations": 20
+    },
+    {
+     "slug": "rocky_mountain_tailed_frog",
+     "observations": 19
+    },
+    {
+     "slug": "common_garter_snake",
+     "observations": 15
+    },
+    {
+     "slug": "brook_trout",
+     "observations": 14
+    },
+    {
+     "slug": "black_capped_chickadee",
+     "observations": 13
+    },
+    {
+     "slug": "western_conifer_seed_bug",
+     "observations": 10
+    },
+    {
+     "slug": "long_toed_salamander",
+     "observations": 8
+    },
+    {
+     "slug": "coyote",
+     "observations": 8
+    },
+    {
+     "slug": "black_billed_magpie",
+     "observations": 7
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 6
+    },
+    {
+     "slug": "mountain_whitefish",
+     "observations": 6
+    },
+    {
+     "slug": "killdeer",
+     "observations": 5
+    },
+    {
+     "slug": "eastern_kingbird",
+     "observations": 5
+    },
+    {
+     "slug": "redside_shiner",
+     "observations": 5
+    },
+    {
+     "slug": "american_bison",
+     "observations": 5
+    },
+    {
+     "slug": "ring_billed_gull",
+     "observations": 4
+    },
+    {
+     "slug": "wild_turkey",
+     "observations": 3
+    },
+    {
+     "slug": "american_white_pelican",
+     "observations": 3
+    },
+    {
+     "slug": "red_winged_blackbird",
+     "observations": 3
+    },
+    {
+     "slug": "great_horned_owl",
+     "observations": 3
+    },
+    {
+     "slug": "rainbow_trout",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "national_bison_range",
+   "name": "National Bison Range",
+   "lat": 47.37,
+   "lon": -114.25,
+   "radius_km": 10,
+   "blurb": "Prairie and hills; bison, elk, pronghorn, bighorn sheep and bears.",
+   "species": [
+    {
+     "slug": "american_bison",
+     "observations": 323
+    },
+    {
+     "slug": "pronghorn",
+     "observations": 163
+    },
+    {
+     "slug": "elk",
+     "observations": 116
+    },
+    {
+     "slug": "white_tailed_deer",
+     "observations": 106
+    },
+    {
+     "slug": "mule_deer",
+     "observations": 102
+    },
+    {
+     "slug": "western_meadowlark",
+     "observations": 89
+    },
+    {
+     "slug": "american_black_bear",
+     "observations": 72
+    },
+    {
+     "slug": "vesper_sparrow",
+     "observations": 45
+    },
+    {
+     "slug": "painted_turtle",
+     "observations": 41
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 37
+    },
+    {
+     "slug": "eastern_kingbird",
+     "observations": 32
+    },
+    {
+     "slug": "red_winged_blackbird",
+     "observations": 25
+    },
+    {
+     "slug": "coyote",
+     "observations": 23
+    },
+    {
+     "slug": "bald_eagle",
+     "observations": 22
+    },
+    {
+     "slug": "yellow_headed_blackbird",
+     "observations": 22
+    },
+    {
+     "slug": "black_billed_magpie",
+     "observations": 22
+    },
+    {
+     "slug": "cedar_waxwing",
+     "observations": 18
+    },
+    {
+     "slug": "two_striped_grasshopper",
+     "observations": 16
+    },
+    {
+     "slug": "bighorn_sheep",
+     "observations": 15
+    },
+    {
+     "slug": "american_robin",
+     "observations": 14
+    },
+    {
+     "slug": "mountain_bluebird",
+     "observations": 13
+    },
+    {
+     "slug": "dusky_grouse",
+     "observations": 12
+    },
+    {
+     "slug": "mallard",
+     "observations": 12
+    },
+    {
+     "slug": "great_horned_owl",
+     "observations": 12
+    },
+    {
+     "slug": "osprey",
+     "observations": 12
+    },
+    {
+     "slug": "european_starling",
+     "observations": 9
+    },
+    {
+     "slug": "wild_turkey",
+     "observations": 8
+    },
+    {
+     "slug": "gopher_snake",
+     "observations": 8
+    },
+    {
+     "slug": "prairie_rattlesnake",
+     "observations": 8
+    },
+    {
+     "slug": "chipping_sparrow",
+     "observations": 7
+    },
+    {
+     "slug": "northern_flicker",
+     "observations": 7
+    },
+    {
+     "slug": "killdeer",
+     "observations": 6
+    },
+    {
+     "slug": "common_merganser",
+     "observations": 6
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 5
+    },
+    {
+     "slug": "mountain_cottontail",
+     "observations": 5
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 4
+    },
+    {
+     "slug": "american_goldfinch",
+     "observations": 4
+    },
+    {
+     "slug": "columbian_ground_squirrel",
+     "observations": 4
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 3
+    },
+    {
+     "slug": "common_raven",
+     "observations": 3
+    },
+    {
+     "slug": "tree_swallow",
+     "observations": 3
+    },
+    {
+     "slug": "house_sparrow",
+     "observations": 3
+    },
+    {
+     "slug": "western_terrestrial_garter_snake",
+     "observations": 3
+    },
+    {
+     "slug": "european_mantis",
+     "observations": 3
+    },
+    {
+     "slug": "common_pill_woodlouse",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "medicine_lake_national_wildlife_refuge",
+   "name": "Medicine Lake National Wildlife Refuge",
+   "lat": 48.5,
+   "lon": -104.35,
+   "radius_km": 12,
+   "blurb": "Prairie lakes; American white pelicans, grebes, pronghorn and sharp-tailed grouse.",
+   "species": [
+    {
+     "slug": "american_white_pelican",
+     "observations": 6
+    },
+    {
+     "slug": "ring_billed_gull",
+     "observations": 6
+    },
+    {
+     "slug": "eastern_kingbird",
+     "observations": 6
+    },
+    {
+     "slug": "yellow_headed_blackbird",
+     "observations": 5
+    },
+    {
+     "slug": "painted_turtle",
+     "observations": 5
+    },
+    {
+     "slug": "pronghorn",
+     "observations": 4
+    },
+    {
+     "slug": "killdeer",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "charles_m_russell_national_wildlife_refuge",
+   "name": "Charles M. Russell National Wildlife Refuge",
+   "lat": 47.7,
+   "lon": -107.5,
+   "radius_km": 25,
+   "blurb": "Missouri River breaks; elk, bighorn sheep, sage grouse and prairie dogs.",
+   "species": [
+    {
+     "slug": "american_bison",
+     "observations": 36
+    },
+    {
+     "slug": "black_tailed_prairie_dog",
+     "observations": 24
+    },
+    {
+     "slug": "prairie_rattlesnake",
+     "observations": 19
+    },
+    {
+     "slug": "north_american_racer",
+     "observations": 16
+    },
+    {
+     "slug": "eastern_kingbird",
+     "observations": 14
+    },
+    {
+     "slug": "gopher_snake",
+     "observations": 13
+    },
+    {
+     "slug": "pronghorn",
+     "observations": 11
+    },
+    {
+     "slug": "plains_garter_snake",
+     "observations": 10
+    },
+    {
+     "slug": "western_meadowlark",
+     "observations": 8
+    },
+    {
+     "slug": "woodhouses_toad",
+     "observations": 7
+    },
+    {
+     "slug": "painted_turtle",
+     "observations": 6
+    },
+    {
+     "slug": "coyote",
+     "observations": 6
+    },
+    {
+     "slug": "great_plains_toad",
+     "observations": 6
+    },
+    {
+     "slug": "mule_deer",
+     "observations": 5
+    },
+    {
+     "slug": "osprey",
+     "observations": 5
+    },
+    {
+     "slug": "elk",
+     "observations": 5
+    },
+    {
+     "slug": "western_tiger_salamander",
+     "observations": 4
+    },
+    {
+     "slug": "greater_short_horned_lizard",
+     "observations": 4
+    },
+    {
+     "slug": "hunts_bumble_bee",
+     "observations": 4
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 3
+    },
+    {
+     "slug": "great_horned_owl",
+     "observations": 3
+    },
+    {
+     "slug": "white_tailed_deer",
+     "observations": 3
+    },
+    {
+     "slug": "northern_leopard_frog",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "freezout_lake_wildlife_management_area",
+   "name": "Freezout Lake Wildlife Management Area",
+   "lat": 47.7,
+   "lon": -111.95,
+   "radius_km": 6,
+   "blurb": "Prairie lake; tens of thousands of snow geese and tundra swans in spring.",
+   "species": []
+  },
+  {
+   "id": "lee_metcalf_national_wildlife_refuge",
+   "name": "Lee Metcalf National Wildlife Refuge",
+   "lat": 46.55,
+   "lon": -114.1,
+   "radius_km": 6,
+   "blurb": "Bitterroot River marsh; ospreys, otters, ducks and white-tailed deer.",
+   "species": [
+    {
+     "slug": "canada_goose",
+     "observations": 104
+    },
+    {
+     "slug": "osprey",
+     "observations": 93
+    },
+    {
+     "slug": "columbian_ground_squirrel",
+     "observations": 84
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 77
+    },
+    {
+     "slug": "red_winged_blackbird",
+     "observations": 71
+    },
+    {
+     "slug": "mallard",
+     "observations": 63
+    },
+    {
+     "slug": "wild_turkey",
+     "observations": 52
+    },
+    {
+     "slug": "great_horned_owl",
+     "observations": 51
+    },
+    {
+     "slug": "yellow_headed_blackbird",
+     "observations": 50
+    },
+    {
+     "slug": "northern_flicker",
+     "observations": 49
+    },
+    {
+     "slug": "sandhill_crane",
+     "observations": 46
+    },
+    {
+     "slug": "tree_swallow",
+     "observations": 45
+    },
+    {
+     "slug": "killdeer",
+     "observations": 44
+    },
+    {
+     "slug": "black_billed_magpie",
+     "observations": 44
+    },
+    {
+     "slug": "painted_turtle",
+     "observations": 43
+    },
+    {
+     "slug": "eastern_kingbird",
+     "observations": 42
+    },
+    {
+     "slug": "white_tailed_deer",
+     "observations": 41
+    },
+    {
+     "slug": "american_red_squirrel",
+     "observations": 36
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 35
+    },
+    {
+     "slug": "bald_eagle",
+     "observations": 30
+    },
+    {
+     "slug": "american_robin",
+     "observations": 26
+    },
+    {
+     "slug": "western_toad",
+     "observations": 23
+    },
+    {
+     "slug": "black_capped_chickadee",
+     "observations": 20
+    },
+    {
+     "slug": "american_white_pelican",
+     "observations": 18
+    },
+    {
+     "slug": "lorquins_admiral",
+     "observations": 17
+    },
+    {
+     "slug": "cedar_waxwing",
+     "observations": 16
+    },
+    {
+     "slug": "western_terrestrial_garter_snake",
+     "observations": 16
+    },
+    {
+     "slug": "mourning_cloak",
+     "observations": 14
+    },
+    {
+     "slug": "common_garter_snake",
+     "observations": 13
+    },
+    {
+     "slug": "yellow_bellied_marmot",
+     "observations": 13
+    },
+    {
+     "slug": "american_goldfinch",
+     "observations": 13
+    },
+    {
+     "slug": "northern_rubber_boa",
+     "observations": 13
+    },
+    {
+     "slug": "western_meadowlark",
+     "observations": 12
+    },
+    {
+     "slug": "western_tanager",
+     "observations": 11
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 11
+    },
+    {
+     "slug": "common_merganser",
+     "observations": 10
+    },
+    {
+     "slug": "dark_eyed_junco",
+     "observations": 9
+    },
+    {
+     "slug": "american_dipper",
+     "observations": 8
+    },
+    {
+     "slug": "california_tortoiseshell",
+     "observations": 8
+    },
+    {
+     "slug": "red_breasted_nuthatch",
+     "observations": 7
+    },
+    {
+     "slug": "european_starling",
+     "observations": 7
+    },
+    {
+     "slug": "american_beaver",
+     "observations": 7
+    },
+    {
+     "slug": "european_mantis",
+     "observations": 6
+    },
+    {
+     "slug": "pine_siskin",
+     "observations": 6
+    },
+    {
+     "slug": "columbia_spotted_frog",
+     "observations": 5
+    },
+    {
+     "slug": "northern_alligator_lizard",
+     "observations": 5
+    },
+    {
+     "slug": "chipping_sparrow",
+     "observations": 4
+    },
+    {
+     "slug": "common_golden_mantled_ground_squirrel",
+     "observations": 4
+    },
+    {
+     "slug": "common_raven",
+     "observations": 3
+    },
+    {
+     "slug": "rainbow_trout",
+     "observations": 3
+    },
+    {
+     "slug": "hunts_bumble_bee",
+     "observations": 3
+    },
+    {
+     "slug": "westslope_cutthroat_trout",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "makoshika_state_park",
+   "name": "Makoshika State Park",
+   "lat": 47.04,
+   "lon": -104.7,
+   "radius_km": 8,
+   "blurb": "Badlands; mule deer, wild turkeys, rattlesnakes and fossil dinosaurs.",
+   "species": [
+    {
+     "slug": "mountain_bluebird",
+     "observations": 41
+    },
+    {
+     "slug": "mule_deer",
+     "observations": 18
+    },
+    {
+     "slug": "western_meadowlark",
+     "observations": 15
+    },
+    {
+     "slug": "common_sagebrush_lizard",
+     "observations": 15
+    },
+    {
+     "slug": "american_robin",
+     "observations": 10
+    },
+    {
+     "slug": "woodhouses_toad",
+     "observations": 8
+    },
+    {
+     "slug": "chipping_sparrow",
+     "observations": 7
+    },
+    {
+     "slug": "prairie_rattlesnake",
+     "observations": 7
+    },
+    {
+     "slug": "two_striped_grasshopper",
+     "observations": 6
+    },
+    {
+     "slug": "hunts_bumble_bee",
+     "observations": 6
+    },
+    {
+     "slug": "leafy_spurge_hawkmoth",
+     "observations": 4
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 3
+    },
+    {
+     "slug": "northern_flicker",
+     "observations": 3
+    },
+    {
+     "slug": "gopher_snake",
+     "observations": 3
+    },
+    {
+     "slug": "american_goldfinch",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "giant_springs_state_park",
+   "name": "Giant Springs State Park",
+   "lat": 47.53,
+   "lon": -111.22,
+   "radius_km": 3,
+   "blurb": "Big spring on the Missouri River; trout, ducks, geese and pelicans.",
+   "species": [
+    {
+     "slug": "american_white_pelican",
+     "observations": 25
+    },
+    {
+     "slug": "mallard",
+     "observations": 25
+    },
+    {
+     "slug": "american_robin",
+     "observations": 22
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 18
+    },
+    {
+     "slug": "western_terrestrial_garter_snake",
+     "observations": 17
+    },
+    {
+     "slug": "fox_squirrel",
+     "observations": 12
+    },
+    {
+     "slug": "ring_billed_gull",
+     "observations": 11
+    },
+    {
+     "slug": "eastern_kingbird",
+     "observations": 11
+    },
+    {
+     "slug": "cedar_waxwing",
+     "observations": 10
+    },
+    {
+     "slug": "northern_flicker",
+     "observations": 10
+    },
+    {
+     "slug": "common_merganser",
+     "observations": 8
+    },
+    {
+     "slug": "great_horned_owl",
+     "observations": 8
+    },
+    {
+     "slug": "mule_deer",
+     "observations": 7
+    },
+    {
+     "slug": "black_capped_chickadee",
+     "observations": 7
+    },
+    {
+     "slug": "hunts_bumble_bee",
+     "observations": 7
+    },
+    {
+     "slug": "tree_swallow",
+     "observations": 6
+    },
+    {
+     "slug": "gopher_snake",
+     "observations": 6
+    },
+    {
+     "slug": "american_beaver",
+     "observations": 6
+    },
+    {
+     "slug": "house_sparrow",
+     "observations": 5
+    },
+    {
+     "slug": "european_starling",
+     "observations": 5
+    },
+    {
+     "slug": "killdeer",
+     "observations": 4
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 4
+    },
+    {
+     "slug": "bald_eagle",
+     "observations": 4
+    },
+    {
+     "slug": "chipping_sparrow",
+     "observations": 4
+    },
+    {
+     "slug": "north_american_racer",
+     "observations": 4
+    },
+    {
+     "slug": "osprey",
+     "observations": 4
+    },
+    {
+     "slug": "black_billed_magpie",
+     "observations": 4
+    },
+    {
+     "slug": "yellow_headed_blackbird",
+     "observations": 3
+    },
+    {
+     "slug": "painted_turtle",
+     "observations": 3
+    },
+    {
+     "slug": "mountain_cottontail",
+     "observations": 3
+    },
+    {
+     "slug": "yellow_bellied_marmot",
+     "observations": 3
+    },
+    {
+     "slug": "western_conifer_seed_bug",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "missouri_headwaters_state_park",
+   "name": "Missouri Headwaters State Park",
+   "lat": 45.93,
+   "lon": -111.5,
+   "radius_km": 4,
+   "blurb": "Where three rivers meet; deer, ospreys, bald eagles and beavers.",
+   "species": [
+    {
+     "slug": "bald_eagle",
+     "observations": 22
+    },
+    {
+     "slug": "yellow_bellied_marmot",
+     "observations": 17
+    },
+    {
+     "slug": "moose",
+     "observations": 14
+    },
+    {
+     "slug": "american_white_pelican",
+     "observations": 13
+    },
+    {
+     "slug": "gopher_snake",
+     "observations": 13
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 12
+    },
+    {
+     "slug": "northern_leopard_frog",
+     "observations": 11
+    },
+    {
+     "slug": "tree_swallow",
+     "observations": 10
+    },
+    {
+     "slug": "black_billed_magpie",
+     "observations": 10
+    },
+    {
+     "slug": "mountain_bluebird",
+     "observations": 9
+    },
+    {
+     "slug": "american_beaver",
+     "observations": 9
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 7
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 7
+    },
+    {
+     "slug": "mountain_cottontail",
+     "observations": 7
+    },
+    {
+     "slug": "northern_flicker",
+     "observations": 6
+    },
+    {
+     "slug": "osprey",
+     "observations": 6
+    },
+    {
+     "slug": "virile_crayfish",
+     "observations": 6
+    },
+    {
+     "slug": "cedar_waxwing",
+     "observations": 4
+    },
+    {
+     "slug": "american_robin",
+     "observations": 4
+    },
+    {
+     "slug": "eastern_kingbird",
+     "observations": 4
+    },
+    {
+     "slug": "painted_turtle",
+     "observations": 4
+    },
+    {
+     "slug": "two_striped_grasshopper",
+     "observations": 4
+    },
+    {
+     "slug": "killdeer",
+     "observations": 3
+    },
+    {
+     "slug": "european_starling",
+     "observations": 3
+    },
+    {
+     "slug": "western_terrestrial_garter_snake",
+     "observations": 3
+    },
+    {
+     "slug": "prairie_rattlesnake",
+     "observations": 3
+    },
+    {
+     "slug": "black_capped_chickadee",
+     "observations": 3
+    },
+    {
+     "slug": "hunts_bumble_bee",
+     "observations": 3
+    },
+    {
+     "slug": "sandhill_crane",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "wild_horse_island_state_park",
+   "name": "Wild Horse Island State Park",
+   "lat": 47.85,
+   "lon": -114.25,
+   "radius_km": 5,
+   "blurb": "Island in Flathead Lake; wild horses, bighorn sheep, bald eagles and deer.",
+   "species": [
+    {
+     "slug": "bighorn_sheep",
+     "observations": 39
+    },
+    {
+     "slug": "mule_deer",
+     "observations": 23
+    },
+    {
+     "slug": "bald_eagle",
+     "observations": 16
+    },
+    {
+     "slug": "north_american_racer",
+     "observations": 4
+    },
+    {
+     "slug": "osprey",
+     "observations": 4
+    },
+    {
+     "slug": "common_merganser",
+     "observations": 3
+    },
+    {
+     "slug": "western_meadowlark",
+     "observations": 3
+    },
+    {
+     "slug": "dark_eyed_junco",
+     "observations": 3
+    },
+    {
+     "slug": "american_black_bear",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "ninepipe_national_wildlife_refuge",
+   "name": "Ninepipe National Wildlife Refuge",
+   "lat": 47.5,
+   "lon": -114.1,
+   "radius_km": 8,
+   "blurb": "Prairie potholes; ducks, grebes, trumpeter swans and bald eagles.",
+   "species": [
+    {
+     "slug": "yellow_headed_blackbird",
+     "observations": 38
+    },
+    {
+     "slug": "painted_turtle",
+     "observations": 36
+    },
+    {
+     "slug": "red_winged_blackbird",
+     "observations": 34
+    },
+    {
+     "slug": "great_blue_heron",
+     "observations": 29
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 28
+    },
+    {
+     "slug": "mallard",
+     "observations": 26
+    },
+    {
+     "slug": "american_white_pelican",
+     "observations": 23
+    },
+    {
+     "slug": "eastern_kingbird",
+     "observations": 22
+    },
+    {
+     "slug": "red_tailed_hawk",
+     "observations": 20
+    },
+    {
+     "slug": "great_horned_owl",
+     "observations": 20
+    },
+    {
+     "slug": "killdeer",
+     "observations": 19
+    },
+    {
+     "slug": "ring_billed_gull",
+     "observations": 16
+    },
+    {
+     "slug": "western_meadowlark",
+     "observations": 12
+    },
+    {
+     "slug": "bald_eagle",
+     "observations": 11
+    },
+    {
+     "slug": "white_tailed_deer",
+     "observations": 10
+    },
+    {
+     "slug": "hunts_bumble_bee",
+     "observations": 10
+    },
+    {
+     "slug": "american_robin",
+     "observations": 9
+    },
+    {
+     "slug": "western_terrestrial_garter_snake",
+     "observations": 8
+    },
+    {
+     "slug": "black_billed_magpie",
+     "observations": 8
+    },
+    {
+     "slug": "tree_swallow",
+     "observations": 7
+    },
+    {
+     "slug": "osprey",
+     "observations": 7
+    },
+    {
+     "slug": "sandhill_crane",
+     "observations": 7
+    },
+    {
+     "slug": "european_starling",
+     "observations": 5
+    },
+    {
+     "slug": "european_mantis",
+     "observations": 4
+    },
+    {
+     "slug": "virile_crayfish",
+     "observations": 4
+    },
+    {
+     "slug": "northern_flicker",
+     "observations": 3
+    },
+    {
+     "slug": "columbia_spotted_frog",
+     "observations": 3
+    },
+    {
+     "slug": "long_toed_salamander",
+     "observations": 3
+    },
+    {
+     "slug": "common_garter_snake",
+     "observations": 3
+    }
+   ]
+  }
+ ]
+}
