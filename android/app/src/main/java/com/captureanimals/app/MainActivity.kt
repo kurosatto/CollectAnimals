@@ -257,7 +257,7 @@ private val TABS = listOf(
 )
 
 @Composable
-fun CatchScreen(state: UiState, onCapture: (Uri, Pair<Double, Double>?, Boolean) -> Unit, onDismiss: () -> Unit,
+fun CatchScreen(state: UiState, onCapture: (Uri, Pair<Double, Double>?, Boolean, CropBox?) -> Unit, onDismiss: () -> Unit,
                 onPick: (String?) -> Unit, onSaveWhereWhen: SaveWhereWhen, onMakeMain: (String) -> Unit,
                 onOpenDex: (String) -> Unit) {
     val context = LocalContext.current
@@ -265,9 +265,9 @@ fun CatchScreen(state: UiState, onCapture: (Uri, Pair<Double, Double>?, Boolean)
     val askLocation = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
         if (granted.values.none { it }) saveLocation = false
     }
-    val onPhoto: (Uri) -> Unit = { uri ->
-        onCapture(uri, if (saveLocation) lastLocation(context) else null, saveLocation)
-    }
+    // A new photo goes to the crop step first; Identify sends it with the crop.
+    var cropping by rememberSaveable { mutableStateOf<Uri?>(null) }
+    val onPhoto: (Uri) -> Unit = { uri -> onDismiss(); cropping = uri }
     var pendingCameraUri by rememberSaveable { mutableStateOf<Uri?>(null) }
     val takePicture = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
         val uri = pendingCameraUri
@@ -310,6 +310,12 @@ fun CatchScreen(state: UiState, onCapture: (Uri, Pair<Double, Double>?, Boolean)
             androidx.compose.runtime.LaunchedEffect(Unit) {
                 if (saveLocation && !hasLocationPermission(context)) askLocation.launch(LOCATION_PERMISSIONS)
             }
+        }
+        cropping?.let { uri ->
+            CropPanel(uri, onIdentify = { box ->
+                cropping = null
+                onCapture(uri, if (saveLocation) lastLocation(context) else null, saveLocation, box)
+            }, onCancel = { cropping = null })
         }
         if (state.busy) {
             CircularProgressIndicator()

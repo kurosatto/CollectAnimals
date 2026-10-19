@@ -553,3 +553,27 @@ def test_friend_field_guide_places(client, fake):
     assert client.get("/users/nina", headers=ana).json()["state"] == "NC"
     assert ca["state"] == "CA" and ca["primary_state"] == "NC" and ca["caught"] == 1
     assert client.get("/users/nina/collection?state=ZZ", headers=ana).status_code == 404
+
+
+def test_crop_keeps_part_and_metadata(client, fake):
+    # Left half red, right half blue; crop to the blue half.
+    im = Image.new("RGB", (200, 100), "red")
+    im.paste((0, 0, 255), (100, 0, 200, 100))
+    exif = Image.Exif()
+    exif.get_ifd(0x8769)[36867] = "2026:05:04 10:11:12"
+    buf = io.BytesIO()
+    im.save(buf, "JPEG", exif=exif)
+    seen = []
+    fake.predict = lambda image, k=3: seen.append(image) or [Prediction("coyote", 0.95)]
+    ana = signup(client, "ana")
+    r = client.post("/captures", headers=ana, data={"crop_x": "0.5", "crop_y": "0", "crop_w": "0.5", "crop_h": "1"},
+                    files={"photo": ("p.jpg", buf.getvalue(), "image/jpeg")})
+    assert r.status_code == 201, r.text
+    assert seen[0].size == (100, 100)
+    red, green, blue = seen[0].getpixel((50, 50))
+    assert blue > 200 and red < 50
+    assert client.get("/me/album", headers=ana).json()["photos"][0]["taken_on"] == "2026-05-04"
+
+    r = client.post("/captures", headers=ana, data={"crop_x": "0", "crop_y": "0", "crop_w": "0.1", "crop_h": "0.1"},
+                    files={"photo": ("p.jpg", buf.getvalue(), "image/jpeg")})
+    assert r.status_code == 400

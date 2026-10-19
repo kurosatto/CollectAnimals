@@ -610,6 +610,22 @@ def _parse_local_time(value: str | None) -> datetime | None:
         return None
 
 
+def _crop(image: Image.Image, x: float | None, y: float | None,
+          w: float | None, h: float | None) -> Image.Image:
+    """The part of the upright photo the player cropped to (fractions of its size).
+    No box keeps the whole photo; a box under 32 px on a side is refused."""
+    if None in (x, y, w, h):
+        return image
+    W, H = image.size
+    left, top = round(x * W), round(y * H)
+    right, bottom = min(W, round((x + w) * W)), min(H, round((y + h) * H))
+    if right - left < 32 or bottom - top < 32:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Cropped area is too small")
+    if (left, top, right, bottom) == (0, 0, W, H):
+        return image
+    return image.crop((left, top, right, bottom))
+
+
 @app.post("/captures", response_model=CaptureOut, status_code=201)
 async def create_capture(photo: UploadFile = File(...),
                          latitude: float | None = Form(None, ge=-90, le=90),
@@ -618,13 +634,19 @@ async def create_capture(photo: UploadFile = File(...),
                          photo_longitude: float | None = Form(None, ge=-180, le=180),
                          photo_taken_at: str | None = Form(None),
                          save_place: bool = Form(True),
+                         crop_x: float | None = Form(None, ge=0, le=1),
+                         crop_y: float | None = Form(None, ge=0, le=1),
+                         crop_w: float | None = Form(None, gt=0, le=1),
+                         crop_h: float | None = Form(None, gt=0, le=1),
                          user: User = Depends(current_user), db: Session = Depends(get_db)):
     """Identify a photo. When and where it was taken come from the photo's own
     metadata (EXIF) first. Apps that shrink the photo before uploading (which
     drops EXIF) send what they read as photo_latitude/photo_longitude/photo_taken_at
     (local time). Without metadata, latitude/longitude (the phone's location now)
     are used if the photo is recent, and the upload time stands in for the time.
-    save_place=false (the player turned off saving where) keeps no place at all."""
+    save_place=false (the player turned off saving where) keeps no place at all.
+    crop_x/crop_y/crop_w/crop_h (fractions of the upright photo) keep only the part
+    the player cropped to; the whole photo's metadata still counts."""
     model = clf.get_classifier()
     if model is None:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -659,7 +681,7 @@ async def create_capture(photo: UploadFile = File(...),
         state = here
     newly_unlocked = state.code not in unlocked_states(db, user)
     # Phone photos are often rotated via EXIF; apply it before classifying.
-    image = ImageOps.exif_transpose(raw).convert("RGB")
+    image = _crop(ImageOps.exif_transpose(raw).convert("RGB"), crop_x, crop_y, crop_w, crop_h)
 
     # Only the player's state counts: drop the other states' species and rescale,
     # so e.g. a bluebird photo in North Carolina isn't split between the eastern
