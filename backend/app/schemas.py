@@ -204,6 +204,9 @@ class CaptureOut(BaseModel):
     state: str | None = None
     # Set when this was the player's first photo from a state, which unlocks it.
     unlocked_state: str | None = None
+    # True when the photo has no place in a game state, so the player may say
+    # which state it was taken in (POST /captures/{id}/state).
+    can_change_state: bool = False
 
 
 class WhereWhenResult(BaseModel):

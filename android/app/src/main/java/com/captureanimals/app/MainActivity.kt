@@ -222,7 +222,8 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
         Box(Modifier.padding(padding).fillMaxSize()) {
             when {
                 info == null -> CircularProgressIndicator(Modifier.align(Alignment.Center))
-                TABS[tab].key == "catch" -> CatchScreen(state, vm::capture, vm::dismissResult, vm::pick, vm::saveWhereWhen, vm::chooseState) { dexSlug = it }
+                TABS[tab].key == "catch" -> CatchScreen(state, vm::capture, vm::dismissResult, vm::pick, vm::saveWhereWhen, vm::chooseState,
+                    vm::changeCaptureState) { dexSlug = it }
                 TABS[tab].key == "feed" ->
                     SocialScreen(state, social, "feed", onSignIn = { showAccount = true }) { dexSlug = it }
                 TABS[tab].key == "social" ->
@@ -259,7 +260,7 @@ private val TABS = listOf(
 @Composable
 fun CatchScreen(state: UiState, onCapture: (Uri, Pair<Double, Double>?, Boolean, CropBox?) -> Unit, onDismiss: () -> Unit,
                 onPick: (String?) -> Unit, onSaveWhereWhen: SaveWhereWhen, onMakeMain: (String) -> Unit,
-                onOpenDex: (String) -> Unit) {
+                onChangeState: (String) -> Unit, onOpenDex: (String) -> Unit) {
     val context = LocalContext.current
     var saveLocation by rememberSaveable { mutableStateOf(true) }
     val askLocation = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
@@ -329,7 +330,8 @@ fun CatchScreen(state: UiState, onCapture: (Uri, Pair<Double, Double>?, Boolean,
                 // A photo that unlocked a state offers to make it the main one.
                 makeMain = r.unlockedState?.takeIf { it != state.stateCode }
                     ?.let { code -> state.states.firstOrNull { it.code == code } }
-                    ?.let { st -> st.name to { onMakeMain(st.code) } })
+                    ?.let { st -> st.name to { onMakeMain(st.code) } },
+                changeState = if (r.canChangeState && state.states.size > 1) state.states to onChangeState else null)
         }
         if (state.account != null) state.week?.let { ChallengesCard(it) }
     }
@@ -338,7 +340,8 @@ fun CatchScreen(state: UiState, onCapture: (Uri, Pair<Double, Double>?, Boolean,
 @Composable
 fun ResultCard(r: CaptureResult, onDismiss: () -> Unit, onPick: (String?) -> Unit, onOpenDex: (String) -> Unit,
                parks: List<Park> = emptyList(), onSaveWhereWhen: SaveWhereWhen? = null,
-               safety: SpeciesDetails? = null, makeMain: Pair<String, () -> Unit>? = null) {
+               safety: SpeciesDetails? = null, makeMain: Pair<String, () -> Unit>? = null,
+               changeState: Pair<List<StateInfo>, (String) -> Unit>? = null) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Image(r.photo.asImageBitmap(), contentDescription = "Your photo",
@@ -356,6 +359,15 @@ fun ResultCard(r: CaptureResult, onDismiss: () -> Unit, onPick: (String?) -> Uni
             }
             Text(r.message, style = MaterialTheme.typography.bodyLarge)
             makeMain?.let { (name, go) -> OutlinedButton(onClick = go) { Text("★ Make $name my main state") } }
+            changeState?.let { (states, go) ->
+                // No place in a game state (no GPS in the photo, or taken elsewhere): say where it was taken.
+                var picking by remember { mutableStateOf(false) }
+                OutlinedButton(onClick = { picking = true }) { Text("📍 Taken in another state?") }
+                if (picking) StateListDialog(states, "Where was this photo taken?",
+                    "The photo has no location we can use, so it was checked against " +
+                        "${states.firstOrNull { it.code == r.state }?.name ?: "your state"}'s animals.",
+                    onDismiss = { picking = false }) { code -> picking = false; if (code != r.state) go(code) }
+            }
             if (r.matched && safety != null) SafetyCard(safety)
             if (r.whereWhen != null && onSaveWhereWhen != null) WhereWhenRow(r.whereWhen, parks, onSaveWhereWhen)
             r.score?.let { ScoreBox(it, r.bondUp) }
