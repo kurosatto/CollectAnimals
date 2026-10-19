@@ -40,6 +40,12 @@ data class CaptureResult(
     // player's first photo from there, which unlocks that state.
     val state: String? = null,
     val unlockedState: String? = null,
+    // True when the photo has no place in a game state, so the player may say
+    // which state it was taken in ("Taken in another state?").
+    val canChangeState: Boolean = false,
+    // Offline: the photo and crop, to identify it again in another state.
+    val uri: Uri? = null,
+    val crop: CropBox? = null,
 )
 
 /**
@@ -298,19 +304,22 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             whereWhen = WhereWhen.parse(r.optJSONObject("where_when")) ?: prev?.whereWhen,
             state = r.optStringOrNull("state") ?: prev?.state,
             unlockedState = prev?.unlockedState ?: r.optStringOrNull("unlocked_state"),
+            canChangeState = if (prev != null) prev.canChangeState else r.optBoolean("can_change_state"),
         )
     }
 
     // Same rules as the backend's POST /captures, including counting the photo in
     // the state it was taken in (from its EXIF, or [location] if it's recent).
     private suspend fun classify(uri: Uri, mainInfo: ModelInfo, location: Pair<Double, Double>?,
-                                 crop: CropBox? = null): CaptureResult {
+                                 crop: CropBox? = null, chosenState: String? = null): CaptureResult {
         val app = getApplication<Application>()
         val ui = _state.value
         val meta = readPhotoMeta(app, uri)
-        val place = meta?.latitude?.let { lat -> meta.longitude?.let { lat to it } }
+        val place = if (chosenState != null) null else meta?.latitude?.let { lat -> meta.longitude?.let { lat to it } }
             ?: location?.takeIf { meta?.takenAt == null || java.time.Duration.between(meta.takenAt, java.time.LocalDateTime.now()).toHours() < 3 }
-        val here = place?.let { (lat, lon) -> States.stateAt(ui.states, lat, lon) }
+        // The player said where it was taken ("Taken in another state?"), or its place says.
+        val here = ui.states.firstOrNull { it.code == chosenState }
+            ?: place?.let { (lat, lon) -> States.stateAt(ui.states, lat, lon) }
         val code = here?.code ?: ui.stateCode
         val info = if (here == null || code == ui.stateCode) mainInfo else (model ?: mainInfo).withSpecies(here.species)
         val newlyUnlocked = code !in ui.unlockedStates()
@@ -348,6 +357,9 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         }
         if (newlyUnlocked) message = "📍 You unlocked $stateName! $message"
         else if (code != ui.stateCode && matched) message += " It counts in your $stateName Field Guide."
+        if (place != null && here == null) {
+            message = "This photo was taken outside the states in the game, so it was checked against $stateName. $message"
+        }
         return CaptureResult(
             photo = ImageLoader.thumbnail(bitmap, 1024),
             matched = matched,
@@ -361,7 +373,43 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             choices = preds.mapNotNull { p -> bySlug[p.label]?.let { RankedGuess(p.label, it.commonName, p.probability) } },
             state = code,
             unlockedState = code.takeIf { newlyUnlocked },
+            // The phone's location only guesses where a saved picture was taken.
+            canChangeState = here == null || chosenState != null || meta?.latitude == null,
+            uri = uri,
+            crop = crop,
         )
+    }
+
+    /** "Taken in another state?": identify the photo on the result card again against [code]'s animals. */
+    fun changeCaptureState(code: String) {
+        val r = _state.value.result ?: return
+        val info = _state.value.info ?: return
+        _state.update { it.copy(busy = true, error = null) }
+        viewModelScope.launch {
+            try {
+                val id = r.captureId
+                val result = if (id != null) {
+                    onlineResult(Online.captureState(id, code), r.photo, info).also { res ->
+                        res.unlockedState?.let { u ->
+                            _state.update { it.copy(account = it.account?.let { a -> a.copy(unlockedStates = (a.unlockedStates + u).distinct()) }) }
+                        }
+                        runCatching { refreshCollection() }
+                    }
+                } else {
+                    val uri = r.uri ?: run { _state.update { it.copy(busy = false) }; return@launch }
+                    // Take back the badge it earned where it was counted before.
+                    val old = r.state ?: _state.value.stateCode
+                    if (r.matched && r.species != null) withContext(Dispatchers.IO) {
+                        val updated = store.removeCatch(old, collectionOf(old), r.species.slug)
+                        if (old == _state.value.stateCode) _state.update { it.copy(collection = updated) }
+                    }
+                    withContext(Dispatchers.Default) { classify(uri, info, null, r.crop, chosenState = code) }
+                }
+                _state.update { it.copy(busy = false, result = result) }
+            } catch (e: Exception) {
+                _state.update { it.copy(busy = false, error = e.message) }
+            }
+        }
     }
 
     /** Fixes when and where the photo on the result card was taken; an error message, or null. */

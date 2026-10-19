@@ -174,6 +174,10 @@ object Online {
     suspend fun pick(captureId: Int, label: String): JSONObject =
         JSONObject(call("POST", "/captures/$captureId/pick", JSONObject().put("label", label)))
 
+    /** Identifies a photo with no usable place again against another state's animals. */
+    suspend fun captureState(captureId: Int, state: String): JSONObject =
+        JSONObject(call("POST", "/captures/$captureId/state", JSONObject().put("state", state)))
+
     /** Badges for the given state, keyed by slug (caught animals are always named). */
     suspend fun collection(state: String): Map<String, Badge> {
         val o = JSONObject(call("GET", "/me/collection?state=${q(state)}"))
