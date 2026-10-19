@@ -371,7 +371,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             choices = preds.mapNotNull { p -> bySlug[p.label]?.let { RankedGuess(p.label, it.commonName, p.probability) } },
             state = code,
             unlockedState = code.takeIf { newlyUnlocked },
-            canChangeState = here == null || chosenState != null,
+            // The phone's location only guesses where a saved picture was taken.
+            canChangeState = here == null || chosenState != null || meta?.latitude == null,
             uri = uri,
             crop = crop,
         )

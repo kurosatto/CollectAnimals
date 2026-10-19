@@ -807,8 +807,10 @@ def _identify(db: Session, user: User, model, capture: Capture, image: Image.Ima
 
 def _state_unknown(capture: Capture) -> bool:
     """Whether the player may say which state a photo was taken in: it has no
-    place, or its place isn't in any state in the game."""
-    return capture.latitude is None or places.state_at(st.all_states(), capture.latitude, capture.longitude) is None
+    place, only the phone's location (a saved or downloaded picture with no
+    time of its own gets that too), or a place that isn't in any game state."""
+    return (capture.latitude is None or capture.place_source == "device"
+            or places.state_at(st.all_states(), capture.latitude, capture.longitude) is None)
 
 
 @app.post("/captures/{capture_id}/state", response_model=CaptureOut)
@@ -832,6 +834,9 @@ def set_capture_state(capture_id: int, body: UserUpdate, user: User = Depends(cu
     _unassign_capture(db, capture)
     capture.user_picked = None
     db.flush()
+    # The phone's location was wrong about this photo: drop it.
+    if capture.latitude is not None and not places.in_state(state, capture.latitude, capture.longitude):
+        capture.latitude = capture.longitude = capture.place_source = None
     # Unlocked before this photo counted there (the photo itself doesn't count).
     capture.state = None
     db.flush()

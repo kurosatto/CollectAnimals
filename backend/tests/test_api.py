@@ -806,9 +806,17 @@ def test_pick_the_state_for_a_photo_without_a_place(client, fake):
     assert not r3["matched"] and r3["state"] == "CA"
     nc = client.get("/me/collection", headers=h, params={"state": "NC"}).json()
     assert nc["caught"] == 0
-    # A photo whose place is in a game state can't be moved; nor can someone else's.
+    # The phone's location only guesses for a picture with no time or place of
+    # its own (say, a saved one), so it can be moved, and the wrong place goes.
+    fake.next = [Prediction("northern_cardinal", 0.9), Prediction("other", 0.1)]
+    saved = client.post("/captures", headers=h, data={"latitude": 34.05, "longitude": -118.24},
+                        files={"photo": ("p.jpg", jpeg_bytes(), "image/jpeg")}).json()
+    assert saved["state"] == "CA" and saved["can_change_state"]
+    moved = client.post(f"/captures/{saved['capture_id']}/state", headers=h, json={"state": "NC"}).json()
+    assert moved["matched"] and moved["where_when"]["latitude"] is None
+    # A photo whose own place is in a game state can't be moved; nor can someone else's.
     fake.next = [Prediction("coyote", 0.95)]
-    placed = client.post("/captures", headers=h, data={"latitude": 34.05, "longitude": -118.24},
+    placed = client.post("/captures", headers=h, data={"photo_latitude": 34.05, "photo_longitude": -118.24},
                          files={"photo": ("p.jpg", jpeg_bytes(), "image/jpeg")}).json()
     assert not placed["can_change_state"]
     assert client.post(f"/captures/{placed['capture_id']}/state", headers=h, json={"state": "NC"}).status_code == 409
