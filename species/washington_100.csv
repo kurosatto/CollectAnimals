@@ -1,0 +1,101 @@
+slug,common_name,scientific_name,category,rarity
+mallard,Mallard,Anas platyrhynchos,bird,common
+pacific_banana_slug_ariolimax,Pacific Banana Slug,Ariolimax columbianus,invertebrate,common
+great_blue_heron,Great Blue Heron,Ardea herodias,bird,common
+american_robin,American Robin,Turdus migratorius,bird,common
+bald_eagle,Bald Eagle,Haliaeetus leucocephalus,bird,common
+dark_eyed_junco,Dark-eyed Junco,Junco hyemalis,bird,common
+ochre_sea_star,Ochre Sea Star,Pisaster ochraceus,marine,common
+american_crow,American Crow,Corvus brachyrhynchos,bird,common
+pacific_chorus_frog,Pacific chorus frog,Pseudacris regilla,amphibian,common
+song_sparrow,Song Sparrow,Melospiza melodia,bird,common
+canada_goose,Canada Goose,Branta canadensis,bird,common
+cross_orbweaver,Cross Orbweaver,Araneus diadematus,invertebrate,common
+horned_nudibranch,Horned Nudibranch,Hermissenda crassicornis,invertebrate,common
+mottled_star,Mottled Star,Evasterias troschelii,marine,common
+eastern_cottontail,Eastern Cottontail,Sylvilagus floridanus,mammal,common
+annas_hummingbird,Anna's Hummingbird,Calypte anna,bird,common
+northern_flicker,Northern Flicker,Colaptes auratus,bird,common
+spotted_towhee,Spotted Towhee,Pipilo maculatus,bird,common
+western_honey_bee,Western Honey Bee,Apis mellifera,invertebrate,common
+red_winged_blackbird,Red-winged Blackbird,Agelaius phoeniceus,bird,common
+eastern_gray_squirrel,Eastern Gray Squirrel,Sciurus carolinensis,mammal,common
+aggregating_anemone,Aggregating Anemone,Anthopleura elegantissima,marine,common
+house_finch,House Finch,Haemorhous mexicanus,bird,common
+red_rock_crab,Red Rock Crab,Cancer productus,marine,common
+stellers_jay,Steller's Jay,Cyanocitta stelleri,bird,common
+black_capped_chickadee,Black-capped Chickadee,Poecile atricapillus,bird,common
+douglass_squirrel,Douglas's Squirrel,Tamiasciurus douglasii,mammal,common
+red_tailed_hawk,Red-tailed Hawk,Buteo jamaicensis,bird,common
+yellow_shore_crab,Yellow Shore Crab,Hemigrapsus oregonensis,marine,common
+white_crowned_sparrow,White-crowned Sparrow,Zonotrichia leucophrys,bird,common
+double_crested_cormorant,Double-crested Cormorant,Nannopterum auritum,bird,common
+bufflehead,Bufflehead,Bucephala albeola,bird,common
+asian_lady_beetle,Asian Lady Beetle,Harmonia axyridis,invertebrate,common
+american_bullfrog,American Bullfrog,Lithobates catesbeianus,amphibian,common
+black_slug,Black Slug,Arion ater,invertebrate,common
+american_wigeon,American Wigeon,Mareca americana,bird,common
+wood_duck,Wood Duck,Aix sponsa,bird,common
+northwestern_garter_snake,Northwestern Garter Snake,Thamnophis ordinoides,reptile,common
+hooded_merganser,Hooded Merganser,Lophodytes cucullatus,bird,common
+barred_owl,Barred Owl,Strix varia,bird,common
+european_starling,European Starling,Sturnus vulgaris,bird,common
+american_coot,American Coot,Fulica americana,bird,common
+gadwall,Gadwall,Mareca strepera,bird,common
+orange_sea_cucumber,Orange Sea Cucumber,Cucumaria miniata,marine,common
+osprey,Osprey,Pandion haliaetus,bird,common
+purple_shore_crab,Purple Shore Crab,Hemigrapsus nudus,marine,common
+yellow_spotted_millipede,Yellow-spotted Millipede,Harpaphe haydeniana,marine,common
+black_tailed_bumble_bee,Black-tailed Bumble Bee,Bombus melanopygus,invertebrate,common
+killdeer,Killdeer,Charadrius vociferus,bird,common
+fuzzy_horned_bumble_bee,Fuzzy-Horned Bumble Bee,Bombus mixtus,invertebrate,common
+northern_kelp_crab,Northern Kelp Crab,Pugettia producta,marine,uncommon
+woodland_skipper,Woodland Skipper,Ochlodes sylvanoides,invertebrate,uncommon
+pigeon_guillemot,Pigeon Guillemot,Cepphus columba,bird,uncommon
+frilled_dogwinkle,Frilled Dogwinkle,Nucella lamellosa,invertebrate,uncommon
+cedar_waxwing,Cedar Waxwing,Bombycilla cedrorum,bird,uncommon
+giant_house_spider,Giant House Spider,Eratigena duellica,invertebrate,uncommon
+european_mantis,European Mantis,Mantis religiosa,invertebrate,uncommon
+belted_kingfisher,Belted Kingfisher,Megaceryle alcyon,bird,uncommon
+common_merganser,Common Merganser,Mergus merganser,bird,uncommon
+raccoon,Common Raccoon,Procyon lotor,mammal,uncommon
+painted_anemone,Painted Anemone,Urticina grebelnyi,marine,uncommon
+common_goldeneye,Common Goldeneye,Bucephala clangula,bird,uncommon
+chestnut_backed_chickadee,Chestnut-backed Chickadee,Poecile rufescens,bird,uncommon
+american_goldfinch,American Goldfinch,Spinus tristis,bird,uncommon
+rough_skinned_newt,Rough-skinned Newt,Taricha granulosa,amphibian,uncommon
+northwestern_salamander,Northwestern Salamander,Ambystoma gracile,amphibian,uncommon
+coopers_hawk,Cooper's Hawk,Astur cooperii,bird,uncommon
+red_breasted_nuthatch,Red-breasted Nuthatch,Sitta canadensis,bird,uncommon
+golden_crowned_sparrow,Golden-crowned Sparrow,Zonotrichia atricapilla,bird,uncommon
+hoary_marmot,Hoary Marmot,Marmota caligata,mammal,uncommon
+american_beaver,American Beaver,Castor canadensis,mammal,uncommon
+northern_red_legged_frog,Northern Red-legged Frog,Rana aurora,amphibian,uncommon
+western_toad,Western Toad,Anaxyrus boreas,amphibian,uncommon
+cascade_golden_mantled_ground_squirrel,Cascade Golden-mantled Ground Squirrel,Callospermophilus saturatus,mammal,uncommon
+harbor_seal,Harbor Seal,Phoca vitulina,mammal,uncommon
+mule_deer,Mule Deer,Odocoileus hemionus,mammal,uncommon
+coyote,Coyote,Canis latrans,mammal,uncommon
+common_garter_snake,Common Garter Snake,Thamnophis sirtalis,reptile,rare
+long_toed_salamander,Long-toed Salamander,Ambystoma macrodactylum,amphibian,rare
+north_american_river_otter,North American River Otter,Lontra canadensis,mammal,rare
+american_pika,American Pika,Ochotona princeps,mammal,rare
+northern_alligator_lizard,Northern Alligator Lizard,Elgaria coerulea,reptile,rare
+american_black_bear,American Black Bear,Ursus americanus,mammal,rare
+western_red_backed_salamander,Western Red-backed Salamander,Plethodon vehiculum,amphibian,rare
+townsends_chipmunk,Townsend's Chipmunk,Neotamias townsendii,mammal,rare
+yellow_bellied_marmot,Yellow-bellied Marmot,Marmota flaviventris,mammal,rare
+mountain_goat,Mountain Goat,Oreamnos americanus,mammal,rare
+elk,Wapiti,Cervus canadensis,mammal,rare
+orca,Orca,Orcinus orca,mammal,rare
+california_sea_lion,California Sea Lion,Zalophus californianus,mammal,rare
+western_fence_lizard,Western Fence Lizard,Sceloporus occidentalis,reptile,rare
+pond_slider,Pond Slider,Trachemys scripta,reptile,rare
+yellow_pine_chipmunk,Yellow-pine Chipmunk,Neotamias amoenus,mammal,rare
+gopher_snake,Gopher Snake,Pituophis catenifer,reptile,rare
+western_terrestrial_garter_snake,Western Terrestrial Garter Snake,Thamnophis elegans,reptile,rare
+northern_rubber_boa,Northern Rubber Boa,Charina bottae,reptile,legendary
+painted_turtle,Painted Turtle,Chrysemys picta,reptile,legendary
+pygmy_short_horned_lizard,Pygmy Short-horned Lizard,Phrynosoma douglasii,reptile,legendary
+western_skink,Western Skink,Plestiodon skiltonianus,reptile,legendary
+north_american_racer,North American Racer,Coluber constrictor,reptile,legendary

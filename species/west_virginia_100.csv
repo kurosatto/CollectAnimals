@@ -1,0 +1,101 @@
+slug,common_name,scientific_name,category,rarity
+white_tailed_deer,White-tailed Deer,Odocoileus virginianus,mammal,common
+eastern_newt,Eastern Newt,Notophthalmus viridescens,amphibian,common
+american_toad,American Toad,Anaxyrus americanus,amphibian,common
+eastern_tiger_swallowtail,Eastern Tiger Swallowtail,Papilio glaucus,invertebrate,common
+common_eastern_bumble_bee,Common Eastern Bumble Bee,Bombus impatiens,invertebrate,common
+american_robin,American Robin,Turdus migratorius,bird,common
+monarch,Monarch,Danaus plexippus,invertebrate,common
+canada_goose,Canada Goose,Branta canadensis,bird,common
+eastern_red_backed_salamander,Eastern Red-backed Salamander,Plethodon cinereus,amphibian,common
+asian_lady_beetle,Asian Lady Beetle,Harmonia axyridis,invertebrate,common
+spotted_lanternfly,Spotted Lanternfly,Lycorma delicatula,invertebrate,common
+northern_cardinal,Northern Cardinal,Cardinalis cardinalis,bird,common
+eastern_ratsnake,Central Ratsnake,Pantherophis alleghaniensis,reptile,common
+pipevine_swallowtail,Pipevine Swallowtail,Battus philenor,invertebrate,common
+allegheny_mountain_dusky_salamander,Allegheny Mountain Dusky Salamander,Desmognathus ochrophaeus,amphibian,common
+isabella_tiger_moth,Isabella Tiger Moth,Pyrrharctia isabella,invertebrate,common
+eastern_gray_squirrel,Eastern Gray Squirrel,Sciurus carolinensis,mammal,common
+mallard,Mallard,Anas platyrhynchos,bird,common
+common_garter_snake,Common Garter Snake,Thamnophis sirtalis,reptile,common
+silver_spotted_skipper,Silver-spotted Skipper,Epargyreus clarus,invertebrate,common
+western_honey_bee,Western Honey Bee,Apis mellifera,invertebrate,common
+song_sparrow,Song Sparrow,Melospiza melodia,bird,common
+great_spangled_fritillary,Great Spangled Fritillary,Argynnis cybele,invertebrate,common
+green_frog,Green Frog,Lithobates clamitans,amphibian,common
+celery_leaftier_moth,Celery Leaftier Moth,Udea rubigalis,invertebrate,common
+northern_slimy_salamander,Northern Slimy Salamander,Plethodon glutinosus,amphibian,common
+turkey_vulture,Turkey Vulture,Cathartes aura,bird,common
+eastern_cottontail,Eastern Cottontail,Sylvilagus floridanus,mammal,common
+mourning_dove,Mourning Dove,Zenaida macroura,bird,common
+luna_moth,North American Luna Moth,Actias luna,invertebrate,common
+american_goldfinch,American Goldfinch,Spinus tristis,bird,common
+northern_dusky_salamander,Northern Dusky Salamander,Desmognathus fuscus,amphibian,common
+groundhog,Groundhog,Marmota monax,mammal,common
+blue_jay,Blue Jay,Cyanocitta cristata,bird,common
+spring_peeper,Spring Peeper,Pseudacris crucifer,amphibian,common
+wild_turkey,Wild Turkey,Meleagris gallopavo,bird,common
+house_sparrow,House Sparrow,Passer domesticus,bird,common
+eastern_chipmunk,Eastern Chipmunk,Tamias striatus,mammal,common
+red_winged_blackbird,Red-winged Blackbird,Agelaius phoeniceus,bird,common
+eastern_bluebird,Eastern Bluebird,Sialia sialis,bird,common
+common_snapping_turtle,Common Snapping Turtle,Chelydra serpentina,reptile,common
+eastern_towhee,Eastern Towhee,Pipilo erythrophthalmus,bird,common
+great_blue_heron,Great Blue Heron,Ardea herodias,bird,common
+aromatic_cherry_millipede,Aromatic Cherry Millipede,Apheloria corrugata,marine,common
+raccoon,Common Raccoon,Procyon lotor,mammal,common
+eastern_phoebe,Eastern Phoebe,Sayornis phoebe,bird,common
+carolina_wren,Carolina Wren,Thryothorus ludovicianus,bird,common
+red_bellied_woodpecker,Red-bellied Woodpecker,Melanerpes carolinus,bird,common
+nosy_pill_woodlouse,Nosy Pill Woodlouse,Armadillidium nasatum,marine,common
+tufted_titmouse,Tufted Titmouse,Baeolophus bicolor,bird,common
+house_finch,House Finch,Haemorhous mexicanus,bird,uncommon
+northern_water_snake,Common Watersnake,Nerodia sipedon,reptile,uncommon
+dark_eyed_junco,Dark-eyed Junco,Junco hyemalis,bird,uncommon
+five_lined_skink,Common Five-lined Skink,Plestiodon fasciatus,reptile,uncommon
+american_crow,American Crow,Corvus brachyrhynchos,bird,uncommon
+northern_mockingbird,Northern Mockingbird,Mimus polyglottos,bird,uncommon
+american_black_bear,American Black Bear,Ursus americanus,mammal,uncommon
+killdeer,Killdeer,Charadrius vociferus,bird,uncommon
+bald_eagle,Bald Eagle,Haliaeetus leucocephalus,bird,uncommon
+eastern_box_turtle,Common Box Turtle,Terrapene carolina,reptile,uncommon
+eastern_fence_lizard,Eastern Fence Lizard,Sceloporus undulatus,reptile,uncommon
+chipping_sparrow,Chipping Sparrow,Spizella passerina,bird,uncommon
+downy_woodpecker,Downy Woodpecker,Dryobates pubescens,bird,uncommon
+white_breasted_nuthatch,White-breasted Nuthatch,Sitta carolinensis,bird,uncommon
+ruby_throated_hummingbird,Ruby-throated Hummingbird,Archilochus colubris,bird,uncommon
+ring_necked_snake,Ring-necked Snake,Diadophis punctatus,reptile,uncommon
+european_starling,European Starling,Sturnus vulgaris,bird,uncommon
+common_merganser,Common Merganser,Mergus merganser,bird,uncommon
+eastern_milksnake,Eastern Milksnake,Lampropeltis triangulum,reptile,uncommon
+red_shouldered_hawk,Red-shouldered Hawk,Buteo lineatus,bird,uncommon
+cedar_waxwing,Cedar Waxwing,Bombycilla cedrorum,bird,uncommon
+pileated_woodpecker,Pileated Woodpecker,Dryocopus pileatus,bird,uncommon
+bluegill,Bluegill,Lepomis macrochirus,marine,uncommon
+red_tailed_hawk,Red-tailed Hawk,Buteo jamaicensis,bird,uncommon
+gray_catbird,Gray Catbird,Dumetella carolinensis,bird,uncommon
+indigo_bunting,Indigo Bunting,Passerina cyanea,bird,uncommon
+red_fox,Red Fox,Vulpes vulpes,mammal,uncommon
+wood_duck,Wood Duck,Aix sponsa,bird,rare
+american_beaver,American Beaver,Castor canadensis,mammal,rare
+timber_rattlesnake,Timber Rattlesnake,Crotalus horridus,reptile,rare
+fox_squirrel,Eastern Fox Squirrel,Sciurus niger,mammal,rare
+smallmouth_bass,Smallmouth Bass,Micropterus dolomieu,marine,rare
+eastern_copperhead,Eastern Copperhead,Agkistrodon contortrix,reptile,rare
+virginia_opossum,Virginia Opossum,Didelphis virginiana,mammal,rare
+red_bellied_snake,Red-bellied Snake,Storeria occipitomaculata,reptile,rare
+largemouth_bass,Largemouth Bass,Micropterus nigricans,marine,rare
+common_pill_woodlouse,Common Pill Woodlouse,Armadillidium vulgare,marine,rare
+coyote,Coyote,Canis latrans,mammal,rare
+american_red_squirrel,American Red Squirrel,Tamiasciurus hudsonicus,mammal,rare
+green_sunfish,Green Sunfish,Lepomis cyanellus,marine,rare
+greenhouse_millipede,Greenhouse Millipede,Oxidus gracilis,marine,rare
+fantail_darter,Fantail Darter,Etheostoma flabellare,marine,rare
+rock_bass,Rock Bass,Ambloplites rupestris,marine,rare
+striped_skunk,Striped Skunk,Mephitis mephitis,mammal,rare
+northern_short_tailed_shrew,Northern Short-tailed Shrew,Blarina brevicauda,mammal,rare
+muskrat,Muskrat,Ondatra zibethicus,mammal,legendary
+bobcat,Bobcat,Lynx rufus,mammal,legendary
+north_american_river_otter,North American River Otter,Lontra canadensis,mammal,legendary
+gray_fox,Gray Fox,Urocyon cinereoargenteus,mammal,legendary
+american_mink,American Mink,Neogale vison,mammal,legendary

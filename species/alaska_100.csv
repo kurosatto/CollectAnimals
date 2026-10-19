@@ -1,0 +1,101 @@
+slug,common_name,scientific_name,category,rarity
+bald_eagle,Bald Eagle,Haliaeetus leucocephalus,bird,common
+moose,Moose,Alces alces,mammal,common
+humpback_whale,Humpback Whale,Megaptera novaeangliae,mammal,common
+brown_bear,Brown Bear,Ursus arctos,mammal,common
+steller_sea_lion,Steller Sea Lion,Eumetopias jubatus,mammal,common
+american_red_squirrel,American Red Squirrel,Tamiasciurus hudsonicus,mammal,common
+common_raven,Common Raven,Corvus corax,bird,common
+short_billed_gull,Short-billed Gull,Larus brachyrhynchus,bird,common
+black_billed_magpie,Black-billed Magpie,Pica hudsonia,bird,common
+black_legged_kittiwake,Black-legged Kittiwake,Rissa tridactyla,bird,common
+mottled_star,Mottled Star,Evasterias troschelii,marine,common
+glaucous_winged_gull,Glaucous-winged Gull,Larus glaucescens,bird,common
+mallard,Mallard,Anas platyrhynchos,bird,common
+caribou,Caribou,Rangifer tarandus,mammal,common
+arctic_ground_squirrel,Arctic Ground Squirrel,Urocitellus parryii,mammal,common
+american_black_bear,American Black Bear,Ursus americanus,mammal,common
+harbor_seal,Harbor Seal,Phoca vitulina,mammal,common
+american_robin,American Robin,Turdus migratorius,bird,common
+willow_ptarmigan,Willow Ptarmigan,Lagopus lagopus,bird,common
+sandhill_crane,Sandhill Crane,Antigone canadensis,bird,common
+arctic_tern,Arctic Tern,Sterna paradisaea,bird,common
+common_murre,Common Murre,Uria aalge,bird,common
+common_merganser,Common Merganser,Mergus merganser,bird,common
+dark_eyed_junco,Dark-eyed Junco,Junco hyemalis,bird,common
+ochre_sea_star,Ochre Sea Star,Pisaster ochraceus,marine,common
+tufted_puffin,Tufted Puffin,Fratercula cirrhata,bird,common
+trumpeter_swan,Trumpeter Swan,Cygnus buccinator,bird,common
+american_wigeon,American Wigeon,Mareca americana,bird,common
+pigeon_guillemot,Pigeon Guillemot,Cepphus columba,bird,common
+horned_puffin,Horned Puffin,Fratercula corniculata,bird,common
+snowshoe_hare,Snowshoe Hare,Lepus americanus,mammal,common
+redpoll,Redpoll,Acanthis flammea,bird,common
+pacific_banana_slug_ariolimax,Pacific Banana Slug,Ariolimax columbianus,invertebrate,common
+orca,Orca,Orcinus orca,mammal,common
+harlequin_duck,Harlequin Duck,Histrionicus histrionicus,bird,common
+white_crowned_sparrow,White-crowned Sparrow,Zonotrichia leucophrys,bird,common
+red_necked_grebe,Red-necked Grebe,Podiceps grisegena,bird,common
+stellers_jay,Steller's Jay,Cyanocitta stelleri,bird,common
+black_capped_chickadee,Black-capped Chickadee,Poecile atricapillus,bird,common
+sunflower_sea_star,Sunflower Sea Star,Pycnopodia helianthoides,marine,common
+spruce_grouse,Spruce Grouse,Canachites canadensis,bird,common
+north_american_porcupine,North American Porcupine,Erethizon dorsatum,mammal,common
+marbled_murrelet,Marbled Murrelet,Brachyramphus marmoratus,bird,common
+pink_salmon,Pink Salmon,Oncorhynchus gorbuscha,marine,common
+painted_anemone,Painted Anemone,Urticina grebelnyi,marine,common
+moonglow_anemone,Moonglow Anemone,Anthopleura artemisia,marine,common
+canada_goose,Canada Goose,Branta canadensis,bird,common
+leather_star,Leather Star,Dermasterias imbricata,marine,common
+common_loon,Common Loon,Gavia immer,bird,common
+arctic_green_sea_urchin,Arctic Green Sea Urchin,Strongylocentrotus droebachiensis,marine,common
+pelagic_cormorant,Pelagic Cormorant,Urile pelagicus,bird,uncommon
+mountain_goat,Mountain Goat,Oreamnos americanus,mammal,uncommon
+canada_jay,Canada Jay,Perisoreus canadensis,bird,uncommon
+pacific_lions_mane_jelly,Pacific Lion's Mane Jelly,Cyanea ferruginea,marine,uncommon
+savannah_sparrow,Savannah Sparrow,Passerculus sandwichensis,bird,uncommon
+sockeye_salmon,Sockeye Salmon,Oncorhynchus nerka,marine,uncommon
+song_sparrow,Song Sparrow,Melospiza melodia,bird,uncommon
+greater_yellowlegs,Greater Yellowlegs,Tringa melanoleuca,bird,uncommon
+red_necked_phalarope,Red-necked Phalarope,Phalaropus lobatus,bird,uncommon
+american_dipper,American Dipper,Cinclus mexicanus,bird,uncommon
+green_winged_teal,Green-winged Teal,Anas crecca,bird,uncommon
+sea_otter,Sea Otter,Enhydra lutris,mammal,uncommon
+glaucous_gull,Glaucous Gull,Larus hyperboreus,bird,uncommon
+pacific_loon,Pacific Loon,Gavia pacifica,bird,uncommon
+wood_frog,Wood Frog,Lithobates sylvaticus,amphibian,uncommon
+american_crow,American Crow,Corvus brachyrhynchos,bird,uncommon
+northern_pintail,Northern Pintail,Anas acuta,bird,uncommon
+red_fox,Red Fox,Vulpes vulpes,mammal,uncommon
+orange_crowned_warbler,Orange-crowned Warbler,Leiothlypis celata,bird,uncommon
+bonapartes_gull,Bonaparte's Gull,Chroicocephalus philadelphia,bird,uncommon
+northern_bay_mussel,Northern Bay Mussel,Mytilus trossulus,invertebrate,uncommon
+varied_thrush,Varied Thrush,Ixoreus naevius,bird,uncommon
+black_oystercatcher,Black Oystercatcher,Haematopus bachmani,bird,uncommon
+lapland_longspur,Lapland Longspur,Calcarius lapponicus,bird,uncommon
+tree_swallow,Tree Swallow,Tachycineta bicolor,bird,uncommon
+barrows_goldeneye,Barrow's Goldeneye,Bucephala islandica,bird,uncommon
+muskox,Muskox,Ovibos moschatus,mammal,uncommon
+black_tailed_bumble_bee,Black-tailed Bumble Bee,Bombus melanopygus,invertebrate,rare
+american_beaver,American Beaver,Castor canadensis,mammal,rare
+canadian_tiger_swallowtail,Canadian Tiger Swallowtail,Papilio canadensis,invertebrate,rare
+large_yellow_underwing,Large Yellow Underwing,Noctua pronuba,invertebrate,rare
+hoary_marmot,Hoary Marmot,Marmota caligata,mammal,rare
+thinhorn_sheep,Thinhorn Sheep,Ovis dalli,mammal,rare
+lined_chiton,Lined Chiton,Tonicella lineata,invertebrate,rare
+spotted_tussock_moth,Spotted Tussock Moth,Lophocampa maculata,invertebrate,rare
+milberts_tortoiseshell,Milbert's Tortoiseshell,Aglais milberti,invertebrate,rare
+birch_shield_bug,Birch Shield Bug,Elasmostethus interstinctus,invertebrate,rare
+black_leather_chiton,Black Leather Chiton,Katharina tunicata,invertebrate,rare
+yellow_fronted_bumble_bee,Yellow-fronted Bumble Bee,Bombus flavifrons,invertebrate,rare
+variable_carpet_moth,Variable Carpet Moth,Anticlea vasiliata,invertebrate,rare
+north_american_river_otter,North American River Otter,Lontra canadensis,mammal,rare
+western_toad,Western Toad,Anaxyrus boreas,amphibian,rare
+rough_skinned_newt,Rough-skinned Newt,Taricha granulosa,amphibian,rare
+columbia_spotted_frog,Columbia Spotted Frog,Rana luteiventris,amphibian,rare
+pacific_chorus_frog,Pacific chorus frog,Pseudacris regilla,amphibian,rare
+northern_red_legged_frog,Northern Red-legged Frog,Rana aurora,amphibian,legendary
+long_toed_salamander,Long-toed Salamander,Ambystoma macrodactylum,amphibian,legendary
+northwestern_salamander,Northwestern Salamander,Ambystoma gracile,amphibian,legendary
+green_sea_turtle,Green Sea Turtle,Chelonia mydas,reptile,legendary
+pond_slider,Pond Slider,Trachemys scripta,reptile,legendary

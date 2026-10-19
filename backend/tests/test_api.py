@@ -534,7 +534,8 @@ def test_species_per_state(client):
     assert client.get("/species/american_black_bear").json()["rarity"] == "rare"
     assert client.get("/species/american_black_bear", params={"state": "NC"}).json()["rarity"] == "uncommon"
     assert client.get("/species/elk", params={"state": "NC"}, headers=h).json()["common_name"] == "Elk"
-    assert client.get("/species", params={"state": "TX"}).status_code == 404
+    assert client.get("/species", params={"state": "TX"}).status_code == 200  # all 50 states
+    assert client.get("/species", params={"state": "ZZ"}).status_code == 404
 
 
 def test_change_state_and_captures_per_state(client, fake):
