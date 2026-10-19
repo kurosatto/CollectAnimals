@@ -252,6 +252,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 _state.update { it.copy(busy = false, error = e.message) }
             } catch (e: Exception) {
                 _state.update { it.copy(busy = false, error = "Couldn't read that photo (${e.message})") }
+            } catch (e: OutOfMemoryError) {
+                _state.update { it.copy(busy = false, error = "That photo is too big to open. Try cropping less or another photo.") }
             }
         }
     }
@@ -259,7 +261,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     /** Signed in: the server identifies the photo and keeps the badge, as on the website. */
     private suspend fun captureOnline(uri: Uri, info: ModelInfo, location: Pair<Double, Double>?,
                                       savePlace: Boolean, crop: CropBox?): CaptureResult {
-        val bitmap = withContext(Dispatchers.IO) { ImageLoader.load(getApplication(), uri, minShortSide = if (crop == null) 1200 else 2400).cropTo(crop) }
+        val bitmap = withContext(Dispatchers.IO) { ImageLoader.load(getApplication(), uri, minShortSide = if (crop == null) 1200 else 1800).cropTo(crop) }
         val meta = withContext(Dispatchers.IO) { readPhotoMeta(getApplication(), uri) }
         val r = Online.capture(bitmap, location?.first, location?.second, meta, savePlace)
         val result = onlineResult(r, ImageLoader.thumbnail(bitmap, 1024), info)

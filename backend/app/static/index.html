@@ -588,10 +588,17 @@ $("auth-form").onsubmit = async (e) => {
 $("logout").onclick = async () => { await pushUnsubscribe(); setToken(null); };
 $("username").onclick = () => openProfile($("username").textContent);
 
+const CAPTURE_TIMEOUT_MS = 90000;
+
+// The geolocation timeout doesn't count while a permission prompt is open, so an
+// unanswered prompt would hold up identifying forever: stop waiting after 10 s.
 function here() {
   if (!$("use-location").checked || !navigator.geolocation) return Promise.resolve(null);
-  return new Promise((ok) => navigator.geolocation.getCurrentPosition(
-    (p) => ok(p.coords), () => ok(null), { timeout: 8000, maximumAge: 300000 }));
+  return new Promise((ok) => {
+    setTimeout(() => ok(null), 10000);
+    navigator.geolocation.getCurrentPosition(
+      (p) => ok(p.coords), () => ok(null), { timeout: 8000, maximumAge: 300000 });
+  });
 }
 
 // Phones only offer the camera when `capture` is set, so there are two pickers:
@@ -676,7 +683,10 @@ function croppedBlob() {
   const W = img.naturalWidth, H = img.naturalHeight;
   const c = document.createElement("canvas");
   c.width = Math.max(1, Math.round(b.w * W)); c.height = Math.max(1, Math.round(b.h * H));
-  c.getContext("2d").drawImage(img, b.x * W, b.y * H, c.width, c.height, 0, 0, c.width, c.height);
+  // Some phones refuse very big canvases; then the album preview shows the whole photo.
+  const ctx = c.getContext("2d");
+  if (!ctx) return Promise.resolve(chosenPhoto);
+  ctx.drawImage(img, b.x * W, b.y * H, c.width, c.height, 0, 0, c.width, c.height);
   return new Promise((ok) => c.toBlob((blob) => ok(blob || chosenPhoto), "image/jpeg", 0.9));
 }
 
@@ -689,7 +699,7 @@ $("upload-form").onsubmit = async (e) => {
   if (cropped()) {
     const b = crop.box;
     for (const [k, v] of Object.entries({ crop_x: b.x, crop_y: b.y, crop_w: b.w, crop_h: b.h })) fd.append(k, v.toFixed(4));
-    file = await croppedBlob();
+    file = await croppedBlob().catch(() => chosenPhoto);
   }
   const box = $("result");
   box.classList.remove("hidden", "win");
@@ -698,7 +708,17 @@ $("upload-form").onsubmit = async (e) => {
   if (pos) { fd.append("latitude", pos.latitude); fd.append("longitude", pos.longitude); }
   if (!$("use-location").checked) fd.append("save_place", "false");
   try {
-    showCapture(await api("/captures", { method: "POST", body: fd }), file, box);
+    // A sleeping or offline server can leave the upload hanging, so give up after a while.
+    const stop = new AbortController();
+    const timer = setTimeout(() => stop.abort(), CAPTURE_TIMEOUT_MS);
+    let r;
+    try { r = await api("/captures", { method: "POST", body: fd, signal: stop.signal }); }
+    catch (err) {
+      if (err.name === "AbortError") throw new Error("The game server didn't answer. Is the PC on? Try again in a bit.");
+      if (err instanceof TypeError) throw new Error("Can't reach the game server. Is the PC on?");
+      throw err;
+    } finally { clearTimeout(timer); }
+    showCapture(r, file, box);
   } catch (err) { box.textContent = err.message; }
 };
 
@@ -1122,7 +1142,7 @@ function addTile(grid, e, i, tier, owner = null) {
 
 // Bonds: six field notes per captured animal, each a heart (app/bonds.py).
 const BOND_MAX = 6;
-const BOND_TITLES = ["Met", "Familiar", "Regular", "Friend", "Good friend", "Lifelong friend"];
+const BOND_TITLES = ["Met", "Neighbor", "Regular", "Friend", "Good friend", "Lifelong friend"];
 function heartsEl(n, max = BOND_MAX) {
   const h = el("span", "hearts");
   h.append("♥".repeat(n));

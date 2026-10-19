@@ -34,7 +34,7 @@ class ProgressTest {
 
         val bond = Bond.parse(JSONObject("""{"species": {"number": 3, "slug": "coyote", "common_name": "Coyote",
               "scientific_name": "Canis latrans", "category": "mammal", "rarity": "common"},
-              "level": 2, "max_level": 6, "title": "Familiar",
+              "level": 2, "max_level": 6, "title": "Neighbor",
               "notes": [{"id": "met", "title": "First meeting", "hint": "Capture it", "progress": 1, "goal": 1, "done": true}]}"""))
         assertEquals("coyote", bond.slug)
         assertEquals(2, bond.level)
