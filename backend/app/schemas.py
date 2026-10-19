@@ -270,6 +270,8 @@ class PhotoOut(BaseModel):
     longitude: float | None = None
     location_precise: bool = False
     place: str | None = None
+    # Name of the state it was captured in (old captures: the player's home state).
+    state: str | None = None
     like_count: int = 0
     liked_by_me: bool = False
     comment_count: int = 0

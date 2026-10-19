@@ -302,6 +302,8 @@ data class OnlinePhoto(
     // When the photo was taken (its date), shown under it.
     val takenOn: Long,
     val place: String?,
+    // Name of the state it was captured in.
+    val state: String?,
     val likeCount: Int,
     val likedByMe: Boolean,
     val commentCount: Int,
@@ -318,7 +320,7 @@ data class OnlinePhoto(
             val s = o.getJSONObject("species")
             return OnlinePhoto(o.getInt("id"), o.optStringOrNull("url"), o.getString("username"),
                 s.optStringOrNull("slug"), s.optStringOrNull("common_name"), s.getString("rarity"),
-                s.getString("category"), takenOn(o), o.optStringOrNull("place"),
+                s.getString("category"), takenOn(o), o.optStringOrNull("place"), o.optStringOrNull("state"),
                 o.optInt("like_count"), o.optBoolean("liked_by_me"), o.optInt("comment_count"),
                 o.optBoolean("is_mine"), o.optBoolean("by_friend"), o.optIntOrNull("stars"),
                 o.optIntOrNull("score"), WhereWhen.parse(o.optJSONObject("where_when")))

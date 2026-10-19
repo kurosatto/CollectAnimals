@@ -567,7 +567,8 @@ private fun FeedCard(p: OnlinePhoto, social: SocialViewModel, onOpenDex: (String
                         color = rarityColor(p.rarity), maxLines = 1, overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.clickable(enabled = p.slug != null) { p.slug?.let(onOpenDex) })
                     if (p.url != null) p.stars?.let { Stars(it, points = p.score) }
-                    Text(listOfNotNull(if (p.isMine) "You" else p.username, p.place, dateOf(p.takenOn)).joinToString(" · "),
+                    val who = (if (p.isMine) "You" else p.username) + (p.state?.let { " in $it" } ?: "")
+                    Text(listOfNotNull(who, p.place, dateOf(p.takenOn)).joinToString(" · "),
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline,
                         maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
