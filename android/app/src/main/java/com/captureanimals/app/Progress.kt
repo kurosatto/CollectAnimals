@@ -106,7 +106,7 @@ data class Bond(val slug: String, val name: String, val level: Int, val maxLevel
     }
 }
 
-val BOND_TITLES = listOf("Met", "Familiar", "Regular", "Friend", "Good friend", "Lifelong friend")
+val BOND_TITLES = listOf("Met", "Neighbor", "Regular", "Friend", "Good friend", "Lifelong friend")
 
 // --- UI ----------------------------------------------------------------------------------
 
