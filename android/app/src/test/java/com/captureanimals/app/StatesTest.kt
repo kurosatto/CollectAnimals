@@ -66,19 +66,27 @@ class StatesTest {
     }
 
     @Test
-    fun stateSearch() {
+    fun stateTilesAndList() {
         val names = mapOf("CA" to "California", "NC" to "North Carolina", "SC" to "South Carolina", "OR" to "Oregon")
         val states = names.map { (c, n) -> StateInfo(c, n, emptyList()) { error("not needed") } }
-        // A to Z with nothing of your own (first launch).
-        assertEquals(listOf("CA", "NC", "OR", "SC"), StateSearch.rows(states, "", emptySet()).map { it.code })
-        assertEquals(listOf("NC", "SC"), StateSearch.rows(states, "carolina", emptySet()).map { it.code })
-        assertEquals(listOf("OR"), StateSearch.rows(states, " or ", emptySet()).map { it.code })
-        // Your states first, the rest locked.
-        val rows = StateSearch.rows(states, "", setOf("NC"))
-        assertEquals(listOf("Your states", "North Carolina", "Other states", "California", "Oregon", "South Carolina"),
-            rows.map { it.name })
-        assertTrue(rows.filter { !it.header && it.code != "NC" }.all { it.locked })
-        assertTrue(StateSearch.rows(states, "texas", setOf("NC")).isEmpty())
+        // First launch: every state A to Z.
+        assertEquals(listOf("CA", "NC", "OR", "SC"), StateList.alphabetical(states).map { it.code })
+        // The state screen: only unlocked states, in states.json order.
+        assertEquals(listOf("NC", "OR"), StateList.tiles(states, setOf("OR", "NC")).map { it.code })
+    }
+
+    @Test
+    fun stateAtAPoint() {
+        // A real outline (a triangle) beats an overlapping bounding box; of two boxes the smaller wins.
+        val tri = listOf(doubleArrayOf(-120.0, 35.0, -110.0, 35.0, -115.0, 45.0))
+        val states = listOf(
+            StateInfo("AA", "Outlined", emptyList(), Box(-120.0, -110.0, 35.0, 45.0), { tri }) { error("not needed") },
+            StateInfo("BB", "Big box", emptyList(), Box(-125.0, -100.0, 30.0, 50.0)) { error("not needed") },
+            StateInfo("CC", "Small box", emptyList(), Box(-105.0, -100.0, 40.0, 45.0)) { error("not needed") })
+        assertEquals("AA", States.stateAt(states, 38.0, -115.0)?.code)     // inside the triangle
+        assertEquals("BB", States.stateAt(states, 44.0, -119.0)?.code)     // in AA's box but not its outline
+        assertEquals("CC", States.stateAt(states, 42.0, -102.0)?.code)
+        assertEquals(null, States.stateAt(states, 10.0, 0.0))
     }
 
     @Test

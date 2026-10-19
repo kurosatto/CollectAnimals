@@ -402,8 +402,10 @@ def test_new_state_without_map_data_or_art(tmp_path, fake):
             r = upload(client, h)
             assert r.status_code == 201, r.text
             assert r.json()["species"]["slug"] == "testland_mystery_vole"
-            # Moving to another state and back works the same as for CA and NC.
-            assert client.patch("/me", headers=h, json={"state": "NC"}).json()["unlocked_states"] == ["NC", "TL"]
+            # A photo taken there unlocks a state, as for CA and NC. Testland has no
+            # outline, so its bounding box decides.
+            assert client.patch("/me", headers=h, json={"state": "NC"}).status_code == 403
+            assert client.get("/states/at", params={"lat": 41.5, "lon": -97.5}).json() == {"code": "TL"}
     finally:
         settings.states_json = real
         Base.metadata.drop_all(engine)
@@ -542,16 +544,18 @@ def test_change_state_and_captures_per_state(client, fake):
     fake.next = [Prediction("coyote", 0.95)]
     assert upload(client, h).json()["new_badge"]
 
-    r = client.patch("/me", headers=h, json={"state": "NC"})
-    assert r.status_code == 200 and r.json()["state"] == "NC"
-    col = client.get("/me/collection", headers=h).json()
     # A California coyote doesn't count in North Carolina: capture it again there.
-    assert col["state"] == "NC" and col["total"] == 100 and col["caught"] == 0
-    coyote = next(e for e in col["entries"] if e["species"]["slug"] == "coyote")
+    nc = client.get("/me/collection", headers=h, params={"state": "NC"}).json()
+    assert nc["state"] == "NC" and nc["total"] == 100 and nc["caught"] == 0
+    coyote = next(e for e in nc["entries"] if e["species"]["slug"] == "coyote")
     assert not coyote["caught"] and coyote["species"]["revealed"]    # its name stays known
     assert not client.get("/species/coyote/dex?state=NC", headers=h).json()["captured"]
     fake.next = [Prediction("coyote", 0.95)]
-    assert upload(client, h).json()["new_badge"]                     # new for North Carolina
+    r = client.post("/captures", headers=h, data={"latitude": 35.78, "longitude": -78.64},
+                    files={"photo": ("p.jpg", jpeg_bytes(), "image/jpeg")}).json()
+    assert r["new_badge"] and r["state"] == "NC"                     # new for North Carolina
+    r = client.patch("/me", headers=h, json={"state": "NC"})
+    assert r.status_code == 200 and r.json()["state"] == "NC"
     assert client.get("/me/collection", headers=h).json()["caught"] == 1
     ca = client.get("/me/collection", headers=h, params={"state": "CA"}).json()
     assert ca["state"] == "CA" and ca["caught"] == 1
@@ -758,19 +762,49 @@ def test_mask_name():
     assert m("", "Bobcat") == "" and m(None, "Bobcat") is None
 
 
-def test_states_unlock_by_choice(client, fake):
+def test_states_unlock_with_photos(client, fake):
     h = signup(client)
     me = client.get("/me", headers=h).json()
     assert me["state"] == "CA" and me["unlocked_states"] == ["CA"]
+    # No photo from North Carolina yet: it can't be picked.
+    r = client.patch("/me", json={"state": "NC"}, headers=h)
+    assert r.status_code == 403 and "photo" in r.json()["detail"]
+    # Capturing an animal that's on both lists, with no place, doesn't unlock it.
+    fake.next = [Prediction("coyote", 0.93)]
+    r = upload(client, h).json()
+    assert r["state"] == "CA" and r["unlocked_state"] is None
+    assert client.get("/me", headers=h).json()["unlocked_states"] == ["CA"]
+    # A photo taken in Raleigh does, and counts in North Carolina's Field Guide.
+    fake.next = [Prediction("coyote", 0.93)]
+    r = client.post("/captures", headers=h, data={"latitude": 35.78, "longitude": -78.64},
+                    files={"photo": ("p.jpg", jpeg_bytes(), "image/jpeg")}).json()
+    assert r["state"] == "NC" and r["unlocked_state"] == "NC" and r["new_badge"]
+    assert r["message"].startswith("📍 You unlocked North Carolina!")
+    assert client.get("/me", headers=h).json()["unlocked_states"] == ["CA", "NC"]
+    nc = client.get("/me/collection", params={"state": "NC"}, headers=h).json()
+    assert [e["species"]["slug"] for e in nc["entries"] if e["caught"]] == ["coyote"]
+    # Now it's a home state option; the old home stays unlocked.
     r = client.patch("/me", json={"state": "NC"}, headers=h).json()
     assert r["state"] == "NC" and r["unlocked_states"] == ["CA", "NC"]
-    r = client.patch("/me", json={"state": "CA"}, headers=h).json()
-    assert r["state"] == "CA" and r["unlocked_states"] == ["CA", "NC"]   # stays unlocked
-    # Capturing an animal that's on both lists doesn't unlock the other state.
-    other = signup(client, "bob")
-    fake.next = [Prediction("coyote", 0.93)]
-    upload(client, other)
-    assert client.get("/me", headers=other).json()["unlocked_states"] == ["CA"]
+    assert client.patch("/me", json={"state": "CA"}, headers=h).json()["state"] == "CA"
+
+
+def test_state_at():
+    from app import places
+    from app import states as st
+    def at(lat, lon):
+        here = places.state_at(st.all_states(), lat, lon)
+        return here.code if here else None
+    assert at(34.05, -118.24) == "CA" and at(35.6, -82.55) == "NC"
+    # Reno is inside California's bounding box but not its outline.
+    assert at(39.53, -119.81) is None
+    assert at(40.7, -74.0) is None
+
+
+def test_state_at_endpoint(client):
+    assert client.get("/states/at", params={"lat": 35.78, "lon": -78.64}).json() == {"code": "NC"}
+    assert client.get("/states/at", params={"lat": 51.5, "lon": -0.1}).json() == {"code": None}
+    assert client.get("/states/at", params={"lat": 120, "lon": 0}).status_code == 422
 
 
 def test_older_photos_get_scored(client, fake):

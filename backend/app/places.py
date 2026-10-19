@@ -86,24 +86,31 @@ _outlines: dict[str, list] = {}
 _COAST_KM = 5
 
 
-def in_state(state, lat: float, lon: float) -> bool:
-    """Whether a point is inside the state's outline, or just off its edge."""
+def _rings(state) -> list:
     rings = _outlines.get(state.code)
     if rings is None:
         rings = json.loads(state.outline.read_text(encoding="utf-8"))["rings"] if state.outline and state.outline.exists() else []
         _outlines[state.code] = rings
+    return rings
+
+
+def _fit(state, lat: float, lon: float) -> int | None:
+    """How well a point fits a state, best first: 0 inside its outline, 1 just
+    off its edge, 2 inside the bounding box of a state with no outline yet,
+    3 just outside that box. None when it's not in the state."""
     b = state.bounds
     if not (b["south"] - _MARGIN <= lat <= b["north"] + _MARGIN and b["west"] - _MARGIN <= lon <= b["east"] + _MARGIN):
-        return False
+        return None
+    rings = _rings(state)
     if not rings:
-        return True
+        return 2 if b["south"] <= lat <= b["north"] and b["west"] <= lon <= b["east"] else 3
     inside = False
     for ring in rings:
         for (x1, y1), (x2, y2) in zip(ring, ring[1:] + ring[:1]):
             if (y1 > lat) != (y2 > lat) and lon < x1 + (lat - y1) * (x2 - x1) / (y2 - y1):
                 inside = not inside
     if inside:
-        return True
+        return 0
     # Distance to the outline, on a flat projection (fine at a few km).
     kx = 111.32 * math.cos(math.radians(lat))
     for ring in rings:
@@ -112,8 +119,23 @@ def in_state(state, lat: float, lon: float) -> bool:
             dx, dy = bx - ax, by - ay
             t = max(0.0, min(1.0, -(ax * dx + ay * dy) / (dx * dx + dy * dy))) if dx or dy else 0.0
             if math.hypot(ax + t * dx, ay + t * dy) <= _COAST_KM:
-                return True
-    return False
+                return 1
+    return None
+
+
+def in_state(state, lat: float, lon: float) -> bool:
+    """Whether a point is inside the state's outline, or just off its edge."""
+    return _fit(state, lat, lon) is not None
+
+
+def state_at(states, lat: float, lon: float):
+    """The state a point is in, or None. A real outline beats a bounding box
+    (boxes of neighbouring states overlap), and of two boxes the smaller wins."""
+    def area(s):
+        b = s.bounds
+        return (b["north"] - b["south"]) * (b["east"] - b["west"])
+    fits = [(f, area(s), s) for s in states if (f := _fit(s, lat, lon)) is not None]
+    return min(fits, key=lambda x: x[:2])[2] if fits else None
 
 
 # Smallest radius for the "near me" feed, so it can't be narrowed down to a house.

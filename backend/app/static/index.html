@@ -63,8 +63,14 @@
   dialog { border:1px solid var(--line); border-radius:14px; background:var(--card); color:var(--ink);
            padding:0; width:min(560px, calc(100vw - 32px)); }
   dialog::backdrop { background:rgba(0,0,0,.45); }
-  #state-search { width:100%; box-sizing:border-box; margin:12px 0 8px; }
-  .state-list { max-height:min(420px, 60dvh); overflow-y:auto; display:grid; gap:2px; }
+  .state-list { max-height:min(420px, 60dvh); overflow-y:auto; display:grid; gap:2px; margin-top:12px; }
+  .state-tiles { display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:8px; margin-top:12px; }
+  .state-tiles button, .state-list .state-tiles button { padding:14px 10px; border-radius:12px; border:1px solid var(--line); background:var(--bg, transparent);
+                        color:var(--ink); cursor:pointer; text-align:left; display:grid; gap:4px; font:inherit; }
+  .state-tiles button b { font-size:1.4rem; letter-spacing:.03em; }
+  .state-tiles button.on, .state-list .state-tiles button.on { border:2px solid var(--accent); }
+  .state-tiles button.on .muted { color:var(--accent); font-weight:600; }
+  .state-tiles button:hover, .state-tiles button:focus-visible { border-color:var(--accent); }
   .state-list button { text-align:left; padding:9px 10px; border-radius:8px; border:none; background:transparent;
                        color:var(--ink); cursor:pointer; display:flex; justify-content:space-between; gap:8px; }
   .state-list button:hover, .state-list button:focus-visible { background:var(--line); }
@@ -319,7 +325,7 @@
     <span id="offline" class="hidden" title="No connection: your Field Guide and habitat still work, new captures need the internet">Offline</span>
     <button class="link hidden" id="install">Install app</button>
     <div id="who" class="hidden"><button class="link" id="username"></button>
-      <button class="link" id="my-state" title="Your primary location: your Field Guide, Parks and maps follow it, and friends see it first">📍</button>
+      <button class="link" id="my-state" title="Your states: your Field Guide, Parks and maps follow your main state, and friends see it first">📍</button>
       <button class="link" id="logout">Log out</button></div>
     </div>
   </header>
@@ -465,7 +471,6 @@
     <div><h2 id="state-pick-title"></h2><div class="muted" id="state-pick-note"></div></div>
     <button class="close" id="state-pick-close" aria-label="Close">×</button>
   </div>
-  <input id="state-search" type="search" placeholder="Search states" aria-label="Search states" autocomplete="off">
   <div id="state-list" class="state-list"></div>
 </div></dialog>
 <dialog id="album"><div class="dex">
@@ -598,6 +603,19 @@ $("upload-form").onsubmit = async (e) => {
       .map((x) => `${x.common_name || (x.label === "other" ? "not on the list" : "???")} ${(x.probability * 100).toFixed(0)}%`).join(", ");
     if (r.new_badge && r.species?.slug) box.append(captureReveal(r.species.slug));
     box.append(h, p);
+    if (r.unlocked_state) {
+      markLocked([...unlocked, r.unlocked_state]);
+      const st = states.find((x) => x.code === r.unlocked_state);
+      if (st && st.code !== myState.code) {
+        const b = el("button", "photo-btn", `★ Make ${st.name} my main state`);
+        b.type = "button";
+        b.onclick = async () => {
+          try { await setMainState(st.code); b.replaceWith(el("p", "muted", `${st.name} is now your main state.`)); }
+          catch (err) { alert(err.message); }
+        };
+        box.append(b);
+      }
+    }
     const sb = safetyBox(r);
     if (sb) box.append(sb);
     if (r.where_when) box.append(whereWhen(r.where_when, (res) => {
@@ -1052,60 +1070,65 @@ async function useState(code) {
   try { OUTLINE = (await api(`/map/${myState.code}`)).rings || []; } catch {}
 }
 
-// Picking a state from all 50: a searchable list, the player's own states first.
+// The state dialog. With `tiles`, only the given states as big tiles (the
+// player's unlocked states, home marked). Otherwise every state A to Z, after a
+// guess from the device's location when `locate` is set (sign-up).
 // Resolves to the chosen code, or null when closed.
-function pickState({ title, note = "", current = null, mine = [] }) {
-  const dlg = $("state-pick"), list = $("state-list"), search = $("state-search");
+function pickState({ title, note = "", current = null, tiles = null, locate = false, after = "" }) {
+  const dlg = $("state-pick"), list = $("state-list");
   $("state-pick-title").textContent = title;
   $("state-pick-note").textContent = note;
-  search.value = "";
   return new Promise((resolve) => {
     let done = false;
     const finish = (code) => { if (done) return; done = true; dlg.close(); resolve(code); };
-    const draw = () => {
-      const q = search.value.trim().toLowerCase();
-      // The start of the name or of any word in it ("carolina", "new y"), or the code ("nc").
-      const hit = (st) => !q || st.code.toLowerCase() === q
-        || st.name.toLowerCase().split(" ").some((_, i, w) => w.slice(i).join(" ").startsWith(q));
-      const own = states.filter((st) => mine.includes(st.code) && hit(st));
-      const rest = states.filter((st) => !mine.includes(st.code) && hit(st))
-        .sort((a, b) => a.name.localeCompare(b.name));
-      list.innerHTML = "";
-      const row = (st, locked) => {
+    const tile = (st, label) => {
+      const b = el("button", st.code === current ? "on" : "");
+      b.type = "button";
+      b.append(el("b", "", st.code), el("span", "", st.name), el("span", "muted", label || ""));
+      b.onclick = () => finish(st.code);
+      return b;
+    };
+    list.innerHTML = "";
+    if (tiles) {
+      list.className = "";
+      const grid = el("div", "state-tiles");
+      states.filter((st) => tiles.includes(st.code))
+        .forEach((st) => grid.append(tile(st, st.code === current ? "★ Main state" : "Make main")));
+      list.append(grid);
+      if (after) list.append(el("p", "muted", after));
+    } else {
+      list.className = "state-list";
+      const guess = el("div", "state-tiles");
+      if (locate && navigator.geolocation) {
+        guess.append(el("p", "muted", "Finding your state…"));
+        list.append(guess, el("div", "sep", "Or pick your state"));
+        navigator.geolocation.getCurrentPosition(async (p) => {
+          let code = null;
+          try { ({ code } = await api(`/states/at?lat=${p.coords.latitude}&lon=${p.coords.longitude}`)); } catch {}
+          const st = states.find((x) => x.code === code);
+          guess.replaceChildren(st ? Object.assign(tile(st, "📍 You're here"), { className: "on" }) : el("p", "muted", "Couldn't tell from your location."));
+        }, () => guess.replaceChildren(el("p", "muted", "Location is off, so pick from the list.")),
+        { timeout: 8000, maximumAge: 600000 });
+      }
+      for (const st of [...states].sort((a, b) => a.name.localeCompare(b.name))) {
         const b = el("button", st.code === current ? "on" : "");
         b.type = "button";
-        b.append(el("span", "", (locked ? "🔒 " : "") + st.name),
-                 el("span", "muted", st.code === current ? "✓" : ""));
+        b.append(el("span", "", st.name), el("span", "muted", st.code === current ? "✓" : ""));
         b.onclick = () => finish(st.code);
         list.append(b);
-      };
-      if (own.length && mine.length) list.append(el("div", "sep", "Your states"));
-      own.forEach((st) => row(st, false));
-      if (own.length && rest.length) list.append(el("div", "sep", "Other states"));
-      rest.forEach((st) => row(st, mine.length > 0));
-      if (!own.length && !rest.length) list.append(el("p", "muted", "No state matches."));
-    };
-    search.oninput = draw;
-    // Enter picks the only (or first) match.
-    search.onkeydown = (e) => {
-      if (e.key !== "Enter") return;
-      e.preventDefault();
-      const first = list.querySelector("button");
-      if (first) first.click();
-    };
+      }
+    }
     $("state-pick-close").onclick = () => finish(null);
     dlg.onclose = () => finish(null);
-    draw();
     dlg.showModal();
-    search.focus();
   });
 }
 
-// Sign-up: which state they live in.
+// Sign-up: which state they live in, guessed from where they are.
 let signupState = null;
 async function chooseSignupState() {
-  const code = await pickState({ title: "Which state are you in?", current: signupState,
-    note: "Your Field Guide and parks follow your state. You can unlock others later." });
+  const code = await pickState({ title: "Which state are you in?", current: signupState, locate: true,
+    note: "Your Field Guide and parks follow your main state. Photos you take in other states unlock them." });
   if (code) setSignupState(code);
 }
 function setSignupState(code) {
@@ -1115,28 +1138,31 @@ function setSignupState(code) {
 }
 $("signup-state").onclick = chooseSignupState;
 
-// Players start with their home state; other states show 🔒 until they choose
-// to unlock one.
+// A state unlocks once the player has a photo from it; any unlocked state can
+// be their main state.
 let unlocked = [];
 function markLocked(list) {
   unlocked = list || unlocked;
 }
 
+async function setMainState(code) {
+  const me = await api("/me", { method: "PATCH", headers: { "Content-Type": "application/json" },
+                     body: JSON.stringify({ state: code }) });
+  markLocked(me.unlocked_states);
+  hotSelected = null;
+  await useState(code);
+  loadCollection();
+}
+
 $("my-state").onclick = async () => {
-  const code = await pickState({ title: "Primary location", current: myState.code, mine: unlocked,
-    note: "Your Field Guide, parks and challenges follow it." });
+  // Photos may have unlocked states since the page loaded.
+  try { markLocked((await api("/me")).unlocked_states); } catch {}
+  const left = states.length - unlocked.length;
+  const code = await pickState({ title: "Your states", current: myState.code, tiles: unlocked,
+    note: "Your Field Guide, parks and challenges follow your main state. Tap a state to make it your main one.",
+    after: left > 0 ? `📷 Take a photo in another state to unlock it (${unlocked.length} of ${states.length} unlocked).` : "" });
   if (!code || code === myState.code) return;
-  const st = states.find((x) => x.code === code) || { name: code };
-  if (!unlocked.includes(code) && !confirm(`Unlock ${st.name}? Its Field Guide, parks and challenges will open, ` +
-      `and your captures will count there while it's your state.`)) return;
-  try {
-    const me = await api("/me", { method: "PATCH", headers: { "Content-Type": "application/json" },
-                       body: JSON.stringify({ state: code }) });
-    markLocked(me.unlocked_states);
-    hotSelected = null;
-    await useState(code);
-    loadCollection();
-  } catch (err) { alert(err.message); }
+  try { await setMainState(code); } catch (err) { alert(err.message); }
 };
 
 // Outlines of other states, for a Field Guide entry from a state that isn't yours.
