@@ -49,6 +49,10 @@ fun TabIcon(name: String, modifier: Modifier = Modifier) {
         contentScale = ContentScale.Fit, filterQuality = FilterQuality.None)
 }
 
+/** A player's profile picture (1-10, drawn by tools/make_avatars.py). */
+@Composable
+fun Avatar(n: Int, modifier: Modifier = Modifier) = TabIcon("avatar_${n.coerceIn(1, 10)}", modifier)
+
 private var spriteFiles: Set<String>? = null
 
 /** The files in the sprites/ assets, listed once. */

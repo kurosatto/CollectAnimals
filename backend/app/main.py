@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session
 
 from . import classifier as clf
 from . import dex
-from . import bonds, goals, household, limits, notices, places, scoring, social, weather
+from . import avatars, bonds, goals, household, limits, notices, places, scoring, social, weather
 from . import states as st
 from .auth import DUMMY_HASH, create_token, current_user, hash_password, optional_user, verify_password
 from .classifier import OTHER_LABEL, Prediction
@@ -330,7 +330,7 @@ def register(body: RegisterIn, request: Request, db: Session = Depends(get_db)):
     if state is None:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, f"Unknown state {body.state!r}")
     user = User(email=body.email.lower(), username=body.username,
-                password_hash=hash_password(body.password), state=state.code)
+                password_hash=hash_password(body.password), state=state.code, avatar=avatars.pick())
     db.add(user)
     try:
         db.commit()
@@ -389,6 +389,7 @@ def unlocked_states(db: Session, user: User) -> list[str]:
 def user_out(db: Session, user: User) -> UserOut:
     out = UserOut.model_validate(user)
     out.unlocked_states = unlocked_states(db, user)
+    out.avatar = avatars.avatar_of(user)
     return out
 
 
@@ -512,6 +513,7 @@ def get_dex_entry(key: str, state: str | None = Query(None), user: User | None =
         return text if revealed else dex.mask_name(text, s.common_name, s.scientific_name)
     return DexOut(species=species_out(s, revealed, m), state=code, size=d.get("size"), weight=d.get("weight"),
                   fun_fact=d.get("fun_fact") if revealed else None,
+                  facts=dex.facts_for(s.slug, code) if revealed else [],
                   where_to_find=tip(d.get("where_to_find")),
                   active_time=d.get("active_time"),
                   spotting_tip=tip(d.get("spotting_tip")),

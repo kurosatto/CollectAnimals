@@ -3,7 +3,7 @@ package com.captureanimals.app
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,12 +34,10 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import java.text.DateFormat
-import java.util.Date
 
 /**
- * Your captures' photos, newest first. Tapping a photo opens its Field Guide page;
- * "Delete photo" removes the photo and un-captures the animal, as on the website.
+ * Your captures' photos, newest first, four to a row. Tapping a photo opens its Field
+ * Guide page; holding it offers to delete it, which un-captures the animal, as on the website.
  */
 @Composable
 fun GalleryScreen(species: List<Species>, collection: Map<String, Badge>, onOpenDex: (String) -> Unit,
@@ -57,35 +55,32 @@ fun GalleryScreen(species: List<Species>, collection: Map<String, Badge>, onOpen
         return
     }
 
-    LazyVerticalGrid(columns = GridCells.Adaptive(150.dp), modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(12.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    LazyVerticalGrid(columns = GridCells.Fixed(4), modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         item(span = { GridItemSpan(maxLineSpan) }) {
-            Text("${entries.size} photo${if (entries.size == 1) "" else "s"}",
+            Text("${entries.size} photo${if (entries.size == 1) "" else "s"} · hold one to delete it",
                 style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.outline)
         }
         items(entries, key = { it.key }) { (slug, badge) ->
             val s = bySlug.getValue(slug)
-            Card(shape = RoundedCornerShape(12.dp)) {
+            Card(shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.combinedClickable(onLongClick = { confirm = s }) { onOpenDex(slug) }) {
                 Column {
-                    val photo = remember(badge.photo) { badge.photo?.let { BitmapFactory.decodeFile(it) } }
-                    Box(Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant).clickable { onOpenDex(slug) }) {
+                    // Decoded small: a quarter of the screen wide is all it needs.
+                    val photo = remember(badge.photo) {
+                        badge.photo?.let { BitmapFactory.decodeFile(it, BitmapFactory.Options().apply { inSampleSize = 4 }) }
+                    }
+                    Box(Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)) {
                         if (photo != null) {
                             Image(photo.asImageBitmap(), contentDescription = s.commonName,
                                 modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                         }
                     }
-                    Column(Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
-                        Text(s.commonName, style = MaterialTheme.typography.titleSmall, maxLines = 1,
-                            overflow = TextOverflow.Ellipsis, color = rarityColor(s.rarity))
-                        Text(DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(badge.firstCaughtAt)) +
-                            if (badge.count > 1) " · ${badge.count}×" else "",
-                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
-                        TextButton(onClick = { confirm = s }, contentPadding = PaddingValues(0.dp)) {
-                            Text("Delete photo")
-                        }
-                    }
+                    Text(s.commonName, style = MaterialTheme.typography.labelSmall, maxLines = 1,
+                        overflow = TextOverflow.Ellipsis, color = rarityColor(s.rarity),
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 3.dp))
                 }
             }
         }

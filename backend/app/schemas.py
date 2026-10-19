@@ -31,6 +31,8 @@ class UserOut(BaseModel):
     created_at: datetime
     show_in_feed: bool | None = True
     is_private: bool | None = False
+    # Profile picture number: /sprites/avatar_<n>.png
+    avatar: int | None = 1
     # The states this player can switch to; the rest show locked until they choose one.
     unlocked_states: list[str] = []
 
@@ -77,6 +79,8 @@ class DexOut(BaseModel):
     size: str | None = None
     weight: str | None = None
     fun_fact: str | None = None
+    # Every fun fact (the main one first); empty until the animal is revealed.
+    facts: list[str] = []
     where_to_find: str | None = None
     active_time: str | None = None
     spotting_tip: str | None = None
@@ -350,6 +354,7 @@ class ProfileOut(BaseModel):
     # self | friends | requested (you asked them) | incoming (they asked you) | none
     friendship: str
     is_bot: bool = False
+    avatar: int = 1
     # Their primary location: the state they play in.
     state: str = ""
     # Private players show their photos only to themselves and friends.
@@ -396,12 +401,14 @@ class FriendOut(BaseModel):
     caught: int = 0
     since: datetime
     is_bot: bool = False
+    avatar: int = 1
 
 
 class SuggestionOut(BaseModel):
     username: str
     caught: int = 0
     is_bot: bool = False
+    avatar: int = 1
 
 
 class FriendsOut(BaseModel):

@@ -15,6 +15,9 @@ from pathlib import Path
 from .states import State
 
 _details: dict[str, dict] = {}
+# More fun facts per species (species/facts.json, true in every state), told
+# after the main one when you tap an animal in your habitat.
+_facts: dict[str, list[str]] = {}
 # state code -> data
 _ranges: dict[str, dict] = {}
 _hotspots: dict[str, list[dict]] = {}
@@ -45,8 +48,12 @@ def load(details_csv: Path, states: list[State]) -> None:
     _state_text.clear()
     _seasons.clear()
     _avg_night_share.clear()
+    _facts.clear()
     if details_csv.exists():
         _details.update(_read_csv(details_csv))
+    facts_json = details_csv.parent / "facts.json"
+    if facts_json.exists():
+        _facts.update(json.loads(facts_json.read_text(encoding="utf-8")))
     _base_state = next((s.code for s in states if s.dex_csv is None), None)
     for st in states:
         if st.ranges and st.ranges.exists():
@@ -72,6 +79,12 @@ def _night_share(entry: dict) -> float | None:
     hours = entry.get("hours") or []
     total = sum(hours)
     return sum(hours[h] for h in NIGHT_HOURS if h < len(hours)) / total if total >= 30 else None
+
+
+def facts_for(slug: str, state: str) -> list[str]:
+    """The species' fun facts: the state's main one first, then the shared extras."""
+    main = details(slug, state).get("fun_fact")
+    return [f for f in [main, *_facts.get(slug, [])] if f]
 
 
 def season_for(slug: str, state: str) -> dict | None:

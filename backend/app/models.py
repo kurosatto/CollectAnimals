@@ -28,6 +28,8 @@ class User(Base):
     # Private players' photos are shown only to themselves and their friends.
     is_private: Mapped[bool | None] = mapped_column(nullable=True, default=False)
     is_bot: Mapped[bool | None] = mapped_column(nullable=True, default=False)
+    # Profile picture 1-10 (app/avatars.py); None on accounts from before pictures.
+    avatar: Mapped[int | None] = mapped_column(nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 

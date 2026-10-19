@@ -32,18 +32,20 @@ import java.net.URL
 
 /** One animal for the habitat scene. */
 data class HabitatAnimal(val number: Int, val slug: String, val name: String, val category: String,
-                         val rarity: String, val activity: String)
+                         val rarity: String, val activity: String, val funFact: String = "")
 
 /** Your captured animals, in the habitat's JSON shape. */
 fun habitatAnimals(info: ModelInfo, dex: FieldGuide?, collection: Map<String, Badge>): List<HabitatAnimal> =
     info.dexOrder.filter { it.slug in collection }.map { s ->
-        HabitatAnimal(info.dexNumber(s.slug), s.slug, s.commonName, s.category, s.rarity, dex?.activity(s.slug) ?: "day")
+        HabitatAnimal(info.dexNumber(s.slug), s.slug, s.commonName, s.category, s.rarity, dex?.activity(s.slug) ?: "day",
+            dex?.details?.get(s.slug)?.funFact.orEmpty())
     }
 
 /**
  * The live habitat: the same pixel scene as the website (backend/app/static/habitat.js),
  * shown in a WebView from the app's own assets, so it works offline. [visitor] shows a
- * friend's animals in their state's scenery. Tapping an animal twice calls [onOpen].
+ * friend's animals in their state's scenery. A tapped animal tells you its fun facts;
+ * the link in its bubble calls [onOpen].
  *
  * Keep one per screen with [rememberHabitatView] so scrolling it away and back doesn't
  * restart the scene.
@@ -57,7 +59,7 @@ fun Habitat(view: HabitatWebView, animals: List<HabitatAnimal>, state: String, m
         JSONArray(animals.map { a ->
             JSONObject().put("caught", true).put("activity", a.activity).put("species", JSONObject()
                 .put("number", a.number).put("slug", a.slug).put("common_name", a.name)
-                .put("category", a.category).put("rarity", a.rarity))
+                .put("category", a.category).put("rarity", a.rarity).put("fun_fact", a.funFact))
         }).toString()
     }
     LaunchedEffect(json, state, visitor) { view.show(json, state, visitor) }

@@ -274,11 +274,12 @@ fun JSONObject.optStringOrNull(key: String): String? = if (isNull(key) || !has(k
 fun JSONObject.optIntOrNull(key: String): Int? = if (isNull(key) || !has(key)) null else getInt(key)
 
 data class Account(val username: String, val email: String, val state: String, val showInFeed: Boolean,
-                   val unlockedStates: List<String> = emptyList()) {
+                   val unlockedStates: List<String> = emptyList(), val avatar: Int = 1) {
     companion object {
         fun parse(o: JSONObject) = Account(o.getString("username"), o.getString("email"), o.getString("state"),
             o.isNull("show_in_feed") || o.optBoolean("show_in_feed", true),
-            o.optJSONArray("unlocked_states")?.let { a -> List(a.length()) { a.getString(it) } } ?: emptyList())
+            o.optJSONArray("unlocked_states")?.let { a -> List(a.length()) { a.getString(it) } } ?: emptyList(),
+            o.optInt("avatar", 1))
     }
 }
 
@@ -334,9 +335,10 @@ data class PhotoComment(val id: Int, val username: String, val body: String, val
     }
 }
 
-data class FriendEntry(val username: String, val caught: Int, val isBot: Boolean) {
+data class FriendEntry(val username: String, val caught: Int, val isBot: Boolean, val avatar: Int = 1) {
     companion object {
-        fun parse(o: JSONObject) = FriendEntry(o.getString("username"), o.optInt("caught"), o.optBoolean("is_bot"))
+        fun parse(o: JSONObject) = FriendEntry(o.getString("username"), o.optInt("caught"), o.optBoolean("is_bot"),
+            o.optInt("avatar", 1))
     }
 }
 

@@ -31,6 +31,17 @@ def names(client, h):
             if e["species"]["revealed"]}
 
 
+def test_profile_pictures(client):
+    a, b = signup(client, "ana"), signup(client, "ben")
+    me = client.get("/me", headers=a).json()
+    assert 1 <= me["avatar"] <= 10
+    client.post("/friends/requests", json={"username": "ana"}, headers=b)
+    client.post("/friends/requests/ben/accept", headers=a)
+    friend = client.get("/friends", headers=a).json()["friends"][0]
+    assert friend["username"] == "ben" and friend["avatar"] == client.get("/me", headers=b).json()["avatar"]
+    assert client.get("/users/ben", headers=a).json()["avatar"] == friend["avatar"]
+
+
 def test_friend_requests(client):
     ana, bob = signup(client, "ana"), signup(client, "bob")
     assert client.post("/friends/requests", headers=ana, json={"username": "ana"}).status_code == 400
@@ -391,8 +402,10 @@ def test_bot_friends(client, fake):
     catch(client, fake, bot, "coyote")
 
     s = client.get("/friends/suggestions", headers=ana).json()
-    assert s == [{"username": "birdnerd", "caught": 1, "is_bot": True},
-                 {"username": "trailblazer", "caught": 0, "is_bot": True}]
+    assert [{k: v for k, v in x.items() if k != "avatar"} for x in s] == \
+        [{"username": "birdnerd", "caught": 1, "is_bot": True},
+         {"username": "trailblazer", "caught": 0, "is_bot": True}]
+    assert all(1 <= x["avatar"] <= 10 for x in s)
     # Bots accept right away, and their catches reveal names.
     assert client.post("/friends/requests", headers=ana, json={"username": "birdnerd"}).json() == \
         {"status": "friends"}

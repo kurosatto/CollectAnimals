@@ -24,6 +24,7 @@ from sqlalchemy import and_, delete, func, or_, select
 from sqlalchemy.orm import Session
 
 from . import goals, notices, places
+from .avatars import avatar_of
 from .scoring import to_local
 from . import states
 from .auth import current_user
@@ -346,6 +347,7 @@ def user_profile(username: str, user: User = Depends(current_user), db: Session 
     return ProfileOut(
         username=owner.username, joined=owner.created_at, friendship=friendship,
         is_bot=bool(owner.is_bot), is_private=bool(owner.is_private), state=owner.state,
+        avatar=avatar_of(owner),
         caught=len(caught_ids), total=len(members), by_rarity=by_rarity, by_category=by_category,
         likes_received=likes_received,
         achievements=_achievements(len(caught_ids), len(members), by_rarity, by_category, likes_received)
@@ -609,7 +611,7 @@ def list_friends(user: User = Depends(current_user), db: Session = Depends(get_d
     for f in sorted(rows, key=lambda f: f.created_at):
         other = f.requester if f.addressee_id == user.id else f.addressee
         entry = FriendOut(username=other.username, caught=caught.get(other.id, 0) if f.accepted else 0,
-                          since=f.created_at, is_bot=bool(other.is_bot))
+                          since=f.created_at, is_bot=bool(other.is_bot), avatar=avatar_of(other))
         if f.accepted:
             out.friends.append(entry)
         elif f.addressee_id == user.id:
@@ -654,7 +656,8 @@ def friend_suggestions(user: User = Depends(current_user), db: Session = Depends
     bots = db.scalars(select(User).where(User.is_bot, User.id != user.id,
                                          User.id.not_in(linked)).order_by(User.username)).all()
     caught = caught_counts(db, list(bots))
-    return [SuggestionOut(username=b.username, caught=caught.get(b.id, 0), is_bot=True) for b in bots]
+    return [SuggestionOut(username=b.username, caught=caught.get(b.id, 0), is_bot=True,
+                         avatar=avatar_of(b)) for b in bots]
 
 
 @router.post("/friends/requests/{username}/accept")
