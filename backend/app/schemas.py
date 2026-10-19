@@ -44,6 +44,10 @@ class UserUpdate(BaseModel):
     state: str
 
 
+class StateAtOut(BaseModel):
+    code: str | None
+
+
 class StateOut(BaseModel):
     code: str
     name: str
@@ -192,6 +196,10 @@ class CaptureOut(BaseModel):
     where_when: WhereWhenOut | None = None
     # Set when the photo is a pet or a pest (a dog, a pigeon...) rather than a wild animal.
     household: HouseholdOut | None = None
+    # The state the photo counts in: where it was taken, else the player's home state.
+    state: str | None = None
+    # Set when this was the player's first photo from a state, which unlocks it.
+    unlocked_state: str | None = None
 
 
 class WhereWhenResult(BaseModel):

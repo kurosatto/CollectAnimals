@@ -7,8 +7,18 @@ import org.json.JSONObject
  * The Field Guide (sighting map, parks, seasons) is read the first time it's needed,
  * so 50 states don't all load at start-up.
  */
-class StateInfo(val code: String, val name: String, val species: List<Species>, guide: () -> FieldGuide) {
+class StateInfo(val code: String, val name: String, val species: List<Species>, val bounds: Box? = null,
+                outline: () -> List<DoubleArray> = { emptyList() }, guide: () -> FieldGuide) {
     val fieldGuide: FieldGuide by lazy(guide)
+    // The real outline's rings ([lon, lat, lon, lat, ...]); empty until the state has one.
+    val outlineRings: List<DoubleArray> by lazy(outline)
+}
+
+/** A state's bounding box in degrees. */
+class Box(val west: Double, val east: Double, val south: Double, val north: Double) {
+    fun contains(lat: Double, lon: Double, margin: Double = 0.0) =
+        lat in south - margin..north + margin && lon in west - margin..east + margin
+    val area get() = (north - south) * (east - west)
 }
 
 /**
@@ -28,7 +38,11 @@ object States {
             val s = arr.getJSONObject(i)
             val name = s.getString("name")
             fun optional(key: String) = s.optString(key).takeIf { it.isNotEmpty() && it != "null" }?.let(read)
-            StateInfo(s.getString("code"), name, parseSpecies(read(s.getString("species")) ?: error("no list for $name"))) {
+            val box = s.getJSONObject("bounds").let { b ->
+                Box(b.getDouble("west"), b.getDouble("east"), b.getDouble("south"), b.getDouble("north"))
+            }
+            StateInfo(s.getString("code"), name, parseSpecies(read(s.getString("species")) ?: error("no list for $name")),
+                box, { optional("outline")?.let { parseRings(it) }.orEmpty() }) {
                 // Sighting maps and outlines are built on a PC with iNaturalist access; until then
                 // a state has an empty sighting map and its bounding box as the outline.
                 val bounds = s.getJSONObject("bounds")
@@ -42,6 +56,57 @@ object States {
             }
         }
         return o.optString("default", states.first().code) to states
+    }
+
+    fun parseRings(outlineJson: String): List<DoubleArray> {
+        val ringsJson = JSONObject(outlineJson).getJSONArray("rings")
+        return List(ringsJson.length()) { i ->
+            val ring = ringsJson.getJSONArray(i)
+            DoubleArray(ring.length() * 2) { j -> ring.getJSONArray(j / 2).getDouble(j % 2) }
+        }
+    }
+
+    // Same as the backend's places.state_at: how far outside a box still counts
+    // (degrees), and how far off a coarse outline a beach or island still counts (km).
+    private const val MARGIN = 0.3
+    private const val COAST_KM = 5.0
+
+    /**
+     * The state a point is in, or null. A real outline beats a bounding box (boxes
+     * of neighbouring states overlap), and of two boxes the smaller wins.
+     */
+    fun stateAt(states: List<StateInfo>, lat: Double, lon: Double): StateInfo? =
+        states.mapNotNull { st -> fit(st, lat, lon)?.let { Triple(it, st.bounds?.area ?: 0.0, st) } }
+            .minWithOrNull(compareBy({ it.first }, { it.second }))?.third
+
+    /** 0 inside the outline, 1 just off its edge, 2 inside the box of a state with no outline, 3 just outside it. */
+    private fun fit(st: StateInfo, lat: Double, lon: Double): Int? {
+        val b = st.bounds ?: return null
+        if (!b.contains(lat, lon, MARGIN)) return null
+        val rings = st.outlineRings
+        if (rings.isEmpty()) return if (b.contains(lat, lon)) 2 else 3
+        var inside = false
+        for (r in rings) {
+            val n = r.size / 2
+            for (i in 0 until n) {
+                val (x1, y1) = r[2 * i] to r[2 * i + 1]
+                val (x2, y2) = r[2 * ((i + 1) % n)] to r[2 * ((i + 1) % n) + 1]
+                if ((y1 > lat) != (y2 > lat) && lon < x1 + (lat - y1) * (x2 - x1) / (y2 - y1)) inside = !inside
+            }
+        }
+        if (inside) return 0
+        val kx = 111.32 * Math.cos(Math.toRadians(lat))
+        for (r in rings) {
+            val n = r.size / 2
+            for (i in 0 until n) {
+                val ax = (r[2 * i] - lon) * kx; val ay = (r[2 * i + 1] - lat) * 110.57
+                val bx = (r[2 * ((i + 1) % n)] - lon) * kx; val by = (r[2 * ((i + 1) % n) + 1] - lat) * 110.57
+                val dx = bx - ax; val dy = by - ay
+                val t = if (dx != 0.0 || dy != 0.0) (-(ax * dx + ay * dy) / (dx * dx + dy * dy)).coerceIn(0.0, 1.0) else 0.0
+                if (Math.hypot(ax + t * dx, ay + t * dy) <= COAST_KM) return 1
+            }
+        }
+        return null
     }
 
     /** A quarter-degree sighting grid over the state's bounds, for a state with no ranges file yet. */

@@ -441,8 +441,7 @@ def test_private_player(client, fake):
 
 
 def test_feed_by_state_and_global(client, fake):
-    ana, nina = signup(client, "ana"), signup(client, "nina")
-    client.patch("/me", headers=nina, json={"state": "NC"})
+    ana, nina = signup(client, "ana"), signup(client, "nina", state="NC")
     catch(client, fake, ana, "coyote", latitude=36.97, longitude=-122.03)    # Santa Cruz, CA
     catch(client, fake, ana, "raccoon", latitude=35.78, longitude=-78.64)    # Raleigh, NC (on a trip)
     catch(client, fake, nina, "coyote")                                      # no location, NC player
@@ -546,9 +545,7 @@ def test_friend_field_guide_places(client, fake):
     catch(client, fake, nina, "american_black_bear")         # on both state lists
     g = client.get("/users/nina/collection", headers=ana).json()
     assert [(p["state"], p["caught"]) for p in g["places"]] == [("NC", 1)]   # counts only where captured
-    client.patch("/me", json={"state": "CA"}, headers=nina)
-    catch(client, fake, nina, "american_black_bear")
-    client.patch("/me", json={"state": "NC"}, headers=nina)
+    catch(client, fake, nina, "american_black_bear", latitude=36.97, longitude=-122.03)   # on a trip to CA
     g = client.get("/users/nina/collection", headers=ana).json()
     places = {p["state"]: p for p in g["places"]}
     assert places["NC"]["caught"] == 1 and places["CA"]["caught"] == 1 and places["CA"]["name"]
