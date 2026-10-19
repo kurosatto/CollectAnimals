@@ -8,7 +8,7 @@
        "NC": ["northern_cardinal", "eastern_gray_squirrel", "eastern_box_turtle", "loggerhead_sea_turtle",
               "pine_barrens_treefrog", "marbled_salamander", "eastern_tiger_swallowtail", "western_honey_bee",
               "scotch_bonnet", "red_drum"]}},
-    {"id": "backyard", "title": "Backyard buddies",
+    {"id": "backyard", "title": "Backyard visitors",
      "description": "Animals you can find close to home.",
      "species": ["american_crow", "house_finch", "california_scrub_jay", "american_robin", "northern_mockingbird",
                  "black_phoebe", "annas_hummingbird", "western_fence_lizard", "western_gray_squirrel",

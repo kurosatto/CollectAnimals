@@ -1101,7 +1101,7 @@ function addTile(grid, e, i, tier, owner = null) {
 
 // Bonds: six field notes per captured animal, each a heart (app/bonds.py).
 const BOND_MAX = 6;
-const BOND_TITLES = ["Met", "Familiar", "Regular", "Friend", "Good friend", "Lifelong friend"];
+const BOND_TITLES = ["Met", "Neighbor", "Regular", "Friend", "Good friend", "Lifelong friend"];
 function heartsEl(n, max = BOND_MAX) {
   const h = el("span", "hearts");
   h.append("♥".repeat(n));

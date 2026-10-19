@@ -28,7 +28,7 @@ PLACE_KM = 1.0
 # The "Great shot" note: a photo with at least this many stars (of 5).
 GREAT_SHOT_STARS = 4
 
-TITLES = ["Met", "Familiar", "Regular", "Friend", "Good friend", "Lifelong friend"]
+TITLES = ["Met", "Neighbor", "Regular", "Friend", "Good friend", "Lifelong friend"]
 
 # (id, title, how it's ticked)
 NOTES = [
