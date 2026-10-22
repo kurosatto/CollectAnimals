@@ -22,6 +22,7 @@ from sqlalchemy.orm import Session
 from . import classifier as clf
 from . import dex
 from . import avatars, bonds, goals, household, limits, notices, places, scoring, social, weather
+from .safety import is_admin, router as safety_router
 from . import states as st
 from .auth import DUMMY_HASH, create_token, current_user, hash_password, optional_user, verify_password
 from .classifier import OTHER_LABEL, Prediction
@@ -176,6 +177,7 @@ async def security_headers(request: Request, call_next):
     return response
 
 app.include_router(social.router)
+app.include_router(safety_router)
 app.include_router(notices.router)
 # Third-party browser libraries, served from here so the app works without a CDN.
 app.mount("/vendor", StaticFiles(directory=STATIC_DIR / "vendor"), name="vendor")
@@ -390,6 +392,7 @@ def user_out(db: Session, user: User) -> UserOut:
     out = UserOut.model_validate(user)
     out.unlocked_states = unlocked_states(db, user)
     out.avatar = avatars.avatar_of(user)
+    out.is_admin = is_admin(user)
     return out
 
 

@@ -137,6 +137,12 @@
   .comments .c { line-height:1.35; overflow-wrap:anywhere; }
   .comments .c .when { color:var(--muted); font-size:.75rem; margin-left:4px; }
   .comments .c .x { background:none; border:none; color:var(--muted); padding:0 4px; font-size:.8rem; }
+  .flagged { color:#c0392b; font-size:.8rem; }
+  #report form label { display:block; margin:4px 0; }
+  #report textarea { width:100%; box-sizing:border-box; min-height:60px; font:inherit; }
+  .report-item { border-top:1px solid var(--line); padding:10px 0; }
+  .report-item img { max-width:220px; max-height:160px; border-radius:8px; display:block; margin:6px 0; }
+  .danger { color:#c0392b; }
   .comments form { display:flex; flex-wrap:wrap; gap:6px; }
   .comments form input { flex:1 1 120px; width:0; min-width:0; padding:6px 8px; }
   .comments form button { padding:6px 10px; }
@@ -362,6 +368,7 @@
     <button class="link hidden" id="install">Install app</button>
     <div id="who" class="hidden"><button class="link" id="username"></button>
       <button class="link" id="my-state" title="Your states: your Field Guide, Parks and maps follow your main state, and friends see it first">📍</button>
+      <button class="link hidden" id="reports-open" title="Reports from players">🚩 Reports</button>
       <button class="link" id="logout">Log out</button></div>
     </div>
   </header>
@@ -391,6 +398,7 @@
     </form>
     <p class="muted"><button class="link" id="toggle">Need an account? Sign up</button></p>
     <p id="auth-error" style="color:#c0392b"></p>
+    <p class="muted" style="font-size:.85rem">For players 13 and older. <a href="/privacy" target="_blank" rel="noopener" style="color:var(--accent)">Privacy policy</a></p>
     </div>
     <ul class="pitch-list">
       <li><img src="/sprites/ui_tab_capture.png" alt="">Photograph real animals and find out what you met</li>
@@ -526,6 +534,27 @@
     <button class="close" id="album-close" aria-label="Close">×</button>
   </div>
   <div id="album-photos"></div>
+</div></dialog>
+<dialog id="report"><div class="dex">
+  <div class="dex-head"><div><h2 id="report-title">Report</h2>
+    <div class="muted">A moderator will look at it. They won't tell the player who reported them.</div></div>
+    <button class="close" id="report-close" aria-label="Close">×</button></div>
+  <form id="report-form">
+    <label><input type="radio" name="reason" value="bullying" required> Bullying or mean</label>
+    <label><input type="radio" name="reason" value="inappropriate"> Inappropriate (violence, nudity, gross)</label>
+    <label><input type="radio" name="reason" value="personal_info"> Shows someone's personal info or face</label>
+    <label><input type="radio" name="reason" value="spam"> Spam</label>
+    <label><input type="radio" name="reason" value="not_animal"> Not an animal photo</label>
+    <label><input type="radio" name="reason" value="other"> Something else</label>
+    <textarea id="report-details" maxlength="500" placeholder="Anything else the moderator should know (optional)"></textarea>
+    <p><button type="submit">Send report</button></p>
+    <p id="report-msg" class="muted"></p>
+  </form>
+</div></dialog>
+<dialog id="reports"><div class="dex">
+  <div class="dex-head"><div><h2>Reports</h2><div class="muted">What players flagged. Removed photos stay visible to their owner only.</div></div>
+    <button class="close" id="reports-close" aria-label="Close">×</button></div>
+  <div id="reports-list"></div>
 </div></dialog>
 <link rel="stylesheet" href="/vendor/leaflet/leaflet.css">
 <script src="/vendor/leaflet/leaflet.js"></script>
@@ -1496,6 +1525,8 @@ function photoCard(p, { showSpecies = false, onChange, compact = false } = {}) {
     meta.append(a);
   } else if (p.place) meta.append(el("span", "muted", p.place));
   meta.append(reactions(p, meta, onChange));
+  if (p.hidden) meta.append(el("span", "flagged", "Hidden from others after reports"));
+  if (!p.is_mine) meta.append(reportButton({ photo_id: p.id }, "this photo"));
   if (p.is_mine) {
     const del = el("button", "like ghost", "Delete photo");
     del.onclick = async () => {
@@ -1540,6 +1571,8 @@ function openViewer(p, onClose, onDeleted) {
   }));
   const row = reactions(p, side);
   side.append(row);
+  if (p.hidden) side.append(el("div", "flagged", "Hidden from other players after reports"));
+  if (!p.is_mine) side.append(reportButton({ photo_id: p.id }, "this photo"));
   if (p.is_mine && onDeleted) {
     const del = el("button", "like ghost", "Delete photo");
     del.onclick = async () => {
@@ -1613,6 +1646,11 @@ function commentsPanel(p, onCount) {
         catch (err) { alert(err.message); }
       };
       d.append(x);
+    }
+    if (!c.is_mine) {
+      const f = el("button", "x", "⚑"); f.type = "button"; f.title = "Report comment";
+      f.onclick = () => openReport({ comment_id: c.id }, "this comment");
+      d.append(f);
     }
     return d;
   };
@@ -1756,6 +1794,22 @@ async function openProfile(username) {
     api(`/friends/requests/${name}/accept`, { method: "POST" }));
   else if (u.friendship === "requested") act.append(el("span", "muted", "Friend request sent"));
   else if (u.friendship === "friends") act.append(el("span", "muted", "✓ Friends"));
+  if (u.friendship === "blocked") {
+    act.append(el("span", "muted", "You blocked this player. "));
+    friendBtn("Unblock", "ghost", () => api(`/blocks/${name}`, { method: "DELETE" }));
+  } else if (u.friendship !== "self") {
+    const blk = el("button", "ghost", "Block");
+    blk.onclick = async () => {
+      if (!confirm(`Block ${u.username}? You won't see each other's photos or comments, and they can't add you.`)) return;
+      try {
+        await api("/blocks", { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: u.username }) });
+        openProfile(u.username); loadFriends(); loadFeed();
+      } catch (err) { alert(err.message); }
+    };
+    act.append(blk);
+    act.append(reportButton({ username: u.username }, u.username));
+  }
   if (u.is_bot) act.append(el("p", "muted", "A bot friend: a sample player who comes with the game."));
   if (act.childNodes.length) box.append(act);
   // Your own profile: pick your picture.
@@ -1850,8 +1904,117 @@ async function openProfile(username) {
     ach.append(d);
   }
   box.append(ach);
-
+  if (mine) accountSection(box);
 }
+
+// Your own profile ends with account things: blocked players, the privacy
+// policy and deleting the account.
+async function accountSection(box) {
+  box.append(el("h3", "", "Account"));
+  const blocked = el("div");
+  box.append(blocked);
+  try {
+    const names = await api("/blocks");
+    if (names.length) blocked.append(el("p", "muted", "Players you blocked:"));
+    names.forEach((n) => {
+      const row = el("div", "profile-actions");
+      const b = el("button", "ghost", "Unblock");
+      b.onclick = async () => { await api(`/blocks/${encodeURIComponent(n)}`, { method: "DELETE" }); row.remove(); loadFeed(); };
+      row.append(el("span", "", n + " "), b);
+      blocked.append(row);
+    });
+  } catch {}
+  const links = el("p");
+  const pol = el("a", "", "Privacy policy"); pol.href = "/privacy"; pol.target = "_blank"; pol.rel = "noopener";
+  links.append(pol);
+  const del = el("button", "ghost danger", "Delete account");
+  del.onclick = async () => {
+    if (!confirm("Delete your account? Your photos, Field Guide, friends, likes and comments are all deleted for good.")) return;
+    const pw = prompt("Type your password to delete your account:");
+    if (!pw) return;
+    try {
+      await api("/me", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: pw }) });
+      await pushUnsubscribe().catch(() => {});
+      $("album").close();
+      setToken(null);
+      alert("Your account is deleted.");
+    } catch (err) { alert(err.message); }
+  };
+  box.append(links, del);
+}
+
+// --- reports and moderation ------------------------------------------------------
+
+let reportTarget = null;
+function reportButton(target, label) {
+  const b = el("button", "like ghost", "⚑ Report");
+  b.type = "button"; b.title = `Report ${label}`;
+  b.onclick = (e) => { e.stopPropagation(); openReport(target, label); };
+  return b;
+}
+function openReport(target, label) {
+  reportTarget = target;
+  $("report-title").textContent = `Report ${label}`;
+  $("report-form").reset();
+  $("report-msg").textContent = "";
+  $("report").showModal();
+}
+$("report-close").onclick = () => $("report").close();
+$("report-form").onsubmit = async (e) => {
+  e.preventDefault();
+  const reason = new FormData(e.target).get("reason");
+  try {
+    const r = await api("/reports", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...reportTarget, reason, details: $("report-details").value.trim() || null }) });
+    $("report-msg").textContent = r.hidden ? "Thanks. It's hidden until a moderator looks at it." : "Thanks, we'll take a look.";
+    setTimeout(() => $("report").close(), 1200);
+    if (r.hidden) loadFeed();
+  } catch (err) { $("report-msg").textContent = err.message; }
+};
+
+const REASON_NAMES = { bullying: "bullying", inappropriate: "inappropriate", personal_info: "personal info",
+                       spam: "spam", not_animal: "not an animal", other: "other" };
+async function openReports() {
+  const list = $("reports-list");
+  list.textContent = "Loading…";
+  if (!$("reports").open) $("reports").showModal();
+  let items;
+  try { items = await api("/admin/reports"); } catch (err) { list.textContent = err.message; return; }
+  list.innerHTML = "";
+  if (!items.length) list.append(el("p", "muted", "Nothing to review."));
+  for (const it of items) {
+    const d = el("div", "report-item");
+    const what = { photo: `Photo${it.species ? ` of ${it.species}` : ""}`, comment: "Comment", user: "Player" }[it.kind];
+    d.append(el("strong", "", `${what} by ${it.username || "?"}`),
+             el("div", "muted", `${it.reports} report${it.reports > 1 ? "s" : ""}: ` +
+               Object.entries(it.reasons).map(([k, n]) => `${REASON_NAMES[k] || k} ×${n}`).join(", ") +
+               (it.hidden ? " · hidden now" : "")));
+    if (it.photo_url) { const img = el("img"); img.src = it.photo_url; img.alt = "Reported photo"; d.append(img); }
+    if (it.comment) d.append(el("p", "", `“${it.comment}”`));
+    it.details.forEach((t) => d.append(el("p", "muted", `“${t}”`)));
+    const row = el("div", "profile-actions");
+    const act = (label, action, cls, ask) => {
+      const b = el("button", cls, label);
+      b.onclick = async () => {
+        if (ask && !confirm(ask)) return;
+        try {
+          await api("/admin/reports/resolve", { method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ kind: it.kind, id: it.id, action }) });
+          d.remove();
+        } catch (err) { alert(err.message); }
+      };
+      row.append(b);
+    };
+    if (it.kind !== "user") act("Remove", "remove", "");
+    act("It's fine", "keep", "ghost");
+    act("Delete their account", "delete_account", "ghost danger",
+        `Delete ${it.username}'s account and everything in it? This can't be undone.`);
+    d.append(row);
+    list.append(d);
+  }
+}
+$("reports-open").onclick = openReports;
+$("reports-close").onclick = () => $("reports").close();
 $("album-close").onclick = () => $("album").close();
 $("album").addEventListener("close", habLeave);
 $("album").onclick = (e) => { if (e.target === $("album")) $("album").close(); };
@@ -2355,6 +2518,8 @@ function selectHotspot(i) {
 $("dex-close").onclick = () => $("dex").close();
 $("dex").onclick = (e) => { if (e.target === $("dex")) $("dex").close(); };
 
+// A "new report" notification opens /#reports (moderators only).
+let openReportsOnStart = location.hash === "#reports";
 async function render() {
   const authed = !!token;
   $("auth").classList.toggle("hidden", authed);
@@ -2370,6 +2535,9 @@ async function render() {
       const me = await api("/me");
       $("username").replaceChildren(avatarImg(me.avatar, "small"), me.username);
       $("share-feed").checked = me.show_in_feed !== false;
+      $("reports-open").classList.toggle("hidden", !me.is_admin);
+      if (me.is_admin && openReportsOnStart) openReports();
+      openReportsOnStart = false;
       await useState(me.state);
       markLocked(me.unlocked_states);
       loadCollection(); loadFriends(); loadFeed(); botWelcome(me.username);

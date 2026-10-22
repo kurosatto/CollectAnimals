@@ -35,6 +35,8 @@ class UserOut(BaseModel):
     avatar: int | None = 1
     # The states this player can switch to; the rest show locked until they choose one.
     unlocked_states: list[str] = []
+    # Can review reports (ADMIN_USERNAMES).
+    is_admin: bool = False
 
 
 class SettingsIn(BaseModel):
@@ -282,6 +284,8 @@ class PhotoOut(BaseModel):
     stars: int | None = None
     # Only on your own photos: the exact time and place, to show and fix.
     where_when: WhereWhenOut | None = None
+    # Your own photo is hidden from others (reported, or removed by a moderator).
+    hidden: bool = False
 
 
 class CommentIn(BaseModel):

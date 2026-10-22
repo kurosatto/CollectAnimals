@@ -246,11 +246,14 @@ def activity(since: datetime | None = Query(None), user: User = Depends(current_
     if since is None:
         return out
     since = since.astimezone(timezone.utc) if since.tzinfo else since.replace(tzinfo=timezone.utc)
+    from .social import blocked_ids
+    blocked = blocked_ids(db, user.id)
     likes = db.execute(
         select(PhotoLike.photo_id, Species.common_name, User.username)
         .join(AlbumPhoto, AlbumPhoto.id == PhotoLike.photo_id).join(Species, Species.id == AlbumPhoto.species_id)
         .join(User, User.id == PhotoLike.user_id)
-        .where(AlbumPhoto.user_id == user.id, PhotoLike.created_at > since, PhotoLike.created_at <= now)
+        .where(AlbumPhoto.user_id == user.id, PhotoLike.created_at > since, PhotoLike.created_at <= now,
+               PhotoLike.user_id.not_in(blocked))
         .order_by(PhotoLike.created_at.desc())).all()
     by_photo: dict[int, dict] = {}
     for photo_id, name, who in likes:
@@ -262,7 +265,7 @@ def activity(since: datetime | None = Query(None), user: User = Depends(current_
     comments = db.execute(
         select(PhotoComment, Species.common_name)
         .join(AlbumPhoto, AlbumPhoto.id == PhotoComment.photo_id).join(Species, Species.id == AlbumPhoto.species_id)
-        .where(AlbumPhoto.user_id == user.id, PhotoComment.user_id != user.id,
+        .where(AlbumPhoto.user_id == user.id, PhotoComment.user_id != user.id, PhotoComment.user_id.not_in(blocked),
                PhotoComment.created_at > since, PhotoComment.created_at <= now)
         .order_by(PhotoComment.created_at.desc()).limit(20)).all()
     out["comments"] = [{"photo_id": c.photo_id, "species": name, "username": c.user.username, "body": c.body,

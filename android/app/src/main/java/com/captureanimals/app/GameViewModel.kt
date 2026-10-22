@@ -185,6 +185,15 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         _state.update { it.copy(account = null, collection = store.load(it.stateCode), result = null, week = null) }
     }
 
+    /** Delete the account on the server (needs the password), then carry on offline. */
+    fun deleteAccount(password: String, done: (String?) -> Unit) {
+        viewModelScope.launch {
+            val err = runCatching { Online.deleteAccount(password) }.exceptionOrNull()?.let { it.message ?: "Something went wrong" }
+            if (err == null) signOut()
+            done(err)
+        }
+    }
+
     fun setServer(url: String?) {
         Online.setManualUrl(url)
         _state.update { it.copy(server = Online.base) }

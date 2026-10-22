@@ -48,6 +48,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -63,6 +64,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
@@ -81,6 +83,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 import java.text.DateFormat
 import java.util.Date
 
@@ -275,6 +278,27 @@ class SocialViewModel(app: Application) : AndroidViewModel(app) {
         then()
     }
 
+    /** Report a photo, comment or player; [done] gets the line to show. */
+    fun report(target: JSONObject, reason: String, details: String?, done: (String) -> Unit) {
+        viewModelScope.launch {
+            runCatching { Online.report(target, reason, details) }
+                .onSuccess { hidden ->
+                    done(if (hidden) "Thanks. It's hidden until a moderator looks at it." else "Thanks, we'll take a look.")
+                    if (hidden) loadFeed()
+                }
+                .onFailure { done(it.message ?: "Couldn't send the report") }
+        }
+    }
+
+    /** Block a player: their photos and comments disappear and they can't add you. */
+    fun block(username: String) = run {
+        Online.block(username)
+        _state.update { it.copy(viewing = null, commentsFor = null, comments = null, message = "Blocked $username") }
+        reloadFriends()
+        val (photos, next) = Online.feed(_state.value.feedScope, _state.value.feedState, null)
+        _state.update { it.copy(feed = photos, feedNext = next) }
+    }
+
     fun clear() = _state.update { SocialState() }
 }
 
@@ -351,6 +375,8 @@ fun AccountDialog(state: UiState, vm: GameViewModel, onDismiss: () -> Unit) {
                 TextButton(onClick = { signUp = !signUp }, contentPadding = PaddingValues(0.dp)) {
                     Text(if (signUp) "Have an account? Log in" else "Need an account? Sign up")
                 }
+                Text("For players 13 and older.", style = MaterialTheme.typography.bodySmall)
+                PrivacyLink()
             } else {
                 // Your profile picture: tap one of the ten to switch.
                 Text("Your picture", style = MaterialTheme.typography.titleSmall)
@@ -369,6 +395,9 @@ fun AccountDialog(state: UiState, vm: GameViewModel, onDismiss: () -> Unit) {
                     Text("Show my captures in the news feed", Modifier.weight(1f))
                     Switch(acct.showInFeed, onCheckedChange = vm::setShowInFeed)
                 }
+                BlockedPlayers()
+                PrivacyLink()
+                DeleteAccount(vm, onDismiss)
             }
             HorizontalDivider()
             Text(if (state.server != null) "Game server: online" else "Game server: can't be found right now",
@@ -445,6 +474,8 @@ private fun Comments(s: SocialState, social: SocialViewModel, p: OnlinePhoto) {
                         }
                         if (c.canDelete) TextButton(onClick = { social.deleteComment(c) },
                             contentPadding = PaddingValues(0.dp)) { Text("Delete") }
+                        if (!c.isMine) ReportButton("this comment", social, offerBlock = c.username) {
+                            JSONObject().put("comment_id", c.id) }
                     }
                 }
             }
@@ -511,6 +542,10 @@ fun PhotoViewer(s: SocialState, social: SocialViewModel, parks: List<Park> = emp
                     if (p.isMine && onDelete != null) {
                         TextButton(onClick = { onDelete(p) }, contentPadding = PaddingValues(0.dp)) { Text("Delete photo") }
                     }
+                    if (p.isMine && p.hidden) Text("Hidden from other players after reports",
+                        color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    if (!p.isMine) ReportButton("this photo", social, offerBlock = p.username) {
+                        JSONObject().put("photo_id", p.id) }
                     HorizontalDivider()
                     Comments(s, social, p)
                 }
@@ -792,4 +827,124 @@ fun OnlinePhotosScreen(social: SocialViewModel, onOpenDex: (String) -> Unit, onD
             dismissButton = { TextButton(onClick = { confirm = null }) { Text("Cancel") } },
         )
     }
+}
+
+
+// --- Safety: privacy policy, blocking, reports, deleting the account ---------------------
+
+@Composable
+private fun PrivacyLink() {
+    val uri = LocalUriHandler.current
+    val server = Online.base ?: return
+    TextButton(onClick = { runCatching { uri.openUri("$server/privacy") } }, contentPadding = PaddingValues(0.dp)) {
+        Text("Privacy policy")
+    }
+}
+
+/** Players you blocked, each with Unblock. */
+@Composable
+private fun BlockedPlayers() {
+    var names by remember { mutableStateOf<List<String>>(emptyList()) }
+    var reload by remember { mutableStateOf(0) }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    LaunchedEffect(reload) { names = runCatching { Online.blocks() }.getOrDefault(emptyList()) }
+    if (names.isEmpty()) return
+    Text("Players you blocked", style = MaterialTheme.typography.titleSmall)
+    names.forEach { n ->
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(n, Modifier.weight(1f))
+            TextButton(onClick = { scope.launch { runCatching { Online.unblock(n) }; reload++ } }) { Text("Unblock") }
+        }
+    }
+}
+
+/** Delete account: asks for the password, then deletes everything on the server. */
+@Composable
+private fun DeleteAccount(vm: GameViewModel, onDismiss: () -> Unit) {
+    var asking by remember { mutableStateOf(false) }
+    TextButton(onClick = { asking = true }, contentPadding = PaddingValues(0.dp)) {
+        Text("Delete account", color = MaterialTheme.colorScheme.error)
+    }
+    if (!asking) return
+    var password by remember { mutableStateOf("") }
+    var busy by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    AlertDialog(onDismissRequest = { if (!busy) asking = false },
+        title = { Text("Delete your account?") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Your photos, Field Guide, friends, likes and comments on the server are all deleted for good. " +
+                    "Captures saved on this phone stay here for offline play.")
+                OutlinedTextField(password, { password = it }, label = { Text("Password") }, singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password))
+                error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            }
+        },
+        confirmButton = {
+            Button(enabled = password.isNotEmpty() && !busy, onClick = {
+                busy = true
+                vm.deleteAccount(password) { err ->
+                    busy = false
+                    if (err == null) { asking = false; onDismiss() } else error = err
+                }
+            }) { Text("Delete for good") }
+        },
+        dismissButton = { TextButton(enabled = !busy, onClick = { asking = false }) { Text("Cancel") } })
+}
+
+private val REPORT_REASONS = listOf(
+    "bullying" to "Bullying or mean",
+    "inappropriate" to "Inappropriate (violence, nudity, gross)",
+    "personal_info" to "Shows someone's personal info or face",
+    "spam" to "Spam",
+    "not_animal" to "Not an animal photo",
+    "other" to "Something else",
+)
+
+/** "Report" (and, for another player's content, "Block"), each with its own dialog. */
+@Composable
+fun ReportButton(label: String, social: SocialViewModel, offerBlock: String? = null, target: () -> JSONObject) {
+    var open by remember { mutableStateOf(false) }
+    var confirmBlock by remember { mutableStateOf(false) }
+    Row {
+        TextButton(onClick = { open = true }, contentPadding = PaddingValues(horizontal = 4.dp)) { Text("Report") }
+        if (offerBlock != null) TextButton(onClick = { confirmBlock = true },
+            contentPadding = PaddingValues(horizontal = 4.dp)) { Text("Block") }
+    }
+    if (confirmBlock && offerBlock != null) AlertDialog(onDismissRequest = { confirmBlock = false },
+        title = { Text("Block $offerBlock?") },
+        text = { Text("You won't see each other's photos or comments, and they can't add you as a friend.") },
+        confirmButton = { Button(onClick = { confirmBlock = false; social.block(offerBlock) }) { Text("Block") } },
+        dismissButton = { TextButton(onClick = { confirmBlock = false }) { Text("Cancel") } })
+    if (!open) return
+    var reason by remember { mutableStateOf<String?>(null) }
+    var details by remember { mutableStateOf("") }
+    var result by remember { mutableStateOf<String?>(null) }
+    var busy by remember { mutableStateOf(false) }
+    AlertDialog(onDismissRequest = { open = false },
+        title = { Text("Report $label") },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                Text("A moderator will look at it. The player isn't told who reported them.",
+                    style = MaterialTheme.typography.bodySmall)
+                REPORT_REASONS.forEach { (key, text) ->
+                    Row(Modifier.fillMaxWidth().clickable { reason = key }, verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(selected = reason == key, onClick = { reason = key })
+                        Text(text, style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+                OutlinedTextField(details, { if (it.length <= 500) details = it }, Modifier.fillMaxWidth(),
+                    placeholder = { Text("Anything else? (optional)") }, maxLines = 3)
+                result?.let { Text(it, Modifier.padding(top = 8.dp)) }
+            }
+        },
+        confirmButton = {
+            if (result == null) Button(enabled = reason != null && !busy, onClick = {
+                busy = true
+                social.report(target(), reason!!, details.trim()) { result = it; busy = false }
+            }) { Text("Send report") }
+            else TextButton(onClick = { open = false }) { Text("Close") }
+        },
+        dismissButton = { if (result == null) TextButton(onClick = { open = false }) { Text("Cancel") } })
 }

@@ -247,6 +247,28 @@ object Online {
     suspend fun acceptFriend(username: String) { call("POST", "/friends/requests/${q(username)}/accept") }
     suspend fun removeFriend(username: String) { call("DELETE", "/friends/${q(username)}") }
 
+    // --- Safety: blocking, reports, deleting the account --------------------------------
+
+    suspend fun blocks(): List<String> {
+        val a = JSONArray(call("GET", "/blocks"))
+        return List(a.length()) { a.getString(it) }
+    }
+    suspend fun block(username: String) { call("POST", "/blocks", JSONObject().put("username", username)) }
+    suspend fun unblock(username: String) { call("DELETE", "/blocks/${q(username)}") }
+
+    /** target is {"photo_id": n}, {"comment_id": n} or {"username": "..."}. True if it's now hidden. */
+    suspend fun report(target: JSONObject, reason: String, details: String?): Boolean {
+        target.put("reason", reason)
+        if (!details.isNullOrBlank()) target.put("details", details)
+        return JSONObject(call("POST", "/reports", target)).optBoolean("hidden")
+    }
+
+    /** Deletes the account and everything in it on the server, then signs out here. */
+    suspend fun deleteAccount(password: String) {
+        call("POST", "/me/delete", JSONObject().put("password", password))
+        setToken(null)
+    }
+
     // --- Images -----------------------------------------------------------------------
 
     private val images = object : LruCache<String, Bitmap>(24 * 1024 * 1024) {
@@ -314,6 +336,8 @@ data class OnlinePhoto(
     val score: Int? = null,
     // Only on your own photos: the exact time and place, to show and fix.
     val whereWhen: WhereWhen? = null,
+    // Your own photo is hidden from other players (reported, or removed by a moderator).
+    val hidden: Boolean = false,
 ) {
     companion object {
         fun parse(o: JSONObject): OnlinePhoto {
@@ -323,7 +347,7 @@ data class OnlinePhoto(
                 s.getString("category"), takenOn(o), o.optStringOrNull("place"), o.optStringOrNull("state"),
                 o.optInt("like_count"), o.optBoolean("liked_by_me"), o.optInt("comment_count"),
                 o.optBoolean("is_mine"), o.optBoolean("by_friend"), o.optIntOrNull("stars"),
-                o.optIntOrNull("score"), WhereWhen.parse(o.optJSONObject("where_when")))
+                o.optIntOrNull("score"), WhereWhen.parse(o.optJSONObject("where_when")), o.optBoolean("hidden"))
         }
 
         /** Midday on the photo's date (so it shows the same day in any zone), else the upload time. */

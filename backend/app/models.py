@@ -153,6 +153,9 @@ class AlbumPhoto(Base):
     species_id: Mapped[int] = mapped_column(ForeignKey("species.id"), index=True)
     capture_id: Mapped[int] = mapped_column(ForeignKey("captures.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    # Hidden from everyone but its owner: reported by several players, or removed
+    # by a moderator (app/safety.py).
+    hidden: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
 
     user: Mapped[User] = relationship()
     species: Mapped[Species] = relationship()
@@ -180,6 +183,8 @@ class PhotoComment(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     body: Mapped[str] = mapped_column(String(300))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    # Hidden from everyone but its writer after several players reported it.
+    hidden: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
 
     user: Mapped[User] = relationship()
 
@@ -213,3 +218,37 @@ class PushSubscription(Base):
     p256dh: Mapped[str] = mapped_column(String(200))
     auth: Mapped[str] = mapped_column(String(100))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class Block(Base):
+    """blocker never sees blocked's photos or comments again, and the two can't
+    friend, like or comment on each other (both ways)."""
+
+    __tablename__ = "blocks"
+    __table_args__ = (UniqueConstraint("blocker_id", "blocked_id"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    blocker_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    blocked_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    blocked: Mapped[User] = relationship(foreign_keys=[blocked_id])
+
+
+class Report(Base):
+    """A player flagged a photo, a comment or a player for a moderator to look at.
+    Exactly one of photo_id, comment_id is set for content; neither for a player."""
+
+    __tablename__ = "reports"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    reporter_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    reported_user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    photo_id: Mapped[int | None] = mapped_column(ForeignKey("album_photos.id", ondelete="CASCADE"), nullable=True)
+    comment_id: Mapped[int | None] = mapped_column(ForeignKey("photo_comments.id", ondelete="CASCADE"), nullable=True)
+    reason: Mapped[str] = mapped_column(String(32))
+    details: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    # "open" until a moderator removes the content ("removed") or keeps it ("kept").
+    status: Mapped[str] = mapped_column(String(16), default="open")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

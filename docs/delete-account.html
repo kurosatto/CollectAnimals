@@ -1,0 +1,22 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Delete your account · Capture Animals</title>
+<style>body{font:16px/1.55 system-ui,sans-serif;max-width:720px;margin:0 auto;padding:16px;color:#1d2a1f;background:#f6f8f3}
+h1{font-size:1.5rem}a{color:#2e7d32}@media (prefers-color-scheme:dark){body{background:#141a15;color:#e3ebe2}a{color:#8fd694}}</style>
+</head><body>
+<h1>Delete your Capture Animals account</h1>
+<p>Deleting your account removes everything in it right away: your photos, captures, Field Guide, likes,
+comments, friends, blocks and reports. It can't be undone.</p>
+<p><b>In the app:</b> open your account and choose <b>Delete account</b>.</p>
+<p><b>On the web:</b> <a id="go" href="#">open the delete account page on the game server</a>, then log in there
+to delete your account.</p>
+<p id="msg"></p>
+<p><a href="privacy.html">Privacy policy</a></p>
+<script>
+// The game server's address changes now and then; the app finds it the same way.
+fetch("https://raw.githubusercontent.com/kurosatto/CollectAnimals/server-url/server.json")
+  .then((r) => r.json())
+  .then((j) => { document.getElementById("go").href = j.url.replace(/\/$/, "") + "/delete-account"; })
+  .catch(() => { document.getElementById("msg").textContent =
+    "Couldn't find the game server just now. Try again later, or delete your account in the app."; });
+</script>
+</body></html>
