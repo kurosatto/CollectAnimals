@@ -209,6 +209,11 @@ function habPerches(L, state) {
     const { ix, ground, lx, ltop } = habAssateague(L);
     return [[lx - 4, ltop - 1], [lx + 5, ltop - 1], [ix - 20, ground + 1], [ix + 22, ground + 1]];
   }
+  if (state === "MI") {
+    // The tops of the bridge's two towers and the deck between them.
+    const { deck, t1, t2, ttop } = habMackinac(L);
+    return [[t1, ttop - 1], [t2, ttop - 1], [Math.round((t1 + t2) / 2) - 6, deck - 1], [Math.round((t1 + t2) / 2) + 6, deck - 1]];
+  }
   if (state === "GA") {
     // The shrimp boat's mast top, both boom tips and the cabin roof.
     const { bx, wl, mast, booms } = habShrimper(L);
@@ -230,6 +235,16 @@ function habPerches(L, state) {
     return [[bx - half + 3, ridge], [bx + half - 3, ridge], [bx - half - 8, bank], [bx + half + 8, bank]];
   }
   return [];
+}
+// The Mackinac Bridge across the Straits: deck height, the two towers and the
+// main cable's curve between and beyond them.
+function habMackinac(L) {
+  const x0 = L.sea + 4, x1 = L.w + 4, deck = L.water - 8, t1 = L.sea + Math.round((L.w - L.sea) * .3);
+  const t2 = L.sea + Math.round((L.w - L.sea) * .8), ttop = deck - 34;
+  const sag = deck - 4 - ttop, side = (d, len) => ttop + Math.pow(d / len, 1.3) * sag;
+  const cable = (x) => x < t1 ? side(t1 - x, t1 - x0) : x > t2 ? side(x - t2, x1 - t2)
+    : ttop + sag * 4 * (x - t1) * (t2 - x) / ((t2 - t1) * (t2 - t1));
+  return { x0, x1, deck, t1, t2, ttop, cable };
 }
 // A Georgia shrimp boat out on the water: its middle, waterline, mast top and the
 // tips of the two net booms.
@@ -824,6 +839,7 @@ const HAB_SHOWCASE = {
   FL: { slug: "roseate_spoonbill", common_name: "Roseate Spoonbill", category: "bird", rarity: "uncommon" },
   NY: { slug: "black_capped_chickadee", common_name: "Black-capped Chickadee", category: "bird", rarity: "common" },
   VA: { slug: "northern_cardinal", common_name: "Northern Cardinal", category: "bird", rarity: "common" },
+  MI: { slug: "american_robin", common_name: "American Robin", category: "bird", rarity: "common" },
   GA: { slug: "brown_thrasher", common_name: "Brown Thrasher", category: "bird", rarity: "common" },
   OH: { slug: "northern_cardinal", common_name: "Northern Cardinal", category: "bird", rarity: "common" },
   IL: { slug: "northern_cardinal", common_name: "Northern Cardinal", category: "bird", rarity: "common" },
@@ -1326,6 +1342,9 @@ const HAB_SCENES = {
   VA: { far: ["#4a7f52", "#5a925c", "#6ca567", "#82b878"], near: ["#3a7442", "#4a874c", "#5c9a56", "#72ad66"],
         meadow: ["#5f9a3d", "#77b04a", "#8fc35a", "#a8d36d"], dots: "forest", tree: "round",
         flowers: [["#ffffff", "#f3e6b0"], ["#f6b8cf", "#ffffff"], ["#5a7ae0", "#f6b8cf"], ["#5a7ae0", "#c4d0ff"]] },
+  MI: { far: ["#3f7a4a", "#4f8d55", "#62a061", "#79b473"], near: ["#2f6a3c", "#3d7d46", "#4f9150", "#64a55e"],
+        meadow: ["#5f9a3d", "#77b04a", "#8fc35a", "#a8d36d"], dots: "forest", tree: "pine",
+        flowers: [["#f8b8c8", "#ffffff"], ["#ffffff", "#ffe9a0"], ["#ffd84d", "#fff2a0"], ["#9a6ad8", "#ffd84d"]] },
   GA: { far: ["#5a8a4e", "#6a9c58", "#7cae64", "#92c076"], near: ["#4a7e3c", "#5a9046", "#6ca252", "#82b462"],
         meadow: ["#5f9a3d", "#77b04a", "#8fc35a", "#a8d36d"], dots: "forest", tree: "oak",
         flowers: [["#ffffff", "#f3e6b0"], ["#f27aa8", "#ffc4dc"], ["#f27aa8", "#ffc4dc"], ["#ffb08a", "#ffe0d0"]] },
@@ -1853,6 +1872,23 @@ function habBackground(L, phase, state) {
     as.onto(img, P("#2a2014"));
     const foam = P("#e9f6ff");
     for (let dx = -36; dx <= 36; dx++) if (hash2(dx, 83) > .45) img.set(ix + dx, ground + 9 + (hash2(dx, 84) > .7 ? 1 : 0), foam);
+  } else if (state === "MI") {
+    // The Mackinac Bridge: two tall towers, the main cables sweeping between them
+    // with hangers down to the deck; the cables are strung with lights at night.
+    const mb = pxLayer(W, H), { x0, x1, deck, t1, t2, ttop, cable } = habMackinac(L);
+    const tw = P("#4a6a5a", "#5e8270", "#76988a"), cb = P("#e8e2c8"), dk = P("#5a5e64", "#7a7e84"), lamp = P("#fff0b0");
+    for (let x = x0; x < Math.min(x1, W); x++) {
+      mb.set(x, deck, dk[1]); mb.set(x, deck + 1, dk[0]);
+      if (x % 6 === 0) for (let y = deck + 2; y < L.water + 2; y++) mb.set(x, y, dk[0]);  // the piers under the deck
+      const cy = Math.round(cable(x));
+      mb.set(x, cy, cb[0], night && x % 3 === 0 ? 1 : 0);
+      if (x % 4 === 0) for (let y = cy + 1; y < deck; y++) mb.set(x, y, cb[0]);
+    }
+    for (const tx of [t1, t2]) for (let y = ttop; y < L.water + 2; y++) for (let dx = -2; dx <= 2; dx++) {
+      if (Math.abs(dx) === 0 && (y - ttop) % 9 > 2 && y < deck) continue;  // daylight between the tower legs
+      mb.set(tx + dx, y, ramp(tw, .85 - (dx + 2) / 5 * .6, tx + dx, y));
+    }
+    mb.onto(img);
   } else if (state === "GA") {
     // A shrimp boat off the Georgia coast: white hull, a little wheelhouse, the
     // tall mast and two outrigger booms with their green nets hanging down.
@@ -2189,6 +2225,11 @@ function habAmbient(c, L, phase) {
     const [lx, ly] = habLiberty(L).torch, k = .25 + Math.sin(t * 3.1) * .05 + Math.sin(t * 7.3) * .03;
     c.fillStyle = `rgba(255,220,120,${k.toFixed(3)})`; c.fillRect(lx - 4, ly - 5, 10, 8);
     c.fillStyle = `rgba(255,220,120,${(k * .5).toFixed(3)})`; c.fillRect(lx - 8, ly - 3, 18, 4);
+  } else if (habState() === "MI" && phase !== "day") {
+    // The Mackinac Bridge's cables are strung with lights after dark.
+    const { x0, cable } = habMackinac(L);
+    c.fillStyle = "#fff0b0";
+    for (let x = x0 + 2; x < L.w; x += 5) c.fillRect(x, Math.round(cable(x)), 1, 1);
   } else if (habState() === "GA" && phase !== "day") {
     // The shrimp boat's masthead light and lit wheelhouse after dark.
     const { bx, wl, mast } = habShrimper(L), k = .3 + Math.sin(t * 2.3) * .05;

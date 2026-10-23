@@ -283,6 +283,12 @@
    "swim",
    "sleep"
   ],
+  "blandings_turtle": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep"
+  ],
   "blue_banded_hermit_crab": [
    "idle",
    "sleep"
@@ -298,6 +304,11 @@
    "fly",
    "sleep"
   ],
+  "blue_spotted_salamander": [
+   "idle",
+   "walk",
+   "sleep"
+  ],
   "bluegill": [
    "idle",
    "swim",
@@ -310,6 +321,11 @@
    "sleep"
   ],
   "bobcat": [
+   "idle",
+   "walk",
+   "sleep"
+  ],
+  "bold_jumping_spider": [
    "idle",
    "walk",
    "sleep"
@@ -479,6 +495,12 @@
    "fly",
    "sleep"
   ],
+  "cedar_waxwing": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep"
+  ],
   "chipping_sparrow": [
    "idle",
    "walk",
@@ -535,6 +557,12 @@
   "common_green_darner": [
    "idle",
    "fly",
+   "sleep"
+  ],
+  "common_merganser": [
+   "idle",
+   "fly",
+   "swim",
    "sleep"
   ],
   "common_pill_woodlouse": [
@@ -834,6 +862,11 @@
   "eastern_towhee": [
    "idle",
    "walk",
+   "fly",
+   "sleep"
+  ],
+  "ebony_jewelwing": [
+   "idle",
    "fly",
    "sleep"
   ],
@@ -1168,6 +1201,11 @@
    "walk",
    "sleep"
   ],
+  "japanese_beetle": [
+   "idle",
+   "walk",
+   "sleep"
+  ],
   "joro_spider": [
    "idle",
    "walk",
@@ -1256,9 +1294,19 @@
    "walk",
    "sleep"
   ],
+  "milkweed_tussock_moth": [
+   "idle",
+   "walk",
+   "sleep"
+  ],
   "monarch": [
    "idle",
    "fly",
+   "sleep"
+  ],
+  "moose": [
+   "idle",
+   "walk",
    "sleep"
   ],
   "mountain_lion": [
@@ -1513,6 +1561,11 @@
    "fly",
    "sleep"
   ],
+  "pumpkinseed": [
+   "idle",
+   "swim",
+   "sleep"
+  ],
   "purple_gallinule": [
    "idle",
    "fly",
@@ -1646,6 +1699,11 @@
    "swim",
    "sleep"
   ],
+  "rock_bass": [
+   "idle",
+   "swim",
+   "sleep"
+  ],
   "rock_pigeon": [
    "idle",
    "walk",
@@ -1655,6 +1713,12 @@
   "rock_squirrel": [
    "idle",
    "walk",
+   "sleep"
+  ],
+  "rose_breasted_grosbeak": [
+   "idle",
+   "walk",
+   "fly",
    "sleep"
   ],
   "roseate_spoonbill": [
@@ -1676,6 +1740,11 @@
   "rough_skinned_newt": [
    "idle",
    "walk",
+   "sleep"
+  ],
+  "round_goby": [
+   "idle",
+   "swim",
    "sleep"
   ],
   "royal_tern": [
@@ -1932,6 +2001,12 @@
    "walk",
    "sleep"
   ],
+  "trumpeter_swan": [
+   "idle",
+   "fly",
+   "swim",
+   "sleep"
+  ],
   "tufted_titmouse": [
    "idle",
    "walk",
@@ -2148,6 +2223,11 @@
   "yellow_garden_spider": [
    "idle",
    "walk",
+   "sleep"
+  ],
+  "yellow_perch": [
+   "idle",
+   "swim",
    "sleep"
   ],
   "yellow_rumped_warbler": [
