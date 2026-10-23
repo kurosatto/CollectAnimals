@@ -35,7 +35,7 @@ seasons in the habitat, states unlocked by where your photos were taken.
 | `backend/app/{scoring,bonds,goals,places,states,weather,household,limits,storage}.py` | Photo scores, field notes, sets/challenges, location blurring and place names, state lookup, api.weather.gov, pets-and-pests, rate limits, photo storage |
 | `backend/app/config.py` | Every setting, read from env vars (see §5) |
 | `backend/app/static/index.html` | The whole web client (~2.3k lines, vanilla JS, no build step) |
-| `backend/app/static/habitat.js` | Habitat engine (scenes per state, perches, motion, weather, seasons). **Shared with Android** |
+| `backend/app/static/habitat.js` | Habitat engine (scenes per state, perches, motion, weather, seasons, real sun and moon). **Shared with Android** |
 | `backend/app/static/sw.js`, `manifest.webmanifest`, `icons/` | PWA (install, offline Field Guide) |
 | `backend/tests/` | pytest, ~105 tests, ~2 min |
 | `android/` | Kotlin + Jetpack Compose app. Runs the ONNX model on the phone offline; talks to the server when signed in |
@@ -123,8 +123,8 @@ Useful env vars (`backend/app/config.py`): `MODEL_PATH` (default
 `backend/.secret_key`). The Web Push key lives in `backend/.vapid_private.pem`;
 losing it breaks every push subscription.
 
-Web previews: `?weather=rain,windy` and `?season=winter` force the habitat's
-weather and season.
+Web previews: `?weather=rain,windy`, `?season=winter` and
+`?at=2026-10-26T05:00:00Z` force the habitat's weather, season and sky time.
 
 ## 6. Conventions and design rules
 
