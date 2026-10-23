@@ -1,0 +1,2604 @@
+{
+ "source": "iNaturalist research-grade observations (species_counts by radius)",
+ "min_observations": 3,
+ "parks": [
+  {
+   "id": "hawaii_volcanoes_national_park",
+   "name": "Hawaii Volcanoes National Park",
+   "lat": 19.42,
+   "lon": -155.29,
+   "radius_km": 25,
+   "blurb": "Active volcanoes and rainforest; nene geese, honeycreepers and green sea turtles.",
+   "species": [
+    {
+     "slug": "kalij_pheasant",
+     "observations": 1298
+    },
+    {
+     "slug": "apapane",
+     "observations": 739
+    },
+    {
+     "slug": "hawaiian_goose",
+     "observations": 716
+    },
+    {
+     "slug": "warbling_white_eye",
+     "observations": 228
+    },
+    {
+     "slug": "hawai_i_amakihi",
+     "observations": 163
+    },
+    {
+     "slug": "common_coqui",
+     "observations": 156
+    },
+    {
+     "slug": "saffron_finch",
+     "observations": 140
+    },
+    {
+     "slug": "jacksons_chameleon",
+     "observations": 117
+    },
+    {
+     "slug": "yellow_billed_cardinal",
+     "observations": 112
+    },
+    {
+     "slug": "white_tailed_tropicbird",
+     "observations": 93
+    },
+    {
+     "slug": "northern_cardinal",
+     "observations": 70
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 70
+    },
+    {
+     "slug": "dark_flecked_garden_sunskink",
+     "observations": 67
+    },
+    {
+     "slug": "gold_dust_day_gecko",
+     "observations": 65
+    },
+    {
+     "slug": "yellow_fronted_canary",
+     "observations": 63
+    },
+    {
+     "slug": "red_billed_leiothrix",
+     "observations": 51
+    },
+    {
+     "slug": "asian_spinybacked_orbweaver",
+     "observations": 48
+    },
+    {
+     "slug": "wild_boar",
+     "observations": 43
+    },
+    {
+     "slug": "pacific_golden_plover",
+     "observations": 41
+    },
+    {
+     "slug": "green_anole",
+     "observations": 40
+    },
+    {
+     "slug": "house_sparrow",
+     "observations": 39
+    },
+    {
+     "slug": "common_myna",
+     "observations": 38
+    },
+    {
+     "slug": "i_iwi",
+     "observations": 38
+    },
+    {
+     "slug": "green_sea_turtle",
+     "observations": 34
+    },
+    {
+     "slug": "zebra_dove",
+     "observations": 29
+    },
+    {
+     "slug": "house_finch",
+     "observations": 26
+    },
+    {
+     "slug": "small_indian_mongoose",
+     "observations": 25
+    },
+    {
+     "slug": "black_witch",
+     "observations": 23
+    },
+    {
+     "slug": "common_waxbill",
+     "observations": 21
+    },
+    {
+     "slug": "gulf_fritillary",
+     "observations": 19
+    },
+    {
+     "slug": "scaly_breasted_munia",
+     "observations": 18
+    },
+    {
+     "slug": "hawaiian_garden_spider",
+     "observations": 14
+    },
+    {
+     "slug": "cane_toad",
+     "observations": 14
+    },
+    {
+     "slug": "spotted_dove",
+     "observations": 14
+    },
+    {
+     "slug": "mourning_gecko",
+     "observations": 13
+    },
+    {
+     "slug": "monarch",
+     "observations": 8
+    },
+    {
+     "slug": "thin_shelled_rock_crab",
+     "observations": 8
+    },
+    {
+     "slug": "shingle_urchin",
+     "observations": 7
+    },
+    {
+     "slug": "great_frigatebird",
+     "observations": 6
+    },
+    {
+     "slug": "hawaiian_black_nerite",
+     "observations": 6
+    },
+    {
+     "slug": "red_crested_cardinal",
+     "observations": 5
+    },
+    {
+     "slug": "asian_house_gecko",
+     "observations": 5
+    },
+    {
+     "slug": "java_sparrow",
+     "observations": 5
+    },
+    {
+     "slug": "brown_anole",
+     "observations": 5
+    },
+    {
+     "slug": "pacific_white_spotted_sea_cucumber",
+     "observations": 5
+    },
+    {
+     "slug": "valley_carpenter_bee",
+     "observations": 4
+    },
+    {
+     "slug": "hawaiian_convict_surgeonfish",
+     "observations": 4
+    },
+    {
+     "slug": "greenhouse_frog",
+     "observations": 3
+    },
+    {
+     "slug": "mottled_snake_eyed_skink",
+     "observations": 3
+    },
+    {
+     "slug": "humpback_whale",
+     "observations": 3
+    },
+    {
+     "slug": "dotted_periwinkle",
+     "observations": 3
+    },
+    {
+     "slug": "zebra_blenny",
+     "observations": 3
+    },
+    {
+     "slug": "blackspot_sergeant",
+     "observations": 3
+    },
+    {
+     "slug": "indo_pacific_rock_boring_urchin",
+     "observations": 3
+    },
+    {
+     "slug": "wandering_tattler",
+     "observations": 3
+    },
+    {
+     "slug": "brahminy_blindsnake",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "haleakala_national_park",
+   "name": "Haleakala National Park",
+   "lat": 20.71,
+   "lon": -156.17,
+   "radius_km": 15,
+   "blurb": "Volcanic crater and cloud forest; nene geese, honeycreepers and petrels.",
+   "species": [
+    {
+     "slug": "i_iwi",
+     "observations": 694
+    },
+    {
+     "slug": "hawaiian_goose",
+     "observations": 460
+    },
+    {
+     "slug": "apapane",
+     "observations": 394
+    },
+    {
+     "slug": "hawai_i_amakihi",
+     "observations": 245
+    },
+    {
+     "slug": "hawaiian_garden_spider",
+     "observations": 111
+    },
+    {
+     "slug": "red_crested_cardinal",
+     "observations": 102
+    },
+    {
+     "slug": "small_indian_mongoose",
+     "observations": 92
+    },
+    {
+     "slug": "house_finch",
+     "observations": 82
+    },
+    {
+     "slug": "warbling_white_eye",
+     "observations": 81
+    },
+    {
+     "slug": "house_sparrow",
+     "observations": 80
+    },
+    {
+     "slug": "green_sea_turtle",
+     "observations": 64
+    },
+    {
+     "slug": "northern_cardinal",
+     "observations": 48
+    },
+    {
+     "slug": "red_billed_leiothrix",
+     "observations": 45
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 42
+    },
+    {
+     "slug": "asian_spinybacked_orbweaver",
+     "observations": 34
+    },
+    {
+     "slug": "green_anole",
+     "observations": 31
+    },
+    {
+     "slug": "pacific_golden_plover",
+     "observations": 28
+    },
+    {
+     "slug": "common_myna",
+     "observations": 28
+    },
+    {
+     "slug": "gold_dust_day_gecko",
+     "observations": 27
+    },
+    {
+     "slug": "white_tailed_tropicbird",
+     "observations": 22
+    },
+    {
+     "slug": "wild_boar",
+     "observations": 20
+    },
+    {
+     "slug": "gulf_fritillary",
+     "observations": 20
+    },
+    {
+     "slug": "african_giant_snail",
+     "observations": 20
+    },
+    {
+     "slug": "scaly_breasted_munia",
+     "observations": 18
+    },
+    {
+     "slug": "jacksons_chameleon",
+     "observations": 17
+    },
+    {
+     "slug": "zebra_dove",
+     "observations": 16
+    },
+    {
+     "slug": "great_frigatebird",
+     "observations": 15
+    },
+    {
+     "slug": "monarch",
+     "observations": 14
+    },
+    {
+     "slug": "java_sparrow",
+     "observations": 14
+    },
+    {
+     "slug": "western_cattle_egret",
+     "observations": 12
+    },
+    {
+     "slug": "spotted_dove",
+     "observations": 12
+    },
+    {
+     "slug": "chestnut_munia",
+     "observations": 11
+    },
+    {
+     "slug": "dark_flecked_garden_sunskink",
+     "observations": 10
+    },
+    {
+     "slug": "mourning_gecko",
+     "observations": 10
+    },
+    {
+     "slug": "thin_shelled_rock_crab",
+     "observations": 9
+    },
+    {
+     "slug": "chital",
+     "observations": 8
+    },
+    {
+     "slug": "hawaiian_monk_seal",
+     "observations": 8
+    },
+    {
+     "slug": "brown_anole",
+     "observations": 7
+    },
+    {
+     "slug": "cane_toad",
+     "observations": 7
+    },
+    {
+     "slug": "shingle_urchin",
+     "observations": 5
+    },
+    {
+     "slug": "asian_house_gecko",
+     "observations": 5
+    },
+    {
+     "slug": "black_witch",
+     "observations": 5
+    },
+    {
+     "slug": "wrinkled_frog",
+     "observations": 4
+    },
+    {
+     "slug": "valley_carpenter_bee",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "hanauma_bay_nature_preserve",
+   "name": "Hanauma Bay Nature Preserve",
+   "lat": 21.27,
+   "lon": -157.69,
+   "radius_km": 3,
+   "blurb": "Coral bay on Oahu; green sea turtles, parrotfish and tropical reef fish.",
+   "species": [
+    {
+     "slug": "red_tailed_tropicbird",
+     "observations": 385
+    },
+    {
+     "slug": "pacific_orange_spine_unicornfish",
+     "observations": 341
+    },
+    {
+     "slug": "hawaiian_convict_surgeonfish",
+     "observations": 326
+    },
+    {
+     "slug": "western_cattle_egret",
+     "observations": 267
+    },
+    {
+     "slug": "red_crested_cardinal",
+     "observations": 212
+    },
+    {
+     "slug": "dusky_surgeonfish",
+     "observations": 210
+    },
+    {
+     "slug": "blackspot_sergeant",
+     "observations": 199
+    },
+    {
+     "slug": "threadfin_butterflyfish",
+     "observations": 174
+    },
+    {
+     "slug": "indo_pacific_rock_boring_urchin",
+     "observations": 173
+    },
+    {
+     "slug": "hawaiian_spotted_toby",
+     "observations": 161
+    },
+    {
+     "slug": "wedgetail_triggerfish",
+     "observations": 156
+    },
+    {
+     "slug": "small_indian_mongoose",
+     "observations": 149
+    },
+    {
+     "slug": "saddle_wrasse",
+     "observations": 147
+    },
+    {
+     "slug": "zebra_dove",
+     "observations": 145
+    },
+    {
+     "slug": "pacific_golden_plover",
+     "observations": 135
+    },
+    {
+     "slug": "whitemouth_moray",
+     "observations": 119
+    },
+    {
+     "slug": "thin_shelled_rock_crab",
+     "observations": 115
+    },
+    {
+     "slug": "shingle_urchin",
+     "observations": 102
+    },
+    {
+     "slug": "raccoon_butterflyfish",
+     "observations": 101
+    },
+    {
+     "slug": "white_rumped_shama",
+     "observations": 97
+    },
+    {
+     "slug": "yellowstripe_goatfish",
+     "observations": 95
+    },
+    {
+     "slug": "moorish_idol",
+     "observations": 92
+    },
+    {
+     "slug": "pacific_white_spotted_sea_cucumber",
+     "observations": 90
+    },
+    {
+     "slug": "hawaiian_snakehead_cowrie",
+     "observations": 78
+    },
+    {
+     "slug": "spotted_boxfish",
+     "observations": 74
+    },
+    {
+     "slug": "gulf_fritillary",
+     "observations": 71
+    },
+    {
+     "slug": "red_vented_bulbul",
+     "observations": 62
+    },
+    {
+     "slug": "common_myna",
+     "observations": 59
+    },
+    {
+     "slug": "yellow_tang",
+     "observations": 57
+    },
+    {
+     "slug": "day_octopus",
+     "observations": 56
+    },
+    {
+     "slug": "red_pencil_urchin",
+     "observations": 54
+    },
+    {
+     "slug": "gold_dust_day_gecko",
+     "observations": 51
+    },
+    {
+     "slug": "zebra_blenny",
+     "observations": 51
+    },
+    {
+     "slug": "black_triggerfish",
+     "observations": 50
+    },
+    {
+     "slug": "great_frigatebird",
+     "observations": 49
+    },
+    {
+     "slug": "brown_anole",
+     "observations": 49
+    },
+    {
+     "slug": "dotted_periwinkle",
+     "observations": 46
+    },
+    {
+     "slug": "spotted_dove",
+     "observations": 46
+    },
+    {
+     "slug": "northern_cardinal",
+     "observations": 43
+    },
+    {
+     "slug": "hawaiian_garden_spider",
+     "observations": 43
+    },
+    {
+     "slug": "common_waxbill",
+     "observations": 41
+    },
+    {
+     "slug": "red_footed_booby",
+     "observations": 40
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 36
+    },
+    {
+     "slug": "hawaiian_black_nerite",
+     "observations": 34
+    },
+    {
+     "slug": "blue_billed_white_tern",
+     "observations": 31
+    },
+    {
+     "slug": "wedge_tailed_shearwater",
+     "observations": 27
+    },
+    {
+     "slug": "red_billed_leiothrix",
+     "observations": 25
+    },
+    {
+     "slug": "humpback_whale",
+     "observations": 25
+    },
+    {
+     "slug": "green_sea_turtle",
+     "observations": 23
+    },
+    {
+     "slug": "mourning_gecko",
+     "observations": 23
+    },
+    {
+     "slug": "house_finch",
+     "observations": 21
+    },
+    {
+     "slug": "wandering_tattler",
+     "observations": 20
+    },
+    {
+     "slug": "warbling_white_eye",
+     "observations": 19
+    },
+    {
+     "slug": "african_giant_snail",
+     "observations": 18
+    },
+    {
+     "slug": "grey_francolin",
+     "observations": 15
+    },
+    {
+     "slug": "monarch",
+     "observations": 13
+    },
+    {
+     "slug": "valley_carpenter_bee",
+     "observations": 13
+    },
+    {
+     "slug": "hawaiian_monk_seal",
+     "observations": 13
+    },
+    {
+     "slug": "asian_house_gecko",
+     "observations": 12
+    },
+    {
+     "slug": "house_sparrow",
+     "observations": 11
+    },
+    {
+     "slug": "java_sparrow",
+     "observations": 11
+    },
+    {
+     "slug": "ruddy_turnstone",
+     "observations": 8
+    },
+    {
+     "slug": "saffron_finch",
+     "observations": 7
+    },
+    {
+     "slug": "black_witch",
+     "observations": 7
+    },
+    {
+     "slug": "cane_toad",
+     "observations": 7
+    },
+    {
+     "slug": "white_tailed_tropicbird",
+     "observations": 6
+    },
+    {
+     "slug": "scaly_breasted_munia",
+     "observations": 5
+    },
+    {
+     "slug": "greenhouse_frog",
+     "observations": 4
+    },
+    {
+     "slug": "apapane",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "kealia_pond_national_wildlife_refuge",
+   "name": "Kealia Pond National Wildlife Refuge",
+   "lat": 20.79,
+   "lon": -156.47,
+   "radius_km": 4,
+   "blurb": "Wetland on Maui; Hawaiian stilts, coots and migrating ducks.",
+   "species": [
+    {
+     "slug": "black_crowned_night_heron",
+     "observations": 478
+    },
+    {
+     "slug": "hawaiian_coot",
+     "observations": 359
+    },
+    {
+     "slug": "wandering_tattler",
+     "observations": 259
+    },
+    {
+     "slug": "pacific_golden_plover",
+     "observations": 206
+    },
+    {
+     "slug": "brown_anole",
+     "observations": 173
+    },
+    {
+     "slug": "western_cattle_egret",
+     "observations": 162
+    },
+    {
+     "slug": "zebra_dove",
+     "observations": 136
+    },
+    {
+     "slug": "gold_dust_day_gecko",
+     "observations": 134
+    },
+    {
+     "slug": "ruddy_turnstone",
+     "observations": 129
+    },
+    {
+     "slug": "hawaiian_garden_spider",
+     "observations": 107
+    },
+    {
+     "slug": "red_crested_cardinal",
+     "observations": 89
+    },
+    {
+     "slug": "common_myna",
+     "observations": 88
+    },
+    {
+     "slug": "green_sea_turtle",
+     "observations": 78
+    },
+    {
+     "slug": "african_giant_snail",
+     "observations": 75
+    },
+    {
+     "slug": "asian_house_gecko",
+     "observations": 64
+    },
+    {
+     "slug": "grey_francolin",
+     "observations": 61
+    },
+    {
+     "slug": "cane_toad",
+     "observations": 60
+    },
+    {
+     "slug": "monarch",
+     "observations": 54
+    },
+    {
+     "slug": "hawaiian_snakehead_cowrie",
+     "observations": 50
+    },
+    {
+     "slug": "house_sparrow",
+     "observations": 45
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 45
+    },
+    {
+     "slug": "indo_pacific_rock_boring_urchin",
+     "observations": 44
+    },
+    {
+     "slug": "spotted_dove",
+     "observations": 44
+    },
+    {
+     "slug": "mourning_gecko",
+     "observations": 38
+    },
+    {
+     "slug": "humpback_whale",
+     "observations": 37
+    },
+    {
+     "slug": "scaly_breasted_munia",
+     "observations": 31
+    },
+    {
+     "slug": "wild_boar",
+     "observations": 31
+    },
+    {
+     "slug": "house_finch",
+     "observations": 31
+    },
+    {
+     "slug": "thin_shelled_rock_crab",
+     "observations": 30
+    },
+    {
+     "slug": "red_pencil_urchin",
+     "observations": 30
+    },
+    {
+     "slug": "hawaiian_convict_surgeonfish",
+     "observations": 30
+    },
+    {
+     "slug": "java_sparrow",
+     "observations": 28
+    },
+    {
+     "slug": "northern_cardinal",
+     "observations": 27
+    },
+    {
+     "slug": "warbling_white_eye",
+     "observations": 25
+    },
+    {
+     "slug": "pacific_white_spotted_sea_cucumber",
+     "observations": 19
+    },
+    {
+     "slug": "black_witch",
+     "observations": 16
+    },
+    {
+     "slug": "valley_carpenter_bee",
+     "observations": 16
+    },
+    {
+     "slug": "day_octopus",
+     "observations": 15
+    },
+    {
+     "slug": "greenhouse_frog",
+     "observations": 14
+    },
+    {
+     "slug": "hawaiian_black_nerite",
+     "observations": 14
+    },
+    {
+     "slug": "small_indian_mongoose",
+     "observations": 14
+    },
+    {
+     "slug": "saddle_wrasse",
+     "observations": 13
+    },
+    {
+     "slug": "blackspot_sergeant",
+     "observations": 13
+    },
+    {
+     "slug": "saffron_finch",
+     "observations": 12
+    },
+    {
+     "slug": "gulf_fritillary",
+     "observations": 11
+    },
+    {
+     "slug": "shingle_urchin",
+     "observations": 11
+    },
+    {
+     "slug": "hawaiian_spotted_toby",
+     "observations": 11
+    },
+    {
+     "slug": "hawaiian_goose",
+     "observations": 10
+    },
+    {
+     "slug": "threadfin_butterflyfish",
+     "observations": 10
+    },
+    {
+     "slug": "great_frigatebird",
+     "observations": 8
+    },
+    {
+     "slug": "wedgetail_triggerfish",
+     "observations": 8
+    },
+    {
+     "slug": "chital",
+     "observations": 7
+    },
+    {
+     "slug": "raccoon_butterflyfish",
+     "observations": 7
+    },
+    {
+     "slug": "spotted_boxfish",
+     "observations": 7
+    },
+    {
+     "slug": "dotted_periwinkle",
+     "observations": 7
+    },
+    {
+     "slug": "zebra_blenny",
+     "observations": 7
+    },
+    {
+     "slug": "common_waxbill",
+     "observations": 6
+    },
+    {
+     "slug": "pacific_orange_spine_unicornfish",
+     "observations": 6
+    },
+    {
+     "slug": "chestnut_munia",
+     "observations": 6
+    },
+    {
+     "slug": "moorish_idol",
+     "observations": 6
+    },
+    {
+     "slug": "yellowstripe_goatfish",
+     "observations": 6
+    },
+    {
+     "slug": "asian_spinybacked_orbweaver",
+     "observations": 6
+    },
+    {
+     "slug": "wedge_tailed_shearwater",
+     "observations": 6
+    },
+    {
+     "slug": "dusky_surgeonfish",
+     "observations": 5
+    },
+    {
+     "slug": "hawaiian_monk_seal",
+     "observations": 5
+    },
+    {
+     "slug": "yellow_tang",
+     "observations": 4
+    },
+    {
+     "slug": "black_triggerfish",
+     "observations": 4
+    },
+    {
+     "slug": "whitemouth_moray",
+     "observations": 4
+    },
+    {
+     "slug": "green_anole",
+     "observations": 3
+    },
+    {
+     "slug": "brahminy_blindsnake",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "hanalei_national_wildlife_refuge",
+   "name": "Hanalei National Wildlife Refuge",
+   "lat": 22.2,
+   "lon": -159.47,
+   "radius_km": 5,
+   "blurb": "Taro fields and valley on Kauai; Hawaiian ducks, coots and stilts.",
+   "species": [
+    {
+     "slug": "hawaiian_goose",
+     "observations": 851
+    },
+    {
+     "slug": "red_crested_cardinal",
+     "observations": 732
+    },
+    {
+     "slug": "brown_anole",
+     "observations": 486
+    },
+    {
+     "slug": "white_rumped_shama",
+     "observations": 352
+    },
+    {
+     "slug": "gold_dust_day_gecko",
+     "observations": 281
+    },
+    {
+     "slug": "zebra_dove",
+     "observations": 261
+    },
+    {
+     "slug": "african_giant_snail",
+     "observations": 249
+    },
+    {
+     "slug": "common_myna",
+     "observations": 246
+    },
+    {
+     "slug": "western_cattle_egret",
+     "observations": 243
+    },
+    {
+     "slug": "cane_toad",
+     "observations": 229
+    },
+    {
+     "slug": "chestnut_munia",
+     "observations": 211
+    },
+    {
+     "slug": "pacific_golden_plover",
+     "observations": 184
+    },
+    {
+     "slug": "black_crowned_night_heron",
+     "observations": 174
+    },
+    {
+     "slug": "warbling_white_eye",
+     "observations": 138
+    },
+    {
+     "slug": "hawaiian_coot",
+     "observations": 135
+    },
+    {
+     "slug": "hawaiian_spotted_toby",
+     "observations": 131
+    },
+    {
+     "slug": "hawaiian_garden_spider",
+     "observations": 112
+    },
+    {
+     "slug": "house_sparrow",
+     "observations": 111
+    },
+    {
+     "slug": "mourning_gecko",
+     "observations": 94
+    },
+    {
+     "slug": "spotted_dove",
+     "observations": 94
+    },
+    {
+     "slug": "wedgetail_triggerfish",
+     "observations": 87
+    },
+    {
+     "slug": "green_anole",
+     "observations": 83
+    },
+    {
+     "slug": "hawaiian_convict_surgeonfish",
+     "observations": 82
+    },
+    {
+     "slug": "saddle_wrasse",
+     "observations": 81
+    },
+    {
+     "slug": "thin_shelled_rock_crab",
+     "observations": 66
+    },
+    {
+     "slug": "laysan_albatross",
+     "observations": 62
+    },
+    {
+     "slug": "dusky_surgeonfish",
+     "observations": 60
+    },
+    {
+     "slug": "northern_cardinal",
+     "observations": 59
+    },
+    {
+     "slug": "spotted_boxfish",
+     "observations": 58
+    },
+    {
+     "slug": "asian_spinybacked_orbweaver",
+     "observations": 57
+    },
+    {
+     "slug": "scaly_breasted_munia",
+     "observations": 55
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 55
+    },
+    {
+     "slug": "raccoon_butterflyfish",
+     "observations": 47
+    },
+    {
+     "slug": "whitemouth_moray",
+     "observations": 47
+    },
+    {
+     "slug": "indo_pacific_rock_boring_urchin",
+     "observations": 45
+    },
+    {
+     "slug": "monarch",
+     "observations": 44
+    },
+    {
+     "slug": "yellowstripe_goatfish",
+     "observations": 44
+    },
+    {
+     "slug": "threadfin_butterflyfish",
+     "observations": 38
+    },
+    {
+     "slug": "great_frigatebird",
+     "observations": 36
+    },
+    {
+     "slug": "hawaiian_black_nerite",
+     "observations": 34
+    },
+    {
+     "slug": "white_tailed_tropicbird",
+     "observations": 31
+    },
+    {
+     "slug": "zebra_blenny",
+     "observations": 31
+    },
+    {
+     "slug": "blackspot_sergeant",
+     "observations": 30
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 28
+    },
+    {
+     "slug": "moorish_idol",
+     "observations": 28
+    },
+    {
+     "slug": "wandering_tattler",
+     "observations": 28
+    },
+    {
+     "slug": "pacific_white_spotted_sea_cucumber",
+     "observations": 28
+    },
+    {
+     "slug": "house_finch",
+     "observations": 27
+    },
+    {
+     "slug": "green_sea_turtle",
+     "observations": 26
+    },
+    {
+     "slug": "asian_house_gecko",
+     "observations": 25
+    },
+    {
+     "slug": "dotted_periwinkle",
+     "observations": 18
+    },
+    {
+     "slug": "shingle_urchin",
+     "observations": 17
+    },
+    {
+     "slug": "american_bullfrog",
+     "observations": 15
+    },
+    {
+     "slug": "hawaiian_monk_seal",
+     "observations": 15
+    },
+    {
+     "slug": "red_footed_booby",
+     "observations": 14
+    },
+    {
+     "slug": "black_witch",
+     "observations": 13
+    },
+    {
+     "slug": "greenhouse_frog",
+     "observations": 11
+    },
+    {
+     "slug": "rose_ringed_parakeet",
+     "observations": 10
+    },
+    {
+     "slug": "spinner_dolphin",
+     "observations": 9
+    },
+    {
+     "slug": "day_octopus",
+     "observations": 9
+    },
+    {
+     "slug": "pacific_orange_spine_unicornfish",
+     "observations": 9
+    },
+    {
+     "slug": "yellow_tang",
+     "observations": 8
+    },
+    {
+     "slug": "brahminy_blindsnake",
+     "observations": 8
+    },
+    {
+     "slug": "hawaiian_snakehead_cowrie",
+     "observations": 8
+    },
+    {
+     "slug": "wedge_tailed_shearwater",
+     "observations": 7
+    },
+    {
+     "slug": "common_four_clawed_gecko",
+     "observations": 6
+    },
+    {
+     "slug": "dark_flecked_garden_sunskink",
+     "observations": 6
+    },
+    {
+     "slug": "gulf_fritillary",
+     "observations": 6
+    },
+    {
+     "slug": "red_tailed_tropicbird",
+     "observations": 5
+    },
+    {
+     "slug": "wild_boar",
+     "observations": 5
+    },
+    {
+     "slug": "red_pencil_urchin",
+     "observations": 5
+    },
+    {
+     "slug": "java_sparrow",
+     "observations": 4
+    },
+    {
+     "slug": "valley_carpenter_bee",
+     "observations": 4
+    },
+    {
+     "slug": "humpback_whale",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "kilauea_point_national_wildlife_refuge",
+   "name": "Kilauea Point National Wildlife Refuge",
+   "lat": 22.23,
+   "lon": -159.4,
+   "radius_km": 3,
+   "blurb": "Sea cliffs on Kauai; red-footed boobies, nene geese, albatrosses and humpback whales.",
+   "species": [
+    {
+     "slug": "red_footed_booby",
+     "observations": 1154
+    },
+    {
+     "slug": "hawaiian_goose",
+     "observations": 705
+    },
+    {
+     "slug": "great_frigatebird",
+     "observations": 567
+    },
+    {
+     "slug": "red_tailed_tropicbird",
+     "observations": 392
+    },
+    {
+     "slug": "wedge_tailed_shearwater",
+     "observations": 371
+    },
+    {
+     "slug": "white_tailed_tropicbird",
+     "observations": 237
+    },
+    {
+     "slug": "brown_anole",
+     "observations": 110
+    },
+    {
+     "slug": "red_crested_cardinal",
+     "observations": 71
+    },
+    {
+     "slug": "gold_dust_day_gecko",
+     "observations": 65
+    },
+    {
+     "slug": "white_rumped_shama",
+     "observations": 59
+    },
+    {
+     "slug": "hawaiian_garden_spider",
+     "observations": 47
+    },
+    {
+     "slug": "western_cattle_egret",
+     "observations": 41
+    },
+    {
+     "slug": "gulf_fritillary",
+     "observations": 33
+    },
+    {
+     "slug": "zebra_dove",
+     "observations": 32
+    },
+    {
+     "slug": "common_myna",
+     "observations": 29
+    },
+    {
+     "slug": "northern_cardinal",
+     "observations": 28
+    },
+    {
+     "slug": "house_finch",
+     "observations": 28
+    },
+    {
+     "slug": "warbling_white_eye",
+     "observations": 28
+    },
+    {
+     "slug": "humpback_whale",
+     "observations": 27
+    },
+    {
+     "slug": "african_giant_snail",
+     "observations": 25
+    },
+    {
+     "slug": "green_anole",
+     "observations": 24
+    },
+    {
+     "slug": "thin_shelled_rock_crab",
+     "observations": 22
+    },
+    {
+     "slug": "laysan_albatross",
+     "observations": 21
+    },
+    {
+     "slug": "wandering_tattler",
+     "observations": 20
+    },
+    {
+     "slug": "asian_spinybacked_orbweaver",
+     "observations": 20
+    },
+    {
+     "slug": "cane_toad",
+     "observations": 18
+    },
+    {
+     "slug": "pacific_golden_plover",
+     "observations": 17
+    },
+    {
+     "slug": "scaly_breasted_munia",
+     "observations": 13
+    },
+    {
+     "slug": "chestnut_munia",
+     "observations": 13
+    },
+    {
+     "slug": "spotted_dove",
+     "observations": 13
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 12
+    },
+    {
+     "slug": "zebra_blenny",
+     "observations": 12
+    },
+    {
+     "slug": "dotted_periwinkle",
+     "observations": 11
+    },
+    {
+     "slug": "house_sparrow",
+     "observations": 9
+    },
+    {
+     "slug": "green_sea_turtle",
+     "observations": 9
+    },
+    {
+     "slug": "hawaiian_monk_seal",
+     "observations": 9
+    },
+    {
+     "slug": "shingle_urchin",
+     "observations": 8
+    },
+    {
+     "slug": "spinner_dolphin",
+     "observations": 7
+    },
+    {
+     "slug": "american_bullfrog",
+     "observations": 7
+    },
+    {
+     "slug": "blackspot_sergeant",
+     "observations": 7
+    },
+    {
+     "slug": "indo_pacific_rock_boring_urchin",
+     "observations": 6
+    },
+    {
+     "slug": "pacific_white_spotted_sea_cucumber",
+     "observations": 6
+    },
+    {
+     "slug": "hawaiian_black_nerite",
+     "observations": 5
+    },
+    {
+     "slug": "ruddy_turnstone",
+     "observations": 3
+    },
+    {
+     "slug": "mourning_gecko",
+     "observations": 3
+    },
+    {
+     "slug": "saddle_wrasse",
+     "observations": 3
+    },
+    {
+     "slug": "hawaiian_convict_surgeonfish",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "waimea_canyon_state_park",
+   "name": "Waimea Canyon State Park",
+   "lat": 22.07,
+   "lon": -159.66,
+   "radius_km": 8,
+   "blurb": "Red canyon on Kauai; white-tailed tropicbirds, goats and wild chickens.",
+   "species": [
+    {
+     "slug": "white_tailed_tropicbird",
+     "observations": 74
+    },
+    {
+     "slug": "red_crested_cardinal",
+     "observations": 74
+    },
+    {
+     "slug": "pacific_golden_plover",
+     "observations": 50
+    },
+    {
+     "slug": "zebra_dove",
+     "observations": 48
+    },
+    {
+     "slug": "northern_cardinal",
+     "observations": 44
+    },
+    {
+     "slug": "apapane",
+     "observations": 43
+    },
+    {
+     "slug": "warbling_white_eye",
+     "observations": 39
+    },
+    {
+     "slug": "hawaiian_goose",
+     "observations": 37
+    },
+    {
+     "slug": "dark_flecked_garden_sunskink",
+     "observations": 37
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 32
+    },
+    {
+     "slug": "asian_spinybacked_orbweaver",
+     "observations": 28
+    },
+    {
+     "slug": "green_sea_turtle",
+     "observations": 26
+    },
+    {
+     "slug": "white_rumped_shama",
+     "observations": 20
+    },
+    {
+     "slug": "common_myna",
+     "observations": 17
+    },
+    {
+     "slug": "wild_boar",
+     "observations": 16
+    },
+    {
+     "slug": "gulf_fritillary",
+     "observations": 16
+    },
+    {
+     "slug": "hawaiian_monk_seal",
+     "observations": 16
+    },
+    {
+     "slug": "cane_toad",
+     "observations": 15
+    },
+    {
+     "slug": "hawaiian_garden_spider",
+     "observations": 14
+    },
+    {
+     "slug": "brown_anole",
+     "observations": 7
+    },
+    {
+     "slug": "wrinkled_frog",
+     "observations": 6
+    },
+    {
+     "slug": "laysan_albatross",
+     "observations": 4
+    },
+    {
+     "slug": "rose_ringed_parakeet",
+     "observations": 4
+    },
+    {
+     "slug": "gold_dust_day_gecko",
+     "observations": 4
+    },
+    {
+     "slug": "asian_house_gecko",
+     "observations": 4
+    },
+    {
+     "slug": "hawaiian_hoary_bat",
+     "observations": 4
+    },
+    {
+     "slug": "scaly_breasted_munia",
+     "observations": 3
+    },
+    {
+     "slug": "monarch",
+     "observations": 3
+    },
+    {
+     "slug": "mourning_gecko",
+     "observations": 3
+    },
+    {
+     "slug": "western_cattle_egret",
+     "observations": 3
+    },
+    {
+     "slug": "i_iwi",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "james_campbell_national_wildlife_refuge",
+   "name": "James Campbell National Wildlife Refuge",
+   "lat": 21.69,
+   "lon": -158.01,
+   "radius_km": 5,
+   "blurb": "Wetlands on Oahu; Hawaiian stilts, coots and gallinules.",
+   "species": [
+    {
+     "slug": "pacific_golden_plover",
+     "observations": 137
+    },
+    {
+     "slug": "red_crested_cardinal",
+     "observations": 129
+    },
+    {
+     "slug": "thin_shelled_rock_crab",
+     "observations": 114
+    },
+    {
+     "slug": "gold_dust_day_gecko",
+     "observations": 107
+    },
+    {
+     "slug": "zebra_dove",
+     "observations": 103
+    },
+    {
+     "slug": "brown_anole",
+     "observations": 76
+    },
+    {
+     "slug": "common_myna",
+     "observations": 74
+    },
+    {
+     "slug": "green_sea_turtle",
+     "observations": 71
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 68
+    },
+    {
+     "slug": "saffron_finch",
+     "observations": 64
+    },
+    {
+     "slug": "african_giant_snail",
+     "observations": 64
+    },
+    {
+     "slug": "western_cattle_egret",
+     "observations": 61
+    },
+    {
+     "slug": "wandering_tattler",
+     "observations": 57
+    },
+    {
+     "slug": "common_waxbill",
+     "observations": 54
+    },
+    {
+     "slug": "white_rumped_shama",
+     "observations": 54
+    },
+    {
+     "slug": "red_vented_bulbul",
+     "observations": 49
+    },
+    {
+     "slug": "zebra_blenny",
+     "observations": 49
+    },
+    {
+     "slug": "hawaiian_black_nerite",
+     "observations": 48
+    },
+    {
+     "slug": "hawaiian_convict_surgeonfish",
+     "observations": 43
+    },
+    {
+     "slug": "black_crowned_night_heron",
+     "observations": 39
+    },
+    {
+     "slug": "gulf_fritillary",
+     "observations": 38
+    },
+    {
+     "slug": "wedgetail_triggerfish",
+     "observations": 36
+    },
+    {
+     "slug": "ruddy_turnstone",
+     "observations": 31
+    },
+    {
+     "slug": "dotted_periwinkle",
+     "observations": 31
+    },
+    {
+     "slug": "blackspot_sergeant",
+     "observations": 31
+    },
+    {
+     "slug": "cane_toad",
+     "observations": 31
+    },
+    {
+     "slug": "small_indian_mongoose",
+     "observations": 30
+    },
+    {
+     "slug": "hawaiian_coot",
+     "observations": 29
+    },
+    {
+     "slug": "saddle_wrasse",
+     "observations": 29
+    },
+    {
+     "slug": "indo_pacific_rock_boring_urchin",
+     "observations": 29
+    },
+    {
+     "slug": "shingle_urchin",
+     "observations": 28
+    },
+    {
+     "slug": "warbling_white_eye",
+     "observations": 25
+    },
+    {
+     "slug": "pacific_white_spotted_sea_cucumber",
+     "observations": 23
+    },
+    {
+     "slug": "dusky_surgeonfish",
+     "observations": 22
+    },
+    {
+     "slug": "mourning_gecko",
+     "observations": 21
+    },
+    {
+     "slug": "monarch",
+     "observations": 20
+    },
+    {
+     "slug": "yellowstripe_goatfish",
+     "observations": 20
+    },
+    {
+     "slug": "hawaiian_spotted_toby",
+     "observations": 18
+    },
+    {
+     "slug": "green_anole",
+     "observations": 17
+    },
+    {
+     "slug": "house_finch",
+     "observations": 16
+    },
+    {
+     "slug": "northern_cardinal",
+     "observations": 15
+    },
+    {
+     "slug": "hawaiian_monk_seal",
+     "observations": 15
+    },
+    {
+     "slug": "hawaiian_snakehead_cowrie",
+     "observations": 14
+    },
+    {
+     "slug": "moorish_idol",
+     "observations": 12
+    },
+    {
+     "slug": "spotted_dove",
+     "observations": 12
+    },
+    {
+     "slug": "red_billed_leiothrix",
+     "observations": 10
+    },
+    {
+     "slug": "mottled_snake_eyed_skink",
+     "observations": 10
+    },
+    {
+     "slug": "hawaiian_garden_spider",
+     "observations": 10
+    },
+    {
+     "slug": "red_footed_booby",
+     "observations": 9
+    },
+    {
+     "slug": "laysan_albatross",
+     "observations": 9
+    },
+    {
+     "slug": "humpback_whale",
+     "observations": 9
+    },
+    {
+     "slug": "raccoon_butterflyfish",
+     "observations": 9
+    },
+    {
+     "slug": "spotted_boxfish",
+     "observations": 9
+    },
+    {
+     "slug": "asian_house_gecko",
+     "observations": 9
+    },
+    {
+     "slug": "threadfin_butterflyfish",
+     "observations": 9
+    },
+    {
+     "slug": "chestnut_munia",
+     "observations": 9
+    },
+    {
+     "slug": "valley_carpenter_bee",
+     "observations": 9
+    },
+    {
+     "slug": "wedge_tailed_shearwater",
+     "observations": 9
+    },
+    {
+     "slug": "house_sparrow",
+     "observations": 8
+    },
+    {
+     "slug": "black_witch",
+     "observations": 8
+    },
+    {
+     "slug": "great_frigatebird",
+     "observations": 7
+    },
+    {
+     "slug": "java_sparrow",
+     "observations": 7
+    },
+    {
+     "slug": "greenhouse_frog",
+     "observations": 5
+    },
+    {
+     "slug": "jacksons_chameleon",
+     "observations": 5
+    },
+    {
+     "slug": "red_pencil_urchin",
+     "observations": 5
+    },
+    {
+     "slug": "yellow_fronted_canary",
+     "observations": 5
+    },
+    {
+     "slug": "pacific_orange_spine_unicornfish",
+     "observations": 3
+    },
+    {
+     "slug": "yellow_tang",
+     "observations": 3
+    },
+    {
+     "slug": "brahminy_blindsnake",
+     "observations": 3
+    },
+    {
+     "slug": "grey_francolin",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "kaena_point_natural_area_reserve",
+   "name": "Kaena Point Natural Area Reserve",
+   "lat": 21.57,
+   "lon": -158.25,
+   "radius_km": 4,
+   "blurb": "Coastal dunes on Oahu; Laysan albatrosses, monk seals and green sea turtles.",
+   "species": [
+    {
+     "slug": "wedge_tailed_shearwater",
+     "observations": 222
+    },
+    {
+     "slug": "thin_shelled_rock_crab",
+     "observations": 115
+    },
+    {
+     "slug": "red_crested_cardinal",
+     "observations": 103
+    },
+    {
+     "slug": "laysan_albatross",
+     "observations": 92
+    },
+    {
+     "slug": "pacific_golden_plover",
+     "observations": 80
+    },
+    {
+     "slug": "shingle_urchin",
+     "observations": 74
+    },
+    {
+     "slug": "zebra_blenny",
+     "observations": 73
+    },
+    {
+     "slug": "wandering_tattler",
+     "observations": 72
+    },
+    {
+     "slug": "dotted_periwinkle",
+     "observations": 56
+    },
+    {
+     "slug": "blackspot_sergeant",
+     "observations": 54
+    },
+    {
+     "slug": "hawaiian_monk_seal",
+     "observations": 52
+    },
+    {
+     "slug": "red_vented_bulbul",
+     "observations": 51
+    },
+    {
+     "slug": "common_myna",
+     "observations": 41
+    },
+    {
+     "slug": "zebra_dove",
+     "observations": 38
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 37
+    },
+    {
+     "slug": "hawaiian_black_nerite",
+     "observations": 37
+    },
+    {
+     "slug": "grey_francolin",
+     "observations": 36
+    },
+    {
+     "slug": "gulf_fritillary",
+     "observations": 35
+    },
+    {
+     "slug": "hawaiian_convict_surgeonfish",
+     "observations": 33
+    },
+    {
+     "slug": "hawaiian_garden_spider",
+     "observations": 29
+    },
+    {
+     "slug": "pacific_white_spotted_sea_cucumber",
+     "observations": 29
+    },
+    {
+     "slug": "green_sea_turtle",
+     "observations": 28
+    },
+    {
+     "slug": "small_indian_mongoose",
+     "observations": 25
+    },
+    {
+     "slug": "indo_pacific_rock_boring_urchin",
+     "observations": 24
+    },
+    {
+     "slug": "common_waxbill",
+     "observations": 23
+    },
+    {
+     "slug": "humpback_whale",
+     "observations": 22
+    },
+    {
+     "slug": "great_frigatebird",
+     "observations": 18
+    },
+    {
+     "slug": "red_footed_booby",
+     "observations": 14
+    },
+    {
+     "slug": "saffron_finch",
+     "observations": 14
+    },
+    {
+     "slug": "hawaiian_snakehead_cowrie",
+     "observations": 14
+    },
+    {
+     "slug": "asian_house_gecko",
+     "observations": 13
+    },
+    {
+     "slug": "warbling_white_eye",
+     "observations": 13
+    },
+    {
+     "slug": "spinner_dolphin",
+     "observations": 12
+    },
+    {
+     "slug": "northern_cardinal",
+     "observations": 11
+    },
+    {
+     "slug": "cane_toad",
+     "observations": 11
+    },
+    {
+     "slug": "moorish_idol",
+     "observations": 10
+    },
+    {
+     "slug": "red_pencil_urchin",
+     "observations": 10
+    },
+    {
+     "slug": "raccoon_butterflyfish",
+     "observations": 9
+    },
+    {
+     "slug": "monarch",
+     "observations": 8
+    },
+    {
+     "slug": "wedgetail_triggerfish",
+     "observations": 8
+    },
+    {
+     "slug": "mourning_gecko",
+     "observations": 8
+    },
+    {
+     "slug": "red_tailed_tropicbird",
+     "observations": 7
+    },
+    {
+     "slug": "western_cattle_egret",
+     "observations": 7
+    },
+    {
+     "slug": "spotted_dove",
+     "observations": 7
+    },
+    {
+     "slug": "white_tailed_tropicbird",
+     "observations": 6
+    },
+    {
+     "slug": "gold_dust_day_gecko",
+     "observations": 5
+    },
+    {
+     "slug": "day_octopus",
+     "observations": 5
+    },
+    {
+     "slug": "black_witch",
+     "observations": 5
+    },
+    {
+     "slug": "house_finch",
+     "observations": 5
+    },
+    {
+     "slug": "ruddy_turnstone",
+     "observations": 4
+    },
+    {
+     "slug": "red_billed_leiothrix",
+     "observations": 4
+    },
+    {
+     "slug": "spotted_boxfish",
+     "observations": 4
+    },
+    {
+     "slug": "saddle_wrasse",
+     "observations": 4
+    },
+    {
+     "slug": "hawaiian_spotted_toby",
+     "observations": 4
+    },
+    {
+     "slug": "dusky_surgeonfish",
+     "observations": 4
+    },
+    {
+     "slug": "african_giant_snail",
+     "observations": 4
+    },
+    {
+     "slug": "scaly_breasted_munia",
+     "observations": 3
+    },
+    {
+     "slug": "pacific_orange_spine_unicornfish",
+     "observations": 3
+    },
+    {
+     "slug": "threadfin_butterflyfish",
+     "observations": 3
+    },
+    {
+     "slug": "whitemouth_moray",
+     "observations": 3
+    },
+    {
+     "slug": "white_rumped_shama",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "punaluu_black_sand_beach",
+   "name": "Punalu'u Black Sand Beach",
+   "lat": 19.14,
+   "lon": -155.5,
+   "radius_km": 3,
+   "blurb": "Black sand beach on Hawaii Island; hawksbill and green sea turtles basking.",
+   "species": [
+    {
+     "slug": "shingle_urchin",
+     "observations": 105
+    },
+    {
+     "slug": "thin_shelled_rock_crab",
+     "observations": 93
+    },
+    {
+     "slug": "yellow_billed_cardinal",
+     "observations": 83
+    },
+    {
+     "slug": "zebra_dove",
+     "observations": 57
+    },
+    {
+     "slug": "hawaiian_goose",
+     "observations": 57
+    },
+    {
+     "slug": "green_sea_turtle",
+     "observations": 50
+    },
+    {
+     "slug": "saffron_finch",
+     "observations": 48
+    },
+    {
+     "slug": "wandering_tattler",
+     "observations": 48
+    },
+    {
+     "slug": "dotted_periwinkle",
+     "observations": 38
+    },
+    {
+     "slug": "hawaiian_black_nerite",
+     "observations": 35
+    },
+    {
+     "slug": "small_indian_mongoose",
+     "observations": 32
+    },
+    {
+     "slug": "gold_dust_day_gecko",
+     "observations": 27
+    },
+    {
+     "slug": "gulf_fritillary",
+     "observations": 24
+    },
+    {
+     "slug": "zebra_blenny",
+     "observations": 24
+    },
+    {
+     "slug": "hawaiian_convict_surgeonfish",
+     "observations": 19
+    },
+    {
+     "slug": "hawaiian_garden_spider",
+     "observations": 17
+    },
+    {
+     "slug": "common_myna",
+     "observations": 15
+    },
+    {
+     "slug": "pacific_white_spotted_sea_cucumber",
+     "observations": 15
+    },
+    {
+     "slug": "black_crowned_night_heron",
+     "observations": 13
+    },
+    {
+     "slug": "indo_pacific_rock_boring_urchin",
+     "observations": 12
+    },
+    {
+     "slug": "yellow_fronted_canary",
+     "observations": 10
+    },
+    {
+     "slug": "blackspot_sergeant",
+     "observations": 8
+    },
+    {
+     "slug": "warbling_white_eye",
+     "observations": 7
+    },
+    {
+     "slug": "hawaiian_snakehead_cowrie",
+     "observations": 7
+    },
+    {
+     "slug": "pacific_golden_plover",
+     "observations": 5
+    },
+    {
+     "slug": "common_waxbill",
+     "observations": 5
+    },
+    {
+     "slug": "asian_spinybacked_orbweaver",
+     "observations": 5
+    },
+    {
+     "slug": "northern_cardinal",
+     "observations": 4
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 4
+    },
+    {
+     "slug": "spotted_boxfish",
+     "observations": 4
+    },
+    {
+     "slug": "black_witch",
+     "observations": 4
+    },
+    {
+     "slug": "hawaiian_spotted_toby",
+     "observations": 4
+    },
+    {
+     "slug": "house_finch",
+     "observations": 4
+    },
+    {
+     "slug": "red_pencil_urchin",
+     "observations": 4
+    },
+    {
+     "slug": "african_giant_snail",
+     "observations": 4
+    },
+    {
+     "slug": "asian_house_gecko",
+     "observations": 3
+    },
+    {
+     "slug": "mourning_gecko",
+     "observations": 3
+    },
+    {
+     "slug": "yellowstripe_goatfish",
+     "observations": 3
+    },
+    {
+     "slug": "spotted_dove",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "puuhonua_o_honaunau_national_historical_park",
+   "name": "Pu'uhonua o Honaunau National Historical Park",
+   "lat": 19.42,
+   "lon": -155.91,
+   "radius_km": 4,
+   "blurb": "Kona coast park; spinner dolphins, sea turtles and reef fish.",
+   "species": [
+    {
+     "slug": "yellow_tang",
+     "observations": 333
+    },
+    {
+     "slug": "gold_dust_day_gecko",
+     "observations": 164
+    },
+    {
+     "slug": "moorish_idol",
+     "observations": 134
+    },
+    {
+     "slug": "yellow_billed_cardinal",
+     "observations": 131
+    },
+    {
+     "slug": "hawaiian_convict_surgeonfish",
+     "observations": 124
+    },
+    {
+     "slug": "saffron_finch",
+     "observations": 118
+    },
+    {
+     "slug": "dusky_surgeonfish",
+     "observations": 117
+    },
+    {
+     "slug": "thin_shelled_rock_crab",
+     "observations": 115
+    },
+    {
+     "slug": "indo_pacific_rock_boring_urchin",
+     "observations": 114
+    },
+    {
+     "slug": "black_triggerfish",
+     "observations": 108
+    },
+    {
+     "slug": "pacific_orange_spine_unicornfish",
+     "observations": 103
+    },
+    {
+     "slug": "saddle_wrasse",
+     "observations": 99
+    },
+    {
+     "slug": "hawaiian_garden_spider",
+     "observations": 95
+    },
+    {
+     "slug": "spotted_boxfish",
+     "observations": 89
+    },
+    {
+     "slug": "gulf_fritillary",
+     "observations": 86
+    },
+    {
+     "slug": "threadfin_butterflyfish",
+     "observations": 86
+    },
+    {
+     "slug": "red_pencil_urchin",
+     "observations": 82
+    },
+    {
+     "slug": "raccoon_butterflyfish",
+     "observations": 74
+    },
+    {
+     "slug": "blackspot_sergeant",
+     "observations": 73
+    },
+    {
+     "slug": "ruddy_turnstone",
+     "observations": 68
+    },
+    {
+     "slug": "shingle_urchin",
+     "observations": 66
+    },
+    {
+     "slug": "whitemouth_moray",
+     "observations": 65
+    },
+    {
+     "slug": "yellowstripe_goatfish",
+     "observations": 64
+    },
+    {
+     "slug": "black_crowned_night_heron",
+     "observations": 61
+    },
+    {
+     "slug": "pacific_white_spotted_sea_cucumber",
+     "observations": 61
+    },
+    {
+     "slug": "spinner_dolphin",
+     "observations": 57
+    },
+    {
+     "slug": "zebra_blenny",
+     "observations": 41
+    },
+    {
+     "slug": "common_myna",
+     "observations": 40
+    },
+    {
+     "slug": "green_sea_turtle",
+     "observations": 38
+    },
+    {
+     "slug": "zebra_dove",
+     "observations": 37
+    },
+    {
+     "slug": "wedgetail_triggerfish",
+     "observations": 36
+    },
+    {
+     "slug": "small_indian_mongoose",
+     "observations": 35
+    },
+    {
+     "slug": "hawaiian_spotted_toby",
+     "observations": 34
+    },
+    {
+     "slug": "wandering_tattler",
+     "observations": 34
+    },
+    {
+     "slug": "hawaiian_black_nerite",
+     "observations": 29
+    },
+    {
+     "slug": "warbling_white_eye",
+     "observations": 29
+    },
+    {
+     "slug": "green_anole",
+     "observations": 26
+    },
+    {
+     "slug": "dotted_periwinkle",
+     "observations": 24
+    },
+    {
+     "slug": "house_finch",
+     "observations": 21
+    },
+    {
+     "slug": "pacific_golden_plover",
+     "observations": 19
+    },
+    {
+     "slug": "northern_cardinal",
+     "observations": 19
+    },
+    {
+     "slug": "asian_spinybacked_orbweaver",
+     "observations": 18
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 17
+    },
+    {
+     "slug": "monarch",
+     "observations": 17
+    },
+    {
+     "slug": "house_sparrow",
+     "observations": 16
+    },
+    {
+     "slug": "day_octopus",
+     "observations": 14
+    },
+    {
+     "slug": "african_giant_snail",
+     "observations": 14
+    },
+    {
+     "slug": "black_witch",
+     "observations": 13
+    },
+    {
+     "slug": "java_sparrow",
+     "observations": 13
+    },
+    {
+     "slug": "hawaiian_snakehead_cowrie",
+     "observations": 13
+    },
+    {
+     "slug": "common_waxbill",
+     "observations": 11
+    },
+    {
+     "slug": "common_coqui",
+     "observations": 11
+    },
+    {
+     "slug": "mourning_gecko",
+     "observations": 11
+    },
+    {
+     "slug": "valley_carpenter_bee",
+     "observations": 10
+    },
+    {
+     "slug": "grey_francolin",
+     "observations": 9
+    },
+    {
+     "slug": "yellow_fronted_canary",
+     "observations": 7
+    },
+    {
+     "slug": "spotted_dove",
+     "observations": 6
+    },
+    {
+     "slug": "great_frigatebird",
+     "observations": 3
+    },
+    {
+     "slug": "western_cattle_egret",
+     "observations": 3
+    },
+    {
+     "slug": "hawaiian_monk_seal",
+     "observations": 3
+    },
+    {
+     "slug": "brahminy_blindsnake",
+     "observations": 3
+    }
+   ]
+  }
+ ]
+}
