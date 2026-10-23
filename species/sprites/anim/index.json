@@ -185,6 +185,11 @@
    "fly",
    "sleep"
   ],
+  "big_brown_bat": [
+   "idle",
+   "fly",
+   "sleep"
+  ],
   "bighorn_sheep": [
    "idle",
    "walk",
@@ -299,6 +304,12 @@
   ],
   "brown_belted_bumble_bee": [
    "idle",
+   "fly",
+   "sleep"
+  ],
+  "brown_headed_cowbird": [
+   "idle",
+   "walk",
    "fly",
    "sleep"
   ],
@@ -1253,6 +1264,11 @@
    "swim",
    "sleep"
   ],
+  "northern_two_lined_salamander": [
+   "idle",
+   "walk",
+   "sleep"
+  ],
   "northern_water_snake": [
    "idle",
    "walk",
@@ -1316,6 +1332,12 @@
   "peterss_rock_agama": [
    "idle",
    "walk",
+   "sleep"
+  ],
+  "pickerel_frog": [
+   "idle",
+   "walk",
+   "swim",
    "sleep"
   ],
   "pileated_woodpecker": [
@@ -1587,6 +1609,11 @@
    "fly",
    "sleep"
   ],
+  "smallmouth_bass": [
+   "idle",
+   "swim",
+   "sleep"
+  ],
   "snowy_egret": [
    "idle",
    "walk",
@@ -1699,6 +1726,17 @@
   "tidepool_sculpin": [
    "idle",
    "swim",
+   "sleep"
+  ],
+  "timber_rattlesnake": [
+   "idle",
+   "walk",
+   "sleep"
+  ],
+  "tree_swallow": [
+   "idle",
+   "walk",
+   "fly",
    "sleep"
   ],
   "tricolored_heron": [
@@ -1890,6 +1928,12 @@
    "idle",
    "walk",
    "fly",
+   "sleep"
+  ],
+  "wood_turtle": [
+   "idle",
+   "walk",
+   "swim",
    "sleep"
   ],
   "yellow_bellied_marmot": [
