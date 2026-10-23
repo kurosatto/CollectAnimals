@@ -119,9 +119,9 @@ object Online {
 
     // --- Accounts ---------------------------------------------------------------------
 
-    suspend fun register(email: String, username: String, password: String, state: String) {
+    suspend fun register(email: String, username: String, password: String, state: String, birthYear: Int) {
         val r = call("POST", "/auth/register", JSONObject().put("email", email).put("username", username)
-            .put("password", password).put("state", state))
+            .put("password", password).put("state", state).put("birth_year", birthYear))
         setToken(JSONObject(r).getString("access_token"))
     }
 
@@ -130,6 +130,10 @@ object Online {
         val r = request("POST", "/auth/login", form, "application/x-www-form-urlencoded", auth = false)
         setToken(JSONObject(r).getString("access_token"))
     }
+
+    /** Emails a reset link if the account exists; returns the server's (same either way) answer. */
+    suspend fun forgotPassword(ident: String): String =
+        JSONObject(call("POST", "/auth/forgot", JSONObject().put("ident", ident))).getString("detail")
 
     fun logout() = setToken(null)
 

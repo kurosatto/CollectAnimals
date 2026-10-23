@@ -8,6 +8,9 @@ class RegisterIn(BaseModel):
     username: str = Field(min_length=3, max_length=40, pattern=r"^[A-Za-z0-9_.-]+$")
     password: str = Field(min_length=8)
     state: str | None = None  # where the player lives; their default Dex (None: the default state)
+    # Asked at sign-up to keep out players under 13, then forgotten (never stored).
+    # Optional only so app versions from before the question can still sign up.
+    birth_year: int | None = Field(None, ge=1900, le=2100)
 
     @field_validator("password")
     @classmethod

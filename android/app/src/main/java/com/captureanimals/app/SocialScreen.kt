@@ -326,6 +326,7 @@ fun AccountDialog(state: UiState, vm: GameViewModel, onDismiss: () -> Unit) {
     var email by rememberSaveable { mutableStateOf("") }
     var ident by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
+    var birthYear by rememberSaveable { mutableStateOf("") }
     var editServer by rememberSaveable { mutableStateOf(false) }
     var serverText by rememberSaveable { mutableStateOf(Online.manualUrl ?: "") }
     // Close once signed in.
@@ -334,8 +335,8 @@ fun AccountDialog(state: UiState, vm: GameViewModel, onDismiss: () -> Unit) {
     AlertDialog(onDismissRequest = onDismiss, confirmButton = {
         if (acct == null) {
             Button(enabled = !state.accountBusy && ident.isNotBlank() && password.length >= 8 &&
-                    (!signUp || email.isNotBlank()),
-                onClick = { if (signUp) vm.signUp(email, ident, password) else vm.signIn(ident, password) }) {
+                    (!signUp || (email.isNotBlank() && birthYear.toIntOrNull() in 1900..2100)),
+                onClick = { if (signUp) vm.signUp(email, ident, password, birthYear.toInt()) else vm.signIn(ident, password) }) {
                 Text(if (signUp) "Sign up" else "Log in")
             }
         } else {
@@ -370,11 +371,15 @@ fun AccountDialog(state: UiState, vm: GameViewModel, onDismiss: () -> Unit) {
                 OutlinedTextField(password, { password = it }, label = { Text("Password (8+ characters)") },
                     singleLine = true, visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password), modifier = Modifier.fillMaxWidth())
+                if (signUp) OutlinedTextField(birthYear, { v -> birthYear = v.filter(Char::isDigit).take(4) },
+                    label = { Text("Year you were born") }, singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth())
                 if (state.accountBusy) CircularProgressIndicator(Modifier.size(24.dp))
                 state.accountError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 TextButton(onClick = { signUp = !signUp }, contentPadding = PaddingValues(0.dp)) {
                     Text(if (signUp) "Have an account? Log in" else "Need an account? Sign up")
                 }
+                if (!signUp) ForgotPassword(ident)
                 Text(if (signUp) "For players 13 and older. By signing up you agree to the community rules " +
                     "and privacy policy." else "For players 13 and older.", style = MaterialTheme.typography.bodySmall)
                 PrivacyLink()
@@ -847,6 +852,18 @@ private fun PrivacyLink() {
             Text("Community rules")
         }
     }
+}
+
+/** "Forgot password?": emails a link to pick a new one (to the email or username typed above). */
+@Composable
+private fun ForgotPassword(ident: String) {
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    var note by remember { mutableStateOf<String?>(null) }
+    TextButton(onClick = {
+        if (ident.isBlank()) { note = "Type your email or username above first."; return@TextButton }
+        scope.launch { note = runCatching { Online.forgotPassword(ident.trim()) }.getOrElse { it.message } }
+    }, contentPadding = PaddingValues(0.dp)) { Text("Forgot password?") }
+    note?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
 }
 
 /** Players you blocked, each with Unblock. */
