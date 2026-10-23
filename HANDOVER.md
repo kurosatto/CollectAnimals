@@ -74,6 +74,10 @@ use it.
 - **Keep PC load light.** kuro killed jobs once because the laptop lagged. Run
   downloads/training at low priority and ask before a big retrain.
 
+**Moving off the PC (planned, $0):** `deploy/server/` sets the server up on an Oracle
+Cloud Always Free VM with a fixed DuckDNS address and Caddy HTTPS; see its README for
+the sign-ups only kuro can do. kuro (2026-10-23): no spending until 100+ daily players.
+
 Updating the demo after a merge: back up `demo.db` → pull `main` in the demo
 worktree → restart server + tunnel → `publish_server_url.py` → rebuild the APK
 if Android changed → post the new link. Cloud threads can't message the PC
