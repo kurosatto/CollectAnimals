@@ -8,8 +8,8 @@
 // Habitat: the animals you've captured, living in one small pixel scene at the top
 // of the Field Guide. Each one gets a way of moving from what it is (walkers,
 // hoppers, fliers, swimmers, tide pool animals...) and is awake by day, by night
-// or both (`activity` from /me/collection). The scene follows the phone's clock,
-// and a button peeks at the other half of the day. Tap an animal and it tells
+// or both (`activity` from /me/collection). The scene follows the real sun and
+// moon, and a button peeks at the other half of the day. Tap an animal and it tells
 // you its name and a fun fact; tap it again for another fact, or the bubble's
 // link for its Field Guide page. The sky follows the real weather outside
 // (rain, snow, fog, wind, storms) and the animals react to it.
@@ -147,9 +147,102 @@ function habitatSet(entries) {
   if (habStill) setTimeout(habDraw, 300);
 }
 
+// ---- The real sky: where the sun and moon are right now, worked out on the phone
+// from the date and the place (no downloads). Day, dawn, dusk and night follow the
+// real sunrise and sunset, the sun and moon cross the sky, and the moon shows its
+// real phase. Your own scene uses your rough position when the weather already
+// uses it, otherwise the state's big city (the same cities as backend/app/weather.py).
+// Preview another time with ?at=2026-10-23T03:00:00Z.
+const HAB_CITY = {
+  AL: [33.52, -86.81], AK: [61.22, -149.90], AZ: [33.45, -112.07], AR: [34.75, -92.29],
+  CA: [34.05, -118.24], CO: [39.74, -104.99], CT: [41.76, -72.68], DE: [39.74, -75.55],
+  FL: [28.54, -81.38], GA: [33.75, -84.39], HI: [21.31, -157.86], ID: [43.62, -116.20],
+  IL: [41.88, -87.63], IN: [39.77, -86.16], IA: [41.59, -93.62], KS: [37.69, -97.34],
+  KY: [38.25, -85.76], LA: [29.95, -90.07], ME: [43.66, -70.26], MD: [39.29, -76.61],
+  MA: [42.36, -71.06], MI: [42.33, -83.05], MN: [44.98, -93.27], MS: [32.30, -90.18],
+  MO: [39.10, -94.58], MT: [45.78, -108.50], NE: [41.26, -95.93], NV: [36.17, -115.14],
+  NH: [42.99, -71.46], NJ: [40.74, -74.17], NM: [35.08, -106.65], NY: [40.71, -74.01],
+  NC: [35.23, -80.84], ND: [46.88, -96.79], OH: [39.96, -83.00], OK: [35.47, -97.52],
+  OR: [45.52, -122.68], PA: [39.95, -75.17], RI: [41.82, -71.41], SC: [34.00, -81.03],
+  SD: [43.54, -96.73], TN: [36.16, -86.78], TX: [29.76, -95.37], UT: [40.76, -111.89],
+  VT: [44.48, -73.21], VA: [37.54, -77.44], WA: [47.61, -122.33], WV: [38.35, -81.63],
+  WI: [43.04, -87.91], WY: [41.14, -104.82],
+};
+// The water on the right of the scene is the Pacific in these states, so the sun
+// sets over it there; everywhere else it rises on the water side.
+const HAB_WEST_SEA = new Set(["CA", "OR", "WA", "AK", "HI"]);
+const habAtTest = (() => { try { return Date.parse(new URLSearchParams(location.search).get("at")) || null; } catch { return null; } })();
+const habNow = () => habAtTest || Date.now();
+// Sun is in the sky above this many degrees, below minus HAB_TWILIGHT it's night.
+const HAB_DAYLIGHT = 6, HAB_TWILIGHT = 8;
+
+// Altitude and azimuth (degrees, azimuth from north through east) of a body at
+// ecliptic longitude/latitude lam/beta, seen from lat/lon d days after J2000.
+function habAltAz(lam, beta, d, lat, lon) {
+  const r = Math.PI / 180, e = 23.4397 * r;
+  const l = lam * r, b = beta * r;
+  const ra = Math.atan2(Math.sin(l) * Math.cos(e) - Math.tan(b) * Math.sin(e), Math.cos(l));
+  const dec = Math.asin(Math.sin(b) * Math.cos(e) + Math.cos(b) * Math.sin(e) * Math.sin(l));
+  const H = (280.16 + 360.9856235 * d + lon) * r - ra, p = lat * r;
+  const alt = Math.asin(Math.sin(p) * Math.sin(dec) + Math.cos(p) * Math.cos(dec) * Math.cos(H));
+  const az = Math.atan2(Math.sin(H), Math.cos(H) * Math.sin(p) - Math.tan(dec) * Math.cos(p));
+  return { alt: alt / r, az: (az / r + 540) % 360 };
+}
+// The sun and moon (simple formulas, good to about a degree) for a time and place.
+function habSkyAt(ms, lat, lon) {
+  const r = Math.PI / 180, d = ms / 864e5 - 10957.5;
+  const M = (357.5291 + .98560028 * d) * r;
+  const sunLam = M / r + 1.9148 * Math.sin(M) + .02 * Math.sin(2 * M) + .0003 * Math.sin(3 * M) + 282.9372;
+  const Lm = 218.316 + 13.176396 * d, Mm = (134.963 + 13.064993 * d) * r, F = (93.272 + 13.22935 * d) * r;
+  const moonLam = Lm + 6.289 * Math.sin(Mm), moonBeta = 5.128 * Math.sin(F);
+  // How far the moon is round from the sun: 0 new, 180 full.
+  const gap = ((moonLam - sunLam) % 360 + 360) % 360;
+  const elong = Math.acos(Math.cos(moonBeta * r) * Math.cos(gap * r)) / r;
+  return { sun: habAltAz(sunLam, 0, d, lat, lon), moon: { ...habAltAz(moonLam, moonBeta, d, lat, lon),
+           elong, waxing: gap < 180, lit: (1 - Math.cos(elong * r)) / 2 } };
+}
+function habSkyNow() {
+  const state = habState(), here = !hab.visit && hab.here && hab.here.state === state && hab.here;
+  const [lat, lon] = here ? [here.lat, here.lon] : HAB_CITY[state] || HAB_CITY.CA;
+  const at = Math.floor(habNow() / 15e3), key = `${state}/${lat}/${lon}/${at}`;
+  if (hab.skyKey !== key) { hab.sky = habSkyAt(at * 15e3, lat, lon); hab.skyKey = key; }
+  return hab.sky;
+}
 function habRealPhase() {
-  const h = new Date().getHours();
-  return h >= 21 || h < 5 ? "night" : h < 7 ? "dawn" : h < 19 ? "day" : "dusk";
+  const { alt, az } = habSkyNow().sun;
+  return alt >= HAB_DAYLIGHT ? "day" : alt <= -HAB_TWILIGHT ? "night" : az < 180 ? "dawn" : "dusk";
+}
+const HAB_MOON_NAMES = [["🌑", "New moon"], ["🌒", "Waxing crescent moon"], ["🌓", "First quarter moon"],
+  ["🌔", "Waxing gibbous moon"], ["🌕", "Full moon"], ["🌖", "Waning gibbous moon"], ["🌗", "Last quarter moon"],
+  ["🌘", "Waning crescent moon"]];
+function habMoonName() {
+  const m = habSkyNow().moon, age = m.waxing ? m.elong : 360 - m.elong;
+  return HAB_MOON_NAMES[Math.round(age / 45) % 8];
+}
+// Where the sun or moon sits in the scene: east to west across it (mirrored where
+// the sea is to the west), and higher the higher it is in the real sky.
+function habSkyXY(body, L) {
+  const west = HAB_WEST_SEA.has(habState()) ? 1 : -1;
+  const k = Math.max(-1, Math.min(1, (((body.az - 180) % 360 + 540) % 360 - 180) / 120));
+  const x = Math.round(L.w / 2 + west * k * L.w * .42);
+  // It climbs fast at first so a sun or moon a little way up clears the far hills.
+  const a = body.alt, y = Math.round(L.water - 30 - (a > 0 ? (L.water - 66) * Math.sqrt(Math.min(1, a / 50)) : Math.max(a, -10) * 2.5));
+  return [x, y];
+}
+// The sun and moon to draw for this phase: real ones now, or set ones while peeking.
+function habLights(L, phase) {
+  const sky = habSkyNow(), west = HAB_WEST_SEA.has(habState()) ? 1 : -1;
+  const moon = { lit: sky.moon.lit, elong: sky.moon.elong, side: sky.moon.waxing ? west : -west };
+  if (hab.peek) {
+    return phase === "night" ? { moon: { ...moon, xy: [L.w - 72, 38] } } : { sun: { xy: [L.w - 78, 36] } };
+  }
+  const out = {};
+  if (phase !== "night") out.sun = { xy: habSkyXY(sky.sun, L), low: phase !== "day" };
+  // A moon that's up and not too thin; in daylight only a fat one shows, pale.
+  if (sky.moon.alt > -1 && moon.lit > .03 && (phase !== "day" || (moon.lit > .25 && sky.moon.alt > 5))) {
+    out.moon = { ...moon, xy: habSkyXY(sky.moon, L), pale: phase === "day" };
+  }
+  return out;
 }
 function habPhase() {
   const real = habRealPhase();
@@ -168,6 +261,7 @@ function habNote() {
     : `${n} animal${n > 1 ? "s" : ""} live${n > 1 ? "" : "s"} ${hab.visit ? "in " + who : "here"}` + (asleep ? `, ${asleep} asleep` : "")
       + (hab.wx ? ". " + habWxLine() : ". Tap one to say hi.") + ` ${HAB_SEASON_ICON[habSeason()]} ${habSeason()[0].toUpperCase() + habSeason().slice(1)}.`;
   const night = phase === "night";
+  if (night) $("hab-note").textContent += ` ${habMoonName().join(" ")}.`;
   const here = document.getElementById("hab-wx-here");
   if (here) here.hidden = !(hab.wxAsk && hab.wx && !hab.visit);
   $("hab-peek").textContent = hab.peek ? "Back to now" : night || phase === "dusk" ? "☀️ Peek at daytime" : "🌙 Peek at night";
@@ -666,9 +760,12 @@ function habAnim(a, awake, roost) {
 function habDraw() {
   const cv = $("hab-canvas");
   if (!hab.L || !cv) return;
-  const L = hab.L, phase = habPhase(), key = `${L.w}/${phase}/${habState()}/${habSeason()}`;
+  const L = hab.L, phase = habPhase(), lights = habLights(L, phase);
+  // The sun and moon creep across the sky, so the scenery is redrawn every few pixels they move.
+  const spot = (b) => (b ? b.xy.map((v) => v >> 2).join(",") + (b.lit ? "/" + Math.round(b.lit * 40) : "") : "-");
+  const key = `${L.w}/${phase}/${habState()}/${habSeason()}/${spot(lights.sun)}/${spot(lights.moon)}`;
   if (cv.width !== L.w) { cv.width = L.w; cv.height = HAB_H; }
-  if (hab.bgKey !== key) { hab.bg = habBackground(L, phase, habState()); hab.bgKey = key; }
+  if (hab.bgKey !== key) { hab.bg = habBackground(L, phase, habState(), lights); hab.bgKey = key; }
   const c = cv.getContext("2d");
   c.imageSmoothingEnabled = false;
   c.drawImage(hab.bg, 0, 0);
@@ -1005,10 +1102,12 @@ function habWeather() {
   const own = !hab.visit;
   habWxSpot(own).then((pos) => {
     const q = pos ? `?lat=${pos.lat.toFixed(1)}&lon=${pos.lon.toFixed(1)}` : own ? "?here=1" : "";
-    return fetch(`/weather/${state}${q}`);
-  }).then((r) => (r.ok ? r.json() : null)).catch(() => null).then((w) => {
+    return fetch(`/weather/${state}${q}`).then((r) => (r.ok ? r.json() : null)).then((w) => [w, pos]);
+  }).catch(() => [null, null]).then(([w, pos]) => {
     if (hab.wxKey !== state) return;
     hab.wx = w && w.sky ? w : null;
+    // The sun and moon use your spot too, once the weather says it's in this state.
+    hab.here = w && w.near && pos ? { state, lat: +pos.lat.toFixed(1), lon: +pos.lon.toFixed(1) } : null;
     hab.drops = [];
     habNote();
     if (habStill) habDraw();
@@ -1093,7 +1192,7 @@ function habSeasonScene(sc, season, state) {
 // "🌧️ Raining in Houston, 61°F." for the line under the scene.
 function habWxLine() {
   const w = hab.wx, moon = habPhase() === "night" && (w.sky === "clear" || w.sky === "partly");
-  let line = `${moon ? "🌙" : HAB_WX_ICON[w.sky]} ${HAB_WX_WORDS[w.sky]}`;
+  let line = `${moon ? habMoonName()[0] : HAB_WX_ICON[w.sky]} ${HAB_WX_WORDS[w.sky]}`;
   if (w.wind === "windy") line += " and windy";
   if (w.place) line += ` ${w.near ? "near" : "in"} ${w.place}`;
   if (w.temp_f != null) line += `, ${w.temp_f}°F`;
@@ -1472,7 +1571,7 @@ for (const [st, d] of Object.entries(HAB_STATE_LAND)) {
 }
 
 
-function habBackground(L, phase, state) {
+function habBackground(L, phase, state, lights = {}) {
   // Land is painted in daylight colors, then graded for the time of day at the end.
   const W = L.w, H = HAB_H, season = habSeason(), snowy = habSnowy(state);
   const sc = habSeasonScene(HAB_SCENES[state] || HAB_SCENES.default, season, state), P = pxPalette("day");
@@ -1524,20 +1623,32 @@ function habBackground(L, phase, state) {
         for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) put(x + dx, y + dy, blend(get(x + dx, y + dy), hexRgb("#cfe0ff"), .4));
       }
     }
-    const mx = W - 72, my = 38;
-    hab.glowX = mx;
-    halo(mx, my, 10, 32, hexRgb("#8fa2e0"), .6);
-    disc(mx, my, 10, (x, y, u, v) => {
-      const l = u * .5 - v * .6;
-      put(x, y, hexRgb(l > .4 ? "#fffbe6" : l > -.3 ? "#f1ebc8" : "#d8cfa6"));
-    });
-    for (const [dx, dy, rr] of [[-3, -2, 2], [3, 3, 1], [2, -5, 1], [-5, 4, 1]]) disc(mx + dx, my + dy, rr, (x, y) => put(x, y, hexRgb("#cfc499")));
-  } else {
-    const low = phase !== "day";
-    const sx = low ? Math.round(W * .52) : W - 78, sy = low ? HZ - 30 : 36, sr = low ? 15 : 11;
+  }
+  hab.glowX = -1;
+  const { sun, moon } = lights;
+  if (sun) {
+    const [sx, sy] = sun.xy, low = sun.low, sr = low ? 15 : 11;
     hab.glowX = sx;
     halo(sx, sy, sr, sr + (low ? 40 : 26), hexRgb(low ? "#ffd08a" : "#fff6cc"), .75);
     disc(sx, sy, sr, (x, y, u, v) => put(x, y, hexRgb(Math.hypot(u - .3, v + .3) < .5 ? "#fffbe8" : low ? "#ffc867" : "#ffe98a")));
+  }
+  if (moon) {
+    // The lit part ends at the terminator: an ellipse across the disc that sweeps
+    // from the sunny edge (new moon) over to the far edge (full moon).
+    const [mx, my] = moon.xy, c = Math.cos(moon.elong * Math.PI / 180);
+    if (!moon.pale) {
+      if (!sun) hab.glowX = mx;
+      halo(mx, my, 10, 32, hexRgb("#8fa2e0"), .6 * Math.min(1, .25 + moon.lit));
+    }
+    const craters = [[-3, -2, 2], [3, 3, 1], [2, -5, 1], [-5, 4, 1]];
+    disc(mx, my, 10, (x, y, u, v) => {
+      const lit = u * moon.side > c * Math.sqrt(Math.max(0, 1 - v * v));
+      const pit = craters.some(([dx, dy, rr]) => (x - mx - dx) ** 2 + (y - my - dy) ** 2 <= rr * rr + rr * .8);
+      if (moon.pale) { if (lit) put(x, y, blend(get(x, y), [255, 255, 255], pit ? .4 : .6)); return; }
+      const l = u * .5 - v * .6;
+      // The dark part keeps a faint earthshine so the round shape still shows.
+      put(x, y, lit ? hexRgb(pit ? "#cfc499" : l > .4 ? "#fffbe6" : l > -.3 ? "#f1ebc8" : "#d8cfa6") : blend(get(x, y), hexRgb("#4a5688"), .35));
+    });
   }
   hab.stars = stars;
   // Far mountains, sloping down to the coast.
