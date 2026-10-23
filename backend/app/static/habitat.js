@@ -209,6 +209,11 @@ function habPerches(L, state) {
     const { ix, ground, lx, ltop } = habAssateague(L);
     return [[lx - 4, ltop - 1], [lx + 5, ltop - 1], [ix - 20, ground + 1], [ix + 22, ground + 1]];
   }
+  if (state === "NJ") {
+    // The Ferris wheel's top and the pier's railing on either side of it.
+    const { x0, x1, deck, hx, hy, r } = habPier(L);
+    return [[hx, hy - r - 2], [x0 + 6, deck - 3], [x1 - 6, deck - 3], [hx - r - 6, deck - 3]];
+  }
   if (state === "MI") {
     // The tops of the bridge's two towers and the deck between them.
     const { deck, t1, t2, ttop } = habMackinac(L);
@@ -235,6 +240,14 @@ function habPerches(L, state) {
     return [[bx - half + 3, ridge], [bx + half - 3, ridge], [bx - half - 8, bank], [bx + half + 8, bank]];
   }
   return [];
+}
+// A Jersey Shore pier: the boardwalk deck, and the Ferris wheel standing on it
+// (its hub, radius and the gondolas' positions as it turns).
+function habPier(L) {
+  const x0 = L.sea + 6, x1 = L.sea + Math.round((L.w - L.sea) * .9), deck = L.water - 6;
+  const r = 21, hx = L.sea + Math.round((L.w - L.sea) * .55), hy = deck - r - 4;
+  const cars = (a) => Array.from({ length: 8 }, (_, i) => [hx + Math.cos(a + i * Math.PI / 4) * r, hy + Math.sin(a + i * Math.PI / 4) * r]);
+  return { x0, x1, deck, hx, hy, r, cars };
 }
 // The Mackinac Bridge across the Straits: deck height, the two towers and the
 // main cable's curve between and beyond them.
@@ -839,6 +852,7 @@ const HAB_SHOWCASE = {
   FL: { slug: "roseate_spoonbill", common_name: "Roseate Spoonbill", category: "bird", rarity: "uncommon" },
   NY: { slug: "black_capped_chickadee", common_name: "Black-capped Chickadee", category: "bird", rarity: "common" },
   VA: { slug: "northern_cardinal", common_name: "Northern Cardinal", category: "bird", rarity: "common" },
+  NJ: { slug: "american_goldfinch", common_name: "American Goldfinch", category: "bird", rarity: "common" },
   MI: { slug: "american_robin", common_name: "American Robin", category: "bird", rarity: "common" },
   GA: { slug: "brown_thrasher", common_name: "Brown Thrasher", category: "bird", rarity: "common" },
   OH: { slug: "northern_cardinal", common_name: "Northern Cardinal", category: "bird", rarity: "common" },
@@ -1342,6 +1356,9 @@ const HAB_SCENES = {
   VA: { far: ["#4a7f52", "#5a925c", "#6ca567", "#82b878"], near: ["#3a7442", "#4a874c", "#5c9a56", "#72ad66"],
         meadow: ["#5f9a3d", "#77b04a", "#8fc35a", "#a8d36d"], dots: "forest", tree: "round",
         flowers: [["#ffffff", "#f3e6b0"], ["#f6b8cf", "#ffffff"], ["#5a7ae0", "#f6b8cf"], ["#5a7ae0", "#c4d0ff"]] },
+  NJ: { far: ["#5f8f56", "#70a160", "#84b46c", "#9cc67e"], near: ["#4c8442", "#5e984e", "#72aa5a", "#88bc6a"],
+        meadow: ["#5f9a3d", "#77b04a", "#8fc35a", "#a8d36d"], dots: "round", tree: "oak",
+        flowers: [["#7a5ad8", "#c4b4ff"], ["#7a5ad8", "#c4b4ff"], ["#ffffff", "#ffe9a0"], ["#ffd84d", "#fff2a0"]] },
   MI: { far: ["#3f7a4a", "#4f8d55", "#62a061", "#79b473"], near: ["#2f6a3c", "#3d7d46", "#4f9150", "#64a55e"],
         meadow: ["#5f9a3d", "#77b04a", "#8fc35a", "#a8d36d"], dots: "forest", tree: "pine",
         flowers: [["#f8b8c8", "#ffffff"], ["#ffffff", "#ffe9a0"], ["#ffd84d", "#fff2a0"], ["#9a6ad8", "#ffd84d"]] },
@@ -1872,6 +1889,24 @@ function habBackground(L, phase, state) {
     as.onto(img, P("#2a2014"));
     const foam = P("#e9f6ff");
     for (let dx = -36; dx <= 36; dx++) if (hash2(dx, 83) > .45) img.set(ix + dx, ground + 9 + (hash2(dx, 84) > .7 ? 1 : 0), foam);
+  } else if (state === "NJ") {
+    // A Jersey Shore pier on wooden pilings, with a Ferris wheel at the end
+    // (its gondolas turn and the rim lights up after dark).
+    const pr = pxLayer(W, H), { x0, x1, deck, hx, hy, r } = habPier(L);
+    const wood = P("#6a5038", "#8a6a4a", "#a8885e"), steel = P("#c8ccd4", "#e8eaee"), red = P("#c8302a");
+    for (let x = x0; x <= x1; x++) {
+      pr.set(x, deck, wood[2]); pr.set(x, deck + 1, wood[1]);
+      if (x % 5 === 0) for (let y = deck + 2; y < L.water + 3; y++) pr.set(x, y, wood[0]);
+      if (x % 3 === 0) pr.set(x, deck - 2, wood[1]);
+      pr.set(x, deck - 3, wood[2]);
+    }
+    for (let a = 0; a < 96; a++) { const u = a / 96 * Math.PI * 2; pr.set(Math.round(hx + Math.cos(u) * r), Math.round(hy + Math.sin(u) * r), steel[1]); }
+    for (let i = 0; i < 8; i++) { const u = i * Math.PI / 4; for (let k = 1; k < r; k++) pr.set(Math.round(hx + Math.cos(u) * k), Math.round(hy + Math.sin(u) * k), steel[0]); }
+    for (let k = 0; k < r + 4; k++) { pr.set(Math.round(hx - k * .45), hy + k, steel[0]); pr.set(Math.round(hx + k * .45), hy + k, steel[0]); }
+    pr.set(hx, hy, red[0]);
+    // a little striped ticket booth by the wheel
+    for (let y = deck - 7; y < deck; y++) for (let dx = 0; dx < 5; dx++) pr.set(x1 - 9 + dx, y, y === deck - 7 ? red[0] : (dx % 2 ? P("#f4f0e8")[0] : red[0]));
+    pr.onto(img);
   } else if (state === "MI") {
     // The Mackinac Bridge: two tall towers, the main cables sweeping between them
     // with hangers down to the deck; the cables are strung with lights at night.
@@ -2225,6 +2260,18 @@ function habAmbient(c, L, phase) {
     const [lx, ly] = habLiberty(L).torch, k = .25 + Math.sin(t * 3.1) * .05 + Math.sin(t * 7.3) * .03;
     c.fillStyle = `rgba(255,220,120,${k.toFixed(3)})`; c.fillRect(lx - 4, ly - 5, 10, 8);
     c.fillStyle = `rgba(255,220,120,${(k * .5).toFixed(3)})`; c.fillRect(lx - 8, ly - 3, 18, 4);
+  } else if (habState() === "NJ") {
+    // The Ferris wheel's gondolas turn slowly; after dark its rim lights up.
+    const { cars, hx, hy, r } = habPier(L), lit = phase !== "day";
+    cars(t * .25).forEach(([x, y], i) => {
+      c.fillStyle = ["#e8402a", "#f0c020", "#2a8ad8", "#3ab85a"][i % 4];
+      c.fillRect(Math.round(x) - 1, Math.round(y) + 1, 3, 2);
+    });
+    if (lit) for (let a = 0; a < 24; a++) {
+      if ((a + Math.floor(t * 4)) % 3) continue;
+      const u = a / 24 * Math.PI * 2;
+      c.fillStyle = "#fff0a0"; c.fillRect(Math.round(hx + Math.cos(u) * r), Math.round(hy + Math.sin(u) * r), 1, 1);
+    }
   } else if (habState() === "MI" && phase !== "day") {
     // The Mackinac Bridge's cables are strung with lights after dark.
     const { x0, cable } = habMackinac(L);

@@ -154,6 +154,11 @@
    "idle",
    "sleep"
   ],
+  "atlantic_sand_crab": [
+   "idle",
+   "walk",
+   "sleep"
+  ],
   "atlantic_sand_fiddler_crab": [
    "idle",
    "walk",
@@ -1035,6 +1040,12 @@
    "swim",
    "sleep"
   ],
+  "great_black_backed_gull": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep"
+  ],
   "great_blue_heron": [
    "idle",
    "walk",
@@ -1325,6 +1336,11 @@
    "fly",
    "sleep"
   ],
+  "mud_fiddler_crab": [
+   "idle",
+   "walk",
+   "sleep"
+  ],
   "mule_deer": [
    "idle",
    "walk",
@@ -1414,6 +1430,12 @@
    "fly",
    "sleep"
   ],
+  "northern_red_bellied_cooter": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep"
+  ],
   "northern_short_tailed_shrew": [
    "idle",
    "walk",
@@ -1441,6 +1463,11 @@
    "sleep"
   ],
   "nosy_pill_woodlouse": [
+   "idle",
+   "walk",
+   "sleep"
+  ],
+  "ocellate_lady_crab": [
    "idle",
    "walk",
    "sleep"
@@ -1908,6 +1935,12 @@
   "spotted_salamander": [
    "idle",
    "walk",
+   "sleep"
+  ],
+  "spotted_turtle": [
+   "idle",
+   "walk",
+   "swim",
    "sleep"
   ],
   "spring_peeper": [
