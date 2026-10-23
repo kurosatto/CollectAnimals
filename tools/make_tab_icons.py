@@ -142,6 +142,25 @@ ICONS = {
         "................",
         "................",
     ],
+    # A little green game pad with a red and a yellow button.
+    "games": [
+        "................",
+        "................",
+        "................",
+        "................",
+        "..oooooooooooo..",
+        ".oGGGGGGGGGGGGo.",
+        "oGGGoGGGGGGGGyGo",
+        "oGGoooGGGGGrGGGo",
+        "oGGGoGGGGGGGGGGo",
+        "oGGGGGGddGGGGGGo",
+        "oGGGGGdoodGGGGGo",
+        ".oGGGdo..odGGGo.",
+        "..oooo....oooo..",
+        "................",
+        "................",
+        "................",
+    ],
 }
 
 

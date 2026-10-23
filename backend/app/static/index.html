@@ -380,6 +380,7 @@
   <button data-tab="feed"><img class="ic" src="/sprites/ui_tab_feed.png" alt="">Feed</button>
   <button data-tab="parks"><img class="ic" src="/sprites/ui_tab_parks.png" alt="">Parks</button>
   <button data-tab="friends"><img class="ic" src="/sprites/ui_tab_friends.png" alt="">Friends</button>
+  <button data-tab="games"><img class="ic" src="/sprites/ui_tab_games.png" alt="">Games</button>
 </nav>
 
   <section id="auth" class="card auth">
@@ -478,6 +479,11 @@
       <p class="muted" style="margin-top:0">Your album: one photo for each animal you captured.</p>
       <div id="my-photos" class="photos compact"></div>
     </div>
+    <div class="card off" data-tab="games">
+      <h2>Minigames</h2>
+      <p class="muted" style="margin-top:0">Play as one of the animals you captured. Capture a flying, land or water animal to unlock its game.</p>
+      <div id="minigames"></div>
+    </div>
     <div class="card off" data-tab="friends">
       <h2>Friends</h2>
       <p class="muted">Animals your friends capture show up by name in your collection, and you can see each other's albums.</p>
@@ -561,6 +567,7 @@
 <link rel="stylesheet" href="/vendor/leaflet/leaflet.css">
 <script src="/vendor/leaflet/leaflet.js"></script>
 <script src="/habitat.js"></script>
+<script src="/minigames.js"></script>
 <script>
 const $ = (id) => document.getElementById(id);
 let token = null;
@@ -1127,6 +1134,7 @@ async function loadCollection() {
   const entries = [...c.entries].sort((a, b) => dexSort(a.species, b.species));
   caughtNums = new Set(entries.filter((e) => e.caught).map((e) => e.species.number));
   if (hab.visit) hab.visit.home = entries; else habitatSet(entries);
+  mgSet(entries);
   entries.forEach((e, i) => { dexNumbers[e.species.number] = i + 1; });
   loadHotspots();
   $("progress").textContent = `${c.caught} / ${c.total}`;
@@ -1738,7 +1746,7 @@ async function loadMyPhotos() {
 }
 
 // One section at a time, picked from the tab bar (bottom on phones, top on wide screens).
-const TABS = ["catch", "dex", "photos", "feed", "parks", "friends"];
+const TABS = ["catch", "dex", "photos", "feed", "parks", "friends", "games"];
 function showTab(name) {
   if (!TABS.includes(name)) name = "catch";
   document.querySelectorAll("#game > [data-tab]").forEach((c) => c.classList.toggle("off", c.dataset.tab !== name));
