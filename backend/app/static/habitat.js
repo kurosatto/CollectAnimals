@@ -209,7 +209,18 @@ function habPerches(L, state) {
     const { ix, ground, lx, ltop } = habAssateague(L);
     return [[lx - 4, ltop - 1], [lx + 5, ltop - 1], [ix - 20, ground + 1], [ix + 22, ground + 1]];
   }
+  if (state === "PA") {
+    // The covered bridge: both ends of its roof ridge and the two banks.
+    const { bx, half, ridge, bank } = habBridge(L);
+    return [[bx - half + 3, ridge], [bx + half - 3, ridge], [bx - half - 8, bank], [bx + half + 8, bank]];
+  }
   return [];
+}
+// The red covered bridge out on the water: its middle, half-length, deck, roof
+// ridge, the banks it joins and the lanterns hung at each end.
+function habBridge(L) {
+  const bx = L.sea + Math.round((L.w - L.sea) * .5), half = 21, deck = L.water - 4, ridge = deck - 19, bank = L.water - 1;
+  return { bx, half, deck, ridge, bank, lamps: [[bx - half, deck - 7], [bx + half, deck - 7]] };
 }
 // Assateague Island out in the bay: where it sits, its lighthouse and the lamp.
 function habAssateague(L) {
@@ -773,6 +784,7 @@ const HAB_SHOWCASE = {
   FL: { slug: "roseate_spoonbill", common_name: "Roseate Spoonbill", category: "bird", rarity: "uncommon" },
   NY: { slug: "black_capped_chickadee", common_name: "Black-capped Chickadee", category: "bird", rarity: "common" },
   VA: { slug: "northern_cardinal", common_name: "Northern Cardinal", category: "bird", rarity: "common" },
+  PA: { slug: "eastern_bluebird", common_name: "Eastern Bluebird", category: "bird", rarity: "common" },
   // States without their own pick yet: a robin, found in every state.
   default: { slug: "american_robin", common_name: "American Robin", category: "bird", rarity: "common" },
 };
@@ -1271,6 +1283,9 @@ const HAB_SCENES = {
   VA: { far: ["#4a7f52", "#5a925c", "#6ca567", "#82b878"], near: ["#3a7442", "#4a874c", "#5c9a56", "#72ad66"],
         meadow: ["#5f9a3d", "#77b04a", "#8fc35a", "#a8d36d"], dots: "forest", tree: "round",
         flowers: [["#ffffff", "#f3e6b0"], ["#f6b8cf", "#ffffff"], ["#5a7ae0", "#f6b8cf"], ["#5a7ae0", "#c4d0ff"]] },
+  PA: { far: ["#4f7f5a", "#5f9262", "#71a56c", "#88b87e"], near: ["#3c7040", "#4c834a", "#5e9654", "#74aa66"],
+        meadow: ["#5f9a3d", "#77b04a", "#8fc35a", "#a8d36d"], dots: "forest", tree: "oak",
+        flowers: [["#f6c4d8", "#ffffff"], ["#f6c4d8", "#ffffff"], ["#ffffff", "#f8e0ea"], ["#ffd84d", "#fff2a0"]] },
   default: { far: ["#6f9e60", "#82b370", "#97c483", "#b0d69a"], near: ["#4f8d43", "#62a250", "#78b55e", "#90c771"],
              meadow: ["#5f9a3d", "#77b04a", "#8fc35a", "#a8d36d"], dots: "round", tree: "round",
              flowers: [["#ffffff", "#ffe9a0"], ["#ffd84d", "#fff2a0"], ["#f27aa8", "#ffc4dc"], ["#b48cff", "#e0d0ff"]] },
@@ -1369,6 +1384,17 @@ function habBackground(L, phase, state) {
         img.set(x, y, atmo(ramp(isSnow ? snow : rock, v, x, y), .28));
       }
     }
+  } else if (state === "PA") {
+    // The Ridge-and-Valley Appalachians: long ridges with flat, even crests, one
+    // behind another, each notched once where a river cuts through.
+    [[90, "#b4c8dc", "#c4d4e6"], [104, "#8eaac4", "#a2bcd2"], [118, "#6a8ca8", "#7e9eb8"]].forEach(([base, a, b], i) => {
+      const pal = P(a, b), notch = Math.round(coastEnd * [.62, .3, .5][i]);
+      for (let x = 0; x < coastEnd; x++) {
+        const d = Math.abs(x - notch), gap = d < 7 ? Math.round((7 - d) * 1.6) : 0;
+        const h = fade(x, Math.round(base + gap + (vnoise(x / 70, i, 31 + i) - .5) * 4));
+        for (let y = h; y < foot; y++) img.set(x, y, y === h ? pal[1] : ramp(pal, .7 - (y - h) / 30, x, y));
+      }
+    });
   } else if (state === "NC" || state === "VA") {
     // The Blue Ridge: ridges fading into the haze.
     [[96, "#9fb6dc", "#b4c8e8"], [108, "#8199c8", "#98aedb"], [121, "#6683b8", "#7c97c9"]].forEach(([base, a, b], i) => {
@@ -1754,6 +1780,33 @@ function habBackground(L, phase, state) {
     as.onto(img, P("#2a2014"));
     const foam = P("#e9f6ff");
     for (let dx = -36; dx <= 36; dx++) if (hash2(dx, 83) > .45) img.set(ix + dx, ground + 9 + (hash2(dx, 84) > .7 ? 1 : 0), foam);
+  } else if (state === "PA") {
+    // A red covered bridge on stone piers, joining two wooded banks; lanterns
+    // hang at both ends after dark.
+    const br = pxLayer(W, H), { bx, half, deck, ridge, bank, lamps } = habBridge(L);
+    const grass = P("#3f6a34", "#4f7e3e", "#64944c", "#7aa85c"), stone = P("#6a6660", "#8a857c", "#a8a296", "#c4beb0");
+    const red = P("#5a1a14", "#7e241a", "#9e3224", "#bc4632"), roof = P("#3a3634", "#4e4a46", "#66605a");
+    const dark = P("#1e1410"), lamp = P("#ffe9a0");
+    for (const side of [-1, 1]) {
+      pxBlob(br, bx + side * (half + 9), bank + 3, 12, 5, grass, { flat: true, rough: .6, grain: 1, seed: 20 + side });
+      for (let y = deck; y < L.water + 3; y++) for (let dx = -3; dx <= 3; dx++)
+        br.set(bx + side * (half - 2) + dx, y, ramp(stone, .85 - (dx + 3) / 7 * .6 + ((y + dx) % 3 === 0 ? -.2 : 0), bx + dx, y));
+    }
+    // the walls: red boards with a row of small windows, open portals at the ends
+    for (let y = ridge + 6; y <= deck; y++) for (let dx = -half; dx <= half; dx++) {
+      const portal = Math.abs(dx) > half - 4 && y > ridge + 8, win = (y === deck - 7 || y === deck - 6) && Math.abs(dx) < half - 6 && (dx + 64) % 6 < 2;
+      const trim = Math.abs(dx) === half - 4 && y > ridge + 7 || Math.abs(dx) > half - 4 && y === ridge + 8;
+      br.set(bx + dx, y, trim ? P("#e8e2d4") : portal || win ? dark[0] : ramp(red, .8 - (y - ridge - 6) * .04 + (dx % 3 === 0 ? -.15 : 0), bx + dx, y));
+    }
+    for (let dx = -half; dx <= half; dx++) br.set(bx + dx, deck + 1, stone[0]);
+    // the gable roof, overhanging both ends
+    for (let y = ridge; y < ridge + 6; y++) for (let dx = -half - 2 + (ridge + 5 - y) % 1; dx <= half + 2; dx++)
+      br.set(bx + dx, y, ramp(roof, .85 - (y - ridge) * .14, bx + dx, y));
+    for (let dx = -half - 2; dx <= half + 2; dx++) br.set(bx + dx, ridge, roof[2]);
+    for (const [lx2, ly] of lamps) { br.set(lx2, ly, lamp[0], night ? 1 : 0); br.set(lx2, ly - 1, roof[0]); }
+    br.onto(img, P("#1a1410"));
+    const foam = P("#e9f6ff");
+    for (let dx = -half - 20; dx <= half + 20; dx++) if (hash2(dx, 91) > .5) img.set(bx + dx, L.water + 7 + (hash2(dx, 92) > .7 ? 1 : 0), foam);
   } else if (state === "NY") {
     // The Statue of Liberty on its island: a star fort, the stone pedestal, and
     // the copper-green statue holding up her torch.
@@ -1994,6 +2047,11 @@ function habAmbient(c, L, phase) {
     const [lx, ly] = habLiberty(L).torch, k = .25 + Math.sin(t * 3.1) * .05 + Math.sin(t * 7.3) * .03;
     c.fillStyle = `rgba(255,220,120,${k.toFixed(3)})`; c.fillRect(lx - 4, ly - 5, 10, 8);
     c.fillStyle = `rgba(255,220,120,${(k * .5).toFixed(3)})`; c.fillRect(lx - 8, ly - 3, 18, 4);
+  } else if (habState() === "PA" && phase !== "day") {
+    // The covered bridge's lanterns glow after sundown.
+    const k = .22 + Math.sin(t * 2.7) * .04;
+    c.fillStyle = `rgba(255,214,120,${k.toFixed(3)})`;
+    for (const [lx, ly] of habBridge(L).lamps) c.fillRect(lx - 3, ly - 3, 7, 7);
   } else if (habState() === "VA" && phase !== "day") {
     // Assateague's lighthouse flashes after sundown.
     const [lx, ly] = habAssateague(L).lamp;
