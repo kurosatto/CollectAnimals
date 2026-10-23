@@ -180,7 +180,86 @@ const HAB_PERCH_SCALE = .72;
 // small rock beside it. North Carolina's lighthouse: the gallery and the base.
 // Texas's windmill: its platform, the tail vane and the stock tank below.
 // Florida's mangrove island: the top of its canopy.
+// Scenery for the states drawn from shared pieces: the distant landscape (far:
+// snowy peaks, Blue Ridge-style ridges, mesas, cypress swamp, farmland, or a
+// volcano), the landmark on the water (sea: a lighthouse island, a sea stack,
+// a steamboat, icebergs, the Gateway Arch or the Space Needle), the palette
+// (look), and the state flower's colors.
+const HAB_STATE_LAND = {
+  AL: { far: "cypress", sea: "lighthouse", look: "swamp", flower: ["#d8283a", "#ff9aa0"] },
+  AK: { far: "peaks", sea: "iceberg", look: "north", flower: ["#5a7ae0", "#c4d0ff"] },
+  AZ: { far: "mesas", look: "desert", flower: ["#ffffff", "#f8e8a0"], saguaro: true },
+  AR: { far: "ridges", look: "forest", flower: ["#ffffff", "#f8d0e0"] },
+  CO: { far: "peaks", look: "north", flower: ["#7a8ae0", "#ffffff"] },
+  CT: { far: "ridges", sea: "lighthouse", look: "coast", flower: ["#f8c8d8", "#ffffff"] },
+  DE: { sea: "lighthouse", look: "coast", flower: ["#f8a8c8", "#ffe0ec"] },
+  HI: { far: "shield", look: "tropical", flower: ["#ffd23a", "#c8641e"] },
+  ID: { far: "peaks", look: "north", flower: ["#ffffff", "#f3e6b0"] },
+  IN: { far: "farm", look: "plains", flower: ["#9a5ad8", "#e8c0ff"] },
+  IA: { far: "farm", look: "plains", flower: ["#f6b8cf", "#ffffff"] },
+  KS: { far: "farm", look: "plains", flower: ["#ffd23a", "#6a3a1a"] },
+  KY: { far: "ridges", look: "forest", flower: ["#ffd23a", "#fff2a0"] },
+  LA: { far: "cypress", sea: "steamboat", look: "swamp", flower: ["#ffffff", "#f3e6b0"] },
+  ME: { far: "ridges", sea: "lighthouse", look: "north", flower: ["#ffffff", "#e8dcc0"], lh: "white" },
+  MD: { far: "ridges", sea: "lighthouse", look: "coast", flower: ["#ffc81e", "#5a2a14"] },
+  MA: { sea: "lighthouse", look: "coast", flower: ["#f8c8d8", "#ffffff"], lh: "white" },
+  MN: { far: "ridges", sea: "lighthouse", look: "north", flower: ["#f6b8cf", "#ffffff"], lh: "white" },
+  MS: { far: "cypress", sea: "steamboat", look: "swamp", flower: ["#ffffff", "#f3e6b0"] },
+  MO: { far: "farm", sea: "arch", look: "plains", flower: ["#ffffff", "#f8d0e0"] },
+  MT: { far: "peaks", look: "north", flower: ["#f6b8cf", "#ffffff"] },
+  NE: { far: "farm", look: "plains", flower: ["#ffd23a", "#fff2a0"] },
+  NV: { far: "mesas", look: "desert", flower: ["#c8b8e0", "#ffffff"] },
+  NH: { far: "ridges", look: "maple", flower: ["#9a6ad8", "#e8d0ff"] },
+  NM: { far: "mesas", look: "desert", flower: ["#ffffff", "#f8e8a0"] },
+  ND: { far: "mesas", look: "plains", flower: ["#f27aa8", "#ffc4dc"] },
+  OK: { far: "farm", look: "plains", flower: ["#d8283a", "#ff9aa0"] },
+  OR: { far: "volcano", sea: "stack", look: "north", flower: ["#ffd23a", "#fff2a0"] },
+  RI: { sea: "lighthouse", look: "coast", flower: ["#9a6ad8", "#e8d0ff"], lh: "white" },
+  SC: { far: "cypress", sea: "lighthouse", look: "swamp", flower: ["#ffd23a", "#fff2a0"] },
+  SD: { far: "mesas", look: "plains", flower: ["#b48cff", "#f0e8ff"] },
+  TN: { far: "ridges", look: "forest", flower: ["#9a6ad8", "#e8d0ff"] },
+  UT: { far: "mesas", look: "desert", flower: ["#ffffff", "#f8e0a0"] },
+  VT: { far: "ridges", look: "maple", flower: ["#d8283a", "#ffffff"] },
+  WA: { far: "volcano", sea: "needle", look: "north", flower: ["#f27aa8", "#ffc4dc"] },
+  WV: { far: "ridges", look: "forest", flower: ["#f6b8cf", "#ffffff"] },
+  WI: { far: "farm", sea: "lighthouse", look: "plains", flower: ["#9a6ad8", "#e8d0ff"], lh: "white" },
+  WY: { far: "peaks", look: "north", flower: ["#d8402a", "#ff9a7a"] },
+};
+const habLand = (state) => HAB_STATE_LAND[state] || {};
+// The Gateway Arch on the far bank: its feet and how tall it stands.
+function habArch(L) {
+  const ax = L.sea + Math.round((L.w - L.sea) * .5), ground = L.water - 1;
+  return { ax, ground, half: 20, h: 50 };
+}
+// The Space Needle on its point: the saucer's height and the spire's tip.
+function habNeedle(L) {
+  const nx = L.sea + Math.round((L.w - L.sea) * .5), ground = L.water - 1, deck = ground - 44;
+  return { nx, ground, deck, tip: [nx, deck - 14] };
+}
+// A paddlewheel steamboat on the river: its middle, waterline and stacks.
+function habSteamboat(L) {
+  const bx = L.sea + Math.round((L.w - L.sea) * .5), wl = L.water + 2;
+  return { bx, wl, stacks: [[bx - 6, wl - 26], [bx - 1, wl - 26]] };
+}
 function habPerches(L, state) {
+  const land = habLand(state);
+  if (land.sea === "lighthouse") {
+    const { ix, ground, lx, ltop } = habAssateague(L);
+    return [[lx - 4, ltop - 1], [lx + 5, ltop - 1], [ix - 20, ground + 1], [ix + 22, ground + 1]];
+  }
+  if (land.sea === "stack") state = "CA";
+  if (land.sea === "arch") {
+    const { ax, ground, half, h } = habArch(L);
+    return [[ax, ground - h - 1], [ax - half - 4, ground], [ax + half + 4, ground], [ax - 6, ground - h + 2]];
+  }
+  if (land.sea === "needle") {
+    const { nx, ground, deck } = habNeedle(L);
+    return [[nx - 7, deck - 1], [nx + 7, deck - 1], [nx - 16, ground], [nx + 16, ground]];
+  }
+  if (land.sea === "steamboat") {
+    const { bx, wl, stacks } = habSteamboat(L);
+    return [stacks[0], stacks[1], [bx + 12, wl - 15], [bx - 16, wl - 8]];
+  }
   if (state === "CA") {
     const sx = L.w - Math.round(L.w * .1), top = L.water - 44;
     return [[sx - 7, top], [sx + 6, top], [sx + 17, top + 17], [sx - 27, L.water - 6]];
@@ -1378,12 +1457,26 @@ const HAB_SCENES = {
              meadow: ["#5f9a3d", "#77b04a", "#8fc35a", "#a8d36d"], dots: "round", tree: "round",
              flowers: [["#ffffff", "#ffe9a0"], ["#ffd84d", "#fff2a0"], ["#f27aa8", "#ffc4dc"], ["#b48cff", "#e0d0ff"]] },
 };
+// The palettes the HAB_STATE_LAND states are drawn in.
+const HAB_LOOKS = {
+  forest: HAB_SCENES.NC, north: HAB_SCENES.MI, plains: HAB_SCENES.IL, coast: HAB_SCENES.NJ, maple: HAB_SCENES.NY,
+  swamp: { ...HAB_SCENES.GA, dots: "forest", tree: "oak" },
+  tropical: { ...HAB_SCENES.FL, flat: false },
+  desert: { far: ["#b8946a", "#c8a476", "#d8b688", "#e6c89a"], near: ["#9a8a5a", "#ae9c66", "#c0ae74", "#d0c084"],
+            meadow: ["#8a9a52", "#9eac5e", "#b2be6c", "#c4ce80"], dots: "round", tree: "oak",
+            flowers: [["#ff7a1a", "#ffb347"], ["#ffd84d", "#fff2a0"], ["#e85a8a", "#ffc4dc"], ["#ffffff", "#ffe9a0"]] },
+};
+for (const [st, d] of Object.entries(HAB_STATE_LAND)) {
+  const base = HAB_LOOKS[d.look];
+  HAB_SCENES[st] = { ...base, saguaro: !!d.saguaro, flowers: [d.flower, d.flower, ...base.flowers.slice(2)] };
+}
+
 
 function habBackground(L, phase, state) {
   // Land is painted in daylight colors, then graded for the time of day at the end.
   const W = L.w, H = HAB_H, season = habSeason(), snowy = habSnowy(state);
   const sc = habSeasonScene(HAB_SCENES[state] || HAB_SCENES.default, season, state), P = pxPalette("day");
-  const night = phase === "night", r = mulberry(7);
+  const night = phase === "night", r = mulberry(7), land = habLand(state);
   const img = pxLayer(W, H);
   img.own = new Uint8Array(W * H);
   const pack = (a) => (Math.round(a[0]) << 16) | (Math.round(a[1]) << 8) | Math.round(a[2]);
@@ -1455,7 +1548,7 @@ function habBackground(L, phase, state) {
   const foot = L.water + 1;
   const fade = (x, h) => Math.round(foot - (foot - h) * env(x, 90));
   const atmo = (col, k) => pxMix(col, 0xcdeefb, k);
-  if (state === "CA") {
+  if (state === "CA" || land.far === "peaks") {
     // The Sierra Nevada: sharp shaded peaks with snow on top.
     const rock = P("#6c6a8c", "#8583a6", "#9e9cbc", "#b8b6d2"), snow = P("#aeb9dc", "#d2dbf2", "#f2f5ff", "#ffffff");
     const hm = [];
@@ -1484,7 +1577,7 @@ function habBackground(L, phase, state) {
         img.set(x, y, atmo(ramp(rock, v + ((x * 3 + y) % 11 === 0 ? -.2 : 0), x, y), .22));
       }
     }
-  } else if (state === "IL") {
+  } else if (state === "IL" || land.far === "farm") {
     // Prairie farmland to the horizon: a red barn and a silo.
     const barn = P("#6a1e16", "#8e2a1e", "#a8382a"), silo = P("#8a8e94", "#a8acb0", "#c4c8cc"), roofP = P("#4a4440", "#5e5852");
     const bx = Math.round(coastEnd * .3), gy = 147;
@@ -1504,7 +1597,7 @@ function habBackground(L, phase, state) {
         for (let y = h; y < foot; y++) img.set(x, y, y === h ? pal[1] : ramp(pal, .7 - (y - h) / 30, x, y));
       }
     });
-  } else if (state === "NC" || state === "VA") {
+  } else if (state === "NC" || state === "VA" || land.far === "ridges") {
     // The Blue Ridge: ridges fading into the haze.
     [[96, "#9fb6dc", "#b4c8e8"], [108, "#8199c8", "#98aedb"], [121, "#6683b8", "#7c97c9"]].forEach(([base, a, b], i) => {
       const pal = P(a, b);
@@ -1513,7 +1606,7 @@ function habBackground(L, phase, state) {
         for (let y = h; y < foot; y++) img.set(x, y, y === h ? pal[1] : ramp(pal, .7 - (y - h) / 30, x, y));
       }
     });
-  } else if (state === "FL") {
+  } else if (state === "FL" || land.far === "cypress") {
     // Cypress domes and cabbage palms on the far edge of the sawgrass.
     const dome = P("#3d5a44", "#4b6b4f", "#5b7d5a", "#6d8f66"), far = pxLayer(W, H);
     for (let i = 0; i < 9; i++) {
@@ -1550,7 +1643,7 @@ function habBackground(L, phase, state) {
         if (win && night && hash2(dx, y, 66) > .5) img.set(es + dx, y, lit[0], 1);
         else img.set(es + dx, y, atmo(bld[dx < 0 ? 2 : dx > 0 ? 0 : 1], .25));
       }
-  } else if (state === "TX") {
+  } else if (state === "TX" || land.far === "mesas") {
     // Mesas and buttes: flat caprock tops over red-and-tan banded cliffs.
     const rock = P("#9a5e44", "#b47456", "#c98c68", "#dca77f"), cap = P("#b88e6a", "#e6cba4");
     const hm = [];
@@ -1569,6 +1662,20 @@ function habBackground(L, phase, state) {
         const lit = s > 1 ? -.3 : s < -1 ? .2 : 0;
         const v = .66 + lit - band * .14 + (vnoise(x / 5, y / 3, 23) - .5) * .22 - (y - h) * .006;
         img.set(x, y, atmo(y - h < 2 && Math.abs(s) < 2 ? cap[1 - (y - h)] : ramp(rock, v, x, y), .16));
+      }
+    }
+  } else if (land.far === "volcano" || land.far === "shield") {
+    // A lone volcano: a tall snow-capped cone (Mount Rainier, Mount Hood), or in
+    // Hawaii a broad green shield volcano.
+    const shield = land.far === "shield", mx = Math.round(coastEnd * .42), half = shield ? 120 : 64, peak = shield ? 104 : 74;
+    const rock = shield ? P("#3f6a4a", "#4f7e54", "#64945e", "#7caa70") : P("#5e6a8a", "#76829e", "#8e9ab4", "#a8b2ca");
+    const snow = P("#c4cfe6", "#e0e8f6", "#f6f9ff", "#ffffff");
+    for (let x = Math.max(0, mx - half); x <= Math.min(coastEnd, mx + half); x++) {
+      const u = Math.abs(x - mx) / half, h = fade(x, Math.round(peak + Math.pow(u, shield ? 1.8 : .95) * (150 - peak) + (vnoise(x / 7, 0, 61) - .5) * 3));
+      for (let y = h; y < foot; y++) {
+        const v = .62 - (x - mx) / half * .35 + (vnoise(x / 5, y / 3, 62) - .5) * .25 - (y - h) * .004;
+        const cap = !shield && y < peak + 14 + vnoise(x / 4, y / 3, 63) * 9 - (y - h) * .1;
+        img.set(x, y, atmo(ramp(cap ? snow : rock, v, x, y), .3));
       }
     }
   }
@@ -1607,6 +1714,16 @@ function habBackground(L, phase, state) {
       const y = h + Math.floor(tr() * (dots === "forest" ? 14 : 8)) + (li ? 2 : 1);
       if (y > L.water + 2) continue;
       const s = li ? 1 : .7;
+      if (sc.saguaro && i % 2) {
+        // A saguaro with raised arms.
+        const cac = P("#3d6a3a", "#4f8046", "#64965a"), hh = Math.round(10 * s + tr() * 6), arm = Math.round(hh * .5);
+        for (let j = 0; j < hh; j++) for (let dx = -1; dx <= 1; dx++) tl.set(x + dx, y - j, cac[dx + 1]);
+        for (const side of tr() < .5 ? [-1, 1] : [1]) {
+          tl.set(x + side * 2, y - arm, cac[1]); tl.set(x + side * 3, y - arm, cac[1]);
+          for (let j = arm; j < arm + 4; j++) tl.set(x + side * 3, y - j, cac[side > 0 ? 2 : 0]);
+        }
+        continue;
+      }
       if (dots === "oak") pxBlob(tl, x, y - 2, Math.round(5 * s + tr() * 2), Math.round(3 * s + 1), leaf, { rough: .5, seed: i });
       else if (dots === "forest") {
         if (tr() < .5) pxBlob(tl, x, y, Math.round(3 * s + 1), Math.round(4 * s + 1), sc.leaves === "green" ? leaf : leafy(i), { rough: .45, seed: i });
@@ -1717,7 +1834,7 @@ function habBackground(L, phase, state) {
     img.set(p.x + dx, p.y - hgt - 4, reed[0]);
   }
   // State extras on the shore and in the sea.
-  if (state === "CA") {
+  if (state === "CA" || land.sea === "stack") {
     // A sea stack off the coast, like the ones along Big Sur: layered sandstone
     // stepping out in ledges, an arch worn through its foot, a flat top streaked
     // white where the sea birds stand, a smaller rock beside it and surf at the base.
@@ -1843,7 +1960,7 @@ function habBackground(L, phase, state) {
     for (const ay of [rtop + 16, rtop + 34]) for (let x = rx + 5; x < gx - 3; x++) rk.set(x, ay, steel[0]);
     for (let dx = -10; dx <= 18; dx++) for (let y = pad; y < pad + 3; y++) rk.set(rx + dx, y, ramp(P("#7a7a80", "#9a9aa0", "#b8b8bc"), .8 - (y - pad) * .3, rx + dx, y));
     rk.onto(img, P("#1e1e24"));
-  } else if (state === "VA") {
+  } else if (state === "VA" || land.sea === "lighthouse") {
     // Assateague Island: a sandy barrier island with marsh grass, the striped
     // lighthouse, and the wild ponies grazing.
     const as = pxLayer(W, H), { ix, ground, lx, ltop } = habAssateague(L);
@@ -1860,7 +1977,7 @@ function habBackground(L, phase, state) {
     for (let y = ltop; y < ground + 1; y++) {
       const hw = Math.round(2 + (y - ltop) * .07);
       for (let dx = -hw; dx <= hw; dx++)
-        as.set(lx + dx, y, ramp(Math.floor((y - ltop) / 8) % 2 ? white : red, .9 - (dx + hw) / (2 * hw + 1) * .75, lx + dx, y));
+        as.set(lx + dx, y, ramp(Math.floor((y - ltop) / 8) % 2 || land.lh === "white" ? white : red, .9 - (dx + hw) / (2 * hw + 1) * .75, lx + dx, y));
     }
     for (let dx = -4; dx <= 4; dx++) as.set(lx + dx, ltop - 1, black[0]);
     for (let y = ltop - 6; y < ltop - 1; y++) for (let dx = -2; dx <= 2; dx++)
@@ -1883,9 +2000,9 @@ function habBackground(L, phase, state) {
       for (const [dx, dy] of grazing ? [[0, -7], [1, -7]] : [[0, -10], [1, -9]]) as.set(hx + dx * s, py + dy * s, P(mane));
       as.set(px + 8 * s, py - 6 * s, P(mane)); as.set(px + 8 * s, py - 5 * s, P(mane));  // tail
     };
-    pony(ix - 28, ground + 2, ["#7a3a1c", "#9a4e26", "#b86a38"], "#f2ece0", "#f2ece0", 1, true);
-    pony(ix - 14, ground + 3, ["#4a2a1a", "#6a3c24", "#86522e"], null, "#1e1612", 1, false);
-    pony(ix - 1, ground + 4, ["#9a5e34", "#b8784a", "#d09060"], "#f6f0e4", "#5a3a22", 1, true);
+    if (state === "VA") pony(ix - 28, ground + 2, ["#7a3a1c", "#9a4e26", "#b86a38"], "#f2ece0", "#f2ece0", 1, true);
+    if (state === "VA") pony(ix - 14, ground + 3, ["#4a2a1a", "#6a3c24", "#86522e"], null, "#1e1612", 1, false);
+    if (state === "VA") pony(ix - 1, ground + 4, ["#9a5e34", "#b8784a", "#d09060"], "#f6f0e4", "#5a3a22", 1, true);
     as.onto(img, P("#2a2014"));
     const foam = P("#e9f6ff");
     for (let dx = -36; dx <= 36; dx++) if (hash2(dx, 83) > .45) img.set(ix + dx, ground + 9 + (hash2(dx, 84) > .7 ? 1 : 0), foam);
@@ -2051,6 +2168,56 @@ function habBackground(L, phase, state) {
     lib.onto(img, P("#1a2a24"));
     const foam = P("#e9f6ff");
     for (let dx = -26; dx <= 26; dx++) if (hash2(dx, 74) > .45) img.set(sx + dx, L.water + 6 + (hash2(dx, 75) > .7 ? 1 : 0), foam);
+  } else if (land.sea === "iceberg") {
+    // Icebergs drifting in the bay, white above and glassy blue below the water.
+    const ice = pxLayer(W, H), ib = P("#9ac8e0", "#c4e2f0", "#e8f6fc", "#ffffff");
+    for (const [fx, rx, ry, seed] of [[.3, 14, 10, 71], [.62, 9, 6, 72], [.82, 6, 4, 73]]) {
+      const cx = L.sea + Math.round((W - L.sea) * fx);
+      pxBlob(ice, cx, L.water + 1, rx, ry, ib, { flat: true, rough: .6, seed });
+      for (let dx = -rx + 2; dx <= rx - 2; dx++) if (hash2(dx, seed) > .4) ice.set(cx + dx, L.water + 2, P("#6aa8d0")[0]);
+    }
+    ice.onto(img, P("#3a6a8a"));
+  } else if (land.sea === "arch") {
+    // The Gateway Arch: a tall stainless-steel curve on the far bank of the river.
+    const ga = pxLayer(W, H), { ax, ground, half, h } = habArch(L), steel = P("#8a96a6", "#b4bec8", "#dce2e8", "#ffffff");
+    pxBlob(ga, ax, ground + 3, half + 10, 3, P("#4f7e3e", "#64944c", "#7aa85c"), { flat: true, rough: .5, seed: 74 });
+    for (let k = -half * 4; k <= half * 4; k++) {
+      const u = k / (half * 4), y = Math.round(ground - h * (1 - u * u)), x = ax + Math.round(u * half), w = 1 + Math.round((1 - Math.abs(u)) * 0) + (Math.abs(u) > .8 ? 1 : 0);
+      for (let d = 0; d <= w; d++) ga.set(x + (u < 0 ? -d : d), y, steel[u < 0 ? 3 - d : 1 + d]);
+    }
+    ga.onto(img, P("#3a4250"));
+  } else if (land.sea === "needle") {
+    // The Space Needle on a green point: three slender legs, the flying-saucer
+    // top and its spire.
+    const sn = pxLayer(W, H), { nx, ground, deck, tip } = habNeedle(L);
+    const wht = P("#b8bcc4", "#dcdfe4", "#f4f6f8"), orange = P("#d8782a");
+    pxBlob(sn, nx, ground + 3, 22, 4, P("#3f6a34", "#4f7e3e", "#64944c"), { flat: true, rough: .5, seed: 75 });
+    for (let y = deck + 2; y < ground + 1; y++) {
+      const k = (y - deck) / (ground - deck), spread = Math.round(2 + Math.abs(k - .45) * 7);
+      sn.set(nx - spread, y, wht[0]); sn.set(nx + spread, y, wht[2]); sn.set(nx, y, wht[1]);
+    }
+    for (let y = deck - 3; y <= deck + 1; y++) {
+      const hw = y === deck - 3 ? 5 : y === deck + 1 ? 6 : 9;
+      for (let dx = -hw; dx <= hw; dx++) sn.set(nx + dx, y, y === deck - 1 ? orange[0] : wht[dx < 0 ? 2 : 1]);
+    }
+    for (let y = tip[1]; y < deck - 3; y++) sn.set(nx, y, wht[1]);
+    sn.onto(img, P("#3a404a"));
+  } else if (land.sea === "steamboat") {
+    // A Mississippi paddlewheel steamboat: white decks with railings, two tall
+    // black smokestacks and a red paddlewheel at the stern.
+    const sb = pxLayer(W, H), { bx, wl, stacks } = habSteamboat(L);
+    const wht = P("#c8ccd4", "#e8eaee", "#ffffff"), red = P("#8a1a1a", "#c8302a"), blk = P("#1e1e24", "#3a3a42");
+    for (const [y0, y1, l, r] of [[wl - 4, wl + 1, -18, 16], [wl - 10, wl - 4, -15, 12], [wl - 15, wl - 10, -11, 8]])
+      for (let y = y0; y < y1; y++) for (let dx = l; dx <= r; dx++) {
+        const rail = y === y0 && dx % 2 === 0, win = y === y0 + 2 && dx % 3 === 0 && y1 - y0 > 4;
+        sb.set(bx + dx, y, win ? blk[1] : rail ? wht[0] : wht[dx < 0 ? 2 : 1]);
+      }
+    for (const [sx, sy] of stacks) for (let y = sy; y < wl - 15; y++) { sb.set(sx, y, blk[0]); sb.set(sx + 1, y, blk[1]); }
+    for (const [sx, sy] of stacks) { sb.set(sx - 1, sy, blk[0]); sb.set(sx + 2, sy, blk[0]); }
+    for (let y = wl - 9; y <= wl + 1; y++) for (let dx = 17; dx <= 22; dx++) sb.set(bx + dx, y, (y + dx) % 3 === 0 ? red[0] : red[1]);
+    sb.onto(img, P("#2a2a30"));
+    const foam = P("#e9f6ff");
+    for (let dx = -20; dx <= 24; dx++) if (hash2(dx, 76) > .45) img.set(bx + dx, wl + 2 + (hash2(dx, 77) > .7 ? 1 : 0), foam);
   } else if (state === "TX") {
     // Prickly pear: clumps of flat pads with yellow flowers and red fruit.
     const pad = P("#3d6a32", "#4f8240", "#669a4c", "#82b45e"), cac = pxLayer(W, H);
@@ -2299,7 +2466,7 @@ function habAmbient(c, L, phase) {
     const k = .22 + Math.sin(t * 2.7) * .04;
     c.fillStyle = `rgba(255,214,120,${k.toFixed(3)})`;
     for (const [lx, ly] of habBridge(L).lamps) c.fillRect(lx - 3, ly - 3, 7, 7);
-  } else if (habState() === "VA" && phase !== "day") {
+  } else if ((habState() === "VA" || habLand(habState()).sea === "lighthouse") && phase !== "day") {
     // Assateague's lighthouse flashes after sundown.
     const [lx, ly] = habAssateague(L).lamp;
     if (Math.sin(t * 2.1) > .3) {
