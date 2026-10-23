@@ -39,6 +39,12 @@ import species_oh  # noqa: E402,F401
 import species_ga  # noqa: E402,F401
 import species_mi  # noqa: E402,F401
 import species_nj  # noqa: E402,F401
+import species_ak  # noqa: E402,F401
+import species_hi  # noqa: E402,F401
+import species_sw  # noqa: E402,F401
+import species_mtn  # noqa: E402,F401
+import species_nw  # noqa: E402,F401
+import species_east  # noqa: E402,F401
 from archetypes import (BLACK, NOSE, PINK, WHITE, beetle_top, bee, bird, butterfly,  # noqa: E402
                         dragonfly, duck, frog, goose, hummingbird, lizard, mammal, owl, pelican,
                         mantis, pinniped, quad, S, snake, sprite, star, turtle, vulture, wader, whale)
