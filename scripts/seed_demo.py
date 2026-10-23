@@ -25,21 +25,14 @@ from pathlib import Path
 
 import requests
 
-CATCHES = {"birdnerd": 3}  # per state
-# Each bot's primary location: where its profile and live habitat open for friends.
-HOME = {"birdnerd": "CA"}
-PLAYERS = {  # name: {state: species to try in order; later ones are spares}
-    "birdnerd": {"CA": ["annas_hummingbird", "acorn_woodpecker", "california_quail", "western_bluebird",
-                        "california_scrub_jay", "black_phoebe", "stellers_jay", "red_tailed_hawk",
-                        "great_egret", "white_crowned_sparrow", "house_finch", "northern_flicker"],
-                 "NC": ["northern_cardinal", "carolina_wren", "eastern_bluebird", "carolina_chickadee",
-                        "blue_jay", "ruby_throated_hummingbird", "red_bellied_woodpecker", "tufted_titmouse",
-                        "american_goldfinch", "great_blue_heron", "osprey", "barred_owl"]},
-}
+# The demo has no bots any more; this list stays empty so a rerun creates none.
+CATCHES = {}  # per state
+HOME = {}
+PLAYERS = {}  # name: {state: species to try in order; later ones are spares}
 # Former North Carolina bots: re-running clears their photos and friends and
 # stops listing them as bots.
 # Bots that were removed from the demo; a rerun empties them if they still exist.
-RETIRED = ["trailblazer", "tidepooler", "blueridger", "outerbanker", "cardinalfan"]
+RETIRED = ["birdnerd", "trailblazer", "tidepooler", "blueridger", "outerbanker", "cardinalfan"]
 # Fallback spots for species without a hotspot park.
 SPOTS = [(36.49, -121.18), (38.07, -122.88), (36.82, -121.76), (34.09, -118.83), (37.74, -119.59)]
 NC_SPOTS = [(35.63, -83.09), (35.85, -78.75), (35.91, -75.60), (34.21, -77.89)]
