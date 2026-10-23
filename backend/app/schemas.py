@@ -33,7 +33,7 @@ class UserOut(BaseModel):
     is_private: bool | None = False
     # Profile picture number: /sprites/avatar_<n>.png
     avatar: int | None = 1
-    # The states this player can switch to; the rest show locked until they choose one.
+    # States the player has captured an animal in, plus their main state.
     unlocked_states: list[str] = []
     # Can review reports (ADMIN_USERNAMES).
     is_admin: bool = False
@@ -48,6 +48,14 @@ class SettingsIn(BaseModel):
 
 class UserUpdate(BaseModel):
     state: str
+
+
+class MyStateOut(BaseModel):
+    state: str
+    name: str
+    caught: int
+    total: int
+    main: bool
 
 
 class StateAtOut(BaseModel):

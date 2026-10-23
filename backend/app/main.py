@@ -29,7 +29,7 @@ from .classifier import OTHER_LABEL, Prediction
 from .config import settings
 from .db import Base, SessionLocal, add_missing_columns, engine, get_db
 from .models import AlbumPhoto, Badge, Capture, Friendship, IdFeedback, PhotoLike, Species, StateSpecies, User
-from .schemas import (BondNoteOut, BondOut, StateAtOut, BondsOut, CaptureOut, HouseholdOut, ChallengeOut, ChallengesOut, ChoiceOut, ScoreOut, ScorePart, SetOut, SetSpecies, SetsOut, CollectionEntry, CollectionOut, DexOut, PlaceOut, HotspotOut, HotspotSpecies,
+from .schemas import (MyStateOut, BondNoteOut, BondOut, StateAtOut, BondsOut, CaptureOut, HouseholdOut, ChallengeOut, ChallengesOut, ChoiceOut, ScoreOut, ScorePart, SetOut, SetSpecies, SetsOut, CollectionEntry, CollectionOut, DexOut, PlaceOut, HotspotOut, HotspotSpecies,
                       PickIn, PredictionOut, RegisterIn, SpeciesOut, StateOut, TokenOut, UserOut, UserUpdate,
                       WhereWhenIn, WhereWhenResult)
 from .social import catches_in, find_species, friend_ids, revealed_species_ids, species_out, user_named
@@ -367,25 +367,20 @@ def login(request: Request, form: OAuth2PasswordRequestForm = Depends(), db: Ses
     return TokenOut(access_token=create_token(user.id))
 
 
-def _photo_states(db: Session, user: User) -> set[str]:
-    """States the player has a photo from: where a capture counted, or where its
-    place is (older captures counted in the home state wherever they were taken)."""
-    have = set(db.scalars(select(Capture.state).where(Capture.user_id == user.id, Capture.state.is_not(None)).distinct()))
-    points = {(round(lat, 2), round(lon, 2)) for lat, lon in db.execute(
-        select(Capture.latitude, Capture.longitude).where(Capture.user_id == user.id, Capture.latitude.is_not(None),
-                                                          Capture.longitude.is_not(None)))}
-    for lat, lon in points:
-        if (here := places.state_at(st.all_states(), lat, lon)) is not None:
-            have.add(here.code)
-    return have
+def state_counts(db: Session, user: User) -> dict[str, int]:
+    """How many animals on each state's list the player has captured there
+    (captures count only in the state they were made in)."""
+    return dict(db.execute(
+        select(Capture.state, func.count(func.distinct(Capture.species_id)))
+        .join(StateSpecies, (StateSpecies.state == Capture.state) & (StateSpecies.species_id == Capture.species_id))
+        .where(Capture.user_id == user.id).group_by(Capture.state)).all())
 
 
-def unlocked_states(db: Session, user: User) -> list[str]:
-    """A state unlocks once the player has a photo from it. Their home state is
-    always unlocked, and so are states they used to call home (extra_states;
-    before photos unlocked states, players unlocked them by choice and keep them)."""
-    have = {user.state, *filter(None, (user.extra_states or "").split(",")), *_photo_states(db, user)}
-    return [s.code for s in st.all_states() if s.code in have]
+def unlocked_states(db: Session, user: User, counts: dict[str, int] | None = None) -> list[str]:
+    """A state is unlocked while the player has captured an animal there, so
+    deleting the last one locks it again. The main state is always unlocked."""
+    counts = state_counts(db, user) if counts is None else counts
+    return [s.code for s in st.all_states() if s.code == user.state or counts.get(s.code)]
 
 
 def user_out(db: Session, user: User) -> UserOut:
@@ -404,17 +399,26 @@ def me(user: User = Depends(current_user), db: Session = Depends(get_db)):
 @app.patch("/me", response_model=UserOut)
 def update_me(body: UserUpdate, user: User = Depends(current_user), db: Session = Depends(get_db)):
     """Change the player's home state; their Field Guide, parks and maps follow
-    it. Only unlocked states (ones they have a photo from) can be picked."""
+    it. Only unlocked states (ones they've captured an animal in) can be picked."""
     state = state_or_404(body.state)
     if state.code not in unlocked_states(db, user):
-        raise HTTPException(status.HTTP_403_FORBIDDEN, f"Take a photo in {state.name} to unlock it.")
+        raise HTTPException(status.HTTP_403_FORBIDDEN, f"Capture an animal in {state.name} to unlock it.")
     if state.code != user.state:
-        # The old home stays unlocked even without a photo from it.
-        kept = {*filter(None, (user.extra_states or "").split(",")), user.state} - _photo_states(db, user)
-        user.extra_states = ",".join(s.code for s in st.all_states() if s.code in kept) or None
         user.state = state.code
         db.commit()
     return user_out(db, user)
+
+
+@app.get("/me/states", response_model=list[MyStateOut])
+def my_states(user: User = Depends(current_user), db: Session = Depends(get_db)):
+    """The player's unlocked states with how much of each list they've captured,
+    for the state screen. Any of them can be viewed without becoming the main state."""
+    counts = state_counts(db, user)
+    codes = unlocked_states(db, user, counts)
+    totals = dict(db.execute(select(StateSpecies.state, func.count()).where(StateSpecies.state.in_(codes))
+                             .group_by(StateSpecies.state)).all())
+    return [MyStateOut(state=s.code, name=s.name, caught=counts.get(s.code, 0), total=totals.get(s.code, 0),
+                       main=s.code == user.state) for s in st.all_states() if s.code in codes]
 
 
 @app.get("/states/at", response_model=StateAtOut)
@@ -769,6 +773,8 @@ def _identify(db: Session, user: User, model, capture: Capture, image: Image.Ima
         message = household.message(pet)
     else:
         message = f"We couldn't match this to any animal in the {state.name} collection."
+    # A state unlocks with its first captured animal, not with any photo.
+    newly_unlocked = newly_unlocked and matched
     if newly_unlocked:
         message = f"📍 You unlocked {state.name}! " + message
     elif state.code != user.state and matched:
@@ -1213,9 +1219,10 @@ def my_sets(state: str | None = Query(None), user: User = Depends(current_user),
 
 
 @app.get("/me/challenges", response_model=ChallengesOut)
-def my_challenges(user: User = Depends(current_user), db: Session = Depends(get_db)):
-    """This week's three challenges for the player's state and their progress."""
-    state = state_or_404(user.state)
+def my_challenges(state: str | None = Query(None), user: User = Depends(current_user),
+                  db: Session = Depends(get_db)):
+    """This week's three challenges for the player's state (or ?state=) and their progress."""
+    state = state_or_404(state or user.state)
     start, end = goals.week_bounds(state.utc_offset)
     members = {m.species_id: m for m in state_species(db, state.code)}
     categories: dict[str, int] = {}
