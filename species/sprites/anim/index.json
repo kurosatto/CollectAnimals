@@ -159,6 +159,11 @@
    "walk",
    "sleep"
   ],
+  "autumn_meadowhawk": [
+   "idle",
+   "fly",
+   "sleep"
+  ],
   "bald_eagle": [
    "idle",
    "walk",
@@ -563,6 +568,11 @@
    "walk",
    "sleep"
   ],
+  "common_wall_lizard": [
+   "idle",
+   "walk",
+   "sleep"
+  ],
   "common_whitetail": [
    "idle",
    "fly",
@@ -599,6 +609,11 @@
   "coypu": [
    "idle",
    "walk",
+   "sleep"
+  ],
+  "creek_chub": [
+   "idle",
+   "swim",
    "sleep"
   ],
   "cuban_tree_frog": [
@@ -673,6 +688,11 @@
    "fly",
    "sleep"
   ],
+  "eastern_amberwing": [
+   "idle",
+   "fly",
+   "sleep"
+  ],
   "eastern_bluebird": [
    "idle",
    "walk",
@@ -710,6 +730,11 @@
    "walk",
    "sleep"
   ],
+  "eastern_forktail": [
+   "idle",
+   "fly",
+   "sleep"
+  ],
   "eastern_foxsnake": [
    "idle",
    "walk",
@@ -735,6 +760,11 @@
    "sleep"
   ],
   "eastern_lubber_grasshopper": [
+   "idle",
+   "walk",
+   "sleep"
+  ],
+  "eastern_meadow_vole": [
    "idle",
    "walk",
    "sleep"
@@ -869,6 +899,11 @@
    "walk",
    "sleep"
   ],
+  "fragile_forktail": [
+   "idle",
+   "fly",
+   "sleep"
+  ],
   "garibaldi": [
    "idle",
    "sleep"
@@ -941,6 +976,12 @@
   ],
   "gray_snapper": [
    "idle",
+   "swim",
+   "sleep"
+  ],
+  "gray_treefrog": [
+   "idle",
+   "walk",
    "swim",
    "sleep"
   ],
@@ -1296,6 +1337,12 @@
    "swim",
    "sleep"
   ],
+  "northern_map_turtle": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep"
+  ],
   "northern_mockingbird": [
    "idle",
    "walk",
@@ -1456,6 +1503,11 @@
   "raccoon": [
    "idle",
    "walk",
+   "sleep"
+  ],
+  "rainbow_darter": [
+   "idle",
+   "swim",
    "sleep"
   ],
   "rathkes_woodlouse": [
@@ -1710,6 +1762,11 @@
    "idle",
    "walk",
    "swim",
+   "sleep"
+  ],
+  "southern_flying_squirrel": [
+   "idle",
+   "walk",
    "sleep"
   ],
   "southern_leopard_frog": [
@@ -1984,6 +2041,11 @@
   "white_winged_dove": [
    "idle",
    "walk",
+   "fly",
+   "sleep"
+  ],
+  "widow_skimmer": [
+   "idle",
    "fly",
    "sleep"
   ],
