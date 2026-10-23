@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session
 
 from . import classifier as clf
 from . import dex
-from . import avatars, bonds, goals, household, limits, notices, places, scoring, social, weather
+from . import avatars, bonds, goals, household, limits, notices, places, recovery, scoring, social, weather
 from .safety import is_admin, router as safety_router
 from . import states as st
 from .auth import DUMMY_HASH, create_token, current_user, hash_password, optional_user, verify_password
@@ -179,6 +179,7 @@ async def security_headers(request: Request, call_next):
 app.include_router(social.router)
 app.include_router(safety_router)
 app.include_router(notices.router)
+app.include_router(recovery.router)
 # Third-party browser libraries, served from here so the app works without a CDN.
 app.mount("/vendor", StaticFiles(directory=STATIC_DIR / "vendor"), name="vendor")
 
@@ -318,12 +319,17 @@ def health():
 
 # --- auth -------------------------------------------------------------------
 
+MIN_AGE = 13
+
 @app.post("/auth/register", response_model=TokenOut, status_code=201)
 def register(body: RegisterIn, request: Request, db: Session = Depends(get_db)):
     ip = limits.client_ip(request)
     if limits.registrations_by_ip.blocked(ip):
         raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS,
                             "Too many new accounts from here. Try again later.")
+    if body.birth_year is not None and datetime.now().year - body.birth_year < MIN_AGE:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, f"Accounts are for players {MIN_AGE} and older. "
+                            "You can still play on your own in the Android app without one.")
     taken = db.scalar(select(User).where(or_(User.email == body.email.lower(),
                                              func.lower(User.username) == body.username.lower())))
     if taken:
@@ -345,7 +351,7 @@ def register(body: RegisterIn, request: Request, db: Session = Depends(get_db)):
     for bot in db.scalars(select(User).where(User.is_bot.is_(True), User.id != user.id)):
         db.add(Friendship(requester_id=bot.id, addressee_id=user.id, accepted=True))
     db.commit()
-    return TokenOut(access_token=create_token(user.id))
+    return TokenOut(access_token=create_token(user))
 
 
 @app.post("/auth/login", response_model=TokenOut)
@@ -364,7 +370,7 @@ def login(request: Request, form: OAuth2PasswordRequestForm = Depends(), db: Ses
         limits.failed_logins_by_ip.hit(ip)
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Wrong email/username or password")
     limits.failed_logins_by_account.clear(ident.lower())
-    return TokenOut(access_token=create_token(user.id))
+    return TokenOut(access_token=create_token(user))
 
 
 def state_counts(db: Session, user: User) -> dict[str, int]:

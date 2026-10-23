@@ -167,8 +167,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     fun signIn(ident: String, password: String) = account { Online.login(ident.trim(), password) }
 
-    fun signUp(email: String, username: String, password: String) =
-        account { Online.register(email.trim(), username.trim(), password, _state.value.stateCode) }
+    fun signUp(email: String, username: String, password: String, birthYear: Int) =
+        account { Online.register(email.trim(), username.trim(), password, _state.value.stateCode, birthYear) }
 
     private fun account(block: suspend () -> Unit) {
         _state.update { it.copy(accountBusy = true, accountError = null) }

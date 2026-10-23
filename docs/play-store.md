@@ -9,6 +9,12 @@ Set these where the server starts (the PC's start script):
 - `ADMIN_USERNAMES=admin` lets that player review reports (🚩 Reports on the website; a push
   notification arrives when there's a new one). Comma-separate several names.
 - `CONTACT_EMAIL=you@example.com` shows a contact address on the privacy policy page.
+- Password reset emails: `SMTP_HOST`, `SMTP_PORT` (587), `SMTP_USER`, `SMTP_PASSWORD`, `MAIL_FROM`.
+  Free with Gmail: `SMTP_HOST=smtp.gmail.com`, your Gmail address as `SMTP_USER`, and an
+  [app password](https://myaccount.google.com/apppasswords) as `SMTP_PASSWORD`. Without these,
+  the reset link is only written to the server's log.
+- Backups: run `python scripts/backup.py --db <demo.db> --uploads <uploads folder> --to D:/CaptureAnimals/backups`
+  daily with Task Scheduler (keeps 14 database copies and a mirror of the photos).
 
 ## Play Console answers
 

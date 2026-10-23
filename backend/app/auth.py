@@ -1,3 +1,4 @@
+import hashlib
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
@@ -29,9 +30,15 @@ def verify_password(password: str, hashed: str) -> bool:
 DUMMY_HASH = hash_password("not-a-real-password")
 
 
-def create_token(user_id: int) -> str:
+def password_stamp(user: User) -> str:
+    """Changes whenever the password does, so tokens made before a change stop working."""
+    return hashlib.sha256(user.password_hash.encode()).hexdigest()[:16]
+
+
+def create_token(user: User) -> str:
     exp = datetime.now(timezone.utc) + timedelta(minutes=settings.token_ttl_minutes)
-    return jwt.encode({"sub": str(user_id), "exp": exp}, settings.secret_key, algorithm="HS256")
+    return jwt.encode({"sub": str(user.id), "pw": password_stamp(user), "exp": exp},
+                      settings.secret_key, algorithm="HS256")
 
 
 def current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
@@ -40,10 +47,13 @@ def current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_
         headers={"WWW-Authenticate": "Bearer"})
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=["HS256"])
+        if payload.get("purpose"):  # a password reset link, not a login
+            raise unauthorized
         user = db.get(User, int(payload["sub"]))
     except (jwt.PyJWTError, KeyError, ValueError):
         raise unauthorized
-    if user is None:
+    # Tokens from before stamps existed have no "pw" and stay valid until they expire.
+    if user is None or payload.get("pw", password_stamp(user)) != password_stamp(user):
         raise unauthorized
     return user
 

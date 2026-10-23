@@ -50,7 +50,12 @@ registrations_by_ip = Limit(3600, 10)
 # Habitat weather for the player's own spot (each new spot asks the weather service).
 weather_spots_by_ip = Limit(3600, 20)
 
-ALL = (failed_logins_by_account, failed_logins_by_ip, registrations_by_ip, weather_spots_by_ip)
+# Password reset emails per account, and reset requests per address.
+resets_by_account = Limit(3600, 3)
+resets_by_ip = Limit(3600, 10)
+
+ALL = (failed_logins_by_account, failed_logins_by_ip, registrations_by_ip, weather_spots_by_ip,
+       resets_by_account, resets_by_ip)
 
 
 def client_ip(request: Request) -> str:

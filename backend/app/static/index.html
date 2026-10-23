@@ -393,10 +393,12 @@
       <input id="email" type="email" placeholder="Email" class="hidden">
       <input id="ident" placeholder="Email or username" required>
       <input id="password" type="password" placeholder="Password (8+ chars)" required>
+      <input id="birth-year" type="number" inputmode="numeric" min="1900" max="2100" placeholder="Year you were born" class="hidden">
       <button type="button" class="photo-btn hidden" id="signup-state">📍 Choose your state</button>
       <button type="submit" id="auth-submit">Log in</button>
     </form>
-    <p class="muted"><button class="link" id="toggle">Need an account? Sign up</button></p>
+    <p class="muted"><button class="link" id="toggle">Need an account? Sign up</button>
+      <span id="forgot-sep">·</span> <button class="link" id="forgot">Forgot password?</button></p>
     <p id="auth-error" style="color:#c0392b"></p>
     <p class="muted" style="font-size:.85rem">For players 13 and older. By signing up you agree to the <a href="/rules" target="_blank" rel="noopener" style="color:var(--accent)">community rules</a> and <a href="/privacy" target="_blank" rel="noopener" style="color:var(--accent)">privacy policy</a>.</p>
     </div>
@@ -612,7 +614,21 @@ $("toggle").onclick = () => {
   $("email").classList.toggle("hidden", !signup);
   $("signup-state").classList.toggle("hidden", !signup || states.length < 2);
   $("email").required = signup;
+  $("birth-year").classList.toggle("hidden", !signup);
+  $("birth-year").required = signup;
   $("ident").placeholder = signup ? "Username" : "Email or username";
+  $("forgot").classList.toggle("hidden", signup);
+  $("forgot-sep").classList.toggle("hidden", signup);
+};
+
+$("forgot").onclick = async () => {
+  const ident = prompt("Your email or username. We'll email you a link to pick a new password.", $("ident").value);
+  if (!ident) return;
+  try {
+    const r = await api("/auth/forgot", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ident }) });
+    $("auth-error").textContent = r.detail;
+  } catch (err) { $("auth-error").textContent = err.message; }
 };
 
 $("auth-form").onsubmit = async (e) => {
@@ -626,7 +642,7 @@ $("auth-form").onsubmit = async (e) => {
       if (!signupState && states.length > 1) return;
       r = await api("/auth/register", { method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: $("email").value, username: $("ident").value, password: $("password").value,
-                               state: signupState || undefined }) });
+                               state: signupState || undefined, birth_year: Number($("birth-year").value) }) });
     } else {
       r = await api("/auth/login", { method: "POST",
         body: new URLSearchParams({ username: $("ident").value, password: $("password").value }) });

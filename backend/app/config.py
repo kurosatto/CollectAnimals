@@ -59,6 +59,17 @@ class Settings:
         n.strip().lower() for n in os.getenv("ADMIN_USERNAMES", "").split(",") if n.strip()))
     # Shown on the privacy policy page as the way to reach whoever runs the game.
     contact_email: str = field(default_factory=lambda: os.getenv("CONTACT_EMAIL", ""))
+    # Outgoing email for password resets (any SMTP server, e.g. Gmail with an app password,
+    # or Brevo/Resend). Without SMTP_HOST, reset links are only written to the server log.
+    smtp_host: str = field(default_factory=lambda: os.getenv("SMTP_HOST", ""))
+    smtp_port: int = field(default_factory=lambda: int(os.getenv("SMTP_PORT", "587")))
+    smtp_user: str = field(default_factory=lambda: os.getenv("SMTP_USER", ""))
+    smtp_password: str = field(default_factory=lambda: os.getenv("SMTP_PASSWORD", ""))
+    mail_from: str = field(default_factory=lambda: os.getenv("MAIL_FROM", "") or os.getenv("SMTP_USER", ""))
+    # The page reset emails link to. The GitHub Pages copy works even after the
+    # server's address changes, because it looks the address up when opened.
+    reset_page_url: str = field(default_factory=lambda: os.getenv(
+        "RESET_PAGE_URL", "https://kurosatto.github.io/CollectAnimals/reset-password.html"))
     max_upload_mb: int = field(default_factory=lambda: int(os.getenv("MAX_UPLOAD_MB", "15")))
 
 
