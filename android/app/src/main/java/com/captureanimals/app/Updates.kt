@@ -1,6 +1,7 @@
 package com.captureanimals.app
 
 import android.content.Context
+import android.os.Build
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -19,6 +20,8 @@ object Updates {
 
     /** The newer version on offer, unless this phone has it or already said "Later" to it. */
     suspend fun check(context: Context): Available? = withContext(Dispatchers.IO) {
+        // Google Play updates its own installs, and its rules forbid offering APKs from elsewhere.
+        if (installedFromPlay(context)) return@withContext null
         val base = Online.base ?: return@withContext null
         val offer = runCatching {
             val c = URL("$base/app/version").openConnection() as HttpURLConnection
@@ -29,6 +32,13 @@ object Updates {
         val skipped = prefs(context).getString("skipped", null)
         offer.takeIf { isNewer(it.version, BuildConfigCompat.version(context)) && it.version != skipped }
     }
+
+    private fun installedFromPlay(context: Context): Boolean = runCatching {
+        val pm = context.packageManager
+        val installer = if (Build.VERSION.SDK_INT >= 30) pm.getInstallSourceInfo(context.packageName).installingPackageName
+            else @Suppress("DEPRECATION") pm.getInstallerPackageName(context.packageName)
+        installer == "com.android.vending"
+    }.getOrDefault(false)
 
     fun skip(context: Context, version: String) = prefs(context).edit().putString("skipped", version).apply()
 

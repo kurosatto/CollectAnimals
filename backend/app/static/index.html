@@ -398,7 +398,7 @@
     </form>
     <p class="muted"><button class="link" id="toggle">Need an account? Sign up</button></p>
     <p id="auth-error" style="color:#c0392b"></p>
-    <p class="muted" style="font-size:.85rem">For players 13 and older. <a href="/privacy" target="_blank" rel="noopener" style="color:var(--accent)">Privacy policy</a></p>
+    <p class="muted" style="font-size:.85rem">For players 13 and older. By signing up you agree to the <a href="/rules" target="_blank" rel="noopener" style="color:var(--accent)">community rules</a> and <a href="/privacy" target="_blank" rel="noopener" style="color:var(--accent)">privacy policy</a>.</p>
     </div>
     <ul class="pitch-list">
       <li><img src="/sprites/ui_tab_capture.png" alt="">Photograph real animals and find out what you met</li>
@@ -1952,7 +1952,8 @@ async function accountSection(box) {
   } catch {}
   const links = el("p");
   const pol = el("a", "", "Privacy policy"); pol.href = "/privacy"; pol.target = "_blank"; pol.rel = "noopener";
-  links.append(pol);
+  const rules = el("a", "", "Community rules"); rules.href = "/rules"; rules.target = "_blank"; rules.rel = "noopener";
+  links.append(pol, " · ", rules);
   const del = el("button", "ghost danger", "Delete account");
   del.onclick = async () => {
     if (!confirm("Delete your account? Your photos, Field Guide, friends, likes and comments are all deleted for good.")) return;

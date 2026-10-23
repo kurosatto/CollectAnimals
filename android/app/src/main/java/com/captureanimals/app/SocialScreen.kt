@@ -375,7 +375,8 @@ fun AccountDialog(state: UiState, vm: GameViewModel, onDismiss: () -> Unit) {
                 TextButton(onClick = { signUp = !signUp }, contentPadding = PaddingValues(0.dp)) {
                     Text(if (signUp) "Have an account? Log in" else "Need an account? Sign up")
                 }
-                Text("For players 13 and older.", style = MaterialTheme.typography.bodySmall)
+                Text(if (signUp) "For players 13 and older. By signing up you agree to the community rules " +
+                    "and privacy policy." else "For players 13 and older.", style = MaterialTheme.typography.bodySmall)
                 PrivacyLink()
             } else {
                 // Your profile picture: tap one of the ten to switch.
@@ -832,12 +833,19 @@ fun OnlinePhotosScreen(social: SocialViewModel, onOpenDex: (String) -> Unit, onD
 
 // --- Safety: privacy policy, blocking, reports, deleting the account ---------------------
 
+// GitHub Pages copies of docs/, so the links work while the game server is off.
+private const val DOCS = "https://kurosatto.github.io/CollectAnimals"
+
 @Composable
 private fun PrivacyLink() {
     val uri = LocalUriHandler.current
-    val server = Online.base ?: return
-    TextButton(onClick = { runCatching { uri.openUri("$server/privacy") } }, contentPadding = PaddingValues(0.dp)) {
-        Text("Privacy policy")
+    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        TextButton(onClick = { runCatching { uri.openUri("$DOCS/privacy.html") } }, contentPadding = PaddingValues(0.dp)) {
+            Text("Privacy policy")
+        }
+        TextButton(onClick = { runCatching { uri.openUri("$DOCS/rules.html") } }, contentPadding = PaddingValues(0.dp)) {
+            Text("Community rules")
+        }
     }
 }
 
