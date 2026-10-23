@@ -54,6 +54,11 @@ class Settings:
     release_json: Path = field(default_factory=lambda: Path(os.getenv("RELEASE_JSON", ROOT / "release.json")))
     android_apk_dir: Path | None = field(default_factory=lambda: Path(os.environ["ANDROID_APK_DIR"])
                                          if os.getenv("ANDROID_APK_DIR") else None)
+    # Players who can review reports (comma-separated usernames, e.g. ADMIN_USERNAMES=admin).
+    admin_usernames: frozenset[str] = field(default_factory=lambda: frozenset(
+        n.strip().lower() for n in os.getenv("ADMIN_USERNAMES", "").split(",") if n.strip()))
+    # Shown on the privacy policy page as the way to reach whoever runs the game.
+    contact_email: str = field(default_factory=lambda: os.getenv("CONTACT_EMAIL", ""))
     max_upload_mb: int = field(default_factory=lambda: int(os.getenv("MAX_UPLOAD_MB", "15")))
 
 

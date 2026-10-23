@@ -29,7 +29,7 @@ from .scoring import to_local
 from . import states
 from .auth import current_user
 from .db import get_db
-from .models import AlbumPhoto, Badge, Capture, Friendship, PhotoComment, PhotoLike, Species, StateSpecies, User
+from .models import AlbumPhoto, Badge, Block, Capture, Friendship, PhotoComment, PhotoLike, Species, StateSpecies, User
 from .schemas import (WhereWhenOut, AchievementOut, AlbumOut, AlbumPick, CommentIn, CommentOut, FeedOut, ProfileOut, SuggestionOut, Tally, FriendOut, FriendRequestIn, FriendsOut,
                       GalleryOut, PhotoOut, SettingsIn, SpeciesOut)
 from .storage import get_storage
@@ -46,6 +46,19 @@ def friend_ids(db: Session, user_id: int) -> set[int]:
     return {a if b == user_id else b for a, b in rows}
 
 
+def blocked_ids(db: Session, user_id: int) -> set[int]:
+    """Players this one blocked or was blocked by: they don't see each other's
+    photos or comments and can't interact."""
+    rows = db.execute(select(Block.blocker_id, Block.blocked_id).where(
+        or_(Block.blocker_id == user_id, Block.blocked_id == user_id)))
+    return {a if b == user_id else b for a, b in rows}
+
+
+def visible_to(photo: AlbumPhoto, viewer: User) -> bool:
+    """Hidden photos (reported, or removed by a moderator) only show to their owner."""
+    return not photo.hidden or photo.user_id == viewer.id
+
+
 def revealed_species_ids(db: Session, user: User | None) -> set[int]:
     if user is None:
         return set()
@@ -53,11 +66,14 @@ def revealed_species_ids(db: Session, user: User | None) -> set[int]:
     return set(db.scalars(select(Badge.species_id).where(Badge.user_id.in_(ids)).distinct()))
 
 
-def shown_to(user: User, friends: set[int]):
+def shown_to(user: User, friends: set[int], blocked: set[int]):
     """SQL filter: album photos this viewer may see as far as privacy goes
-    (everyone's, except private players' unless they're you or a friend).
+    (everyone's, except private players' unless they're you or a friend, and
+    never blocked players' or hidden ones but your own).
     Use on a query that joins User on AlbumPhoto.user_id."""
-    return or_(User.is_private.is_(None), ~User.is_private, User.id.in_(friends | {user.id}))
+    return and_(or_(User.is_private.is_(None), ~User.is_private, User.id.in_(friends | {user.id})),
+                User.id.not_in(blocked),
+                or_(AlbumPhoto.hidden.is_(None), ~AlbumPhoto.hidden, AlbumPhoto.user_id == user.id))
 
 
 def species_out(s: Species, revealed: bool, m: StateSpecies | None = None) -> SpeciesOut:
@@ -102,7 +118,7 @@ def photo_out(p: AlbumPhoto, viewer: User, friends: set[int], likes: int, liked:
     loc = places.for_viewer(c.latitude, c.longitude, p.species.rarity, mine, p.user_id in friends)
     st = states.get(c.state or p.user.state)
     return PhotoOut(
-        id=p.id, url=get_storage().url(c.image_path) if show_image else None,
+        id=p.id, hidden=bool(p.hidden) if mine else False, url=get_storage().url(c.image_path) if show_image else None,
         username=p.user.username, species=species_out(p.species, revealed),
         taken_on=(c.taken_at or c.created_at).date(), caught_at=c.created_at,
         latitude=loc.latitude, longitude=loc.longitude, location_precise=loc.precise,
@@ -126,7 +142,8 @@ def _comment_counts(db: Session, photo_ids: list[int]) -> dict[int, int]:
     if not photo_ids:
         return {}
     return dict(db.execute(select(PhotoComment.photo_id, func.count()).where(
-        PhotoComment.photo_id.in_(photo_ids)).group_by(PhotoComment.photo_id)).all())
+        PhotoComment.photo_id.in_(photo_ids), or_(PhotoComment.hidden.is_(None), ~PhotoComment.hidden))
+        .group_by(PhotoComment.photo_id)).all())
 
 
 def clear_reactions(db: Session, photo_id: int) -> None:
@@ -174,8 +191,8 @@ def caught_counts(db: Session, users: list[User]) -> dict[int, int]:
 def _album(db: Session, owner: User, viewer: User) -> AlbumOut:
     friends = friend_ids(db, viewer.id)
     revealed = revealed_species_ids(db, viewer)
-    photos = db.scalars(select(AlbumPhoto).where(AlbumPhoto.user_id == owner.id)
-                        .order_by(AlbumPhoto.species_id)).all()
+    photos = [p for p in db.scalars(select(AlbumPhoto).where(AlbumPhoto.user_id == owner.id)
+                                    .order_by(AlbumPhoto.species_id)) if visible_to(p, viewer)]
     counts, liked = _like_info(db, [p.id for p in photos], viewer.id)
     comments = _comment_counts(db, [p.id for p in photos])
     caught = db.scalar(select(func.count()).select_from(Badge).where(Badge.user_id == owner.id))
@@ -308,6 +325,8 @@ def _set_achievements(state: str, members: list[StateSpecies], caught_ids: set[i
 def _friendship(db: Session, viewer: User, other: User) -> str:
     if viewer.id == other.id:
         return "self"
+    if db.scalar(select(Block.id).where(Block.blocker_id == viewer.id, Block.blocked_id == other.id)):
+        return "blocked"
     f = db.scalar(select(Friendship).where(_between(viewer.id, other.id)))
     if not f:
         return "none"
@@ -321,6 +340,8 @@ def user_profile(username: str, user: User = Depends(current_user), db: Session 
     """A player's page: achievements, catches by rarity and group, and photos."""
     owner = _user_by_name(db, username)
     friendship = _friendship(db, user, owner)
+    if friendship != "blocked" and owner.id in blocked_ids(db, user.id):
+        raise HTTPException(404, "No user with that username")  # they blocked you
     friends = friend_ids(db, user.id)
     revealed = revealed_species_ids(db, user)
 
@@ -341,7 +362,8 @@ def user_profile(username: str, user: User = Depends(current_user), db: Session 
     likes_received = db.scalar(select(func.count()).select_from(PhotoLike).join(
         AlbumPhoto, AlbumPhoto.id == PhotoLike.photo_id).where(AlbumPhoto.user_id == owner.id))
     close = friendship in ("self", "friends")
-    visible = [p for p in photos if close or (p.species_id in revealed and not owner.is_private)]
+    visible = [p for p in photos if visible_to(p, user) and friendship != "blocked"
+               and (close or (p.species_id in revealed and not owner.is_private))]
     counts, liked = _like_info(db, [p.id for p in visible], user.id)
     comments = _comment_counts(db, [p.id for p in visible])
 
@@ -376,12 +398,13 @@ def species_gallery(species_key: str,
         raise HTTPException(status.HTTP_403_FORBIDDEN,
                             "Capture this animal, or have a friend capture it, to see its photos")
     friends = friend_ids(db, user.id)
+    blocked = blocked_ids(db, user.id)
     likes = (select(PhotoLike.photo_id, func.count().label("n"))
              .group_by(PhotoLike.photo_id).subquery())
     n = func.coalesce(likes.c.n, 0)
     q = (select(AlbumPhoto, n).outerjoin(likes, likes.c.photo_id == AlbumPhoto.id)
          .join(User, User.id == AlbumPhoto.user_id)
-         .where(AlbumPhoto.species_id == s.id, shown_to(user, friends)))
+         .where(AlbumPhoto.species_id == s.id, shown_to(user, friends, blocked)))
     if scope == "friends":
         q = q.where(AlbumPhoto.user_id.in_(friends | {user.id}))
     total = db.scalar(select(func.count()).select_from(q.subquery()))
@@ -418,11 +441,12 @@ def news_feed(scope: Literal["near", "state", "all", "friends"] = "all",
     if scope == "near" and (lat is None or lon is None):
         raise HTTPException(400, "scope=near needs lat and lon")
     friends = friend_ids(db, user.id)
+    blocked = blocked_ids(db, user.id)
     revealed = revealed_species_ids(db, user)
     q = (select(AlbumPhoto).join(Capture, Capture.id == AlbumPhoto.capture_id)
          .join(User, User.id == AlbumPhoto.user_id)
          .where(or_(User.show_in_feed.is_(None), User.show_in_feed, User.id == user.id),
-                shown_to(user, friends)))
+                shown_to(user, friends, blocked)))
     if scope == "friends":
         q = q.where(AlbumPhoto.user_id.in_(friends | {user.id}))
     if scope == "state":
@@ -486,6 +510,8 @@ def _visible_photo(db: Session, photo_id: int, user: User) -> AlbumPhoto:
         raise HTTPException(404, "No such photo")
     if photo.user.is_private and photo.user_id != user.id and photo.user_id not in friend_ids(db, user.id):
         raise HTTPException(404, "No such photo")
+    if not visible_to(photo, user) or photo.user_id in blocked_ids(db, user.id):
+        raise HTTPException(404, "No such photo")
     return photo
 
 
@@ -529,8 +555,11 @@ def comment_out(c: PhotoComment, photo: AlbumPhoto, viewer: User) -> CommentOut:
 def photo_comments(photo_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
     """Comments on a photo, oldest first. Same visibility as the photo itself."""
     photo = _visible_photo(db, photo_id, user)
-    rows = db.scalars(select(PhotoComment).where(PhotoComment.photo_id == photo.id)
-                      .order_by(PhotoComment.created_at, PhotoComment.id).limit(500)).all()
+    blocked = blocked_ids(db, user.id)
+    rows = db.scalars(select(PhotoComment).where(
+        PhotoComment.photo_id == photo.id, PhotoComment.user_id.not_in(blocked),
+        or_(PhotoComment.hidden.is_(None), ~PhotoComment.hidden, PhotoComment.user_id == user.id))
+        .order_by(PhotoComment.created_at, PhotoComment.id).limit(500)).all()
     return [comment_out(c, photo, user) for c in rows]
 
 
@@ -633,6 +662,8 @@ def send_friend_request(body: FriendRequestIn, user: User = Depends(current_user
     other = _user_by_name(db, body.username)
     if other.id == user.id:
         raise HTTPException(400, "You can't add yourself")
+    if other.id in blocked_ids(db, user.id):
+        raise HTTPException(403, "You can't add this player")
     f = db.scalar(select(Friendship).where(_between(user.id, other.id)))
     if f and f.accepted:
         raise HTTPException(409, "You're already friends")
@@ -656,6 +687,7 @@ def friend_suggestions(user: User = Depends(current_user), db: Session = Depends
     linked = {a if b == user.id else b for a, b in db.execute(
         select(Friendship.requester_id, Friendship.addressee_id).where(
             or_(Friendship.requester_id == user.id, Friendship.addressee_id == user.id)))}
+    linked |= blocked_ids(db, user.id)
     bots = db.scalars(select(User).where(User.is_bot, User.id != user.id,
                                          User.id.not_in(linked)).order_by(User.username)).all()
     caught = caught_counts(db, list(bots))
