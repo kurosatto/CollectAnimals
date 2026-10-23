@@ -363,6 +363,12 @@
    "walk",
    "sleep"
   ],
+  "brown_thrasher": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep"
+  ],
   "brush_rabbit": [
    "idle",
    "walk",
@@ -825,6 +831,12 @@
    "fly",
    "sleep"
   ],
+  "eastern_towhee": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep"
+  ],
   "elk": [
    "idle",
    "walk",
@@ -843,6 +855,11 @@
   "european_starling": [
    "idle",
    "walk",
+   "fly",
+   "sleep"
+  ],
+  "fiery_skipper": [
+   "idle",
    "fly",
    "sleep"
   ],
@@ -1360,6 +1377,11 @@
    "swim",
    "sleep"
   ],
+  "northern_slimy_salamander": [
+   "idle",
+   "walk",
+   "sleep"
+  ],
   "northern_two_lined_salamander": [
    "idle",
    "walk",
@@ -1446,6 +1468,12 @@
    "idle",
    "walk",
    "swim",
+   "sleep"
+  ],
+  "pine_warbler": [
+   "idle",
+   "walk",
+   "fly",
    "sleep"
   ],
   "pipevine_swallowtail": [
@@ -1656,6 +1684,12 @@
    "fly",
    "sleep"
   ],
+  "ruby_crowned_kinglet": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep"
+  ],
   "ruby_throated_hummingbird": [
    "idle",
    "fly",
@@ -1811,6 +1845,11 @@
    "idle",
    "walk",
    "swim",
+   "sleep"
+  ],
+  "squareback_marsh_crab": [
+   "idle",
+   "walk",
    "sleep"
   ],
   "squirrel_tree_frog": [
