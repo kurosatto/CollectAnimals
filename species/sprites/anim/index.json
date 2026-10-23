@@ -165,6 +165,12 @@
    "fly",
    "sleep"
   ],
+  "baltimore_oriole": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep"
+  ],
   "barn_owl": [
    "idle",
    "fly",
@@ -207,6 +213,12 @@
    "fly",
    "sleep"
   ],
+  "black_crowned_night_heron": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep"
+  ],
   "black_oystercatcher": [
    "idle",
    "walk",
@@ -230,6 +242,11 @@
    "fly",
    "sleep"
   ],
+  "black_swallowtail": [
+   "idle",
+   "fly",
+   "sleep"
+  ],
   "black_tailed_jackrabbit": [
    "idle",
    "walk",
@@ -248,6 +265,11 @@
    "idle",
    "walk",
    "fly",
+   "sleep"
+  ],
+  "blackstripe_topminnow": [
+   "idle",
+   "swim",
    "sleep"
   ],
   "blanchards_cricket_frog": [
@@ -285,6 +307,12 @@
   "bobcat": [
    "idle",
    "walk",
+   "sleep"
+  ],
+  "boreal_chorus_frog": [
+   "idle",
+   "walk",
+   "swim",
    "sleep"
   ],
   "broad_headed_skink": [
@@ -682,6 +710,11 @@
    "walk",
    "sleep"
   ],
+  "eastern_foxsnake": [
+   "idle",
+   "walk",
+   "sleep"
+  ],
   "eastern_gray_squirrel": [
    "idle",
    "walk",
@@ -770,6 +803,11 @@
   "ensatina": [
    "idle",
    "walk",
+   "sleep"
+  ],
+  "european_carp": [
+   "idle",
+   "swim",
    "sleep"
   ],
   "european_starling": [
@@ -1224,6 +1262,11 @@
    "fly",
    "sleep"
   ],
+  "northern_cottonmouth": [
+   "idle",
+   "walk",
+   "sleep"
+  ],
   "northern_cricket_frog": [
    "idle",
    "walk",
@@ -1245,6 +1288,12 @@
    "idle",
    "walk",
    "fly",
+   "sleep"
+  ],
+  "northern_leopard_frog": [
+   "idle",
+   "walk",
+   "swim",
    "sleep"
   ],
   "northern_mockingbird": [
@@ -1362,6 +1411,11 @@
    "walk",
    "sleep"
   ],
+  "plains_garter_snake": [
+   "idle",
+   "walk",
+   "sleep"
+  ],
   "plains_longear_sunfish": [
    "idle",
    "swim",
@@ -1404,6 +1458,16 @@
    "walk",
    "sleep"
   ],
+  "rathkes_woodlouse": [
+   "idle",
+   "walk",
+   "sleep"
+  ],
+  "red_admiral": [
+   "idle",
+   "fly",
+   "sleep"
+  ],
   "red_bellied_snake": [
    "idle",
    "walk",
@@ -1413,6 +1477,12 @@
    "idle",
    "walk",
    "fly",
+   "sleep"
+  ],
+  "red_breasted_merganser": [
+   "idle",
+   "fly",
+   "swim",
    "sleep"
   ],
   "red_cheeked_salamander": [
@@ -1599,6 +1669,11 @@
    "walk",
    "sleep"
   ],
+  "silver_haired_bat": [
+   "idle",
+   "fly",
+   "sleep"
+  ],
   "silver_spotted_skipper": [
    "idle",
    "fly",
@@ -1644,6 +1719,12 @@
    "sleep"
   ],
   "southern_toad": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep"
+  ],
+  "spiny_softshell": [
    "idle",
    "walk",
    "swim",
@@ -1723,6 +1804,11 @@
    "swim",
    "sleep"
   ],
+  "thirteen_lined_ground_squirrel": [
+   "idle",
+   "walk",
+   "sleep"
+  ],
   "tidepool_sculpin": [
    "idle",
    "swim",
@@ -1765,6 +1851,11 @@
   "turkey_vulture": [
    "idle",
    "walk",
+   "fly",
+   "sleep"
+  ],
+  "two_spotted_bumble_bee": [
+   "idle",
    "fly",
    "sleep"
   ],

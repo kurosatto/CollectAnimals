@@ -209,12 +209,23 @@ function habPerches(L, state) {
     const { ix, ground, lx, ltop } = habAssateague(L);
     return [[lx - 4, ltop - 1], [lx + 5, ltop - 1], [ix - 20, ground + 1], [ix + 22, ground + 1]];
   }
+  if (state === "IL") {
+    // The Willis Tower's roof on either side of its antennas, and its shoulders.
+    const { wx, wtop } = habChicago(L);
+    return [[wx - 3, wtop], [wx + 3, wtop], [wx - 6, wtop + 8], [wx + 6, wtop + 12]];
+  }
   if (state === "PA") {
     // The covered bridge: both ends of its roof ridge and the two banks.
     const { bx, half, ridge, bank } = habBridge(L);
     return [[bx - half + 3, ridge], [bx + half - 3, ridge], [bx - half - 8, bank], [bx + half + 8, bank]];
   }
   return [];
+}
+// Chicago across Lake Michigan: the skyline's left and right ends, its base on the
+// horizon, and the Willis Tower (where it stands, its roof and the antenna tops).
+function habChicago(L) {
+  const x0 = L.sea + 14, x1 = L.w - 6, base = L.water, wx = x0 + Math.round((x1 - x0) * .62), wtop = base - 30;
+  return { x0, x1, base, wx, wtop, tips: [[wx - 2, wtop - 7], [wx + 2, wtop - 7]] };
 }
 // The red covered bridge out on the water: its middle, half-length, deck, roof
 // ridge, the banks it joins and the lanterns hung at each end.
@@ -784,6 +795,7 @@ const HAB_SHOWCASE = {
   FL: { slug: "roseate_spoonbill", common_name: "Roseate Spoonbill", category: "bird", rarity: "uncommon" },
   NY: { slug: "black_capped_chickadee", common_name: "Black-capped Chickadee", category: "bird", rarity: "common" },
   VA: { slug: "northern_cardinal", common_name: "Northern Cardinal", category: "bird", rarity: "common" },
+  IL: { slug: "northern_cardinal", common_name: "Northern Cardinal", category: "bird", rarity: "common" },
   PA: { slug: "eastern_bluebird", common_name: "Eastern Bluebird", category: "bird", rarity: "common" },
   // States without their own pick yet: a robin, found in every state.
   default: { slug: "american_robin", common_name: "American Robin", category: "bird", rarity: "common" },
@@ -1283,6 +1295,9 @@ const HAB_SCENES = {
   VA: { far: ["#4a7f52", "#5a925c", "#6ca567", "#82b878"], near: ["#3a7442", "#4a874c", "#5c9a56", "#72ad66"],
         meadow: ["#5f9a3d", "#77b04a", "#8fc35a", "#a8d36d"], dots: "forest", tree: "round",
         flowers: [["#ffffff", "#f3e6b0"], ["#f6b8cf", "#ffffff"], ["#5a7ae0", "#f6b8cf"], ["#5a7ae0", "#c4d0ff"]] },
+  IL: { far: ["#7f9a52", "#91aa5c", "#a3ba68", "#b8cc7a"], near: ["#6a8e3c", "#7ea248", "#92b454", "#a8c664"],
+        meadow: ["#6a9a3a", "#80ae46", "#96c054", "#acd068"], dots: "oak", tree: "oak", flat: true,
+        flowers: [["#b45ab4", "#e8a0d8"], ["#b45ab4", "#e8a0d8"], ["#ffd23a", "#c8641e"], ["#ffffff", "#ffe9a0"]] },
   PA: { far: ["#4f7f5a", "#5f9262", "#71a56c", "#88b87e"], near: ["#3c7040", "#4c834a", "#5e9654", "#74aa66"],
         meadow: ["#5f9a3d", "#77b04a", "#8fc35a", "#a8d36d"], dots: "forest", tree: "oak",
         flowers: [["#f6c4d8", "#ffffff"], ["#f6c4d8", "#ffffff"], ["#ffffff", "#f8e0ea"], ["#ffd84d", "#fff2a0"]] },
@@ -1384,6 +1399,15 @@ function habBackground(L, phase, state) {
         img.set(x, y, atmo(ramp(isSnow ? snow : rock, v, x, y), .28));
       }
     }
+  } else if (state === "IL") {
+    // Prairie farmland to the horizon: a red barn and a silo.
+    const barn = P("#6a1e16", "#8e2a1e", "#a8382a"), silo = P("#8a8e94", "#a8acb0", "#c4c8cc"), roofP = P("#4a4440", "#5e5852");
+    const bx = Math.round(coastEnd * .3), gy = 147;
+    for (let y = gy - 7; y < gy; y++) for (let dx = -6; dx <= 6; dx++) img.set(bx + dx, y, atmo(barn[dx < -3 ? 0 : dx > 3 ? 2 : 1], .2));
+    for (let y = gy - 11; y < gy - 7; y++) for (let dx = -(y - gy + 12) * 2; dx <= (y - gy + 12) * 2; dx++) img.set(bx + dx, y, atmo(roofP[1], .2));
+    for (let dx = -1; dx <= 1; dx++) for (let y = gy - 4; y < gy; y++) img.set(bx + dx, y, atmo(P("#e8e2d4")[0], .2));
+    for (let y = gy - 16; y < gy; y++) for (let dx = 0; dx < 4; dx++) img.set(bx + 8 + dx, y, atmo(silo[dx === 0 ? 2 : dx === 3 ? 0 : 1], .2));
+    for (let dx = 0; dx < 4; dx++) img.set(bx + 8 + dx, gy - 17, atmo(silo[2], .2));
   } else if (state === "PA") {
     // The Ridge-and-Valley Appalachians: long ridges with flat, even crests, one
     // behind another, each notched once where a river cuts through.
@@ -1780,6 +1804,30 @@ function habBackground(L, phase, state) {
     as.onto(img, P("#2a2014"));
     const foam = P("#e9f6ff");
     for (let dx = -36; dx <= 36; dx++) if (hash2(dx, 83) > .45) img.set(ix + dx, ground + 9 + (hash2(dx, 84) > .7 ? 1 : 0), foam);
+  } else if (state === "IL") {
+    // The Chicago skyline far across Lake Michigan, the black Willis Tower with its
+    // twin antennas standing tallest; windows light up at night.
+    const { x0, x1, base, wx, wtop, tips } = habChicago(L);
+    const bld = P("#7e8aa2", "#93a0b6", "#a8b4c8", "#bcc6d6"), lit = P("#ffe9a0", "#ffd36a"), wil = P("#2a2c34", "#3a3c46", "#4c4e5a");
+    for (let x = x0, i = 0; x < x1; i++) {
+      const w = 3 + Math.floor(hash2(i, 94) * 4), h = 5 + Math.floor(hash2(i, 95) * 14 * (1 - Math.abs(x - wx) / (x1 - x0) * .8));
+      for (let dx = 0; dx < w && x + dx < x1; dx++) for (let y = base - h; y < base; y++) {
+        const win = dx % 2 === 1 && dx < w - 1 && (y - base + h) % 3 === 1;
+        if (win && night && hash2(x + dx, y, 96) > .55) img.set(x + dx, y, lit[hash2(x, y, 97) > .5 ? 0 : 1], 1);
+        else img.set(x + dx, y, win ? bld[3] : bld[dx === 0 ? 2 : dx === w - 1 ? 0 : 1]);
+      }
+      x += w + (hash2(i, 98) > .7 ? 1 : 0);
+    }
+    // The Willis Tower: stacked black tubes stepping back as they rise.
+    for (const [l, r, y0] of [[-6, 6, wtop + 14], [-4, 6, wtop + 8], [-4, 3, wtop + 3], [-3, 3, wtop]])
+      for (let y = y0; y < base; y++) for (let dx = l; dx <= r; dx++) {
+        const win = dx % 2 === 0 && y % 2 === 0 && dx > l && dx < r;
+        if (win && night && hash2(dx, y, 99) > .6) img.set(wx + dx, y, lit[1], 1);
+        else img.set(wx + dx, y, wil[dx < -1 ? 2 : dx > 2 ? 0 : 1]);
+      }
+    for (const [tx, ty] of tips) for (let y = ty; y < wtop; y++) img.set(tx, y, wil[2]);
+    const foam = P("#e9f6ff");
+    for (let x = x0 - 4; x < x1 + 2; x++) if (hash2(x, 89) > .55) img.set(x, base + 2, foam);
   } else if (state === "PA") {
     // A red covered bridge on stone piers, joining two wooded banks; lanterns
     // hang at both ends after dark.
@@ -2047,6 +2095,12 @@ function habAmbient(c, L, phase) {
     const [lx, ly] = habLiberty(L).torch, k = .25 + Math.sin(t * 3.1) * .05 + Math.sin(t * 7.3) * .03;
     c.fillStyle = `rgba(255,220,120,${k.toFixed(3)})`; c.fillRect(lx - 4, ly - 5, 10, 8);
     c.fillStyle = `rgba(255,220,120,${(k * .5).toFixed(3)})`; c.fillRect(lx - 8, ly - 3, 18, 4);
+  } else if (habState() === "IL" && phase !== "day") {
+    // Red lights blink on top of the Willis Tower's antennas.
+    if (Math.sin(t * 1.8) > 0) {
+      c.fillStyle = "#ff4a3a";
+      for (const [lx, ly] of habChicago(L).tips) c.fillRect(lx, ly, 1, 1);
+    }
   } else if (habState() === "PA" && phase !== "day") {
     // The covered bridge's lanterns glow after sundown.
     const k = .22 + Math.sin(t * 2.7) * .04;
