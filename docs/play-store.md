@@ -13,6 +13,7 @@ Set these where the server starts (the PC's start script):
 ## Play Console answers
 
 - **Privacy policy URL:** https://kurosatto.github.io/CollectAnimals/privacy.html
+- **Community rules (UGC policy):** https://kurosatto.github.io/CollectAnimals/rules.html, agreed to at sign-up
 - **Account deletion URL:** https://kurosatto.github.io/CollectAnimals/delete-account.html
   (in the app: Account → Delete account)
 - **Target audience:** 13 and older. Choosing under-13 brings in the Families policy.
@@ -29,6 +30,11 @@ Those two pages are `docs/privacy.html` and `docs/delete-account.html`, publishe
 (repo Settings → Pages → Deploy from branch `main`, folder `/docs`). They stay up when the PC is off,
 and the delete page finds the game server's current address the same way the app does. The server
 also serves the policy at `/privacy` and the delete page at `/delete-account`.
+
+## Play builds
+
+- The "new version is available" APK prompt is skipped when Google Play installed the app
+  (Play's rules forbid updating outside Play); demo APK installs still get it.
 
 ## Still needed outside the code
 

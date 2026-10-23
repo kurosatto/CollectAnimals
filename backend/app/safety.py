@@ -299,12 +299,27 @@ PRIVACY_FILE = ROOT / "docs" / "privacy.html"
 
 @router.get("/privacy", include_in_schema=False)
 def privacy_page():
-    html = PRIVACY_FILE.read_text(encoding="utf-8").replace('href="delete-account.html"', 'href="/delete-account"')
+    html = _docs_links(PRIVACY_FILE.read_text(encoding="utf-8"))
     if settings.contact_email:
         e = escape(settings.contact_email)
         html = re.sub(r"<!--CONTACT-->.*?<!--/CONTACT-->",
                       f'<p>Questions or requests: <a href="mailto:{e}">{e}</a>.</p>', html, flags=re.S)
     return HTMLResponse(html)
+
+
+RULES_FILE = ROOT / "docs" / "rules.html"
+
+
+def _docs_links(html: str) -> str:
+    """The docs pages link each other by file name (GitHub Pages); on the server they're paths."""
+    for page in ("privacy", "rules", "delete-account"):
+        html = html.replace(f'href="{page}.html"', f'href="/{page}"')
+    return html
+
+
+@router.get("/rules", include_in_schema=False)
+def rules_page():
+    return HTMLResponse(_docs_links(RULES_FILE.read_text(encoding="utf-8")))
 
 
 @router.get("/delete-account", include_in_schema=False)

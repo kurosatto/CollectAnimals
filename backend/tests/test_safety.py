@@ -43,6 +43,9 @@ def test_delete_account_page_and_privacy_page(client, monkeypatch):
     monkeypatch.setattr(settings, "contact_email", "game@example.com")
     page = client.get("/privacy").text
     assert "mailto:game@example.com" in page and "Google Play listing" not in page
+    assert 'href="/rules"' in page
+    rules = client.get("/rules").text
+    assert "community rules" in rules.lower() and 'href="/privacy"' in rules
 
 
 def test_block_hides_both_ways(client, fake):
