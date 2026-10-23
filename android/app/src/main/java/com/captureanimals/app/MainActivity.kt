@@ -209,7 +209,7 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
         NavigationBar {
             TABS.forEachIndexed { i, t ->
                 if (t.key == "hotspots" && dex?.parks.isNullOrEmpty()) return@forEachIndexed
-                // Six tabs: one line of small text each, so "Field Guide" doesn't wrap.
+                // Seven tabs: one line of small text each, so "Field Guide" doesn't wrap.
                 NavigationBarItem(selected = tab == i, onClick = { tabChoice = i },
                     icon = {
                         BadgedBox(badge = { if (t.key == "social" && requests > 0) Badge { Text("$requests") } }) {
@@ -238,6 +238,10 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
                     }
                     CollectionScreen(info, dex, state.stateCode, state.collection, sets) { dexSlug = it }
                 }
+                TABS[tab].key == "games" -> {
+                    val animals = remember(info, dex, state.collection) { habitatAnimals(info, dex, state.collection) }
+                    MinigamesScreen(animals)
+                }
                 TABS[tab].key == "gallery" -> GalleryScreen(state.allSpecies, state.collection, onOpenDex = { dexSlug = it },
                     onDelete = vm::deleteCatch)
                 dex != null -> HotspotsScreen(info, dex, state.collection, onOpenDex = { dexSlug = it })
@@ -256,6 +260,7 @@ private val TABS = listOf(
     AppTab("feed", "Feed", "ui_tab_feed"),
     AppTab("hotspots", "Parks", "ui_tab_parks"),
     AppTab("social", "Friends", "ui_tab_friends"),
+    AppTab("games", "Games", "ui_tab_games"),
 )
 
 @Composable

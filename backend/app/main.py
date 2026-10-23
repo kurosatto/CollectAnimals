@@ -254,6 +254,12 @@ def habitat_js():
     return FileResponse(STATIC_DIR / "habitat.js", media_type="text/javascript")
 
 
+@app.get("/minigames.js", include_in_schema=False)
+def minigames_js():
+    """The minigames, shared with the Android app like the habitat."""
+    return FileResponse(STATIC_DIR / "minigames.js", media_type="text/javascript")
+
+
 @app.get("/sprites/silhouette/{number}.png", include_in_schema=False)
 def silhouette_by_number(number: int, db: Session = Depends(get_db)):
     """The silhouette for a species that's still hidden, by Dex number, so the
