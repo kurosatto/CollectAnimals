@@ -771,7 +771,7 @@ def test_states_unlock_with_photos(client, fake):
     assert me["state"] == "CA" and me["unlocked_states"] == ["CA"]
     # No photo from North Carolina yet: it can't be picked.
     r = client.patch("/me", json={"state": "NC"}, headers=h)
-    assert r.status_code == 403 and "photo" in r.json()["detail"]
+    assert r.status_code == 403 and "Capture an animal in North Carolina" in r.json()["detail"]
     # Capturing an animal that's on both lists, with no place, doesn't unlock it.
     fake.next = [Prediction("coyote", 0.93)]
     r = upload(client, h).json()
@@ -790,6 +790,34 @@ def test_states_unlock_with_photos(client, fake):
     r = client.patch("/me", json={"state": "NC"}, headers=h).json()
     assert r["state"] == "NC" and r["unlocked_states"] == ["CA", "NC"]
     assert client.patch("/me", json={"state": "CA"}, headers=h).json()["state"] == "CA"
+
+
+def test_states_lock_again_without_animals(client, fake):
+    h = signup(client)
+    raleigh = {"latitude": 35.78, "longitude": -78.64}
+    # A photo from Raleigh that isn't any animal on the list doesn't unlock North Carolina.
+    fake.next = [Prediction("other", 0.9)]
+    r = client.post("/captures", headers=h, data=raleigh, files={"photo": ("p.jpg", jpeg_bytes(), "image/jpeg")}).json()
+    assert r["state"] == "NC" and not r["matched"] and r["unlocked_state"] is None
+    assert client.get("/me", headers=h).json()["unlocked_states"] == ["CA"]
+    # A cardinal does, and the state screen counts it.
+    fake.next = [Prediction("northern_cardinal", 0.95)]
+    r = client.post("/captures", headers=h, data=raleigh, files={"photo": ("p.jpg", jpeg_bytes(), "image/jpeg")}).json()
+    assert r["unlocked_state"] == "NC"
+    tiles = client.get("/me/states", headers=h).json()
+    assert [(t["state"], t["caught"], t["main"]) for t in tiles] == [("CA", 0, True), ("NC", 1, False)]
+    assert all(t["total"] > 0 for t in tiles)
+    # Its Field Guide and challenges can be seen without making it the main state.
+    assert client.get("/me/challenges", headers=h, params={"state": "NC"}).json()["state"] == "NC"
+    assert client.get("/me", headers=h).json()["state"] == "CA"
+    # Deleting the only animal from there locks it again.
+    assert client.delete("/me/album/northern_cardinal", headers=h).status_code == 204
+    assert client.get("/me", headers=h).json()["unlocked_states"] == ["CA"]
+    assert [t["state"] for t in client.get("/me/states", headers=h).json()] == ["CA"]
+    # Nor does an old main state stay unlocked once it has no animals.
+    fake.next = [Prediction("northern_cardinal", 0.95)]
+    client.post("/captures", headers=h, data=raleigh, files={"photo": ("p.jpg", jpeg_bytes(), "image/jpeg")})
+    assert client.patch("/me", json={"state": "NC"}, headers=h).json()["unlocked_states"] == ["NC"]
 
 
 def test_pick_the_state_for_a_photo_without_a_place(client, fake):

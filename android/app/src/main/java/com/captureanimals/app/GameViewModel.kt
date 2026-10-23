@@ -48,27 +48,36 @@ data class CaptureResult(
     val crop: CropBox? = null,
 )
 
+/** The player's main state; [UiState.stateCode] is the one on screen, which can be any unlocked state. */
+fun UiState.mainState(): String = account?.state ?: mainCode
+
 /**
- * The states a player can make their main state: their main state, any state
- * they have a photo from (here or on the website), and states they unlocked
- * before photos did that.
+ * The states a player can look at or make their main state: their main state and
+ * any state they've captured an animal in (deleting the last one locks it again).
  */
 fun UiState.unlockedStates(): Set<String> =
-    // Signed in, the server knows every photo, here or on the website.
-    (account?.unlockedStates?.toSet() ?: unlocked) + stateCode
+    // Signed in, the server knows every capture, here or on the website.
+    (account?.unlockedStates?.toSet() ?: unlocked) + mainState()
+
+/** A tile on the "Your states" screen: how much of the state's list the player has captured. */
+data class StateTile(val code: String, val name: String, val caught: Int, val total: Int, val main: Boolean)
 
 data class UiState(
     // The model with the chosen state's species list, and that state's Field Guide.
     val info: ModelInfo? = null,
     val fieldGuide: FieldGuide? = null,
     val states: List<StateInfo> = emptyList(),
+    // The state on screen (Field Guide, habitat, parks); mainState() is the player's main one.
     val stateCode: String = "",
+    val mainCode: String = "",
     // Every state's species, so photos of animals from another state still show.
     val allSpecies: List<Species> = emptyList(),
     // First launch: ask which state the player is in, like the website's sign-up.
     val needsStatePick: Boolean = false,
-    // States unlocked on this phone (photos taken there, past main states); see [unlockedStates].
+    // States with a badge saved on this phone; see [unlockedStates].
     val unlocked: Set<String> = emptySet(),
+    // "Your states", while it's open.
+    val stateTiles: List<StateTile>? = null,
     val collection: Map<String, Badge> = emptyMap(),
     val busy: Boolean = false,
     val result: CaptureResult? = null,
@@ -108,14 +117,16 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             model = base
             val (default, list) = states
             val saved = prefs.getString("state", null)?.takeIf { code -> list.any { it.code == code } }
-            val unlocked = prefs.getStringSet("unlocked", emptySet()).orEmpty()
-            withContext(Dispatchers.IO) {
+            val unlocked = withContext(Dispatchers.IO) {
                 store.migrate(saved ?: default)
+                offlineUnlocked(list)
+            }
+            withContext(Dispatchers.IO) {
                 // Read the starting state's Field Guide here rather than on the main thread.
                 list.firstOrNull { it.code == (saved ?: default) }?.fieldGuide
             }
             _state.update {
-                it.copy(states = list, needsStatePick = saved == null, sets = sets, unlocked = unlocked,
+                it.copy(states = list, needsStatePick = saved == null, sets = sets, unlocked = unlocked, mainCode = saved ?: default,
                     allSpecies = list.flatMap { s -> s.species }.distinctBy { s -> s.slug })
             }
             select(saved ?: default)
@@ -150,7 +161,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         val c = Online.collection(_state.value.stateCode)
         _state.update { it.copy(collection = c) }
         // Extras: the game works without them if the server can't send them.
-        val week = runCatching { Online.challenges() }.getOrNull()
+        val week = runCatching { Online.challenges(_state.value.stateCode) }.getOrNull()
         _state.update { it.copy(week = week) }
     }
 
@@ -225,20 +236,61 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             collection = if (it.account == null) store.load(st.code) else it.collection) }
     }
 
-    /** The player's state: its 100 species, Field Guide and parks. Captures count only in the state they were made in. */
+    /** The player's main state: where photos without a place count, and what friends see first. */
     fun chooseState(code: String) {
-        val unlocked = _state.value.unlocked + code
-        prefs.edit().putString("state", code).putStringSet("unlocked", unlocked).apply()
-        _state.update { it.copy(needsStatePick = false, result = null, unlocked = unlocked) }
+        prefs.edit().putString("state", code).apply()
+        _state.update { it.copy(needsStatePick = false, result = null, mainCode = code) }
         select(code)
         if (_state.value.account != null) viewModelScope.launch {
             runCatching {
                 Online.setState(code)
-                _state.update { it.copy(account = it.account?.let { a -> a.copy(state = code,
-                    unlockedStates = (a.unlockedStates + code).distinct()) }) }
+                // The server may lock the old main state if it has no animals.
+                val me = Online.me()
+                _state.update { it.copy(account = me) }
                 refreshCollection()
             }.onFailure { e -> _state.update { it.copy(error = e.message) } }
         }
+    }
+
+    /** Look at another unlocked state's Field Guide, habitat, parks and challenges without changing the main one. */
+    fun viewState(code: String) {
+        _state.update { it.copy(result = null) }
+        select(code)
+        viewModelScope.launch { runCatching { refreshCollection() } }
+    }
+
+    /** Fills "Your states": each unlocked state with how much of its list is captured. */
+    fun loadStateTiles() {
+        viewModelScope.launch {
+            val ui = _state.value
+            val tiles = if (ui.account != null) {
+                runCatching { Online.myStates() }.getOrNull()?.also { tiles ->
+                    _state.update { it.copy(account = it.account?.copy(unlockedStates = tiles.map { t -> t.code })) }
+                }
+            } else null
+            _state.update { it.copy(stateTiles = tiles ?: withContext(Dispatchers.IO) { offlineTiles() }) }
+        }
+    }
+
+    fun closeStateTiles() = _state.update { it.copy(stateTiles = null) }
+
+    private fun offlineTiles(): List<StateTile> {
+        val ui = _state.value
+        val unlocked = ui.unlockedStates()
+        return ui.states.filter { it.code in unlocked }.map { st ->
+            val slugs = st.species.map { it.slug }.toSet()
+            StateTile(st.code, st.name, collectionOf(st.code).keys.count { it in slugs }, slugs.size, st.code == ui.mainState())
+        }
+    }
+
+    /** States with a badge saved on this phone. */
+    private fun offlineUnlocked(states: List<StateInfo>): Set<String> {
+        val unlocked = states.filter { st ->
+            val slugs = st.species.map { it.slug }.toSet()
+            store.load(st.code).keys.any { it in slugs }
+        }.map { it.code }.toSet()
+        prefs.edit().remove("unlocked").apply()
+        return unlocked
     }
 
     private suspend fun classifier(info: ModelInfo): Classifier = classifierLock.withLock {
@@ -335,14 +387,10 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         // The player said where it was taken ("Taken in another state?"), or its place says.
         val here = ui.states.firstOrNull { it.code == chosenState }
             ?: place?.let { (lat, lon) -> States.stateAt(ui.states, lat, lon) }
-        val code = here?.code ?: ui.stateCode
-        val info = if (here == null || code == ui.stateCode) mainInfo else (model ?: mainInfo).withSpecies(here.species)
-        val newlyUnlocked = code !in ui.unlockedStates()
-        if (newlyUnlocked) {
-            val unlocked = ui.unlocked + code
-            prefs.edit().putStringSet("unlocked", unlocked).apply()
-            _state.update { it.copy(unlocked = unlocked) }
-        }
+        // Without a place, the main state (as on the website), whichever state is on screen.
+        val code = here?.code ?: ui.mainState()
+        val list = here?.species ?: ui.states.firstOrNull { it.code == code }?.species
+        val info = if (code == ui.stateCode || list == null) mainInfo else (model ?: mainInfo).withSpecies(list)
         // Cropping keeps a part, so decode bigger to keep enough pixels for the model.
         val bitmap = ImageLoader.load(app, uri, minShortSide = if (crop == null) info.resize else info.resize * 3).cropTo(crop)
         // Five guesses: three are shown, all five are offered if the player corrects the model.
@@ -354,6 +402,9 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         val species = bySlug[top.label]
         val matched = species != null && top.probability >= info.matchThreshold
 
+        // A state unlocks with its first captured animal.
+        val newlyUnlocked = matched && code !in ui.unlockedStates()
+        if (newlyUnlocked) _state.update { it.copy(unlocked = it.unlocked + code) }
         var newBadge = false
         if (matched) {
             val thumb = ImageLoader.thumbnail(bitmap, 512)
@@ -363,7 +414,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             newBadge = isNew
             if (code == _state.value.stateCode) _state.update { it.copy(collection = updated) }
         }
-        val stateName = here?.name ?: regionName()
+        val stateName = ui.states.firstOrNull { it.code == code }?.name ?: regionName()
         var message = when {
             matched && newBadge -> "You captured a ${species!!.commonName}! New badge unlocked."
             matched -> "Another ${species!!.commonName} for your collection."
@@ -371,7 +422,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             else -> "We couldn't match this to any animal in the $stateName collection."
         }
         if (newlyUnlocked) message = "📍 You unlocked $stateName! $message"
-        else if (code != ui.stateCode && matched) message += " It counts in your $stateName Field Guide."
+        else if (code != ui.mainState() && matched) message += " It counts in your $stateName Field Guide."
         if (place != null && here == null) {
             message = "This photo was taken outside the states in the game, so it was checked against $stateName. $message"
         }
@@ -504,10 +555,13 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val updated = withContext(Dispatchers.IO) { store.forget(_state.value.stateCode, _state.value.collection, slug) }
             _state.update { it.copy(collection = updated) }
+            // Deleting the last animal from a state locks it again.
+            val unlocked = withContext(Dispatchers.IO) { offlineUnlocked(_state.value.states) }
+            _state.update { it.copy(unlocked = unlocked) }
         }
     }
 
-    /** The phone's badges for a state: the ones on screen for the main state, else read from storage. */
+    /** The phone's badges for a state: the ones on screen for the state on screen, else read from storage. */
     private fun collectionOf(code: String) =
         if (code == _state.value.stateCode) _state.value.collection else store.load(code)
 

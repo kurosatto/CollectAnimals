@@ -185,7 +185,8 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
     Scaffold(topBar = {
         Column {
             TopAppBar(title = { Text(if (tab == 0) "Capture Animals" else TABS[tab].title) }, actions = {
-                if (state.states.size > 1) StateMenu(state.states, state.stateCode, state.unlockedStates(), vm::chooseState)
+                if (state.states.size > 1) StateMenu(state.states, state.stateCode, state.mainState(), state.stateTiles,
+                    onOpen = vm::loadStateTiles, onClose = vm::closeStateTiles, onView = vm::viewState, onMakeMain = vm::chooseState)
                 TextButton(onClick = { showAccount = true }) {
                     Text(state.account?.let { "👤 ${it.username}" } ?: "Log in", maxLines = 1,
                         overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 120.dp))
@@ -328,7 +329,7 @@ fun CatchScreen(state: UiState, onCapture: (Uri, Pair<Double, Double>?, Boolean,
                 safety = r.species?.let { state.fieldGuide?.details?.get(it.slug) }
                     ?.takeIf { it.safety == "caution" || it.safety == "danger" },
                 // A photo that unlocked a state offers to make it the main one.
-                makeMain = r.unlockedState?.takeIf { it != state.stateCode }
+                makeMain = r.unlockedState?.takeIf { it != state.mainState() }
                     ?.let { code -> state.states.firstOrNull { it.code == code } }
                     ?.let { st -> st.name to { onMakeMain(st.code) } },
                 changeState = if (r.canChangeState && state.states.size > 1) state.states to onChangeState else null)

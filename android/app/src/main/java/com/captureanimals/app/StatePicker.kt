@@ -42,33 +42,40 @@ object StateList {
 
 /**
  * "📍 NC" in the top bar opens the player's states: one tile per unlocked state
- * (a photo taken in a state unlocks it). Tapping a tile makes it the main state,
- * which the Field Guide, parks and challenges follow.
+ * (capturing an animal in a state unlocks it) with how much of its list they've
+ * captured. Tapping a tile shows that state's Field Guide, habitat and parks
+ * without changing the main state; a button makes the state on screen the main one.
  */
 @Composable
-fun StateMenu(states: List<StateInfo>, current: String, unlocked: Set<String>, onPick: (String) -> Unit) {
-    var open by remember { mutableStateOf(false) }
-    TextButton(onClick = { open = true }) { Text("📍 $current") }
-    if (!open) return
-    val tiles = remember(states, unlocked) { StateList.tiles(states, unlocked) }
-    AlertDialog(onDismissRequest = { open = false }, confirmButton = {},
-        dismissButton = { TextButton(onClick = { open = false }) { Text("Close") } },
+fun StateMenu(states: List<StateInfo>, viewing: String, main: String, tiles: List<StateTile>?,
+              onOpen: () -> Unit, onClose: () -> Unit, onView: (String) -> Unit, onMakeMain: (String) -> Unit) {
+    val name = states.firstOrNull { it.code == viewing }?.name ?: viewing
+    TextButton(onClick = onOpen) { Text(if (viewing == main) "📍 $viewing" else "📍 $viewing (visiting)") }
+    if (tiles == null) return
+    AlertDialog(onDismissRequest = onClose, confirmButton = {
+        if (viewing != main) TextButton(onClick = { onClose(); onMakeMain(viewing) }) { Text("★ Make $name my main state") }
+    },
+        dismissButton = { TextButton(onClick = onClose) { Text("Close") } },
         title = { Text("Your states") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Your Field Guide, parks and challenges follow your main state. Tap a state to make it your main one.",
+                Text("Tap a state to look at its Field Guide, habitat and parks. Your main state is where you start and what friends see first.",
                     style = MaterialTheme.typography.bodyMedium)
                 LazyVerticalGrid(GridCells.Adaptive(120.dp), Modifier.heightIn(max = 360.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(tiles, key = { it.code }) { st ->
-                        StateTile(st, main = st.code == current, label = if (st.code == current) "★ Main state" else "Make main") {
-                            open = false
-                            if (st.code != current) onPick(st.code)
+                    items(tiles, key = { it.code }) { t ->
+                        states.firstOrNull { it.code == t.code }?.let { st ->
+                            StateTile(st, main = t.code == viewing,
+                                label = if (t.main) "★ Main state" else if (t.code == viewing) "👀 Looking now" else "",
+                                sub = "${t.caught} of ${t.total} captured") {
+                                onClose()
+                                if (t.code != viewing) onView(t.code)
+                            }
                         }
                     }
                 }
                 if (tiles.size < states.size) {
-                    Text("📷 Take a photo in another state to unlock it (${tiles.size} of ${states.size} unlocked).",
+                    Text("📷 Capture an animal in another state to unlock it (${tiles.size} of ${states.size} unlocked).",
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
@@ -76,13 +83,14 @@ fun StateMenu(states: List<StateInfo>, current: String, unlocked: Set<String>, o
 }
 
 @Composable
-private fun StateTile(st: StateInfo, main: Boolean, label: String, onClick: () -> Unit) {
+private fun StateTile(st: StateInfo, main: Boolean, label: String, sub: String = "", onClick: () -> Unit) {
     OutlinedCard(onClick = onClick, modifier = Modifier.fillMaxWidth(),
         border = if (main) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else CardDefaults.outlinedCardBorder()) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(st.code, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             Text(st.name, style = MaterialTheme.typography.bodyMedium)
-            Text(label, style = MaterialTheme.typography.labelSmall,
+            if (sub.isNotEmpty()) Text(sub, style = MaterialTheme.typography.bodySmall)
+            if (label.isNotEmpty()) Text(label, style = MaterialTheme.typography.labelSmall,
                 color = if (main) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = if (main) FontWeight.SemiBold else null)
         }

@@ -201,7 +201,16 @@ object Online {
 
     // --- Challenges and bonds ------------------------------------------------------------
 
-    suspend fun challenges(): Week = Week.parse(JSONObject(call("GET", "/me/challenges")))
+    suspend fun challenges(state: String): Week = Week.parse(JSONObject(call("GET", "/me/challenges?state=${q(state)}")))
+
+    /** The player's unlocked states and how much of each they've captured ("Your states"). */
+    suspend fun myStates(): List<StateTile> {
+        val a = JSONArray(call("GET", "/me/states"))
+        return List(a.length()) { i ->
+            val o = a.getJSONObject(i)
+            StateTile(o.getString("state"), o.getString("name"), o.getInt("caught"), o.getInt("total"), o.getBoolean("main"))
+        }
+    }
 
     /** Bond and field notes for one captured animal, or null when it isn't captured. */
     suspend fun bond(slug: String): Bond? =
