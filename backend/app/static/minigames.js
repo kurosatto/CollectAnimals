@@ -6,18 +6,20 @@
 // entries ({caught, species: {slug, common_name, category}}) whenever they change.
 //
 // Each game unlocks once you've captured an animal of its kind: Sky Glide for
-// fliers, Trail Run for land animals, River Swim for swimmers. A round lasts a
-// minute and never ends early: bumping into something only stuns you for a moment.
-// Best scores stay in this browser (localStorage), nothing goes to the server.
-const MG_W = 320, MG_H = 200, MG_ROUND = 60;
+// fliers, Trail Run for land animals, River Swim for swimmers. Every game has
+// hand-made levels that are the same on every try, each with its own song: the
+// hazards sit on the beat. A bump ends the try, and the next one starts right away,
+// so you get further by learning the course. Finishing a level unlocks the next.
+// Progress stays in this browser (localStorage), nothing goes to the server.
+const MG_W = 320, MG_H = 200;
 const MG_GROUND = 172, MG_SURFACE = 34, MG_BED = 186;
 const MG_GAMES = [
   { key: "sky", title: "Sky Glide", pose: "fly", kind: "flying animal", thing: ["berry", "berries"],
-    how: "Tap to flap. Collect berries and glide around the storm clouds.", tip: "Tap to flap your wings" },
+    how: "Tap to flap through the gaps in the storm clouds, and grab the berries on the way.", tip: "Tap to flap your wings" },
   { key: "trail", title: "Trail Run", pose: "walk", kind: "land animal", thing: ["acorn", "acorns"],
-    how: "Tap to jump over logs and rocks, hold for a bigger jump. Collect acorns.", tip: "Tap to jump, hold to jump higher" },
+    how: "Tap to hop over rocks and logs, hold for a big jump over stumps, and stay low under branches.", tip: "Tap to jump, hold to jump higher" },
   { key: "river", title: "River Swim", pose: "swim", kind: "water animal", thing: ["point", "points"],
-    how: "Hold to swim up, let go to dive. Eat snacks, scoop up litter for 3 points, and dodge the snags.", tip: "Hold to swim up, let go to dive" },
+    how: "Hold to swim up, let go to dive. Slip between the rocks and roots, eat snacks and scoop up litter.", tip: "Hold to swim up, let go to dive" },
 ];
 const MG_LAND_ROLES = new Set(["walk", "hop", "shore", "beach", "dangle"]);
 const MG_WATER_ROLES = new Set(["swim", "jelly", "float", "paddle"]);
@@ -66,6 +68,12 @@ function mgBuild() {
   .mg-pick img { width:40px; height:40px; image-rendering:pixelated; border-radius:8px; border:2px solid transparent;
                  cursor:pointer; flex:none; background:rgba(127,127,127,.08); }
   .mg-pick img.on { border-color:var(--accent); background:rgba(127,200,150,.18); }
+  .mg-levels { display:flex; gap:6px; margin-top:6px; flex-wrap:wrap; }
+  .mg-lv { font:inherit; font-size:.78rem; text-align:left; padding:5px 10px; border-radius:10px; border:2px solid var(--line);
+           background:transparent; color:inherit; cursor:pointer; display:flex; flex-direction:column; gap:1px; }
+  .mg-lv span { color:var(--muted); font-size:.72rem; }
+  .mg-lv.on { border-color:var(--accent); background:rgba(127,200,150,.14); }
+  .mg-lv:disabled { opacity:.55; cursor:default; }
   .mg-row { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:6px; }
   .mg-name { font-size:.85rem; font-weight:600; }
   .mg-play { font:inherit; font-weight:600; padding:6px 16px; border-radius:999px; border:none; background:var(--accent);
@@ -87,7 +95,14 @@ function mgBuild() {
   const bar = mgEl("div", "mg-bar"), back = mgEl("button", "mg-back", "← All games"), name = mgEl("span", "muted");
   name.id = "mg-playing";
   back.onclick = mgQuit;
-  bar.append(back, name);
+  const mute = mgEl("button", "mg-back");
+  const label = () => { mute.textContent = mgAudio.muted ? "🔇 Music off" : "🔊 Music on"; };
+  mute.onclick = () => {
+    mgAudio.muted = !mgAudio.muted; mgStore.set("muted", mgAudio.muted ? "1" : "0"); label();
+    if (mgAudio.muted) mgMusicStop(mg.run); else if (mg.run && mg.run.mode === "play") mgMusicStart(mg.run);
+  };
+  label();
+  bar.append(back, name, mute);
   stage.id = "mg-stage";
   stage.append(cv, bar);
   box.append(list, stage);
@@ -112,8 +127,9 @@ function mgList() {
   list.innerHTML = "";
   for (const g of MG_GAMES) {
     const players = mgPlayers(g.key), card = mgEl("div", "mg-game" + (players.length ? "" : " mg-locked"));
-    const h = mgEl("h3", null, g.title), best = +(mgStore.get("best." + g.key) || 0);
-    if (best) h.append(mgEl("span", "mg-best", `Best: ${best}`));
+    const h = mgEl("h3", null, g.title), lvls = MG_LEVELS[g.key];
+    const cleared = lvls.filter((_, i) => mgRec(g.key, i).pct >= 100).length;
+    if (cleared) h.append(mgEl("span", "mg-best", `${cleared} of ${lvls.length} levels cleared`));
     card.append(h, mgEl("div", "mg-how", g.how));
     if (!players.length) {
       card.append(mgEl("div", "mg-lock", `🔒 Capture a ${g.kind} to unlock this game.`));
@@ -134,9 +150,22 @@ function mgList() {
       };
       row.append(img);
     }
-    play.onclick = () => mgStart(g, pick);
+    // Levels: the next one unlocks when you finish the one before.
+    const levels = mgEl("div", "mg-levels");
+    let lv = Math.min(+(mgStore.get("lvl." + g.key) || 0), lvls.length - 1);
+    const open = (i) => i === 0 || mgRec(g.key, i - 1).pct >= 100;
+    if (!open(lv)) lv = 0;
+    lvls.forEach((L, i) => {
+      const rec = mgRec(g.key, i), b = mgEl("button", "mg-lv" + (i === lv ? " on" : ""));
+      b.append(mgEl("b", null, `${i + 1}. ${L.name}`),
+               mgEl("span", null, !open(i) ? `🔒 Finish level ${i} first` : rec.pct >= 100 ? `✓ Cleared · ${rec.got} ${g.thing[1]}` : rec.pct ? `Best ${rec.pct}%` : "New"));
+      b.disabled = !open(i);
+      b.onclick = () => { lv = i; mgStore.set("lvl." + g.key, i); levels.querySelectorAll(".mg-lv").forEach((e, j) => e.classList.toggle("on", j === i)); };
+      levels.append(b);
+    });
+    play.onclick = () => mgStart(g, pick, lv);
     foot.append(name, play);
-    card.append(row, foot);
+    card.append(row, levels, foot);
     list.append(card);
   }
 }
@@ -146,8 +175,8 @@ function mgImg(cache, url) {
   return cache[url];
 }
 
-function mgStart(g, s) {
-  mg.game = g; mg.species = s;
+function mgStart(g, s, level) {
+  mg.game = g; mg.species = s; mg.level = level || 0; mg.tries = 0;
   mgImg(mg.imgs, `/sprites/${encodeURIComponent(s.slug)}.png`);
   mgImg(mg.sheets, `/sprites/anim/${encodeURIComponent(s.slug)}.png`);
   document.getElementById("mg-list").classList.add("hidden");
@@ -160,45 +189,290 @@ function mgStart(g, s) {
 
 function mgQuit() {
   cancelAnimationFrame(mg.raf); mg.raf = 0;
+  mgMusicStop(mg.run);
   mg.run = null; mg.down = false;
   document.getElementById("mg-stage").classList.add("hidden");
   document.getElementById("mg-list").classList.remove("hidden");
   mgList();
 }
 
-// How each animal moves: quick runners go faster, hoppers jump higher, the slow
-// ones plod along (and still get there).
-function mgTraits(s) {
-  const role = habRole(s), slug = s.slug;
-  let speed = 1, jump = 1;
-  if (/roadrunner|squirrel|chipmunk|lizard|skink|anole|fox|coyote|deer|hare|jackrabbit|pronghorn|horse|pony|dog|cat$/.test(slug)) speed = 1.2;
-  if (/tortoise|box_turtle|slug|snail|turtle|millipede|woodlouse|newt|salamander|crab|seal|sea_lion|sloth|porcupine|skunk|armadillo/.test(slug)) speed = .8;
-  if (role === "hop" || /rabbit|cottontail|hare|kangaroo|squirrel/.test(slug)) jump = 1.15;
-  return { speed, jump };
+// ---- Levels --------------------------------------------------------------------
+// Every game has fixed levels, the same on every try, like Geometry Dash: you get
+// better by learning the course, not by luck. Bumping into anything ends the try,
+// and you start again right away from the beginning. A level is a list of things
+// placed by distance along the course (wx: how far you've travelled when it
+// reaches you).
+const MG_DT = 1 / 120;  // fixed physics steps, so a course plays the same every time
+const MG_SPEED = { sky: 75, trail: 100, river: 70 };
+const MG_TOP = 18;      // how high a flier can go
+
+// A gap to fly or swim through: a wall above it and a wall below it.
+function mgGate(key, wx, c, gap, w) {
+  const top = key === "sky" ? 0 : MG_SURFACE, bot = key === "sky" ? MG_GROUND + 6 : MG_BED;
+  const a = c - gap / 2, b = c + gap / 2;
+  const up = key === "sky" ? "storm" : "roots", down = key === "sky" ? "storm" : "boulder";
+  return [{ type: up, wx, y: (top + a) / 2, w: w || 26, h: a - top },
+          { type: down, wx, y: (b + bot) / 2, w: w || 26, h: bot - b }];
 }
 
+// Treats along a line, so the safe way through is also the tasty one.
+function mgTrail(type, wx0, y0, wx1, y1, n, pts) {
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const u = n > 1 ? i / (n - 1) : .5;
+    out.push({ type, good: true, pts: pts || 1, wx: wx0 + (wx1 - wx0) * u, y: y0 + (y1 - y0) * u });
+  }
+  return out;
+}
+
+const MG_SIZES = { berry: [8, 8], acorn: [8, 9], snack: [7, 7], can: [10, 10], bottle: [10, 10], bag: [10, 10],
+                   rock: [12, 10], log: [20, 8], stump: [10, 20], branch: [34, 10], snag: [24, 8], cloud: [30, 12] };
+
+function mgSkyLevel(k, gates, extra) {
+  const out = [];
+  for (const [b, c, gap] of gates) {
+    const wx = b * k;
+    out.push(...mgGate("sky", wx, c, gap));
+    out.push(...mgTrail("berry", wx - 30, c, wx + 30, c, 3));
+  }
+  for (const [b, y] of extra || []) out.push({ type: "cloud", wx: b * k, y });
+  return out;
+}
+
+function mgRiverLevel(k, gates, snags, litter) {
+  const out = [];
+  for (const [b, c, gap] of gates) {
+    const wx = b * k;
+    out.push(...mgGate("river", wx, c, gap, 22));
+    out.push(...mgTrail("snack", wx - 22, c, wx + 22, c, 2));
+  }
+  for (const [b, y] of snags) out.push({ type: "snag", wx: b * k, y });
+  litter.forEach(([b, y], i) => out.push({ type: ["can", "bottle", "bag"][i % 3], good: true, litter: true, pts: 3, wx: b * k, y }));
+  return out;
+}
+
+// Trail obstacles: rocks and logs to hop, tall stumps that need a big jump (hold),
+// and low branches you must stay under (don't jump!).
+function mgTrailLevel(k, list) {
+  const out = [], g = MG_GROUND;
+  for (const [type, b] of list) {
+    const wx = b * k;
+    if (type === "rock") out.push({ type, wx, y: g - 5 }, ...mgTrail("acorn", wx - 18, g - 34, wx + 18, g - 34, 3));
+    else if (type === "log") out.push({ type, wx, y: g - 4 }, ...mgTrail("acorn", wx - 20, g - 36, wx + 20, g - 36, 3));
+    else if (type === "stump") out.push({ type, wx, y: g - 10 }, ...mgTrail("acorn", wx - 14, g - 48, wx + 14, g - 48, 2));
+    else if (type === "branch") out.push({ type, wx, y: g - 35 }, ...mgTrail("acorn", wx - 12, g - 8, wx + 12, g - 8, 2));
+    else if (type === "acorns") out.push(...mgTrail("acorn", wx - 20, g - 8, wx + 20, g - 8, 3));
+  }
+  return out;
+}
+
+// Levels are written in beats of their song, so every hazard lands on the music:
+// the tempo is the difficulty. [beat, gap middle, gap size] for gates.
+const MG_LEVELS = {
+  sky: [
+    { name: "Meadow Breeze", bpm: 112, song: 0, items: (k) => mgSkyLevel(k, [
+      [8, 100, 72], [12, 85, 72], [16, 110, 72], [20, 95, 72],
+      [24, 70, 72], [28, 60, 70], [32, 75, 70],
+      [38, 120, 70], [42, 130, 70], [46, 115, 70],
+      [52, 90, 68], [55, 80, 68], [58, 70, 68], [61, 60, 68],
+      [66, 100, 68], [70, 130, 68], [74, 95, 68], [78, 60, 68], [82, 100, 68], [86, 110, 68], [90, 80, 68],
+    ], [[14, 145], [26, 140], [40, 52], [64, 140], [76, 140]]) },
+    { name: "Storm Front", bpm: 128, song: 1, items: (k) => mgSkyLevel(k, [
+      [8, 100, 62], [12, 70, 62], [16, 110, 62], [20, 70, 62], [24, 110, 62],
+      [28, 130, 60], [30, 114, 60], [32, 98, 60], [34, 82, 60], [36, 66, 60],
+      [40, 60, 60], [43, 100, 60], [46, 60, 60], [49, 100, 60], [52, 60, 60],
+      [56, 140, 58], [58, 130, 58], [60, 120, 58], [62, 110, 58],
+      [66, 50, 58], [69, 90, 58], [72, 130, 58], [75, 90, 58], [78, 50, 58],
+      [82, 100, 58], [84, 100, 58], [86, 100, 58], [90, 70, 58], [94, 120, 58], [98, 95, 58], [102, 95, 58],
+    ], [[38, 100], [54, 100], [64, 75], [80, 120], [88, 50]]) },
+  ],
+  trail: [
+    { name: "Forest Path", bpm: 120, song: 2, items: (k) => mgTrailLevel(k, [
+      ["acorns", 4], ["rock", 8], ["rock", 12], ["log", 16], ["acorns", 19],
+      ["rock", 22], ["log", 26], ["branch", 30], ["acorns", 33], ["rock", 36],
+      ["stump", 40], ["rock", 44], ["rock", 47], ["branch", 52], ["log", 56],
+      ["stump", 60], ["acorns", 63], ["rock", 66], ["log", 70], ["branch", 74], ["rock", 78],
+      ["log", 82], ["rock", 85], ["rock", 88],
+    ]) },
+    { name: "Rocky Ridge", bpm: 132, song: 3, items: (k) => mgTrailLevel(k, [
+      ["rock", 8], ["rock", 11], ["rock", 14], ["log", 18], ["branch", 22],
+      ["stump", 26], ["rock", 30], ["branch", 33], ["log", 37], ["rock", 40],
+      ["stump", 44], ["stump", 48], ["branch", 52], ["rock", 56], ["rock", 59], ["rock", 62],
+      ["branch", 66], ["log", 69], ["stump", 73], ["branch", 77], ["rock", 81], ["log", 84],
+      ["stump", 88], ["rock", 92], ["branch", 95], ["rock", 99], ["stump", 103], ["log", 107], ["rock", 110],
+    ]) },
+  ],
+  river: [
+    { name: "Lazy Creek", bpm: 100, song: 4, items: (k) => mgRiverLevel(k,
+      [[8, 110, 74], [13, 90, 74], [18, 130, 74], [24, 110, 74], [30, 80, 74],
+       [36, 120, 74], [42, 140, 74], [48, 100, 72], [53, 70, 72], [59, 110, 72],
+       [65, 140, 72], [71, 100, 72], [76, 120, 72]],
+      [[10.5, 70], [15.5, 150], [21, 80], [33, 150], [39, 70], [50.5, 150], [62, 70], [68, 80]],
+      [[15.5, 100], [27, 90], [45, 120], [56, 90], [73.5, 110]]) },
+    { name: "Rapids", bpm: 116, song: 5, items: (k) => mgRiverLevel(k,
+      [[8, 110, 64], [12, 80, 64], [16, 120, 64], [20, 150, 64], [24, 120, 64], [28, 80, 64],
+       [33, 60, 62], [36, 90, 62], [39, 120, 62], [42, 150, 62],
+       [47, 110, 62], [50, 110, 62], [53, 70, 62], [56, 110, 62], [59, 150, 62],
+       [64, 100, 60], [67, 70, 60], [70, 100, 60], [73, 130, 60], [76, 100, 60]],
+      [[10, 150], [14, 60], [22, 60], [30.5, 150], [44.5, 70], [61.5, 70], [74.5, 60]],
+      [[18, 140], [34.5, 150], [48.5, 150], [68.5, 130], [79, 90]]) },
+  ],
+};
+
+// A level's things, placed in pixels, and how long it is: a few beats past the last thing.
+function mgLevelOf(key, n) {
+  const lvl = MG_LEVELS[key][Math.min(n, MG_LEVELS[key].length - 1)];
+  if (!lvl.things) {
+    lvl.spb = 60 / lvl.bpm;
+    const k = MG_SPEED[key] * lvl.spb;
+    lvl.things = lvl.items(k).sort((a, b) => a.wx - b.wx);
+    lvl.len = lvl.things[lvl.things.length - 1].wx + 4 * k;
+  }
+  return lvl;
+}
+
+function mgRec(key, n) {
+  const k = `lv.${key}.${n}`;
+  return { pct: +(mgStore.get(k + ".pct") || 0), got: +(mgStore.get(k + ".got") || 0), k };
+}
+const mgTreats = (lvl) => lvl.things.reduce((s, o) => s + (o.good ? o.pts : 0), 0);
+
+// ---- Music ------------------------------------------------------------------------
+// Each level has its own little chiptune, made right here with Web Audio (no sound
+// files). Hazards sit on its beats, so you can feel when to flap or jump. The song
+// follows the level's own clock: it stops when you bump into something and starts
+// over with your next try.
+const MG_SONGS = [
+  // root note (MIDI), chord roots in the key, lead pattern (scale steps, -1 = rest)
+  { root: 60, prog: [0, 5, 3, 4], lead: [0, 2, 4, 2, 7, 4, 2, -1], scale: [0, 2, 4, 5, 7, 9, 11] },
+  { root: 57, prog: [0, 5, 3, 6], lead: [4, -1, 4, 2, 0, 2, 4, 6], scale: [0, 2, 3, 5, 7, 8, 10] },
+  { root: 62, prog: [0, 3, 4, 3], lead: [0, 4, 7, 4, 9, 7, 4, 2], scale: [0, 2, 4, 5, 7, 9, 11] },
+  { root: 59, prog: [0, 6, 5, 4], lead: [7, 6, 4, -1, 4, 6, 7, 9], scale: [0, 2, 3, 5, 7, 8, 10] },
+  { root: 65, prog: [0, 4, 5, 3], lead: [2, -1, 4, -1, 7, -1, 4, 2], scale: [0, 2, 4, 5, 7, 9, 11] },
+  { root: 55, prog: [0, 3, 6, 4], lead: [0, 3, 4, 7, 4, 3, 0, 3], scale: [0, 2, 3, 5, 7, 8, 10] },
+];
+const mgAudio = { ctx: null, out: null, noise: null, muted: mgStore.get("muted") === "1" };
+
+function mgAudioOn() {
+  if (mgAudio.muted) return null;
+  try {
+    if (!mgAudio.ctx) {
+      const C = window.AudioContext || window.webkitAudioContext;
+      if (!C) return null;
+      const ctx = mgAudio.ctx = new C();
+      const buf = ctx.createBuffer(1, ctx.sampleRate * .2, ctx.sampleRate), d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.sin(i * 12.9898) * 43758.5453 % 1;  // fixed noise, no Math.random
+      mgAudio.noise = buf;
+    }
+    if (mgAudio.ctx.state === "suspended") mgAudio.ctx.resume();
+    return mgAudio.ctx;
+  } catch { return null; }
+}
+
+// Starts a fresh bus for this try, so stopping is just fading it out.
+function mgMusicStart(r) {
+  mgMusicStop(r);
+  const ctx = mgAudioOn();
+  if (!ctx) return;
+  const out = ctx.createGain();
+  out.gain.value = .16;
+  out.connect(ctx.destination);
+  r.music = { out, at: ctx.currentTime + .05 - r.t, next: Math.ceil(r.t / (r.lvl.spb / 4)) };
+}
+
+function mgMusicStop(r) {
+  if (!r || !r.music) return;
+  const { out } = r.music, ctx = mgAudio.ctx;
+  try { out.gain.setTargetAtTime(0, ctx.currentTime, .03); setTimeout(() => out.disconnect(), 400); } catch {}
+  r.music = null;
+}
+
+const mgHz = (m) => 440 * Math.pow(2, (m - 69) / 12);
+
+function mgNote(ctx, out, type, freq, at, len, vol, slide) {
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = type; o.frequency.setValueAtTime(freq, at);
+  if (slide) o.frequency.exponentialRampToValueAtTime(slide, at + len);
+  g.gain.setValueAtTime(vol, at); g.gain.exponentialRampToValueAtTime(.001, at + len);
+  o.connect(g); g.connect(out); o.start(at); o.stop(at + len + .02);
+}
+
+function mgHit16(ctx, out, at, len, vol, hp) {
+  const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+  s.buffer = mgAudio.noise; f.type = "highpass"; f.frequency.value = hp;
+  g.gain.setValueAtTime(vol, at); g.gain.exponentialRampToValueAtTime(.001, at + len);
+  s.connect(f); f.connect(g); g.connect(out); s.start(at); s.stop(at + len + .02);
+}
+
+// Schedules the next bit of the song, a little ahead of the level's clock. The
+// level gets busier as it goes: drums first, then bass, then the tune.
+function mgMusicTick(r) {
+  const m = r.music, ctx = mgAudio.ctx;
+  if (!m || !ctx) return;
+  // Stay locked to the level's clock if the page stuttered.
+  const want = ctx.currentTime - r.t;
+  if (Math.abs(want - m.at) > .08) m.at = want;
+  const song = MG_SONGS[r.lvl.song % MG_SONGS.length], step = r.lvl.spb / 4;
+  while (m.next * step < r.t + .25) {
+    const i = m.next++, at = m.at + i * step;
+    if (at < ctx.currentTime - .01) continue;
+    const beat = Math.floor(i / 4), sub = i % 4, bar = Math.floor(beat / 4);
+    const chord = song.prog[bar % 4], deg = (n) => song.root + song.scale[(n % 7 + 7) % 7] + 12 * Math.floor(n / 7);
+    if (sub === 0 && beat % 2 === 0) mgNote(ctx, m.out, "sine", 150, at, .14, .9, 45);  // kick
+    if (sub === 0 && beat % 2 === 1) mgHit16(ctx, m.out, at, .12, .35, 1200);            // snare
+    if (sub === 2) mgHit16(ctx, m.out, at, .04, .18, 6000);                               // hi-hat
+    if (bar >= 2 && sub % 2 === 0) mgNote(ctx, m.out, "triangle", mgHz(deg(chord) - 24), at, step * 1.8, .5);
+    if (bar >= 4) {
+      const n = song.lead[(i / 2 | 0) % song.lead.length];
+      if (sub % 2 === 0 && n >= 0) mgNote(ctx, m.out, "square", mgHz(deg(chord + n)), at, step * 1.6, .09);
+    }
+  }
+}
+
+// A short sound for a bump, a treat and a cleared level.
+function mgSfx(kind) {
+  const ctx = mgAudio.ctx;
+  if (!ctx || mgAudio.muted) return;
+  const out = ctx.destination, at = ctx.currentTime;
+  if (kind === "bump") mgNote(ctx, out, "square", 300, at, .25, .12, 60);
+  else if (kind === "treat") mgNote(ctx, out, "square", 1320, at, .07, .05);
+  else if (kind === "done") [0, 4, 7, 12].forEach((n, i) => mgNote(ctx, out, "square", mgHz(72 + n), at + i * .1, .2, .07));
+}
+
+// ---- Playing --------------------------------------------------------------------
+
 function mgReset(mode) {
-  const g = mg.game;
-  mg.run = { mode, t: 0, left: MG_ROUND, score: 0, litter: 0, things: [], fx: [], spawn: .6, dist: 0, phase: 0,
-             x: g.key === "trail" ? 70 : 72, y: g.key === "trail" ? MG_GROUND : g.key === "sky" ? 90 : 100, vy: 0,
-             stun: 0, flap: 0, ground: true, overAt: 0, best: +(mgStore.get("best." + g.key) || 0), newBest: false,
-             traits: mgTraits(mg.species) };
+  const g = mg.game, lvl = mgLevelOf(g.key, mg.level);
+  const rec = mgRec(g.key, mg.level);
+  mg.tries = mode === "play" ? (mg.tries || 0) + 1 : mg.tries || 0;
+  mg.run = { mode, t: 0, acc: 0, score: 0, litter: 0, fx: [], dist: 0, phase: 0, len: lvl.len, lvl,
+             things: lvl.things.map((o) => Object.assign({ x: MG_W + 99, w: (MG_SIZES[o.type] || [o.w])[0], h: (MG_SIZES[o.type] || [0, o.h])[1] }, o)),
+             x: g.key === "trail" ? 70 : 72, y: g.key === "trail" ? MG_GROUND : g.key === "sky" ? 90 : 110, vy: 0,
+             flap: 0, ground: true, held: false, overAt: 0, rec, newBest: false, total: mgTreats(lvl) };
+}
+
+// A press: flap, jump or start swimming up. Shared by touch, keys and the level checker.
+function mgPress(r, key, on) {
+  if (on && !r.held) {
+    if (key === "sky") { r.vy = -118; r.flap = .35; }
+    if (key === "trail" && r.ground) { r.vy = -255; r.ground = false; }
+  }
+  r.held = on;
 }
 
 function mgTap() {
   const r = mg.run;
   if (!r) return;
-  if (r.mode === "ready" || r.mode === "paused") { r.mode = "play"; mg.last = 0; mgWake(); }
-  else if (r.mode === "over") { if (performance.now() - r.overAt > 700) { mgReset("play"); mgWake(); } return; }
-  if (r.mode !== "play") return;
-  if (mg.game.key === "sky") { r.vy = -118; r.flap = .35; }
-  if (mg.game.key === "trail" && r.ground) { r.vy = -255 * r.traits.jump; r.ground = false; }
+  if (r.mode === "ready" || r.mode === "paused") { r.mode = "play"; mg.last = 0; mgMusicStart(r); mgWake(); }
+  else if (r.mode === "over" || r.mode === "done") {
+    if (performance.now() - r.overAt > (r.mode === "done" ? 900 : 350)) { mgReset("play"); mgMusicStart(mg.run); mgWake(); }
+  }
 }
 
 function mgWake() {
   const r = mg.run;
   const on = r && mg.visible && !document.hidden;
-  if (r && !on && r.mode === "play") r.mode = "paused";
+  if (r && !on && r.mode === "play") { r.mode = "paused"; mgMusicStop(r); }
   if (on && !mg.raf) { mg.last = 0; mg.raf = requestAnimationFrame(mgLoop); }
   if (!on && mg.raf) { cancelAnimationFrame(mg.raf); mg.raf = 0; mgDraw(); }
 }
@@ -210,108 +484,96 @@ function mgLoop(now) {
   mg.last = now;
   const r = mg.run;
   r.phase += dt;
-  if (r.mode === "play") mgStep(r, dt);
+  if (r.mode === "play") { mgStep(r, dt); mgMusicTick(r); }
   mgFxStep(r, dt);
   mgDraw();
   mg.raf = requestAnimationFrame(mgLoop);
 }
 
-const mgRnd = (a, b) => a + Math.random() * (b - a);
-
-function mgStep(r, dt) {
-  const key = mg.game.key;
-  r.t += dt; r.left -= dt;
-  r.stun = Math.max(0, r.stun - dt); r.flap = Math.max(0, r.flap - dt);
-  // Worlds speed up a little over the minute.
-  const base = key === "trail" ? 92 * r.traits.speed : key === "sky" ? 70 : 62;
-  const speed = base * (1 + r.t / 90) * (r.stun ? .55 : 1);
-  r.speed = speed;
-  r.dist += speed * dt;
+// The animal's movement for one step. Pure, so it can be replayed exactly.
+function mgPhys(r, key, dt) {
+  r.t += dt; r.flap = Math.max(0, r.flap - dt);
+  r.dist += MG_SPEED[key] * dt;
   if (key === "sky") {
     r.vy = Math.min(150, r.vy + 300 * dt);
     r.y += r.vy * dt;
-    if (r.y < 18) { r.y = 18; r.vy = Math.max(0, r.vy); }
+    if (r.y < MG_TOP) { r.y = MG_TOP; r.vy = Math.max(0, r.vy); }
     if (r.y > MG_GROUND - 14) { r.y = MG_GROUND - 14; r.vy = 0; }  // glides along the meadow
   } else if (key === "trail") {
-    const g = 760;
     if (!r.ground) {
       // Let go early for a small hop.
-      r.vy += (r.vy < 0 && !mg.down ? g * 2.2 : g) * dt;
+      r.vy += (r.vy < 0 && !r.held ? 760 * 2.2 : 760) * dt;
       r.y += r.vy * dt;
       if (r.y >= MG_GROUND) { r.y = MG_GROUND; r.vy = 0; r.ground = true; }
     }
   } else {
-    r.vy += (mg.down ? -260 : 200) * dt;
+    r.vy += (r.held ? -260 : 200) * dt;
     r.vy = Math.max(-95, Math.min(85, r.vy));
     r.y += r.vy * dt;
     if (r.y < MG_SURFACE + 12) { r.y = MG_SURFACE + 12; r.vy = Math.max(0, r.vy); }
     if (r.y > MG_BED - 12) { r.y = MG_BED - 12; r.vy = Math.min(0, r.vy); }
   }
-  // New things come in from the right.
-  r.spawn -= dt;
-  if (r.spawn <= 0) mgSpawn(r, key);
-  for (const o of r.things) {
-    o.x -= speed * dt * (o.drift || 1);
-    if (o.bob) o.y = o.y0 + Math.sin(r.phase * 3 + o.x * .05) * o.bob;
-  }
-  // Touching things: pick up the good ones, bump the rest.
-  const [px0, py0, px1, py1] = mgBox(r), px = (px0 + px1) / 2, py = (py0 + py1) / 2;
-  for (const o of r.things) {
-    if (o.gone || o.x + o.w / 2 < px0 || o.x - o.w / 2 > px1 || o.y + o.h / 2 < py0 || o.y - o.h / 2 > py1) continue;
-    if (o.good) {
-      if (r.stun) continue;
-      o.gone = true;
-      r.score += o.pts;
-      if (o.litter) r.litter++;
-      r.fx.push({ kind: "text", x: o.x, y: o.y - 6, text: `+${o.pts}`, life: .8 });
-      if (o.litter) r.fx.push({ kind: "text", x: o.x, y: o.y - 16, text: "Cleaned!", life: .9 });
-      for (let i = 0; i < 5; i++) r.fx.push({ kind: "spark", x: o.x, y: o.y, vx: mgRnd(-40, 40), vy: mgRnd(-60, -10), life: .5 });
-    } else if (!r.stun) {
-      r.stun = 1.1;
-      if (key === "sky") r.vy = 60;
-      for (let i = 0; i < 4; i++) r.fx.push({ kind: "star", x: px, y: py - 12, vx: mgRnd(-30, 30), vy: mgRnd(-40, -10), life: .8 });
-    }
-  }
-  r.things = r.things.filter((o) => !o.gone && o.x > -40);
-  if (r.left <= 0) {
-    r.left = 0; r.mode = "over"; r.overAt = performance.now(); r.stun = 0; mg.down = false;
-    if (r.score > r.best) { r.newBest = r.best > 0 || r.score > 0; r.best = r.score; mgStore.set("best." + key, r.score); }
-  }
 }
 
 // What of the player touches things: a box around its body, a bit smaller than the
 // sprite so near misses count as misses. On the trail r.y is where its feet are.
-function mgBox(r) {
-  return mg.game.key === "trail" ? [r.x - 9, r.y - 22, r.x + 9, r.y - 1] : [r.x - 9, r.y - 8, r.x + 9, r.y + 8];
+function mgBox(key, r, pad) {
+  const p = pad || 0;
+  return key === "trail" ? [r.x - 8 - p, r.y - 21 - p, r.x + 8 + p, r.y - 1 + p] : [r.x - 8 - p, r.y - 7 - p, r.x + 8 + p, r.y + 7 + p];
+}
+const mgTouches = (b, o, x) => !(x + o.w / 2 < b[0] || x - o.w / 2 > b[2] || o.y + o.h / 2 < b[1] || o.y - o.h / 2 > b[3]);
+
+// Does the animal hit a hazard right now? (Used by the game and the level checker.)
+function mgHit(r, key, things, pad) {
+  const b = mgBox(key, r, pad);
+  for (const o of things) {
+    if (o.good) continue;
+    const x = o.wx - r.dist + r.x;
+    if (x > b[2] + 40) break;  // things are in course order
+    if (mgTouches(b, o, x)) return true;
+  }
+  return false;
 }
 
-function mgSpawn(r, key) {
-  const add = (o) => r.things.push(Object.assign({ x: MG_W + 20, y0: o.y }, o));
-  if (key === "sky") {
-    if (Math.random() < .42) add({ type: "cloud", y: mgRnd(26, 140), w: 34, h: 14, bob: 3 });
-    const y = mgRnd(24, 150);
-    for (let i = 0; i < (Math.random() < .5 ? 3 : 1); i++)
-      add({ type: "berry", good: true, pts: 1, x: MG_W + 30 + i * 16, y: y + Math.sin(i) * 8, w: 8, h: 8, bob: 2 });
-    r.spawn = mgRnd(.8, 1.2);
-  } else if (key === "trail") {
-    const roll = Math.random();
-    if (roll < .55) add(Math.random() < .5 ? { type: "log", y: MG_GROUND - 5, w: 22, h: 10 } : { type: "rock", y: MG_GROUND - 6, w: 14, h: 12 });
-    // Acorns along the trail or up where a jump goes.
-    const high = Math.random() < .5, n = 1 + Math.floor(Math.random() * 3);
-    for (let i = 0; i < n; i++)
-      add({ type: "acorn", good: true, pts: 1, x: MG_W + 50 + i * 14, y: high ? MG_GROUND - 52 - Math.sin(i / (n - 1 || 1) * Math.PI) * 8 : MG_GROUND - 10, w: 8, h: 9 });
-    // Room to land between logs, even at full speed.
-    r.spawn = mgRnd(1.1, 1.6) * 92 / (r.speed || 92) * (r.traits.speed < 1 ? 1.1 : 1);
-  } else {
-    const roll = Math.random();
-    if (roll < .3) add({ type: "snag", y: mgRnd(MG_SURFACE + 22, MG_BED - 18), w: 26, h: 10, drift: 1.1 });
-    else if (roll < .55) add({ type: pickOf(["can", "bottle", "bag"]), good: true, litter: true, pts: 3, y: mgRnd(MG_SURFACE + 16, MG_BED - 14), w: 10, h: 10, bob: 3 });
-    const y = mgRnd(MG_SURFACE + 16, MG_BED - 14);
-    for (let i = 0; i < 2; i++) add({ type: "snack", good: true, pts: 1, x: MG_W + 40 + i * 14, y: y + i * 6, w: 7, h: 7, bob: 4 });
-    r.spawn = mgRnd(.7, 1.1);
+function mgStep(r, dt) {
+  const key = mg.game.key;
+  // Fixed steps: the same presses always give the same flight.
+  r.acc += dt;
+  while (r.acc >= MG_DT && r.mode === "play") {
+    r.acc -= MG_DT;
+    r.held = mg.down;
+    mgPhys(r, key, MG_DT);
+    for (const o of r.things) o.x = o.wx - r.dist + r.x;
+    const b = mgBox(key, r);
+    for (const o of r.things) {
+      if (!o.good || o.gone || o.x > b[2] + 20 || !mgTouches(b, o, o.x)) continue;
+      o.gone = true;
+      r.score += o.pts;
+      mgSfx("treat");
+      if (o.litter) r.litter++;
+      r.fx.push({ kind: "text", x: o.x, y: o.y - 6, text: `+${o.pts}`, life: .8 });
+      if (o.litter) r.fx.push({ kind: "text", x: o.x, y: o.y - 16, text: "Cleaned!", life: .9 });
+      for (let i = 0; i < 5; i++) r.fx.push({ kind: "spark", x: o.x, y: o.y, vx: (i - 2) * 18, vy: -20 - (i % 3) * 18, life: .5 });
+    }
+    if (mgHit(r, key, r.hazards || (r.hazards = r.things.filter((o) => !o.good).sort((a, b) => a.wx - b.wx)))) mgEnd(r, false);
+    else if (r.dist >= r.len) mgEnd(r, true);
   }
 }
-const pickOf = (a) => a[Math.floor(Math.random() * a.length)];
+
+function mgEnd(r, cleared) {
+  const pct = cleared ? 100 : Math.min(99, Math.floor(r.dist / r.len * 100));
+  r.mode = cleared ? "done" : "over"; r.overAt = performance.now(); r.pct = pct; mg.down = false;
+  mgMusicStop(r);
+  mgSfx(cleared ? "done" : "bump");
+  const rec = r.rec;
+  r.newBest = pct > rec.pct || (cleared && r.score > rec.got);
+  if (pct > rec.pct) { rec.pct = pct; mgStore.set(rec.k + ".pct", pct); }
+  if (cleared && r.score > rec.got) { rec.got = r.score; mgStore.set(rec.k + ".got", r.score); }
+  if (!cleared) {
+    const [x0, y0, x1, y1] = mgBox(mg.game.key, r);
+    for (let i = 0; i < 6; i++) r.fx.push({ kind: "star", x: (x0 + x1) / 2, y: (y0 + y1) / 2, vx: (i - 2.5) * 16, vy: -30 - (i % 2) * 20, life: .8 });
+  }
+}
 
 function mgFxStep(r, dt) {
   for (const f of r.fx) {
@@ -444,6 +706,49 @@ function mgThing(c, o, r) {
       box(-2, -6, 5, 11, "rgba(150,220,180,.85)"); box(-1, -8, 3, 2, "#6aa8d8"); box(-1, -4, 1, 6, "rgba(255,255,255,.7)"); break;
     case "bag":
       box(-5, -4, 10, 8, "rgba(240,240,240,.75)"); box(-4, -6, 2, 2, "rgba(240,240,240,.75)"); box(2, -6, 2, 2, "rgba(240,240,240,.75)"); break;
+    case "storm": {
+      // A wall of storm cloud, puffy at the end that faces the gap.
+      const t0 = Math.round(o.y - o.h / 2), t1 = Math.round(o.y + o.h / 2), up = t0 <= 2;
+      c.fillStyle = "#6f7488"; c.fillRect(x - 13, t0, 26, t1 - t0);
+      // Puffs down both sides so it reads as cloud, not a pillar.
+      for (let yy = t0 + 5; yy < t1 - 3; yy += 9) {
+        const k = Math.floor((yy + o.wx) / 9) % 3;
+        c.fillStyle = "#7a7f92"; c.beginPath(); c.arc(x - 12 + k, yy, 4, 0, Math.PI * 2); c.arc(x + 12 - k, yy + 4, 4, 0, Math.PI * 2); c.fill();
+        c.fillStyle = "#5f6378"; c.fillRect(x - 5 + k * 2, yy + 2, 8, 2);
+      }
+      c.fillStyle = "#8a8fa2"; c.fillRect(x - 13, t0, 3, t1 - t0);
+      const end = up ? t1 : t0;
+      c.fillStyle = "#7a7f92";
+      for (const [dx, r0] of [[-10, 5], [0, 7], [10, 5]]) { c.beginPath(); c.arc(x + dx, end, r0, 0, Math.PI * 2); c.fill(); }
+      if (Math.sin(r.phase * 4 + o.wx) > .93) { box(-1, up ? 6 + (t1 - y) : -(y - t0) - 12, 2, 5, "#f2c14e"); }
+      break;
+    }
+    case "roots": {
+      const t1 = Math.round(o.y + o.h / 2);
+      c.fillStyle = "#5b4030"; c.fillRect(x - 11, MG_SURFACE, 22, t1 - MG_SURFACE);
+      c.fillStyle = "#7a5a40"; c.fillRect(x - 11, MG_SURFACE, 4, t1 - MG_SURFACE);
+      c.fillStyle = "#5b4030";
+      for (const dx of [-8, -2, 5]) c.fillRect(x + dx, t1, 2, 4 + ((dx + 9) % 4));
+      break;
+    }
+    case "boulder": {
+      const t0 = Math.round(o.y - o.h / 2);
+      c.fillStyle = "#6e7380"; c.fillRect(x - 11, t0 + 3, 22, MG_BED - t0);
+      c.fillStyle = "#8a8f9e"; c.fillRect(x - 9, t0, 18, 5); c.fillRect(x - 11, t0 + 3, 5, MG_BED - t0 - 3);
+      c.fillStyle = "#3f8d58"; c.fillRect(x - 7, t0, 6, 2);
+      break;
+    }
+    case "stump":
+      box(-5, -10, 10, 20, "#7a5232"); box(-5, -10, 10, 3, "#d8b07a"); box(-3, -9, 6, 1, "#a8744a"); box(-5, -10, 2, 20, "#946640");
+      box(-7, 8, 14, 2, "#62402a"); break;
+    case "branch":
+      // Vines from the leafy canopy above hold the branch up.
+      c.fillStyle = "#3f8d58"; c.fillRect(x - 12, 0, 1, y); c.fillRect(x + 11, 0, 1, y);
+      c.fillStyle = "#2f7d4f";
+      for (let dx = -22; dx <= 22; dx += 8) { c.beginPath(); c.arc(x + dx, 2, 7, 0, Math.PI * 2); c.fill(); }
+      box(-17, -2, 34, 4, "#7a5232"); box(-17, -2, 34, 1, "#a8744a");
+      box(-15, -6, 8, 4, "#3f8d58"); box(-3, -7, 8, 5, "#2f7d4f"); box(9, -6, 7, 4, "#3f8d58"); box(-10, 2, 6, 3, "#2f7d4f");
+      break;
     case "snag":
       box(-13, -3, 26, 6, "#5b4030"); box(-13, -3, 26, 1, "#7a5a40"); box(-6, -8, 2, 5, "#5b4030"); box(4, 3, 2, 5, "#5b4030");
       box(-8, -9, 4, 2, "#5b4030"); break;
@@ -462,12 +767,12 @@ function mgPlayer(c, r) {
   const moving = r.mode === "play";
   if (pose === "fly") frame = !moving ? cyc(r.phase * 4) : r.flap > 0 || r.vy < 20 ? cyc(r.phase * 14) : HAB_GLIDERS.test(s.slug) ? 0 : cyc(r.phase * 6);
   else if (pose === "walk") frame = key === "trail" && !r.ground ? 1 : cyc((moving ? r.dist : r.phase * 20) / 9);
-  else if (pose === "swim") frame = cyc(r.phase * (mg.down ? 5 : 2.5));
+  else if (pose === "swim") frame = cyc(r.phase * (r.held ? 5 : 2.5));
   if (r.mode === "over" && acts.includes("idle")) { pose = "idle"; frame = 0; }
   const img = framed ? sheet : raw;
   if (!img || !img.complete || !img.naturalWidth) return;
   const F = framed ? sheet.naturalWidth / habAnimIdx.frames : raw.naturalWidth;
-  if (r.stun && Math.floor(r.phase * 12) % 3 === 0) return;  // blink while dizzy
+  if (r.mode === "over" && Math.floor(r.phase * 12) % 3 === 0) return;  // blink after a bump
   let x = Math.round(r.x), y = Math.round(r.y), bob = 0;
   if (!framed) bob = Math.round(Math.sin(r.phase * 8) * 2);
   if (key === "trail" && r.ground) {
@@ -511,21 +816,32 @@ function mgPanel(c, lines, y0) {
 
 function mgHud(c, r) {
   const g = mg.game, top = g.key === "trail" ? 34 : 104;  // clear of the animal
+  // How far along the course you are, with your best try marked.
+  const p = Math.min(1, r.dist / r.len), bw = MG_W - 120;
+  c.fillStyle = "rgba(0,0,0,.35)"; c.fillRect(60, 7, bw, 6);
+  c.fillStyle = "#9be59b"; c.fillRect(60, 7, Math.round(bw * p), 6);
+  if (r.rec.pct) { c.fillStyle = "#ffd28a"; c.fillRect(60 + Math.round(bw * r.rec.pct / 100) - 1, 5, 2, 10); }
   c.textAlign = "left"; c.font = "bold 11px system-ui, sans-serif";
-  const label = g.key === "river" ? `Score ${r.score}` : `${g.key === "sky" ? "Berries" : "Acorns"} ${r.score}`;
-  c.fillStyle = "rgba(0,0,0,.35)"; c.fillRect(4, 4, c.measureText(label).width + 10, 16);
-  c.fillStyle = "#fff"; c.fillText(label, 9, 16);
-  const secs = `${Math.ceil(r.left)}s`;
-  c.textAlign = "right";
-  c.fillStyle = "rgba(0,0,0,.35)"; c.fillRect(MG_W - 14 - c.measureText(secs).width, 4, c.measureText(secs).width + 10, 16);
-  c.fillStyle = r.left < 10 ? "#ffd28a" : "#fff"; c.fillText(secs, MG_W - 9, 16);
-  if (r.mode === "ready") mgPanel(c, [[g.title, 15], [g.tip, 11], ["Tap to start", 11, "#ffd28a"]], top);
+  const label = `${g.key === "river" ? "Score" : g.key === "sky" ? "Berries" : "Acorns"} ${r.score}`;
+  c.fillStyle = "rgba(0,0,0,.35)"; c.fillRect(4, 18, c.measureText(label).width + 10, 16);
+  c.fillStyle = "#fff"; c.fillText(label, 9, 30);
+  c.font = "bold 10px system-ui, sans-serif"; c.textAlign = "right";
+  c.fillStyle = "#fff"; c.fillText(`${Math.floor(p * 100)}%`, MG_W - 8, 15);
+  c.textAlign = "left"; c.fillText(`Try ${mg.tries || 1}`, 8, 15);
+  const lvl = r.lvl;
+  if (r.mode === "ready") mgPanel(c, [[`Level ${mg.level + 1}: ${lvl.name}`, 14], [g.tip, 11], ["The course is the same every time. Learn it!", 10, "#cfe"], ["Tap to start", 11, "#ffd28a"]], top);
   else if (r.mode === "paused") mgPanel(c, [["Paused", 15], ["Tap to keep going", 11, "#ffd28a"]], top);
   else if (r.mode === "over") {
-    const what = `${r.score} ${g.thing[r.score === 1 ? 0 : 1]}`;
-    const lines = [["Time's up!", 15], [what, 13, "#ffd28a"]];
+    const lines = [["Bump!", 15], [`You made it ${r.pct}% of the way`, 12, "#ffd28a"]];
+    lines.push([r.newBest ? "That's your best yet!" : `Best: ${r.rec.pct}%`, 11, r.newBest ? "#9be59b" : "#fff"]);
+    lines.push(["Tap to try again", 10, "#cfe"]);
+    mgPanel(c, lines, Math.min(top, MG_H - 8 - (lines.length * 16 + 14)));
+  } else if (r.mode === "done") {
+    const lines = [["Level complete!", 15, "#9be59b"], [`${r.score} of ${r.total} ${g.thing[1]}`, 12, "#ffd28a"]];
     if (g.key === "river" && r.litter) lines.push([`You cleaned up ${r.litter} piece${r.litter === 1 ? "" : "s"} of litter`, 10]);
-    lines.push([r.newBest ? "New best score!" : `Best: ${r.best}`, 11, r.newBest ? "#9be59b" : "#fff"]);
+    if (r.score >= r.total) lines.push(["You got every one!", 11, "#9be59b"]);
+    else lines.push([r.newBest ? "New best!" : `Best: ${r.rec.got}`, 11, r.newBest ? "#9be59b" : "#fff"]);
+    if (mg.level + 1 < MG_LEVELS[g.key].length) lines.push([`Level ${mg.level + 2} is unlocked!`, 10, "#cfe"]);
     lines.push(["Tap to play again", 10, "#cfe"]);
     mgPanel(c, lines, Math.min(top, MG_H - 8 - (lines.length * 16 + 14)));
   }
