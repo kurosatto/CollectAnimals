@@ -47,8 +47,8 @@ function mgPlayers(key) {
 
 function mgSet(entries) {
   mg.entries = entries || [];
-  // The animation index may still be loading; the unlocks depend on it.
-  if (!habAnimIdx && (mg.tries = (mg.tries || 0) + 1) < 20) { setTimeout(() => mgSet(mg.entries), 300); return; }
+  // The animation index and stats may still be loading; the unlocks depend on them.
+  if ((!habAnimIdx || !mgStatsIdx) && (mg.waits = (mg.waits || 0) + 1) < 20) { setTimeout(() => mgSet(mg.entries), 300); return; }
   if (!mg.run) mgList();
 }
 
@@ -68,6 +68,10 @@ function mgBuild() {
   .mg-pick img { width:40px; height:40px; image-rendering:pixelated; border-radius:8px; border:2px solid transparent;
                  cursor:pointer; flex:none; background:rgba(127,127,127,.08); }
   .mg-pick img.on { border-color:var(--accent); background:rgba(127,200,150,.18); }
+  .mg-stats { display:flex; gap:10px; flex-wrap:wrap; margin-top:4px; font-size:.75rem; }
+  .mg-stat { display:flex; gap:4px; align-items:baseline; }
+  .mg-stat i { font-style:normal; color:var(--muted); }
+  .mg-stat b { color:var(--accent); letter-spacing:-1px; font-weight:400; }
   .mg-levels { display:flex; gap:6px; margin-top:6px; flex-wrap:wrap; }
   .mg-lv { font:inherit; font-size:.78rem; text-align:left; padding:5px 10px; border-radius:10px; border:2px solid var(--line);
            background:transparent; color:inherit; cursor:pointer; display:flex; flex-direction:column; gap:1px; }
@@ -139,13 +143,23 @@ function mgList() {
     const saved = mgStore.get("pick." + g.key);
     let pick = players.find((s) => s.slug === saved) || players[0];
     const row = mgEl("div", "mg-pick"), foot = mgEl("div", "mg-row"), name = mgEl("span", "mg-name", pick.common_name);
+    const stats = mgEl("div", "mg-stats");
+    const showStats = () => {
+      const st = mgStats(pick.slug);
+      stats.innerHTML = "";
+      [st.speed, st.jump, st.agility, st.size].forEach((v, i) => {
+        const cell = mgEl("span", "mg-stat");
+        cell.append(mgEl("i", null, MG_STAT_NAMES[i]), mgEl("b", null, "●".repeat(v) + "○".repeat(5 - v)));
+        stats.append(cell);
+      });
+    };
     const play = mgEl("button", "mg-play", "Play");
     for (const s of players) {
       const img = mgEl("img", s === pick ? "on" : "");
       img.src = `/sprites/${encodeURIComponent(s.slug)}.png`;
       img.alt = img.title = s.common_name;
       img.onclick = () => {
-        pick = s; name.textContent = s.common_name; mgStore.set("pick." + g.key, s.slug);
+        pick = s; name.textContent = s.common_name; mgStore.set("pick." + g.key, s.slug); showStats();
         row.querySelectorAll("img").forEach((i) => i.classList.toggle("on", i === img));
       };
       row.append(img);
@@ -158,14 +172,15 @@ function mgList() {
     lvls.forEach((L, i) => {
       const rec = mgRec(g.key, i), b = mgEl("button", "mg-lv" + (i === lv ? " on" : ""));
       b.append(mgEl("b", null, `${i + 1}. ${L.name}`),
-               mgEl("span", null, !open(i) ? `🔒 Finish level ${i} first` : rec.pct >= 100 ? `✓ Cleared · ${rec.got} ${g.thing[1]}` : rec.pct ? `Best ${rec.pct}%` : "New"));
+               mgEl("span", null, !open(i) ? `🔒 Finish level ${i} first` : rec.pct >= 100 ? `✓ Best ${rec.points || rec.got} points` : rec.pct ? `Best ${rec.pct}%` : "New"));
       b.disabled = !open(i);
       b.onclick = () => { lv = i; mgStore.set("lvl." + g.key, i); levels.querySelectorAll(".mg-lv").forEach((e, j) => e.classList.toggle("on", j === i)); };
       levels.append(b);
     });
     play.onclick = () => mgStart(g, pick, lv);
     foot.append(name, play);
-    card.append(row, levels, foot);
+    showStats();
+    card.append(row, stats, levels, foot);
     list.append(card);
   }
 }
@@ -326,6 +341,7 @@ function mgLevelOf(key, n) {
     lvl.spb = 60 / lvl.bpm;
     const k = MG_SPEED[key] * lvl.spb;
     lvl.things = lvl.items(k).sort((a, b) => a.wx - b.wx);
+    for (const o of lvl.things) if (MG_SIZES[o.type]) [o.w, o.h] = MG_SIZES[o.type];
     lvl.len = lvl.things[lvl.things.length - 1].wx + 4 * k;
   }
   return lvl;
@@ -333,7 +349,8 @@ function mgLevelOf(key, n) {
 
 function mgRec(key, n) {
   const k = `lv.${key}.${n}`;
-  return { pct: +(mgStore.get(k + ".pct") || 0), got: +(mgStore.get(k + ".got") || 0), k };
+  return { pct: +(mgStore.get(k + ".pct") || 0), got: +(mgStore.get(k + ".got") || 0), points: +(mgStore.get(k + ".points") || 0),
+           who: mgStore.get(k + ".who") || "", k };
 }
 const mgTreats = (lvl) => lvl.things.reduce((s, o) => s + (o.good ? o.pts : 0), 0);
 
@@ -377,7 +394,7 @@ function mgMusicStart(r) {
   const out = ctx.createGain();
   out.gain.value = .16;
   out.connect(ctx.destination);
-  r.music = { out, at: ctx.currentTime + .05 - r.t, next: Math.ceil(r.t / (r.lvl.spb / 4)) };
+  r.music = { out, at: ctx.currentTime + .05 - r.rt, next: Math.ceil(r.rt / (r.lvl.spb / 4 / r.p.tempo)) };
 }
 
 function mgMusicStop(r) {
@@ -410,10 +427,11 @@ function mgMusicTick(r) {
   const m = r.music, ctx = mgAudio.ctx;
   if (!m || !ctx) return;
   // Stay locked to the level's clock if the page stuttered.
-  const want = ctx.currentTime - r.t;
+  const want = ctx.currentTime - r.rt;
   if (Math.abs(want - m.at) > .08) m.at = want;
-  const song = MG_SONGS[r.lvl.song % MG_SONGS.length], step = r.lvl.spb / 4;
-  while (m.next * step < r.t + .25) {
+  // A faster animal plays the song faster, a slower one slower.
+  const song = MG_SONGS[r.lvl.song % MG_SONGS.length], step = r.lvl.spb / 4 / r.p.tempo;
+  while (m.next * step < r.rt + .25) {
     const i = m.next++, at = m.at + i * step;
     if (at < ctx.currentTime - .01) continue;
     const beat = Math.floor(i / 4), sub = i % 4, bar = Math.floor(beat / 4);
@@ -439,14 +457,40 @@ function mgSfx(kind) {
   else if (kind === "done") [0, 4, 7, 12].forEach((n, i) => mgNote(ctx, out, "square", mgHz(72 + n), at + i * .1, .2, .07));
 }
 
+// ---- Animal stats ----------------------------------------------------------------
+// Every animal has Speed, Jump, Agility and Size from 1 to 5, from the real animal
+// (tools/make_game_stats.py). Speed plays the whole level faster or slower, music
+// and all, like changing a song's tempo: the course stays the same, a fast animal
+// just gets less time to react and a better time. The others only ever make a
+// level more forgiving, so every level is built for the weakest animal and every
+// animal can finish it.
+let mgStatsIdx = null;
+fetch("/sprites/game_stats.json").then((r) => (r.ok ? r.json() : null)).then((j) => { mgStatsIdx = j; }).catch(() => {});
+const MG_STAT_NAMES = ["Speed", "Jump", "Agility", "Size"];
+
+function mgStats(slug) {
+  const v = (mgStatsIdx && mgStatsIdx.stats[slug]) || [3, 3, 3, 3];
+  return { speed: v[0], jump: v[1], agility: v[2], size: v[3] };
+}
+
+// What the stats do in a game. Level 1 of every stat is the baseline the levels are
+// built (and checked) for.
+function mgPhysOf(st) {
+  return { tempo: [.75, .88, 1, 1.15, 1.3][st.speed - 1], jump: 1 + (st.jump - 1) * .04,
+           power: 1 + (st.agility - 1) * .03, shrink: (5 - st.size) * .75 };
+}
+
+const mgPoints = (treats, p) => Math.round(treats * 10 * p.tempo);
+
 // ---- Playing --------------------------------------------------------------------
 
 function mgReset(mode) {
   const g = mg.game, lvl = mgLevelOf(g.key, mg.level);
   const rec = mgRec(g.key, mg.level);
   mg.tries = mode === "play" ? (mg.tries || 0) + 1 : mg.tries || 0;
-  mg.run = { mode, t: 0, acc: 0, score: 0, litter: 0, fx: [], dist: 0, phase: 0, len: lvl.len, lvl,
-             things: lvl.things.map((o) => Object.assign({ x: MG_W + 99, w: (MG_SIZES[o.type] || [o.w])[0], h: (MG_SIZES[o.type] || [0, o.h])[1] }, o)),
+  const st = mgStats(mg.species.slug);
+  mg.run = { mode, t: 0, rt: 0, acc: 0, st, p: mgPhysOf(st), score: 0, litter: 0, fx: [], dist: 0, phase: 0, len: lvl.len, lvl,
+             things: lvl.things.map((o) => Object.assign({ x: MG_W + 99 }, o)),
              x: g.key === "trail" ? 70 : 72, y: g.key === "trail" ? MG_GROUND : g.key === "sky" ? 90 : 110, vy: 0,
              flap: 0, ground: true, held: false, overAt: 0, rec, newBest: false, total: mgTreats(lvl) };
 }
@@ -454,8 +498,8 @@ function mgReset(mode) {
 // A press: flap, jump or start swimming up. Shared by touch, keys and the level checker.
 function mgPress(r, key, on) {
   if (on && !r.held) {
-    if (key === "sky") { r.vy = -118; r.flap = .35; }
-    if (key === "trail" && r.ground) { r.vy = -255; r.ground = false; }
+    if (key === "sky") { r.vy = -118 * r.p.power; r.flap = .35; }
+    if (key === "trail" && r.ground) { r.vy = -255 * r.p.jump; r.ground = false; }
   }
   r.held = on;
 }
@@ -507,7 +551,7 @@ function mgPhys(r, key, dt) {
       if (r.y >= MG_GROUND) { r.y = MG_GROUND; r.vy = 0; r.ground = true; }
     }
   } else {
-    r.vy += (r.held ? -260 : 200) * dt;
+    r.vy += (r.held ? -260 * r.p.power : 200) * dt;
     r.vy = Math.max(-95, Math.min(85, r.vy));
     r.y += r.vy * dt;
     if (r.y < MG_SURFACE + 12) { r.y = MG_SURFACE + 12; r.vy = Math.max(0, r.vy); }
@@ -518,7 +562,7 @@ function mgPhys(r, key, dt) {
 // What of the player touches things: a box around its body, a bit smaller than the
 // sprite so near misses count as misses. On the trail r.y is where its feet are.
 function mgBox(key, r, pad) {
-  const p = pad || 0;
+  const p = (pad || 0) - r.p.shrink;
   return key === "trail" ? [r.x - 8 - p, r.y - 21 - p, r.x + 8 + p, r.y - 1 + p] : [r.x - 8 - p, r.y - 7 - p, r.x + 8 + p, r.y + 7 + p];
 }
 const mgTouches = (b, o, x) => !(x + o.w / 2 < b[0] || x - o.w / 2 > b[2] || o.y + o.h / 2 < b[1] || o.y - o.h / 2 > b[3]);
@@ -538,7 +582,8 @@ function mgHit(r, key, things, pad) {
 function mgStep(r, dt) {
   const key = mg.game.key;
   // Fixed steps: the same presses always give the same flight.
-  r.acc += dt;
+  r.rt += dt;
+  r.acc += dt * r.p.tempo;
   while (r.acc >= MG_DT && r.mode === "play") {
     r.acc -= MG_DT;
     r.held = mg.down;
@@ -569,6 +614,16 @@ function mgEnd(r, cleared) {
   r.newBest = pct > rec.pct || (cleared && r.score > rec.got);
   if (pct > rec.pct) { rec.pct = pct; mgStore.set(rec.k + ".pct", pct); }
   if (cleared && r.score > rec.got) { rec.got = r.score; mgStore.set(rec.k + ".got", r.score); }
+  if (cleared) {
+    // Points for a finished run: every treat counts, times the animal's speed. A fast
+    // animal is harder to steer through, so it earns more. Best overall, and per animal.
+    const pts = mgPoints(r.score, r.p), slug = mg.species.slug, mine = +(mgStore.get(`${rec.k}.p.${slug}`) || 0);
+    r.points = pts;
+    r.animalBest = pts > mine;
+    if (r.animalBest) mgStore.set(`${rec.k}.p.${slug}`, pts);
+    if (pts > rec.points) { r.newBest = true; rec.points = pts; mgStore.set(rec.k + ".points", pts); mgStore.set(rec.k + ".who", mg.species.common_name); }
+    else r.newBest = false;
+  }
   if (!cleared) {
     const [x0, y0, x1, y1] = mgBox(mg.game.key, r);
     for (let i = 0; i < 6; i++) r.fx.push({ kind: "star", x: (x0 + x1) / 2, y: (y0 + y1) / 2, vx: (i - 2.5) * 16, vy: -30 - (i % 2) * 20, life: .8 });
@@ -827,6 +882,11 @@ function mgHud(c, r) {
   c.fillStyle = "#fff"; c.fillText(label, 9, 30);
   c.font = "bold 10px system-ui, sans-serif"; c.textAlign = "right";
   c.fillStyle = "#fff"; c.fillText(`${Math.floor(p * 100)}%`, MG_W - 8, 15);
+  if (r.p.tempo !== 1) {
+    const sp = `Speed ×${r.p.tempo}`;
+    c.fillStyle = "rgba(0,0,0,.35)"; c.fillRect(MG_W - 14 - c.measureText(sp).width, 18, c.measureText(sp).width + 10, 16);
+    c.fillStyle = r.p.tempo > 1 ? "#ffd28a" : "#cfe"; c.fillText(sp, MG_W - 9, 30);
+  }
   c.textAlign = "left"; c.fillText(`Try ${mg.tries || 1}`, 8, 15);
   const lvl = r.lvl;
   if (r.mode === "ready") mgPanel(c, [[`Level ${mg.level + 1}: ${lvl.name}`, 14], [g.tip, 11], ["The course is the same every time. Learn it!", 10, "#cfe"], ["Tap to start", 11, "#ffd28a"]], top);
@@ -837,10 +897,13 @@ function mgHud(c, r) {
     lines.push(["Tap to try again", 10, "#cfe"]);
     mgPanel(c, lines, Math.min(top, MG_H - 8 - (lines.length * 16 + 14)));
   } else if (r.mode === "done") {
-    const lines = [["Level complete!", 15, "#9be59b"], [`${r.score} of ${r.total} ${g.thing[1]}`, 12, "#ffd28a"]];
+    const lines = [["Level complete!", 15, "#9be59b"], [`${r.points} points as a ${mg.species.common_name}`, 12, "#ffd28a"],
+                   [`${r.score} of ${r.total} ${g.thing[1]} × ${r.p.tempo} speed bonus`, 10]];
     if (g.key === "river" && r.litter) lines.push([`You cleaned up ${r.litter} piece${r.litter === 1 ? "" : "s"} of litter`, 10]);
     if (r.score >= r.total) lines.push(["You got every one!", 11, "#9be59b"]);
-    else lines.push([r.newBest ? "New best!" : `Best: ${r.rec.got}`, 11, r.newBest ? "#9be59b" : "#fff"]);
+    if (r.newBest) lines.push(["Your best score yet!", 11, "#9be59b"]);
+    else if (r.animalBest) lines.push([`Your best with this animal! (Best ever: ${r.rec.points})`, 10, "#9be59b"]);
+    else lines.push([`Best: ${r.rec.points} as a ${r.rec.who}`, 10]);
     if (mg.level + 1 < MG_LEVELS[g.key].length) lines.push([`Level ${mg.level + 2} is unlocked!`, 10, "#cfe"]);
     lines.push(["Tap to play again", 10, "#cfe"]);
     mgPanel(c, lines, Math.min(top, MG_H - 8 - (lines.length * 16 + 14)));

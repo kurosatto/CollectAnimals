@@ -281,6 +281,15 @@ def sprite_anim_index():
     return FileResponse(path, media_type="application/json", headers={"Cache-Control": "public, max-age=3600"})
 
 
+@app.get("/sprites/game_stats.json", include_in_schema=False)
+def sprite_game_stats():
+    """Each animal's minigame stats (Speed, Jump, Agility, Size), from tools/make_game_stats.py."""
+    path = settings.sprites_dir / "game_stats.json"
+    if not path.is_file():
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No stats")
+    return FileResponse(path, media_type="application/json", headers={"Cache-Control": "public, max-age=3600"})
+
+
 @app.get("/sprites/anim/{slug}.png", include_in_schema=False)
 def sprite_anim(slug: str):
     """A species' animation sheet: a row of four 32x32 frames for each pose."""
