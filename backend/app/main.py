@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session
 
 from . import classifier as clf
 from . import dex
-from . import avatars, bonds, goals, household, limits, notices, places, recovery, scoring, social, weather
+from . import avatars, bonds, extras, goals, household, limits, notices, places, recovery, scoring, social, weather
 from .safety import is_admin, router as safety_router
 from . import states as st
 from .auth import DUMMY_HASH, create_token, current_user, hash_password, optional_user, verify_password
@@ -735,9 +735,14 @@ def _identify(db: Session, user: User, model, capture: Capture, image: Image.Ima
     members = {m.species.slug: m for m in state_species(db, state.code)}
     # Pets and pests are recognised too (a state list wins if it has the animal).
     pets = {slug: a for slug, a in household.animals().items() if slug not in members}
-    preds = restrict(model.predict(image, k=1000), set(members) | set(pets) | {OTHER_LABEL})[:5]
+    # So are this state's animals that aren't in its Field Guide yet, and people:
+    # neither earns a badge, but a photo of one isn't forced onto a look-alike.
+    unlisted = extras.for_state(state.code) - set(members) - set(pets)
+    allowed = set(members) | set(pets) | unlisted | {extras.PERSON_LABEL, OTHER_LABEL}
+    preds = restrict(model.predict(image, k=100_000), allowed)[:5]
     top = preds[0]
-    pet = pets.get(top.label) if top.probability >= settings.match_threshold else None
+    sure = top.probability >= settings.match_threshold
+    pet = pets.get(top.label) if sure else None
     species_by_slug = {p.label: members[p.label].species for p in preds if p.label in members}
     names = {p.label: members[p.label].common_name for p in preds if p.label in members}
     species = species_by_slug.get(top.label)
@@ -783,6 +788,11 @@ def _identify(db: Session, user: User, model, capture: Capture, image: Image.Ima
         message = "Might be an animal you haven't discovered yet, but we're not sure. Try a clearer photo!"
     elif pet is not None:
         message = household.message(pet)
+    elif sure and top.label == extras.PERSON_LABEL:
+        message = "That looks like a person! Only wild animals go in the Field Guide."
+    elif sure and top.label in unlisted:
+        message = (f"That looks like a wild animal that isn't in the {state.name} collection yet. "
+                   "It's coming soon!")
     else:
         message = f"We couldn't match this to any animal in the {state.name} collection."
     # A state unlocks with its first captured animal, not with any photo.

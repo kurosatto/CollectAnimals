@@ -213,6 +213,21 @@ def test_pets_and_pests_are_named_but_do_not_count(client, fake):
     assert client.get("/me/collection", headers=h).json()["caught"] == 0
 
 
+def test_animals_not_in_the_field_guide_yet_and_people_do_not_count(client, fake):
+    h = signup(client)
+    # A California animal the model knows that has no entry yet: not squeezed onto a look-alike.
+    fake.next = [Prediction("allens_hummingbird", 0.9), Prediction("annas_hummingbird", 0.1)]
+    r = upload(client, h).json()
+    assert not r["matched"] and r["household"] is None
+    assert "isn't in the California collection yet" in r["message"]
+    assert r["top_predictions"][0]["label"] == "other"  # no name for an animal without an entry
+
+    fake.next = [Prediction("person", 0.95), Prediction("other", 0.05)]
+    r = upload(client, h).json()
+    assert not r["matched"] and "person" in r["message"]
+    assert client.get("/me/collection", headers=h).json()["caught"] == 0
+
+
 def test_low_confidence_and_other_do_not_match(client, fake):
     h = signup(client)
     fake.next = [Prediction("bobcat", 0.41), Prediction("gray_fox", 0.3)]

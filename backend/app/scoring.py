@@ -147,7 +147,7 @@ def center_crop(image: Image.Image, share: float = 0.6) -> Image.Image:
 
 def species_probability(model: Classifier, image: Image.Image, slug: str, allowed: set[str]) -> float:
     """The model's probability for this species among the allowed labels."""
-    preds = [p for p in model.predict(image, k=1000) if p.label in allowed]
+    preds = [p for p in model.predict(image, k=100_000) if p.label in allowed]
     total = sum(p.probability for p in preds)
     return next((p.probability / total for p in preds if p.label == slug), 0.0) if total > 0 else 0.0
 
