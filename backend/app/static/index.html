@@ -28,7 +28,8 @@
   #offline { font-size:.85rem; padding:2px 8px; border-radius:999px; background:var(--line); }
   #who label { display:inline-flex; align-items:center; gap:4px; white-space:nowrap; }
   #who:not(.hidden) { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:4px 12px; }
-  h1 { font-size:1.5rem; margin:.5rem 0; }
+  h1 { font-size:1.5rem; margin:.5rem 0; display:flex; align-items:center; gap:8px; }
+  h1 .logo { width:60px; height:54px; image-rendering:pixelated; }  /* logo.png is 30x27: 2x */
   .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin:16px 0; }
   input, button, select { font:inherit; padding:10px 12px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--ink); }
   button { background:var(--accent); color:#fff; border:none; cursor:pointer; }
@@ -307,7 +308,7 @@
   .auth { display:grid; gap:4px 20px; }
   .auth-scene { position:relative; }
   .auth-place { position:absolute; z-index:1; top:8px; left:8px; padding:2px 8px; border-radius:999px; font-size:.8rem;
-                background:rgba(0,0,0,.45); color:#fff; pointer-events:none; }
+                background:rgba(0,0,0,.45); color:#fff; }
   .auth .habitat { margin:0; }
   .pitch-title { font-size:1.3rem; margin:12px 0 6px; line-height:1.25; }
   .pitch { margin:0 0 4px; }
@@ -355,7 +356,7 @@
 <main>
   <button id="update" class="hidden"></button>
   <header>
-    <h1>Capture Animals <span class="muted" style="font-size:1rem" id="state-name"></span></h1>
+    <h1><img class="logo" src="/icons/logo.png" alt="">Capture Animals <span class="muted" style="font-size:1rem" id="state-name"></span></h1>
     <div class="head-right">
     <span id="offline" class="hidden" title="No connection: your Field Guide and habitat still work, new captures need the internet">Offline</span>
     <button class="link hidden" id="install">Install app</button>
@@ -377,9 +378,10 @@
 </nav>
 
   <section id="auth" class="card auth">
-    <div class="auth-scene" id="auth-scene"><span class="auth-place" id="auth-place">📍</span></div>
+    <div class="auth-scene" id="auth-scene"><button type="button" class="auth-place" id="auth-place"
+      title="Pick your state">📍</button></div>
     <div class="auth-side">
-    <h2 class="pitch-title">How many of <span id="pitch-state">your state</span>'s <span id="pitch-count">100</span> animals can you capture?</h2>
+    <h2 class="pitch-title">How many of <span id="pitch-state">your state's</span> <span id="pitch-count">100</span> animals can you capture?</h2>
     <p class="pitch">Spot a wild animal, snap a great photo, and it's captured in your Field Guide.
       Then it moves into your own little pixel habitat, like the one here.</p>
     <h2 id="auth-title">Log in</h2>
@@ -589,19 +591,19 @@ function setToken(t) {
 }
 
 // Logged out: the login page shows the state's scenery with one animal in it.
-// Before a state is chosen that's the last one used on this device, else the
-// first state in states.json.
+// That's the state chosen at sign-up or last used on this device. Until one is
+// known, no state is named: California's scenery stands in, with no place label.
 let savedState = null;
 try { savedState = localStorage.getItem("state"); } catch {}
 let authState = savedState;
 function authScene(code) {
-  authState = code || (states.some((st) => st.code === authState) ? authState : (states[0] || {}).code);
-  const name = (states.find((st) => st.code === authState) || {}).name || "";
-  $("auth-place").textContent = `📍 ${name}`;
-  $("pitch-state").textContent = name || "your state";
-  $("pitch-count").textContent = (states.find((st) => st.code === authState) || {}).species_count || 100;
-  $("state-name").textContent = name;
-  if (!token) habShowcase(authState, $("auth-scene"));
+  if (code) authState = code;
+  const st = states.find((x) => x.code === authState);
+  $("auth-place").textContent = st ? `📍 ${st.name}` : "📍 Your state?";
+  $("pitch-state").textContent = st ? `${st.name}'s` : "your state's";
+  $("pitch-count").textContent = (st && st.species_count) || 100;
+  $("state-name").textContent = st ? st.name : "";
+  if (!token) habShowcase(st ? st.code : "CA", $("auth-scene"));
 }
 
 $("toggle").onclick = () => {
@@ -1353,6 +1355,11 @@ function setSignupState(code) {
   authScene(code);
 }
 $("signup-state").onclick = chooseSignupState;
+$("auth-place").onclick = async () => {
+  const code = await pickState({ title: "Which state are you in?", current: authState,
+    note: "See its scenery and one of its animals." });
+  if (code) signup ? setSignupState(code) : authScene(code);
+};
 
 // A state unlocks once the player has captured an animal there; any unlocked state can
 // be their main state.

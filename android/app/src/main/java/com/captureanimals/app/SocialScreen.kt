@@ -347,6 +347,7 @@ fun AccountDialog(state: UiState, vm: GameViewModel, onDismiss: () -> Unit) {
     }, title = {
         Row(verticalAlignment = Alignment.CenterVertically) {
             acct?.let { Avatar(it.avatar, Modifier.size(40.dp)); Spacer(Modifier.size(10.dp)) }
+            if (acct == null) { PixelSprite("annas_hummingbird", true, Modifier.size(40.dp)); Spacer(Modifier.size(10.dp)) }
             Text(acct?.let { "Signed in as ${it.username}" } ?: if (signUp) "Create an account" else "Log in")
         }
     },

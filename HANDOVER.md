@@ -46,7 +46,7 @@ seasons in the habitat, states unlocked by where your photos were taken.
 | `species/household.csv` | Pets and pests (dog, cat, rats...): recognized by name only, no badge |
 | `species/sets.json`, `events.json` | Sets/challenges data |
 | `species/sprites/` | Generated sprites, silhouettes, `anim/` frame sheets, `placeholder*.png` ("?" egg) |
-| `tools/` | Sprite drawing in code: `pixel.py` (canvas), `archetypes.py` (body plans), `make_sprites.py`, `species_<st>.py` per state; tab and PWA icon makers |
+| `tools/` | Sprite drawing in code: `pixel.py` (canvas), `archetypes.py` (body plans), `make_sprites.py`, `species_<st>.py` per state; tab icons (`make_tab_icons.py`) and the app logo, Anna's Hummingbird, at every size (`make_app_icons.py`) |
 | `scripts/` | `seed_demo.py` (bot friends), `seed_admin.py`, `publish_server_url.py` (tells the app the new tunnel URL) |
 | `.github/workflows/tests.yml` | CI: backend pytest + Android unit tests, debug APK, unsigned release bundle, 16 KB page-alignment check |
 

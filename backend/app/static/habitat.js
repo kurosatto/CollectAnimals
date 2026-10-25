@@ -1104,7 +1104,7 @@ function habLeave() {
 // Before you log in: your state's scenery with one featured animal, as a taste of
 // the game (the login page and the app's account screen). Harmless animals only.
 const HAB_SHOWCASE = {
-  CA: { slug: "brown_pelican", common_name: "Brown Pelican", category: "bird", rarity: "common" },
+  CA: { slug: "annas_hummingbird", common_name: "Anna's Hummingbird", category: "bird", rarity: "common" },
   NC: { slug: "northern_cardinal", common_name: "Northern Cardinal", category: "bird", rarity: "common" },
   TX: { slug: "northern_mockingbird", common_name: "Northern Mockingbird", category: "bird", rarity: "common" },
   FL: { slug: "roseate_spoonbill", common_name: "Roseate Spoonbill", category: "bird", rarity: "uncommon" },
