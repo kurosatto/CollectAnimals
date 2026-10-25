@@ -6,12 +6,13 @@
 //   with the last answer as the offline fallback. The page clears it on log out.
 // - Everything else (photos, galleries, the feed, uploads, any POST) goes straight to the network,
 //   so other players' photos never fill up the phone.
-const VERSION = "3";
+const VERSION = "4";
 const SHELL = `shell-v${VERSION}`;
 const ASSETS = "assets-v1";
 const API = "api-v1";
 const SHELL_URLS = ["/", "/habitat.js", "/minigames.js", "/manifest.webmanifest", "/vendor/leaflet/leaflet.js",
-  "/vendor/leaflet/leaflet.css", "/icons/icon-192.png", "/icons/favicon-32.png"];
+  "/vendor/leaflet/leaflet.css", "/icons/icon-192.png", "/icons/favicon-32.png",
+  "/icons/logo.png"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(SHELL).then((c) => c.addAll(SHELL_URLS)).then(() => self.skipWaiting()));
