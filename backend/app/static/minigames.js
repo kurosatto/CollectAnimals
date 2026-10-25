@@ -722,7 +722,7 @@ function mgDraw() {
   c.imageSmoothingEnabled = false;
   const key = mg.game.key;
   if (key === "sky") mgSkyBg(c, r); else if (key === "trail") mgTrailBg(c, r); else mgRiverBg(c, r);
-  for (const o of r.things) mgThing(c, o, r);
+  for (const o of r.things) if (!o.gone) mgThing(c, o, r);
   mgPlayer(c, r);
   for (const f of r.fx) mgFxDraw(c, f);
   mgHud(c, r);
@@ -884,6 +884,18 @@ function mgThing(c, o, r) {
   }
 }
 
+const mgFrames = {};
+function mgFrame(sheet, slug, row, frame, F) {
+  const key = `${slug}/${row}/${frame}`;
+  if (!mgFrames[key]) {
+    const cv = document.createElement("canvas");
+    cv.width = F; cv.height = F;
+    cv.getContext("2d").drawImage(sheet, frame * F, row * F, F, F, 0, 0, F, F);
+    mgFrames[key] = cv;
+  }
+  return mgFrames[key];
+}
+
 function mgPlayer(c, r) {
   const s = mg.species, key = mg.game.key;
   const raw = mg.imgs[`/sprites/${encodeURIComponent(s.slug)}.png`], sheet = mg.sheets[`/sprites/anim/${encodeURIComponent(s.slug)}.png`];
@@ -914,7 +926,7 @@ function mgPlayer(c, r) {
   c.scale(-1, 1);
   if (key === "sky" && moving) c.rotate(Math.max(-.35, Math.min(.35, r.vy / 400)));
   if (key === "river" && moving) c.rotate(Math.max(-.3, Math.min(.3, r.vy / 350)));
-  if (framed) c.drawImage(sheet, frame * F, habAnimIdx.rows.indexOf(pose) * F, F, F, -F / 2, -F + bob, F, F);
+  if (framed) c.drawImage(mgFrame(sheet, s.slug, habAnimIdx.rows.indexOf(pose), frame, F), -F / 2, -F + bob);
   else c.drawImage(raw, -F / 2, -F + bob);
   c.restore();
 }
