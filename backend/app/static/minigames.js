@@ -12,6 +12,8 @@
 // so you get further by learning the course. Finishing a level unlocks the next.
 // Progress stays in this browser (localStorage), nothing goes to the server.
 const MG_W = 320, MG_H = 200;
+// The canvas has 4 real pixels per game pixel, so text stays sharp when it's scaled up.
+const MG_RES = 4;
 const MG_GROUND = 172, MG_SURFACE = 34, MG_BED = 186;
 const MG_GAMES = [
   { key: "sky", title: "Sky Glide", pose: "fly", kind: "flying animal", thing: ["berry", "berries"],
@@ -37,7 +39,8 @@ function mgKinds(s) {
   const kinds = [];
   if (HAB_FLIERS.has(role) || acts.includes("fly")) kinds.push("sky");
   if (MG_LAND_ROLES.has(role)) kinds.push("trail");
-  if (MG_WATER_ROLES.has(role) || (acts.includes("swim") && (s.category === "marine" || s.category === "fish"))) kinds.push("river");
+  // Anything drawn swimming can swim: seals, ducks, frogs, turtles. Not tortoises.
+  if (MG_WATER_ROLES.has(role) || (acts.includes("swim") && !/tortoise|box_turtle/.test(s.slug))) kinds.push("river");
   return kinds;
 }
 
@@ -95,7 +98,7 @@ function mgBuild() {
   const list = mgEl("div", "mg-list"), stage = mgEl("div", "mg-stage hidden");
   list.id = "mg-list";
   const cv = mgEl("canvas");
-  cv.width = MG_W; cv.height = MG_H; cv.id = "mg-canvas";
+  cv.width = MG_W * MG_RES; cv.height = MG_H * MG_RES; cv.id = "mg-canvas";
   const bar = mgEl("div", "mg-bar"), back = mgEl("button", "mg-back", "← All games"), name = mgEl("span", "muted");
   name.id = "mg-playing";
   back.onclick = mgQuit;
@@ -586,7 +589,7 @@ function mgStep(r, dt) {
   r.acc += dt * r.p.tempo;
   while (r.acc >= MG_DT && r.mode === "play") {
     r.acc -= MG_DT;
-    r.held = mg.down;
+    mgPress(r, key, mg.down);
     mgPhys(r, key, MG_DT);
     for (const o of r.things) o.x = o.wx - r.dist + r.x;
     const b = mgBox(key, r);
@@ -645,6 +648,7 @@ function mgDraw() {
   const cv = document.getElementById("mg-canvas"), r = mg.run;
   if (!cv || !r) return;
   const c = cv.getContext("2d");
+  c.setTransform(MG_RES, 0, 0, MG_RES, 0, 0);
   c.imageSmoothingEnabled = false;
   const key = mg.game.key;
   if (key === "sky") mgSkyBg(c, r); else if (key === "trail") mgTrailBg(c, r); else mgRiverBg(c, r);

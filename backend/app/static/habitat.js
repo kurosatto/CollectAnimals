@@ -33,7 +33,7 @@ const HAB_ROLES = [
   [/black_skimmer/, "skim"],
   [/sea_otter|by_the_wind/, "float"],
   [/jellyfish|man_o_war/, "jelly"],
-  [/dolphin|whale|manatee|garibaldi|red_drum|snapper|sculpin|sea_hare|loggerhead/, "swim"],
+  [/dolphin|whale|orca|porpoise|manatee|garibaldi|red_drum|snapper|sculpin|sea_hare|loggerhead|sea_turtle|octopus/, "swim"],
   [/seal|sea_lion|crab/, "beach"],
   [/star|anemone|mussel|barnacle|limpet|urchin|turban_snail|hopkins|scotch_bonnet/, "reef"],
   [/mallard|wood_duck|whistling_duck|shoveler|coot|gallinule|goose|swan|trout|bluegill|sunfish|bass|cichlid|gar$|mosquitofish|hellbender|beaver|coypu|muskrat|river_otter|alligator/, "paddle"],
