@@ -279,6 +279,12 @@ object Online {
         setToken(null)
     }
 
+    /** The minigame leaderboards (app/games.py), for minigames.js through [MinigamesWebView]. */
+    suspend fun games(method: String, path: String, body: String?): String {
+        require(path.startsWith("/games/")) { "Not a games call" }
+        return call(method, path, body?.let { JSONObject(it) })
+    }
+
     // --- Images -----------------------------------------------------------------------
 
     private val images = object : LruCache<String, Bitmap>(24 * 1024 * 1024) {

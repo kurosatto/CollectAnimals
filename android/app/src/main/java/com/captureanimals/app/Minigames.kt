@@ -15,6 +15,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -47,6 +50,7 @@ class MinigamesWebView(context: Context) : WebView(context) {
     private var ready = false
     private var pending: String? = null
     private val main = Handler(Looper.getMainLooper())
+    private val scope = MainScope()
 
     init {
         settings.javaScriptEnabled = true
@@ -64,7 +68,25 @@ class MinigamesWebView(context: Context) : WebView(context) {
         if (ready) evaluateJavascript(call, null) else pending = call
     }
 
+    override fun destroy() {
+        scope.cancel()
+        super.destroy()
+    }
+
     private inner class Bridge {
+        /** A leaderboard call from minigames.js; the answer goes back to mgApiDone(). */
+        @JavascriptInterface fun api(id: Int, method: String, path: String, body: String?) {
+            scope.launch {
+                val (ok, text) = try {
+                    true to Online.games(method, path, body)
+                } catch (e: Exception) {
+                    false to (e.message ?: "error")
+                }
+                evaluateJavascript("mgApiDone($id, $ok, ${JSONObject.quote(text)})", null)
+            }
+        }
+
+
         @JavascriptInterface fun ready() {
             main.post {
                 ready = true

@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session
 
 from . import classifier as clf
 from . import dex
-from . import avatars, bonds, extras, goals, household, limits, notices, places, recovery, scoring, social, weather
+from . import avatars, bonds, extras, games, goals, household, limits, notices, places, recovery, scoring, social, weather
 from .safety import is_admin, router as safety_router
 from . import states as st
 from .auth import DUMMY_HASH, create_token, current_user, hash_password, optional_user, verify_password
@@ -180,6 +180,7 @@ app.include_router(social.router)
 app.include_router(safety_router)
 app.include_router(notices.router)
 app.include_router(recovery.router)
+app.include_router(games.router)
 # Third-party browser libraries, served from here so the app works without a CDN.
 app.mount("/vendor", StaticFiles(directory=STATIC_DIR / "vendor"), name="vendor")
 
