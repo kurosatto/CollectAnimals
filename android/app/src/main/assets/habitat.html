@@ -76,6 +76,9 @@ function setAnimals(entries, state, visitor) {
   hab.visit = visitor ? { username: visitor, state: myState.code, home: [] } : null;
   if ((visitor || null) !== (was || null)) { hab.animals = []; hab.w = 0; hab.picked = null; hab.fx = []; }
   habitatSet(entries);
+  // Your skins and decorations from the minigame shop; a friend's habitat shows none.
+  habLookSet(null);
+  if (!visitor && bridge && bridge.look) bridge.look();
   reportHeight();
 }
 

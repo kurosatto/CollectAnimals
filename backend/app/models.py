@@ -30,6 +30,10 @@ class User(Base):
     is_bot: Mapped[bool | None] = mapped_column(nullable=True, default=False)
     # Profile picture 1-10 (app/avatars.py); None on accounts from before pictures.
     avatar: Mapped[int | None] = mapped_column(nullable=True)
+    # Coins from finished minigame levels (app/games.py), and how many came in today.
+    coins: Mapped[int | None] = mapped_column(nullable=True, default=0)
+    coins_day: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    coins_today: Mapped[int | None] = mapped_column(nullable=True, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
@@ -269,4 +273,32 @@ class GameScore(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     user: Mapped[User] = relationship()
+    species: Mapped[Species] = relationship()
+
+
+class GameItem(Base):
+    """Something a player bought with coins: a skin for their animals, or a decoration
+    for their habitat (on = shown there)."""
+
+    __tablename__ = "game_items"
+    __table_args__ = (UniqueConstraint("user_id", "item"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    item: Mapped[str] = mapped_column(String(32))
+    on: Mapped[bool] = mapped_column(default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class AnimalSkin(Base):
+    """Which bought skin a player's animal wears, in the habitat and the games."""
+
+    __tablename__ = "animal_skins"
+    __table_args__ = (UniqueConstraint("user_id", "species_id"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    species_id: Mapped[int] = mapped_column(ForeignKey("species.id"))
+    skin: Mapped[str] = mapped_column(String(16))
+
     species: Mapped[Species] = relationship()
