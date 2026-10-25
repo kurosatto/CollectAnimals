@@ -370,11 +370,11 @@
 <nav id="tabs" class="hidden">
   <button data-tab="catch"><img class="ic" src="/sprites/ui_tab_capture.png" alt="">Capture</button>
   <button data-tab="dex"><img class="ic" src="/sprites/ui_tab_guide.png" alt="">Field Guide</button>
+  <button data-tab="games"><img class="ic" src="/sprites/ui_tab_games.png" alt="">Games</button>
   <button data-tab="photos"><img class="ic" src="/sprites/ui_tab_photos.png" alt="">Photos</button>
   <button data-tab="feed"><img class="ic" src="/sprites/ui_tab_feed.png" alt="">Feed</button>
   <button data-tab="parks"><img class="ic" src="/sprites/ui_tab_parks.png" alt="">Parks</button>
   <button data-tab="friends"><img class="ic" src="/sprites/ui_tab_friends.png" alt="">Friends</button>
-  <button data-tab="games"><img class="ic" src="/sprites/ui_tab_games.png" alt="">Games</button>
 </nav>
 
   <section id="auth" class="card auth">
@@ -1723,7 +1723,7 @@ async function loadMyPhotos() {
 }
 
 // One section at a time, picked from the tab bar (bottom on phones, top on wide screens).
-const TABS = ["catch", "dex", "photos", "feed", "parks", "friends", "games"];
+const TABS = ["catch", "dex", "games", "photos", "feed", "parks", "friends"];
 function showTab(name) {
   if (!TABS.includes(name)) name = "catch";
   document.querySelectorAll("#game > [data-tab]").forEach((c) => c.classList.toggle("off", c.dataset.tab !== name));

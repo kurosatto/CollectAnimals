@@ -118,6 +118,8 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
     val socialState by social.state.collectAsStateWithLifecycle()
     var tabChoice by rememberSaveable { mutableIntStateOf(TABS.indexOfFirst { it.key == openTab }.coerceAtLeast(0)) }
     var showAccount by rememberSaveable { mutableStateOf(false) }
+    // A minigame being played takes the whole screen, so the bars go away.
+    var gameOn by remember { mutableStateOf(false) }
     // Android 13+ asks before showing notifications; ask once a player has signed in.
     val askNotify = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
     val context = LocalContext.current
@@ -183,7 +185,7 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
     val captured = info?.species?.count { it.slug in state.collection } ?: 0
 
     Scaffold(topBar = {
-        Column {
+        if (!gameOn) Column {
             TopAppBar(title = { Text(if (tab == 0) "Capture Animals" else TABS[tab].title) }, actions = {
                 if (state.states.size > 1) StateMenu(state.states, state.stateCode, state.mainState(), state.stateTiles,
                     onOpen = vm::loadStateTiles, onClose = vm::closeStateTiles, onView = vm::viewState, onMakeMain = vm::chooseState)
@@ -206,7 +208,7 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
         }
     }, bottomBar = {
         // One screen per job instead of one long page; Hotspots only once its data is there.
-        NavigationBar {
+        if (!gameOn) NavigationBar {
             TABS.forEachIndexed { i, t ->
                 if (t.key == "hotspots" && dex?.parks.isNullOrEmpty()) return@forEachIndexed
                 // Seven tabs: one line of small text each, so "Field Guide" doesn't wrap.
@@ -243,7 +245,7 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
                 }
                 TABS[tab].key == "games" -> {
                     val animals = remember(info, dex, state.collection) { habitatAnimals(info, dex, state.collection) }
-                    MinigamesScreen(animals)
+                    MinigamesScreen(animals) { gameOn = it }
                 }
                 TABS[tab].key == "gallery" -> GalleryScreen(state.allSpecies, state.collection, onOpenDex = { dexSlug = it },
                     onDelete = vm::deleteCatch)
@@ -259,11 +261,11 @@ private class AppTab(val key: String, val title: String, val icon: String)
 private val TABS = listOf(
     AppTab("catch", "Capture", "ui_tab_capture"),
     AppTab("collection", "Field Guide", "ui_tab_guide"),
+    AppTab("games", "Games", "ui_tab_games"),
     AppTab("gallery", "Photos", "ui_tab_photos"),
     AppTab("feed", "Feed", "ui_tab_feed"),
     AppTab("hotspots", "Parks", "ui_tab_parks"),
     AppTab("social", "Friends", "ui_tab_friends"),
-    AppTab("games", "Games", "ui_tab_games"),
 )
 
 @Composable
