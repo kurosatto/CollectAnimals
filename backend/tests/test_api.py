@@ -956,7 +956,7 @@ def test_installable_web_app(client):
     sw = client.get("/sw.js")
     assert sw.status_code == 200 and "javascript" in sw.headers["content-type"]
     assert sw.headers["cache-control"] == "no-cache"
-    assert client.get("/icons/apple-touch-icon.png").status_code == 200
+    assert client.get("/icons/hummingbird/apple-touch-icon.png").status_code == 200
 
     page = client.get("/").text
     assert 'rel="manifest"' in page and "/sw.js" in page

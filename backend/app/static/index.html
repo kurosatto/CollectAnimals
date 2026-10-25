@@ -7,8 +7,8 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#2f7d4f">
 <meta name="description" content="Photograph wild animals and capture them in your Field Guide.">
-<link rel="icon" type="image/png" href="/icons/favicon-32.png">
-<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/icons/hummingbird/favicon-32.png">
+<link rel="apple-touch-icon" href="/icons/hummingbird/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Capture Animals">
@@ -356,7 +356,7 @@
 <main>
   <button id="update" class="hidden"></button>
   <header>
-    <h1><img class="logo" src="/icons/logo.png" alt="">Capture Animals <span class="muted" style="font-size:1rem" id="state-name"></span></h1>
+    <h1><img class="logo" src="/icons/hummingbird/logo.png" alt="">Capture Animals <span class="muted" style="font-size:1rem" id="state-name"></span></h1>
     <div class="head-right">
     <span id="offline" class="hidden" title="No connection: your Field Guide and habitat still work, new captures need the internet">Offline</span>
     <button class="link hidden" id="install">Install app</button>
@@ -2240,7 +2240,7 @@ function alertNote(lines, tab) {
   // Pushed notifications already reach a hidden tab; this covers browsers without push.
   if (document.hidden && !pushOn && "Notification" in window && Notification.permission === "granted") {
     const n = new Notification("Capture Animals", { body: shown.join("\n").replace(/^[^\p{L}\s]+ /gmu, ""),
-                                                    icon: "/icons/icon-192.png", tag: tab });
+                                                    icon: "/icons/hummingbird/icon-192.png", tag: tab });
     n.onclick = () => { window.focus(); showTab(tab); n.close(); };
   }
 }

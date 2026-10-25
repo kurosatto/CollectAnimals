@@ -4,7 +4,7 @@ Run from the repo root: python tools/make_app_icons.py
 The sprite is cropped to the bird and scaled up by whole numbers with nearest-neighbour,
 so every pixel stays a crisp square, then centred on a warm yellow background.
 Writes:
-- backend/app/static/icons/{icon,maskable}-{192,512}.png, apple-touch-icon.png, favicon-32.png, logo.png (web header)
+- backend/app/static/icons/hummingbird/{icon,maskable}-{192,512}.png, apple-touch-icon.png, favicon-32.png, logo.png (web header)
 - android/app/src/main/res/mipmap-*/ic_launcher_foreground.png (adaptive icon foreground, one per density)
 - docs/store/icon-512.png (Google Play listing icon)
 """
@@ -14,7 +14,9 @@ from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parent.parent
 SPRITE = ROOT / "species" / "sprites" / "annas_hummingbird.png"
-WEB = ROOT / "backend" / "app" / "static" / "icons"
+# A new picture gets a new folder name: installed web apps and the service worker's cache
+# keep a file for as long as its address stays the same.
+WEB = ROOT / "backend" / "app" / "static" / "icons" / "hummingbird"
 RES = ROOT / "android" / "app" / "src" / "main" / "res"
 STORE = ROOT / "docs" / "store"
 BG = (255, 233, 184, 255)  # #FFE9B8, as ic_launcher_background in android/.../values/colors.xml
