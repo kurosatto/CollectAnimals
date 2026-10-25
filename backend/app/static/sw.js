@@ -6,13 +6,13 @@
 //   with the last answer as the offline fallback. The page clears it on log out.
 // - Everything else (photos, galleries, the feed, uploads, any POST) goes straight to the network,
 //   so other players' photos never fill up the phone.
-const VERSION = "4";
+const VERSION = "5";
 const SHELL = `shell-v${VERSION}`;
 const ASSETS = "assets-v1";
 const API = "api-v1";
 const SHELL_URLS = ["/", "/habitat.js", "/minigames.js", "/manifest.webmanifest", "/vendor/leaflet/leaflet.js",
-  "/vendor/leaflet/leaflet.css", "/icons/icon-192.png", "/icons/favicon-32.png",
-  "/icons/logo.png"];
+  "/vendor/leaflet/leaflet.css", "/icons/hummingbird/icon-192.png", "/icons/hummingbird/favicon-32.png",
+  "/icons/hummingbird/logo.png"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(SHELL).then((c) => c.addAll(SHELL_URLS)).then(() => self.skipWaiting()));
@@ -39,7 +39,7 @@ self.addEventListener("push", (e) => {
     if (open.some((c) => c.focused && c.visibilityState === "visible")) return;
     await self.registration.showNotification(d.title || "Capture Animals", {
       body: d.body || "", tag: d.tag, renotify: !!d.tag, data: { url: d.url || "/" },
-      icon: "/icons/icon-192.png", badge: "/icons/favicon-32.png" });
+      icon: "/icons/hummingbird/icon-192.png", badge: "/icons/hummingbird/favicon-32.png" });
   })());
 });
 
