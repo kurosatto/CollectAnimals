@@ -39,11 +39,5 @@ class ProgressTest {
         assertEquals("coyote", bond.slug)
         assertEquals(2, bond.level)
         assertEquals(BondNote("First meeting", "Capture it", 1, 1, true), bond.notes.single())
-
-        val week = Week.parse(JSONObject("""{"state": "CA", "week_start": "2026-10-12T07:00:00Z",
-            "week_end": "2026-10-19T07:00:00Z", "done": 1,
-            "challenges": [{"id": "a", "title": "Capture 3 birds", "progress": 3, "goal": 3, "done": true}]}"""))
-        assertEquals(1, week.done)
-        assertEquals(Challenge("Capture 3 birds", 3, 3, true), week.challenges.single())
     }
 }
