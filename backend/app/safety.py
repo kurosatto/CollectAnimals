@@ -30,7 +30,7 @@ from . import notices
 from .auth import current_user, verify_password
 from .config import ROOT, settings
 from .db import get_db
-from .models import (AlbumPhoto, Badge, Block, Capture, Friendship, GameScore, IdFeedback, PhotoComment, PhotoLike,
+from .models import (AlbumPhoto, Badge, Block, Capture, Friendship, GameItem, GameScore, AnimalSkin, IdFeedback, PhotoComment, PhotoLike,
                      PushSubscription, Report, User)
 from .social import _between, _user_by_name, _visible_photo, blocked_ids, clear_reactions
 from .storage import get_storage
@@ -88,6 +88,8 @@ def delete_account(db: Session, user: User) -> None:
     db.execute(delete(Block).where(or_(Block.blocker_id == uid, Block.blocked_id == uid)))
     db.execute(delete(PushSubscription).where(PushSubscription.user_id == uid))
     db.execute(delete(GameScore).where(GameScore.user_id == uid))
+    db.execute(delete(GameItem).where(GameItem.user_id == uid))
+    db.execute(delete(AnimalSkin).where(AnimalSkin.user_id == uid))
     db.delete(user)
     db.commit()
 

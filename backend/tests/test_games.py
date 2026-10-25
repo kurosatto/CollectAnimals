@@ -17,9 +17,10 @@ def test_points_come_from_the_animals_speed(client, fake):
     ana = signup(client, "ana")
     catch(client, fake, ana, "bobcat")  # speed 4
     catch(client, fake, ana, "raccoon")  # speed 3
-    assert score(client, ana, "bobcat", 20).json() == {"points": 230, "animal_best": True}
-    assert score(client, ana, "raccoon", 20).json() == {"points": 200, "animal_best": True}
-    assert score(client, ana, "raccoon", 10).json() == {"points": 100, "animal_best": False}
+    best = lambda r: {k: r.json()[k] for k in ("points", "animal_best")}  # noqa: E731
+    assert best(score(client, ana, "bobcat", 20)) == {"points": 230, "animal_best": True}
+    assert best(score(client, ana, "raccoon", 20)) == {"points": 200, "animal_best": True}
+    assert best(score(client, ana, "raccoon", 10)) == {"points": 100, "animal_best": False}
     # Only animals you've captured, sane treat counts and real levels.
     assert score(client, ana, "coyote", 5).status_code == 400
     assert score(client, ana, "bobcat", 100000).status_code == 422
@@ -61,3 +62,24 @@ def test_speed_depends_on_the_game(client, fake):
     catch(client, fake, ana, "harbor_seal")  # slow on land, fast in the water
     assert score(client, ana, "harbor_seal", 20, level="trail.0").json()["points"] == 150
     assert score(client, ana, "harbor_seal", 20, level="river.0").json()["points"] == 260
+
+
+def test_coins_buy_skins_and_decorations(client, fake):
+    ana = signup(client, "ana")
+    catch(client, fake, ana, "bobcat")  # speed 4 on land
+    r = score(client, ana, "bobcat", 20).json()  # 230 points
+    assert (r["coins_earned"], r["coins"]) == (23, 23)
+    assert client.post("/games/shop/buy", headers=ana, json={"item": "decor.flowers"}).status_code == 400
+    for _ in range(6):
+        score(client, ana, "bobcat", 60)  # 69 coins a run, but only 300 a day
+    shop = client.get("/games/shop", headers=ana).json()
+    assert shop["coins"] == 300
+    shop = client.post("/games/shop/buy", headers=ana, json={"item": "skin.frosty"}).json()
+    assert shop["coins"] == 150 and next(i for i in shop["items"] if i["key"] == "skin.frosty")["owned"]
+    assert client.post("/games/shop/buy", headers=ana, json={"item": "skin.frosty"}).status_code == 409
+    assert client.post("/games/shop/skin", headers=ana, json={"species": "bobcat", "skin": "golden"}).status_code == 400
+    assert client.post("/games/shop/skin", headers=ana, json={"species": "bobcat", "skin": "frosty"}).json()["skins"] == \
+        {"bobcat": "frosty"}
+    shop = client.post("/games/shop/buy", headers=ana, json={"item": "decor.flowers"}).json()
+    assert shop["decor"] == ["flowers"] and shop["coins"] == 50
+    assert client.post("/games/shop/decor", headers=ana, json={"item": "decor.flowers", "on": False}).json()["decor"] == []

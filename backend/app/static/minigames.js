@@ -65,6 +65,66 @@ function mgSet(entries) {
   // The animation index and stats may still be loading; the unlocks depend on them.
   if ((!habAnimIdx || !mgStatsIdx) && (mg.waits = (mg.waits || 0) + 1) < 20) { setTimeout(() => mgSet(mg.entries), 300); return; }
   if (!mg.run) mgList();
+  mgLoadShop();
+}
+
+// ---- Coins and the shop ----------------------------------------------------------
+// Finished levels pay coins (app/games.py), which buy skins for your animals and
+// decorations for your habitat. Logged out or offline, there's no shop.
+function mgLoadShop() {
+  mgApi("GET", "/games/shop").then(mgShopGot).catch(() => {});
+}
+function mgShopGot(d) {
+  mg.shop = d;
+  habLookSet(d);
+  if (!mg.run) mgList();
+}
+function mgShopDo(path, body) {
+  mgApi("POST", path, body).then(mgShopGot).catch((e) => alert(e.message));
+}
+
+function mgShopBar(list) {
+  const d = mg.shop;
+  if (!d) return;
+  const bar = mgEl("div", "mg-shopbar"), open = mgStore.get("shop") === "1";
+  const btn = mgEl("button", "mg-back", open ? "Close shop" : "🛍️ Shop");
+  btn.onclick = () => { mgStore.set("shop", open ? "0" : "1"); mgList(); };
+  bar.append(mgEl("b", "mg-coins", `🪙 ${d.coins} coins`), btn);
+  list.append(bar);
+  if (!open) return;
+  const shop = mgEl("div", "mg-shop");
+  shop.append(mgEl("div", "mg-how", "Finish levels to earn coins. Skins recolor any of your animals; decorations go in your habitat."));
+  for (const it of d.items) {
+    const row = mgEl("div", "mg-item");
+    row.append(mgEl("span", null, `${it.kind === "skin" ? "🎨" : "🌼"} ${it.name}`), mgEl("span", "muted", it.kind === "skin" ? "Skin" : "Habitat"));
+    let b;
+    if (!it.owned) {
+      b = mgEl("button", "mg-play", `🪙 ${it.price}`);
+      b.disabled = d.coins < it.price;
+      b.onclick = () => mgShopDo("/games/shop/buy", { item: it.key });
+    } else if (it.kind === "decor") {
+      b = mgEl("button", "mg-back", it.on ? "Hide" : "Show");
+      b.onclick = () => mgShopDo("/games/shop/decor", { item: it.key, on: !it.on });
+    } else b = mgEl("span", "muted", "Owned");
+    row.append(b);
+    shop.append(row);
+  }
+  list.append(shop);
+}
+
+// Under the animal picker: its look, from the skins you own.
+function mgLooks(slug) {
+  const d = mg.shop, owned = d ? d.items.filter((i) => i.kind === "skin" && i.owned) : [];
+  const box = mgEl("div", "mg-looks");
+  if (!owned.length) return box;
+  const now = d.skins[slug] || null;
+  box.append(mgEl("i", null, "Look"));
+  for (const [skin, name] of [[null, "Normal"], ...owned.map((i) => [i.key.split(".")[1], i.name])]) {
+    const b = mgEl("button", "mg-tab" + (skin === now ? " on" : ""), name);
+    b.onclick = () => mgShopDo("/games/shop/skin", { species: slug, skin });
+    box.append(b);
+  }
+  return box;
 }
 
 // ---- Leaderboards ----------------------------------------------------------------
@@ -143,6 +203,15 @@ function mgBuild() {
   .mg-lv span { color:var(--muted); font-size:.72rem; }
   .mg-lv.on { border-color:var(--accent); background:rgba(127,200,150,.14); }
   .mg-lv:disabled { opacity:.55; cursor:default; }
+  .mg-shopbar { display:flex; justify-content:space-between; align-items:center; }
+  .mg-coins { font-size:.95rem; }
+  .mg-shop { border:1px solid var(--line); border-radius:12px; padding:8px 12px; display:grid; gap:6px; }
+  .mg-item { display:grid; grid-template-columns:1fr auto auto; gap:8px; align-items:center; font-size:.85rem; }
+  .mg-item .mg-play { padding:3px 12px; }
+  .mg-item .mg-play:disabled { opacity:.45; cursor:default; }
+  .mg-looks { display:flex; gap:4px; flex-wrap:wrap; align-items:baseline; margin-top:4px; font-size:.75rem; }
+  .mg-looks:empty { display:none; }
+  .mg-looks i { font-style:normal; color:var(--muted); margin-right:4px; }
   .mg-board { margin-top:8px; font-size:.8rem; }
   .mg-board.hidden { display:none; }
   .mg-tabs { display:inline-flex; gap:4px; margin-left:8px; }
@@ -213,6 +282,7 @@ function mgList() {
   mgBuild();
   const list = document.getElementById("mg-list");
   list.innerHTML = "";
+  mgShopBar(list);
   for (const g of MG_GAMES) {
     const players = mgPlayers(g.key), card = mgEl("div", "mg-game" + (players.length ? "" : " mg-locked"));
     const h = mgEl("h3", null, g.title), lvls = MG_LEVELS[g.key];
@@ -228,7 +298,10 @@ function mgList() {
     let pick = players.find((s) => s.slug === saved) || players[0];
     const row = mgEl("div", "mg-pick"), foot = mgEl("div", "mg-row"), name = mgEl("span", "mg-name", pick.common_name);
     const stats = mgEl("div", "mg-stats");
+    let looks = mgEl("div");
     const showStats = () => {
+      const fresh = mgLooks(pick.slug);
+      looks.replaceWith(fresh); looks = fresh;
       const st = mgStats(pick.slug, g.key);
       stats.innerHTML = "";
       [st.speed, st.jump, st.agility, st.size].forEach((v, i) => {
@@ -269,7 +342,7 @@ function mgList() {
     showStats();
     const board = mgEl("div", "mg-board");
     mgBoard(board, `${g.key}.${lv}`, mgStore.get("board") || "all");
-    card.append(row, stats, levels, foot, board);
+    card.append(row, stats, looks, levels, foot, board);
     list.append(card);
   }
 }
@@ -784,7 +857,8 @@ function mgEnd(r, cleared) {
     r.animalBest = pts > mine;
     if (r.animalBest) mgStore.set(`${rec.k}.p.${slug}`, pts);
     // The server works the points out again from the treats and the animal.
-    mg.posting = mgApi("POST", "/games/scores", { level: `${mg.game.key}.${mg.level}`, species: slug, treats: r.score }).catch(() => {});
+    mg.posting = mgApi("POST", "/games/scores", { level: `${mg.game.key}.${mg.level}`, species: slug, treats: r.score })
+      .then((d) => { r.coins = d.coins_earned; if (mg.shop) mg.shop.coins = d.coins; }).catch(() => {});
     if (pts > rec.points) { r.newBest = true; rec.points = pts; mgStore.set(rec.k + ".points", pts); mgStore.set(rec.k + ".who", mg.species.common_name); }
     else r.newBest = false;
   }
@@ -1033,7 +1107,7 @@ function mgPoolDraw(c, r) {
   for (let i = 0; i < 6; i++) c.lineTo(...at(i * MG_SIDE, rock - 6));
   c.closePath(); c.fill();
   // You, clinging to the rock with your back to the waves.
-  const s = mg.species, raw = mg.imgs[`/sprites/${encodeURIComponent(s.slug)}.png`];
+  const s = mg.species, raw = habSkin(mg.imgs[`/sprites/${encodeURIComponent(s.slug)}.png`], s.slug);
   if (!raw || !raw.complete || !raw.naturalWidth || (r.mode === "over" && Math.floor(r.phase * 12) % 3 === 0)) return;
   const [x, y] = at(r.ang, MG_POOL.r - 9), F = raw.naturalWidth, k = 26 / F;
   c.save(); c.translate(x, y); c.rotate(r.ang + Math.PI / 2); c.scale(k, k);
@@ -1055,7 +1129,8 @@ function mgFrame(sheet, slug, row, frame, F) {
 
 function mgPlayer(c, r) {
   const s = mg.species, key = mg.game.key;
-  const raw = mg.imgs[`/sprites/${encodeURIComponent(s.slug)}.png`], sheet = mg.sheets[`/sprites/anim/${encodeURIComponent(s.slug)}.png`];
+  const raw = habSkin(mg.imgs[`/sprites/${encodeURIComponent(s.slug)}.png`], s.slug);
+  const sheet = habSkin(mg.sheets[`/sprites/anim/${encodeURIComponent(s.slug)}.png`], s.slug);
   const acts = (habAnimIdx && habAnimIdx.acts[s.slug]) || [];
   const framed = sheet && sheet.complete && sheet.naturalWidth && acts.length;
   const cyc = (t) => ((Math.floor(t) % 4) + 4) % 4;
@@ -1083,7 +1158,7 @@ function mgPlayer(c, r) {
   c.scale(-1, 1);
   if (key === "sky" && moving) c.rotate(Math.max(-.35, Math.min(.35, r.vy / 400)));
   if (key === "river" && moving) c.rotate(Math.max(-.3, Math.min(.3, r.vy / 350)));
-  if (framed) c.drawImage(mgFrame(sheet, s.slug, habAnimIdx.rows.indexOf(pose), frame, F), -F / 2, -F + bob);
+  if (framed) c.drawImage(mgFrame(sheet, `${s.slug}~${habLook.skins[s.slug] || ""}`, habAnimIdx.rows.indexOf(pose), frame, F), -F / 2, -F + bob);
   else c.drawImage(raw, -F / 2, -F + bob);
   c.restore();
 }
@@ -1145,6 +1220,7 @@ function mgHud(c, r) {
                    [`${r.score} of ${r.total} ${g.key === "pool" ? food : g.thing[1]} × ${r.p.tempo} speed bonus`, 10]];
     if (g.key === "river" && r.litter) lines.push([`You cleaned up ${r.litter} piece${r.litter === 1 ? "" : "s"} of litter`, 10]);
     if (r.score >= r.total) lines.push(["You got every one!", 11, "#9be59b"]);
+    if (r.coins) lines.push([`+${r.coins} coins 🪙`, 11, "#ffd28a"]);
     if (r.newBest) lines.push(["Your best score yet!", 11, "#9be59b"]);
     else if (r.animalBest) lines.push([`Your best with this animal! (Best ever: ${r.rec.points})`, 10, "#9be59b"]);
     else lines.push([`Best: ${r.rec.points} as a ${r.rec.who}`, 10]);

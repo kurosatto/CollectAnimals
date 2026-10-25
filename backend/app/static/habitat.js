@@ -792,6 +792,7 @@ function habDraw() {
   c.fillStyle = { day: "rgba(40,140,210,.31)", dawn: "rgba(80,100,180,.31)", dusk: "rgba(80,80,160,.31)",
                   night: "rgba(20,40,100,.35)" }[phase];
   c.fillRect(L.sea, L.water + 3, L.w - L.sea, HAB_H);
+  habDecor(c, L, phase);
   land.forEach((p) => habSprite(c, p));
   sky.forEach((p) => habSprite(c, p));
   habFx(c, phase);
@@ -826,6 +827,69 @@ const HAB_NO_SHADOW = new Set(["swim", "jelly", "reef", "float", "paddle", "wade
 // frame cut straight out of the sheet picks up stray pixels from the frame next
 // to it (dark specks around the animal).
 const habFrameCache = new WeakMap();
+// Skins and decorations bought with minigame coins (app/games.py): your own habitat
+// shows them, a friend's doesn't. minigames.js and habitat.html call habLookSet().
+let habLook = { skins: {}, decor: [] };
+function habLookSet(look) {
+  habLook = { skins: (look && look.skins) || {}, decor: (look && look.decor) || [] };
+}
+const habMine = () => !hab.visit;
+// Each skin recolours the animal by brightness, keeping the darkest outline pixels.
+const HAB_SKINS = {
+  frosty: (l) => [l * .7 + 60, l * .85 + 65, l * .9 + 90],
+  rose: (l) => [l * .9 + 80, l * .55 + 40, l * .65 + 65],
+  midnight: (l) => [l * .45 + 30, l * .4 + 30, l * .8 + 70],
+  golden: (l) => [l * 1.05 + 70, l * .85 + 45, l * .3 + 10],
+};
+const habSkinCache = new Map();
+function habSkin(img, slug) {
+  const skin = habMine() || (typeof mg !== "undefined" && mg.run) ? habLook.skins[slug] : null, fn = HAB_SKINS[skin];
+  if (!fn || !img || !img.complete || !img.naturalWidth) return img;
+  const key = `${img.src}~${skin}`;
+  if (!habSkinCache.has(key)) {
+    const cv = document.createElement("canvas");
+    cv.width = img.naturalWidth; cv.height = img.naturalHeight;
+    const c = cv.getContext("2d");
+    c.drawImage(img, 0, 0);
+    const id = c.getImageData(0, 0, cv.width, cv.height), d = id.data;
+    for (let i = 0; i < d.length; i += 4) {
+      if (!d[i + 3]) continue;
+      const l = d[i] * .3 + d[i + 1] * .59 + d[i + 2] * .11;
+      if (l < 36) continue;
+      const [r, g, b] = fn(l);
+      d[i] = Math.min(255, r); d[i + 1] = Math.min(255, g); d[i + 2] = Math.min(255, b);
+    }
+    c.putImageData(id, 0, 0);
+    cv.naturalWidth = cv.width; cv.naturalHeight = cv.height; cv.complete = true; cv.src = key;
+    habSkinCache.set(key, cv);
+  }
+  return habSkinCache.get(key);
+}
+
+// Decorations in your meadow, drawn behind the animals.
+function habDecor(c, L, phase) {
+  if (!habMine() || !habLook.decor.length) return;
+  const px = (x, y, w, h, col) => { c.fillStyle = col; c.fillRect(Math.round(x), Math.round(y), w, h); };
+  for (const d of habLook.decor) {
+    if (d === "flowers") {
+      const x = Math.round(L.land * .15), y = 252;
+      px(x - 14, y, 28, 5, "#7a5232"); px(x - 13, y - 1, 26, 2, "#5b3f28");
+      [["#e05a7a", -10], ["#f2c14e", -4], ["#b070e0", 2], ["#ffffff", 8]].forEach(([col, dx], i) => {
+        px(x + dx, y - 6 - (i % 2) * 2, 1, 6, "#3f8d58"); px(x + dx - 1, y - 8 - (i % 2) * 2, 3, 3, col); px(x + dx, y - 7 - (i % 2) * 2, 1, 1, "#ffe27a");
+      });
+    } else if (d === "birdbath") {
+      const x = Math.round(L.land * .82), y = 214;
+      px(x - 2, y - 10, 4, 10, "#b8bcc8"); px(x - 5, y, 10, 2, "#9a9eaa");
+      px(x - 9, y - 14, 18, 4, "#c8ccd8"); px(x - 7, y - 14, 14, 2, phase === "night" ? "#3a5a8a" : "#7cc4e8");
+    } else if (d === "lantern") {
+      const x = Math.round(L.land * .62), y = 202, lit = phase !== "day";
+      px(x, y - 26, 2, 26, "#3a3a44"); px(x - 3, y - 28, 8, 2, "#3a3a44");
+      if (lit) { c.fillStyle = "rgba(255,220,120,.25)"; c.fillRect(x - 9, y - 32, 20, 18); }
+      px(x - 3, y - 26, 8, 8, lit ? "#ffe27a" : "#d8c890"); px(x - 3, y - 26, 8, 1, "#3a3a44"); px(x - 3, y - 19, 8, 1, "#3a3a44");
+    }
+  }
+}
+
 function habFrame(sheet, row, frame, F) {
   let frames = habFrameCache.get(sheet);
   if (!frames) habFrameCache.set(sheet, frames = {});
@@ -840,11 +904,12 @@ function habFrame(sheet, row, frame, F) {
 }
 
 function habSprite(c, p) {
-  const raw = habImgs[p.a.s.slug];
+  const raw = habSkin(habImgs[p.a.s.slug], p.a.s.slug);
   if (!raw || !raw.complete || !raw.naturalWidth) return;
-  const { a, x, y } = p, sheet = habSheets[a.s.slug];
+  const { a, x, y } = p, sheet = habSkin(habSheets[a.s.slug], a.s.slug);
   const framed = p.anim && sheet && sheet.complete && sheet.naturalWidth;
-  const img = framed ? habTinted(sheet, `${a.s.slug}@anim`, p.phase) : habTinted(raw, a.s.slug, p.phase);
+  const look = habMine() ? habLook.skins[a.s.slug] || "" : "";
+  const img = framed ? habTinted(sheet, `${a.s.slug}@anim~${look}`, p.phase) : habTinted(raw, `${a.s.slug}~${look}`, p.phase);
   // Frame size from the image (40 px: a 32 px drawing with room for wings, tails
   // and antlers), feet on its bottom row.
   const F = framed ? sheet.naturalWidth / habAnimIdx.frames : raw.naturalWidth;

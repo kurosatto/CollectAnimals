@@ -25,6 +25,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import org.json.JSONArray
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.io.ByteArrayInputStream
 import java.net.HttpURLConnection
@@ -97,6 +100,7 @@ class HabitatWebView(context: Context) : WebView(context) {
     private var ready = false
     private var pending: String? = null
     private val main = Handler(Looper.getMainLooper())
+    private val scope = MainScope()
 
     init {
         settings.javaScriptEnabled = true
@@ -119,7 +123,19 @@ class HabitatWebView(context: Context) : WebView(context) {
         if (ready) evaluateJavascript(call, null) else pending = call
     }
 
+    override fun destroy() {
+        scope.cancel()
+        super.destroy()
+    }
+
     private inner class Bridge {
+        /** Your skins and decorations from the minigame shop, when you're online. */
+        @JavascriptInterface fun look() {
+            scope.launch {
+                runCatching { Online.games("GET", "/games/shop", null) }
+                    .onSuccess { evaluateJavascript("habLookSet($it)", null) }
+            }
+        }
         @JavascriptInterface fun ready() {
             main.post {
                 ready = true

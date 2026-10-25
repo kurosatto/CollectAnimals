@@ -1,8 +1,11 @@
-"""Minigame leaderboards: each player's best points per level, with the animal
+"""Minigame leaderboards and coins: each player's best points per level, with the animal
 they played as. The game (static/minigames.js) sends how many treats a finished
 run collected and the server works out the points from the animal's Speed, so a
 score can't be sent straight in. That's the only check: kuro doesn't want heavy
-anti-cheat, just nothing too easy."""
+anti-cheat, just nothing too easy.
+
+Every finished level also pays coins (treats x the animal's speed bonus, up to a daily
+limit), which buy skins for your animals and decorations for your habitat."""
 
 import json
 import re
@@ -17,7 +20,9 @@ from . import limits
 from .auth import current_user
 from .config import settings
 from .db import get_db
-from .models import Badge, GameScore, Species, User
+from datetime import date
+
+from .models import AnimalSkin, Badge, GameItem, GameScore, Species, User
 from .social import blocked_ids, friend_ids, revealed_species_ids
 
 router = APIRouter()
@@ -27,6 +32,19 @@ MAX_TREATS = 400  # more than any level has
 # Same as mgPhysOf in minigames.js: the game runs faster for a faster animal.
 TEMPO = [.75, .88, 1, 1.15, 1.3]
 submits = limits.Limit(60, 30)
+COINS_PER_DAY = 300
+
+# What coins buy. Skins recolour an animal (drawn in habitat.js); decorations stand in
+# your habitat.
+SHOP = {
+    "skin.frosty": {"kind": "skin", "name": "Frosty", "price": 150},
+    "skin.rose": {"kind": "skin", "name": "Rose", "price": 150},
+    "skin.midnight": {"kind": "skin", "name": "Midnight", "price": 200},
+    "skin.golden": {"kind": "skin", "name": "Golden", "price": 400},
+    "decor.flowers": {"kind": "decor", "name": "Flower bed", "price": 100},
+    "decor.birdbath": {"kind": "decor", "name": "Bird bath", "price": 150},
+    "decor.lantern": {"kind": "decor", "name": "Lantern", "price": 200},
+}
 
 
 @lru_cache(maxsize=1)
@@ -66,6 +84,7 @@ def submit_score(body: ScoreIn, user: User = Depends(current_user), db: Session 
     if sp is None or not db.scalar(select(Badge.id).where(Badge.user_id == user.id, Badge.species_id == sp.id)):
         raise HTTPException(400, "Capture this animal first")
     pts = points(body.treats, sp.slug, body.level.split(".")[0])
+    earned = _pay(user, pts // 10)
     row = db.scalar(select(GameScore).where(GameScore.user_id == user.id, GameScore.level == body.level,
                                             GameScore.species_id == sp.id))
     best = row is None or pts > row.points
@@ -74,7 +93,93 @@ def submit_score(body: ScoreIn, user: User = Depends(current_user), db: Session 
     elif best:
         row.points = pts
     db.commit()
-    return {"points": pts, "animal_best": best}
+    return {"points": pts, "animal_best": best, "coins_earned": earned, "coins": user.coins or 0}
+
+
+def _pay(user: User, coins: int) -> int:
+    """Adds coins, up to COINS_PER_DAY a day. Returns how many were added."""
+    today = date.today().isoformat()
+    if user.coins_day != today:
+        user.coins_day, user.coins_today = today, 0
+    coins = max(0, min(coins, COINS_PER_DAY - (user.coins_today or 0)))
+    user.coins_today = (user.coins_today or 0) + coins
+    user.coins = (user.coins or 0) + coins
+    return coins
+
+
+def _shop(db: Session, user: User) -> dict:
+    owned = {i.item: i for i in db.scalars(select(GameItem).where(GameItem.user_id == user.id))}
+    skins = {s.species.slug: s.skin for s in db.scalars(select(AnimalSkin).where(AnimalSkin.user_id == user.id))}
+    items = [{"key": k, **v, "owned": k in owned, "on": k in owned and owned[k].on} for k, v in SHOP.items()]
+    return {"coins": user.coins or 0, "items": items, "skins": skins,
+            "decor": [k.split(".", 1)[1] for k, i in owned.items() if k.startswith("decor.") and i.on]}
+
+
+@router.get("/games/shop")
+def shop(user: User = Depends(current_user), db: Session = Depends(get_db)):
+    """Your coins, what's for sale, what you own, and your animals' skins."""
+    return _shop(db, user)
+
+
+class BuyIn(BaseModel):
+    item: str = Field(max_length=32)
+
+
+@router.post("/games/shop/buy")
+def buy(body: BuyIn, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    it = SHOP.get(body.item)
+    if it is None:
+        raise HTTPException(404, "Nothing like that in the shop")
+    if db.scalar(select(GameItem.id).where(GameItem.user_id == user.id, GameItem.item == body.item)):
+        raise HTTPException(409, "You already have it")
+    if (user.coins or 0) < it["price"]:
+        raise HTTPException(400, "Not enough coins yet")
+    user.coins = (user.coins or 0) - it["price"]
+    db.add(GameItem(user_id=user.id, item=body.item))
+    db.commit()
+    return _shop(db, user)
+
+
+class SkinIn(BaseModel):
+    species: str = Field(max_length=64)
+    skin: str | None = Field(None, max_length=16)
+
+
+@router.post("/games/shop/skin")
+def wear_skin(body: SkinIn, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    """Puts a skin you own on one of your animals (skin null takes it off)."""
+    sp = db.scalar(select(Species).where(Species.slug == body.species))
+    if sp is None or not db.scalar(select(Badge.id).where(Badge.user_id == user.id, Badge.species_id == sp.id)):
+        raise HTTPException(400, "Capture this animal first")
+    row = db.scalar(select(AnimalSkin).where(AnimalSkin.user_id == user.id, AnimalSkin.species_id == sp.id))
+    if body.skin is None:
+        if row:
+            db.delete(row)
+    else:
+        if not db.scalar(select(GameItem.id).where(GameItem.user_id == user.id, GameItem.item == f"skin.{body.skin}")):
+            raise HTTPException(400, "Buy that skin first")
+        if row:
+            row.skin = body.skin
+        else:
+            db.add(AnimalSkin(user_id=user.id, species_id=sp.id, skin=body.skin))
+    db.commit()
+    return _shop(db, user)
+
+
+class DecorIn(BaseModel):
+    item: str = Field(max_length=32)
+    on: bool
+
+
+@router.post("/games/shop/decor")
+def show_decor(body: DecorIn, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    """Shows or hides a decoration you own in your habitat."""
+    row = db.scalar(select(GameItem).where(GameItem.user_id == user.id, GameItem.item == body.item))
+    if row is None or not body.item.startswith("decor."):
+        raise HTTPException(404, "You don't have that")
+    row.on = body.on
+    db.commit()
+    return _shop(db, user)
 
 
 @router.get("/games/scores/{level}")
