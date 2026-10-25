@@ -90,8 +90,6 @@ data class UiState(
     val accountError: String? = null,
     // species/sets.json; each state shows its own sets (works offline too).
     val sets: SetCatalog = SetCatalog(emptyList()),
-    // Signed in: this week's challenges (they live on the server).
-    val week: Week? = null,
 )
 
 class GameViewModel(app: Application) : AndroidViewModel(app) {
@@ -151,7 +149,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 refreshCollection()
             } catch (e: Online.ApiError) {
                 // Signed out by the server (401): back to the badges saved on this phone.
-                if (!Online.signedIn) _state.update { it.copy(account = null, collection = store.load(it.stateCode), week = null) }
+                if (!Online.signedIn) _state.update { it.copy(account = null, collection = store.load(it.stateCode)) }
             }
         }
     }
@@ -160,9 +158,6 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         if (!Online.signedIn || _state.value.account == null) return
         val c = Online.collection(_state.value.stateCode)
         _state.update { it.copy(collection = c) }
-        // Extras: the game works without them if the server can't send them.
-        val week = runCatching { Online.challenges(_state.value.stateCode) }.getOrNull()
-        _state.update { it.copy(week = week) }
     }
 
     fun signIn(ident: String, password: String) = account { Online.login(ident.trim(), password) }
@@ -193,7 +188,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     /** Back to playing offline, with the badges saved on this phone. */
     fun signOut() {
         Online.logout()
-        _state.update { it.copy(account = null, collection = store.load(it.stateCode), result = null, week = null) }
+        _state.update { it.copy(account = null, collection = store.load(it.stateCode), result = null) }
     }
 
     /** Delete the account on the server (needs the password), then carry on offline. */
@@ -209,12 +204,6 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         Online.setManualUrl(url)
         _state.update { it.copy(server = Online.base) }
         connect()
-    }
-
-    fun setShowInFeed(on: Boolean) {
-        val acct = _state.value.account ?: return
-        _state.update { it.copy(account = acct.copy(showInFeed = on)) }
-        viewModelScope.launch { runCatching { Online.setShowInFeed(on) } }
     }
 
     fun setAvatar(n: Int) {
@@ -252,7 +241,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    /** Look at another unlocked state's Field Guide, habitat, parks and challenges without changing the main one. */
+    /** Look at another unlocked state's Field Guide, habitat and parks without changing the main one. */
     fun viewState(code: String) {
         _state.update { it.copy(result = null) }
         select(code)

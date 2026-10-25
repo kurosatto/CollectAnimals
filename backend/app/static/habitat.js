@@ -1009,12 +1009,12 @@ function habVisit(username, state, entries, slot) {
   habitatSet(entries);
 }
 
-// Back to your own scene, in its place on the Field Guide tab.
+// Back to your own scene, in its place on the Capture tab.
 function habLeave() {
   if (!hab.visit) return;
   const home = hab.visit.home;
   hab.visit = null;
-  $("grid").before($("habitat"), $("hab-bar"));
+  $("hab-home").append($("habitat"), $("hab-bar"));
   hab.animals = []; hab.w = 0; hab.picked = null; hab.fx = [];
   habitatSet(home);
 }

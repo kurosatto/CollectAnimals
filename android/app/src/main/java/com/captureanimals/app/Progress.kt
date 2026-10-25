@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.dp
 import org.json.JSONArray
 import org.json.JSONObject
 
-// Photo stars, sets, weekly challenges and bonds: the website's versions
+// Photo stars, sets and bonds: the website's versions
 // (backend/app/goals.py, bonds.py, static/index.html), shown the same way in the app.
 
 // --- Data --------------------------------------------------------------------------------
@@ -69,21 +69,6 @@ class SetCatalog(private val sets: List<JSONObject>) {
         fun parse(json: String?): SetCatalog {
             val a = json?.let { JSONObject(it).optJSONArray("sets") } ?: JSONArray()
             return SetCatalog(List(a.length()) { a.getJSONObject(it) })
-        }
-    }
-}
-
-data class Challenge(val title: String, val progress: Int, val goal: Int, val done: Boolean)
-
-/** This week's challenges for the player's state (ChallengesOut). */
-data class Week(val endsAt: Long, val challenges: List<Challenge>, val done: Int) {
-    companion object {
-        fun parse(o: JSONObject): Week {
-            val a = o.getJSONArray("challenges")
-            return Week(Online.parseTime(o.optStringOrNull("week_end")), List(a.length()) { i ->
-                a.getJSONObject(i).let { Challenge(it.getString("title"), it.getInt("progress"), it.getInt("goal"),
-                    it.getBoolean("done")) }
-            }, o.getInt("done"))
         }
     }
 }
@@ -146,36 +131,6 @@ fun ScoreBox(score: PhotoScore, bondUp: List<String>) {
                 }
             }
             bondUp.forEach { Text("♥ Field note: $it", color = Heart, style = MaterialTheme.typography.bodyMedium) }
-        }
-    }
-}
-
-/** "This week's challenges" on the Capture tab (signed in). */
-@Composable
-fun ChallengesCard(week: Week) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("This week's challenges", style = MaterialTheme.typography.titleMedium)
-                Text("${week.done} / ${week.challenges.size}", color = MaterialTheme.colorScheme.outline)
-            }
-            val days = ((week.endsAt - System.currentTimeMillis()) / 86_400_000.0).let { kotlin.math.ceil(it).toInt() }
-                .coerceAtLeast(1)
-            Text(if (week.done == week.challenges.size) "All done this week. New challenges on Monday!"
-                 else "New challenges in $days day${if (days > 1) "s" else ""}.",
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
-            week.challenges.forEach { c ->
-                Column {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(if (c.done) "✓" else "•", color = MaterialTheme.colorScheme.primary)
-                        Text(c.title, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-                        Text("${c.progress} / ${c.goal}", color = MaterialTheme.colorScheme.outline,
-                            style = MaterialTheme.typography.bodySmall)
-                    }
-                    LinearProgressIndicator(progress = { c.progress / c.goal.coerceAtLeast(1).toFloat() },
-                        modifier = Modifier.fillMaxWidth().padding(top = 2.dp))
-                }
-            }
         }
     }
 }
