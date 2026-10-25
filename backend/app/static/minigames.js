@@ -52,6 +52,56 @@ function mgSet(entries) {
   if (!mg.run) mgList();
 }
 
+// ---- Leaderboards ----------------------------------------------------------------
+// Finished runs go to the game server (app/games.py), which keeps everyone's best per
+// level and shows the top 10, or you and your friends. The website calls it with its
+// own api(); the Android app passes calls through its AndroidMinigames bridge. Offline
+// or logged out, the games work the same without the boards.
+const mgCalls = {};
+let mgCallN = 0;
+function mgApi(method, path, body) {
+  const json = body ? JSON.stringify(body) : null;
+  if (window.AndroidMinigames && window.AndroidMinigames.api) {
+    return new Promise((ok, fail) => { const id = ++mgCallN; mgCalls[id] = [ok, fail]; window.AndroidMinigames.api(id, method, path, json); });
+  }
+  if (typeof api === "function" && typeof token !== "undefined" && token) {
+    return api(path, { method, headers: json ? { "Content-Type": "application/json" } : {}, body: json });
+  }
+  return Promise.reject(new Error("offline"));
+}
+// The Android bridge answers here.
+function mgApiDone(id, ok, text) {
+  const cb = mgCalls[id];
+  delete mgCalls[id];
+  if (!cb) return;
+  if (ok) { try { cb[0](JSON.parse(text)); } catch (e) { cb[1](e); } } else cb[1](new Error(text));
+}
+
+function mgBoard(box, level, scope) {
+  box.innerHTML = "";
+  const tabs = mgEl("div", "mg-tabs"), rows = mgEl("ol", "mg-rows");
+  for (const [s, label] of [["all", "Everyone"], ["friends", "Friends"]]) {
+    const b = mgEl("button", "mg-tab" + (s === scope ? " on" : ""), label);
+    b.onclick = () => { mgStore.set("board", s); mgBoard(box, level, s); };
+    tabs.append(b);
+  }
+  box.append(mgEl("b", null, "Top scores"), tabs, rows);
+  const row = (e) => {
+    const li = mgEl("li", e.you ? "you" : "");
+    li.append(mgEl("span", "mg-rank", `${e.rank}.`));
+    const img = mgEl("img");
+    if (e.species.slug) { img.src = `/sprites/${encodeURIComponent(e.species.slug)}.png`; img.alt = e.species.common_name; }
+    else img.style.visibility = "hidden";
+    li.append(img, mgEl("span", "mg-who", `${e.you ? "You" : e.username} as ${e.species.common_name}`), mgEl("span", "mg-pts", e.points));
+    return li;
+  };
+  Promise.resolve(mg.posting).then(() => mgApi("GET", `/games/scores/${level}?scope=${scope}`)).then((d) => {
+    if (!d.top.length) rows.append(mgEl("li", "muted", scope === "friends" ? "No scores from you or your friends yet." : "No scores yet. Finish the level to be first!"));
+    d.top.forEach((e) => rows.append(row(e)));
+    if (d.you && !d.top.some((e) => e.you)) rows.append(row(d.you));
+  }).catch(() => { box.classList.add("hidden"); });
+}
+
 const mgEl = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 
 function mgBuild() {
@@ -78,6 +128,19 @@ function mgBuild() {
   .mg-lv span { color:var(--muted); font-size:.72rem; }
   .mg-lv.on { border-color:var(--accent); background:rgba(127,200,150,.14); }
   .mg-lv:disabled { opacity:.55; cursor:default; }
+  .mg-board { margin-top:8px; font-size:.8rem; }
+  .mg-board.hidden { display:none; }
+  .mg-tabs { display:inline-flex; gap:4px; margin-left:8px; }
+  .mg-tab { font:inherit; font-size:.72rem; padding:1px 8px; border-radius:999px; border:1px solid var(--line);
+            background:transparent; color:var(--muted); cursor:pointer; }
+  .mg-tab.on { border-color:var(--accent); color:var(--accent); }
+  .mg-rows { list-style:none; margin:4px 0 0; padding:0; display:grid; gap:2px; }
+  .mg-rows li { display:flex; align-items:center; gap:6px; }
+  .mg-rows li.you { font-weight:600; }
+  .mg-rows img { width:20px; height:20px; image-rendering:pixelated; }
+  .mg-rank { width:2.2em; color:var(--muted); text-align:right; }
+  .mg-who { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mg-pts { color:var(--accent); font-variant-numeric:tabular-nums; }
   .mg-row { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:6px; }
   .mg-name { font-size:.85rem; font-weight:600; }
   .mg-play { font:inherit; font-weight:600; padding:6px 16px; border-radius:999px; border:none; background:var(--accent);
@@ -174,13 +237,18 @@ function mgList() {
       b.append(mgEl("b", null, `${i + 1}. ${L.name}`),
                mgEl("span", null, !open(i) ? `🔒 Finish level ${i} first` : rec.pct >= 100 ? `✓ Best ${rec.points || rec.got} points` : rec.pct ? `Best ${rec.pct}%` : "New"));
       b.disabled = !open(i);
-      b.onclick = () => { lv = i; mgStore.set("lvl." + g.key, i); levels.querySelectorAll(".mg-lv").forEach((e, j) => e.classList.toggle("on", j === i)); };
+      b.onclick = () => {
+        lv = i; mgStore.set("lvl." + g.key, i); levels.querySelectorAll(".mg-lv").forEach((e, j) => e.classList.toggle("on", j === i));
+        mgBoard(board, `${g.key}.${i}`, mgStore.get("board") || "all");
+      };
       levels.append(b);
     });
     play.onclick = () => mgStart(g, pick, lv);
     foot.append(name, play);
     showStats();
-    card.append(row, stats, levels, foot);
+    const board = mgEl("div", "mg-board");
+    mgBoard(board, `${g.key}.${lv}`, mgStore.get("board") || "all");
+    card.append(row, stats, levels, foot, board);
     list.append(card);
   }
 }
@@ -621,6 +689,8 @@ function mgEnd(r, cleared) {
     r.points = pts;
     r.animalBest = pts > mine;
     if (r.animalBest) mgStore.set(`${rec.k}.p.${slug}`, pts);
+    // The server works the points out again from the treats and the animal.
+    mg.posting = mgApi("POST", "/games/scores", { level: `${mg.game.key}.${mg.level}`, species: slug, treats: r.score }).catch(() => {});
     if (pts > rec.points) { r.newBest = true; rec.points = pts; mgStore.set(rec.k + ".points", pts); mgStore.set(rec.k + ".who", mg.species.common_name); }
     else r.newBest = false;
   }
