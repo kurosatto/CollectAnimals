@@ -822,6 +822,23 @@ function habDraw() {
 // Animals standing on the ground get a soft shadow under their feet.
 const HAB_NO_SHADOW = new Set(["swim", "jelly", "reef", "float", "paddle", "wade", "dangle"]);
 
+// One frame of an animation sheet on its own little canvas. Tilting or squashing a
+// frame cut straight out of the sheet picks up stray pixels from the frame next
+// to it (dark specks around the animal).
+const habFrameCache = new WeakMap();
+function habFrame(sheet, row, frame, F) {
+  let frames = habFrameCache.get(sheet);
+  if (!frames) habFrameCache.set(sheet, frames = {});
+  const key = `${row}/${frame}`;
+  if (!frames[key]) {
+    const cv = document.createElement("canvas");
+    cv.width = F; cv.height = F;
+    cv.getContext("2d").drawImage(sheet, frame * F, row * F, F, F, 0, 0, F, F);
+    frames[key] = cv;
+  }
+  return frames[key];
+}
+
 function habSprite(c, p) {
   const raw = habImgs[p.a.s.slug];
   if (!raw || !raw.complete || !raw.naturalWidth) return;
@@ -858,7 +875,7 @@ function habSprite(c, p) {
   if (a.dir > 0 && a.role !== "reef") c.scale(-1, 1);
   if (p.tilt) c.rotate(-p.tilt);
   if (p.sx !== 1 || p.sy !== 1) c.scale(p.sx, p.sy);
-  if (framed) c.drawImage(img, p.anim[1] * F, habAnimIdx.rows.indexOf(p.anim[0]) * F, F, F, -F / 2, mid - F, F, F);
+  if (framed) c.drawImage(habFrame(img, habAnimIdx.rows.indexOf(p.anim[0]), p.anim[1], F), -F / 2, mid - F);
   else c.drawImage(img, -F / 2, mid - F);
   c.restore();
   if (a.role === "paddle") {
