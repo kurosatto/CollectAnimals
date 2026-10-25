@@ -22,7 +22,7 @@ from .social import blocked_ids, friend_ids, revealed_species_ids
 
 router = APIRouter()
 
-LEVEL = re.compile(r"^(sky|trail|river)\.[0-9]{1,2}$")
+LEVEL = re.compile(r"^(sky|trail|river|pool)\.[0-9]{1,2}$")
 MAX_TREATS = 400  # more than any level has
 # Same as mgPhysOf in minigames.js: the game runs faster for a faster animal.
 TEMPO = [.75, .88, 1, 1.15, 1.3]
@@ -30,16 +30,21 @@ submits = limits.Limit(60, 30)
 
 
 @lru_cache(maxsize=1)
-def _speeds() -> dict[str, int]:
+def _stats() -> dict:
     try:
-        stats = json.loads((settings.sprites_dir / "game_stats.json").read_text())["stats"]
-    except (OSError, ValueError, KeyError):
+        return json.loads((settings.sprites_dir / "game_stats.json").read_text())
+    except (OSError, ValueError):
         return {}
-    return {slug: s[0] for slug, s in stats.items()}
 
 
-def points(treats: int, slug: str) -> int:
-    speed = _speeds().get(slug, 3)
+def speed_of(slug: str, game: str) -> int:
+    """The animal's Speed in this game's place (land, water, air), as minigames.js has it."""
+    d = _stats()
+    return d.get("speed", {}).get(slug, {}).get(game) or d.get("stats", {}).get(slug, [3])[0]
+
+
+def points(treats: int, slug: str, game: str) -> int:
+    speed = speed_of(slug, game)
     return round(treats * 10 * TEMPO[min(max(speed, 1), 5) - 1])
 
 
@@ -60,7 +65,7 @@ def submit_score(body: ScoreIn, user: User = Depends(current_user), db: Session 
     sp = db.scalar(select(Species).where(Species.slug == body.species))
     if sp is None or not db.scalar(select(Badge.id).where(Badge.user_id == user.id, Badge.species_id == sp.id)):
         raise HTTPException(400, "Capture this animal first")
-    pts = points(body.treats, sp.slug)
+    pts = points(body.treats, sp.slug, body.level.split(".")[0])
     row = db.scalar(select(GameScore).where(GameScore.user_id == user.id, GameScore.level == body.level,
                                             GameScore.species_id == sp.id))
     best = row is None or pts > row.points

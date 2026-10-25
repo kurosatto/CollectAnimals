@@ -54,3 +54,10 @@ def test_unrevealed_animals_stay_a_mystery(client, fake):
 def test_speed_table_matches_the_game():
     js = (Path(__file__).parents[1] / "app/static/minigames.js").read_text()
     assert "tempo: [" + ", ".join(f"{x:g}".lstrip("0") for x in games.TEMPO) + "]" in js
+
+
+def test_speed_depends_on_the_game(client, fake):
+    ana = signup(client, "ana")
+    catch(client, fake, ana, "harbor_seal")  # slow on land, fast in the water
+    assert score(client, ana, "harbor_seal", 20, level="trail.0").json()["points"] == 150
+    assert score(client, ana, "harbor_seal", 20, level="river.0").json()["points"] == 260
