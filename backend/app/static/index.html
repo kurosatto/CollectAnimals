@@ -379,9 +379,9 @@
 
   <section id="auth" class="card auth">
     <div class="auth-scene" id="auth-scene"><button type="button" class="auth-place" id="auth-place"
-      title="Show another state">📍</button></div>
+      title="Pick your state">📍</button></div>
     <div class="auth-side">
-    <h2 class="pitch-title">How many of <span id="pitch-state">your state</span>'s <span id="pitch-count">100</span> animals can you capture?</h2>
+    <h2 class="pitch-title">How many of <span id="pitch-state">your state's</span> <span id="pitch-count">100</span> animals can you capture?</h2>
     <p class="pitch">Spot a wild animal, snap a great photo, and it's captured in your Field Guide.
       Then it moves into your own little pixel habitat, like the one here.</p>
     <h2 id="auth-title">Log in</h2>
@@ -591,35 +591,19 @@ function setToken(t) {
 }
 
 // Logged out: the login page shows the state's scenery with one animal in it.
-// Before a state is chosen that's the last one used on this device, else a guess
-// from the device's time zone (no location prompt), else the first state in states.json.
+// That's the state chosen at sign-up or last used on this device. Until one is
+// known, no state is named: California's scenery stands in, with no place label.
 let savedState = null;
 try { savedState = localStorage.getItem("state"); } catch {}
-// US time zones that point to one state, or to the most populous state using them.
-const TZ_STATE = {
-  "America/Los_Angeles": "CA", "America/Denver": "CO", "America/Phoenix": "AZ", "America/Boise": "ID",
-  "America/Chicago": "TX", "America/New_York": "NY", "America/Detroit": "MI", "America/Menominee": "MI",
-  "America/Anchorage": "AK", "America/Juneau": "AK", "America/Sitka": "AK", "America/Nome": "AK",
-  "America/Yakutat": "AK", "America/Metlakatla": "AK", "America/Adak": "AK", "Pacific/Honolulu": "HI",
-};
-function tzState() {
-  try {
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
-    if (tz.startsWith("America/Indiana/")) return "IN";
-    if (tz.startsWith("America/Kentucky/") || tz === "America/Louisville") return "KY";
-    if (tz.startsWith("America/North_Dakota/")) return "ND";
-    return TZ_STATE[tz] || null;
-  } catch { return null; }
-}
-let authState = savedState || tzState();
+let authState = savedState;
 function authScene(code) {
-  authState = code || (states.some((st) => st.code === authState) ? authState : (states[0] || {}).code);
-  const name = (states.find((st) => st.code === authState) || {}).name || "";
-  $("auth-place").textContent = `📍 ${name}`;
-  $("pitch-state").textContent = name || "your state";
-  $("pitch-count").textContent = (states.find((st) => st.code === authState) || {}).species_count || 100;
-  $("state-name").textContent = name;
-  if (!token) habShowcase(authState, $("auth-scene"));
+  if (code) authState = code;
+  const st = states.find((x) => x.code === authState);
+  $("auth-place").textContent = st ? `📍 ${st.name}` : "📍 Your state?";
+  $("pitch-state").textContent = st ? `${st.name}'s` : "your state's";
+  $("pitch-count").textContent = (st && st.species_count) || 100;
+  $("state-name").textContent = st ? st.name : "";
+  if (!token) habShowcase(st ? st.code : "CA", $("auth-scene"));
 }
 
 $("toggle").onclick = () => {
@@ -1372,8 +1356,8 @@ function setSignupState(code) {
 }
 $("signup-state").onclick = chooseSignupState;
 $("auth-place").onclick = async () => {
-  const code = await pickState({ title: "Show another state", current: authState,
-    note: "See the scenery and an animal from any state." });
+  const code = await pickState({ title: "Which state are you in?", current: authState,
+    note: "See its scenery and one of its animals." });
   if (code) signup ? setSignupState(code) : authScene(code);
 };
 
