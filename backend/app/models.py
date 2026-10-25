@@ -252,3 +252,21 @@ class Report(Base):
     status: Mapped[str] = mapped_column(String(16), default="open")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class GameScore(Base):
+    """A player's best points on one minigame level with one animal (app/games.py)."""
+
+    __tablename__ = "game_scores"
+    __table_args__ = (UniqueConstraint("user_id", "level", "species_id"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    # "<game>.<level number>", e.g. "sky.0".
+    level: Mapped[str] = mapped_column(String(16), index=True)
+    species_id: Mapped[int] = mapped_column(ForeignKey("species.id"))
+    points: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    user: Mapped[User] = relationship()
+    species: Mapped[Species] = relationship()
