@@ -12,8 +12,13 @@
 // so you get further by learning the course. Finishing a level unlocks the next.
 // Progress stays in this browser (localStorage), nothing goes to the server.
 const MG_W = 320, MG_H = 200;
-// The canvas has 4 real pixels per game pixel, so text stays sharp when it's scaled up.
-const MG_RES = 4;
+// The canvas has as many real pixels per game pixel as the screen shows, so text stays
+// sharp and pixel art isn't squeezed (squeezing dropped pixels and left dark specks).
+let MG_RES = 4;
+function mgFit(cv) {
+  const res = Math.max(1, Math.min(8, Math.ceil((cv.clientWidth || MG_W * 4) * (window.devicePixelRatio || 1) / MG_W)));
+  if (res !== MG_RES || cv.width !== MG_W * res) { MG_RES = res; cv.width = MG_W * res; cv.height = MG_H * res; }
+}
 const MG_GROUND = 172, MG_SURFACE = 34, MG_BED = 186;
 const MG_GAMES = [
   { key: "sky", title: "Sky Glide", pose: "fly", kind: "flying animal", thing: ["berry", "berries"],
@@ -22,8 +27,12 @@ const MG_GAMES = [
     how: "Tap to hop over rocks and logs, hold for a big jump over stumps, and stay low under branches.", tip: "Tap to jump, hold to jump higher" },
   { key: "river", title: "River Swim", pose: "swim", kind: "water animal", thing: ["point", "points"],
     how: "Hold to swim up, let go to dive. Slip between the rocks and roots, eat snacks and scoop up litter.", tip: "Hold to swim up, let go to dive" },
+  { key: "pool", title: "Tide Pool Spin", pose: "idle", kind: "tide pool animal", thing: ["bite", "bites"],
+    how: "Cling to your rock and turn around it. Hold the left or right side to turn through the gaps in the waves, and catch food as it washes in.",
+    tip: "Hold left or right to turn" },
 ];
 const MG_LAND_ROLES = new Set(["walk", "hop", "shore", "beach", "dangle"]);
+const MG_SHELL = /(?:^|_)(?:mussel|clam|oyster|scallop|cockle|barnacle|limpet|snail|whelk|periwinkle|nerite|conch|bonnet|turban|abalone|chiton|urchin|star|crab|lobster|crayfish|tortoise|turtle|cooter|slider|terrapin|armadillo|softshell|dogwinkle|slippersnail)(?:_|$)/;
 const MG_WATER_ROLES = new Set(["swim", "jelly", "float", "paddle"]);
 const mg = { entries: [], game: null, slug: null, run: null, raf: 0, last: 0, visible: true, down: false, built: false,
              imgs: {}, sheets: {} };
@@ -41,6 +50,9 @@ function mgKinds(s) {
   if (MG_LAND_ROLES.has(role)) kinds.push("trail");
   // Anything drawn swimming can swim: seals, ducks, frogs, turtles. Not tortoises.
   if (MG_WATER_ROLES.has(role) || (acts.includes("swim") && !/tortoise|box_turtle/.test(s.slug))) kinds.push("river");
+  // Animals with a shell or armor (mussels, snails, crabs, turtles, sea stars, urchins)
+  // tuck in and turn, and so do the tide pool animals that can't get about at all.
+  if (s.category !== "bird" && (MG_SHELL.test(s.slug) || role === "reef")) kinds.push("pool");
   return kinds;
 }
 
@@ -151,7 +163,7 @@ function mgBuild() {
   .mg-locked { opacity:.6; }
   .mg-list.hidden, .mg-stage.hidden { display:none; }
   .mg-lock { font-size:.85rem; }
-  .mg-stage canvas { display:block; width:100%; height:auto; image-rendering:pixelated; border-radius:10px;
+  .mg-stage canvas { display:block; width:100%; height:auto; border-radius:10px;
                      touch-action:none; user-select:none; -webkit-user-select:none; cursor:pointer; }
   .mg-bar { display:flex; justify-content:space-between; align-items:center; margin-top:6px; font-size:.85rem; }
   .mg-back { font:inherit; font-size:.85rem; padding:4px 12px; border-radius:999px; border:1px solid var(--line);
@@ -176,15 +188,21 @@ function mgBuild() {
   stage.id = "mg-stage";
   stage.append(cv, bar);
   box.append(list, stage);
-  const press = (on) => {
+  const press = (on, dir) => {
     if (on && !mg.down) mgTap();
     mg.down = on;
+    mg.dir = on ? dir || 0 : 0;  // Tide Pool Spin: -1 turns left (anticlockwise), 1 right
   };
-  cv.addEventListener("pointerdown", (e) => { e.preventDefault(); try { cv.setPointerCapture(e.pointerId); } catch {} press(true); });
+  cv.addEventListener("pointerdown", (e) => {
+    e.preventDefault(); try { cv.setPointerCapture(e.pointerId); } catch {}
+    const b = cv.getBoundingClientRect();
+    press(true, e.clientX < b.left + b.width / 2 ? -1 : 1);
+  });
   ["pointerup", "pointercancel", "lostpointercapture"].forEach((t) => cv.addEventListener(t, () => press(false)));
   cv.addEventListener("contextmenu", (e) => e.preventDefault());
-  const keys = (e) => [" ", "ArrowUp", "w", "W", "Enter"].includes(e.key);
-  addEventListener("keydown", (e) => { if (mg.run && mg.visible && keys(e)) { e.preventDefault(); if (!e.repeat) press(true); } });
+  const keys = (e) => [" ", "ArrowUp", "w", "W", "Enter", "ArrowLeft", "ArrowRight", "a", "A", "d", "D"].includes(e.key);
+  const dirOf = (e) => (["ArrowLeft", "a", "A"].includes(e.key) ? -1 : ["ArrowRight", "d", "D"].includes(e.key) ? 1 : 0);
+  addEventListener("keydown", (e) => { if (mg.run && mg.visible && keys(e)) { e.preventDefault(); if (!e.repeat) press(true, dirOf(e)); } });
   addEventListener("keyup", (e) => { if (mg.run && keys(e)) press(false); });
   // Stop when the tab is switched away or the page is hidden; the round waits.
   new IntersectionObserver(([en]) => { mg.visible = en.isIntersecting; mgWake(); }).observe(cv);
@@ -211,7 +229,7 @@ function mgList() {
     const row = mgEl("div", "mg-pick"), foot = mgEl("div", "mg-row"), name = mgEl("span", "mg-name", pick.common_name);
     const stats = mgEl("div", "mg-stats");
     const showStats = () => {
-      const st = mgStats(pick.slug);
+      const st = mgStats(pick.slug, g.key);
       stats.innerHTML = "";
       [st.speed, st.jump, st.agility, st.size].forEach((v, i) => {
         const cell = mgEl("span", "mg-stat");
@@ -289,7 +307,7 @@ function mgQuit() {
 // placed by distance along the course (wx: how far you've travelled when it
 // reaches you).
 const MG_DT = 1 / 120;  // fixed physics steps, so a course plays the same every time
-const MG_SPEED = { sky: 75, trail: 100, river: 70 };
+const MG_SPEED = { sky: 75, trail: 100, river: 70, pool: 60 };
 const MG_TOP = 18;      // how high a flier can go
 
 // A gap to fly or swim through: a wall above it and a wall below it.
@@ -352,6 +370,28 @@ function mgTrailLevel(k, list) {
   return out;
 }
 
+// Tide Pool Spin, like Super Hexagon: the animal clings to a rock in the middle of the
+// pool and turns around it, while rings of waves wash in from the edge. Each ring has
+// six sides, some of them foam; slip through an open side. wx is when a ring reaches
+// the animal, so a ring's size is how far it still has to come. Food washes in through
+// the open sides.
+const MG_POOL = { cx: 160, cy: 108, r: 30, thick: 9, turn: 4.4 };
+const MG_SIDE = Math.PI / 3;
+// Which sides are foam (1) for each kind of ring, before it's turned by g sides.
+const MG_RINGS = { c: [0, 1, 1, 1, 1, 1], v: [0, 1, 1, 0, 1, 1], alt: [0, 1, 0, 1, 0, 1], half: [0, 0, 0, 1, 1, 1], two: [0, 0, 1, 1, 1, 1] };
+
+function mgPoolLevel(k, rings) {
+  const out = [];
+  for (const [b, kind, g] of rings) {
+    const wx = b * k, sides = MG_RINGS[kind].map((_, i, a) => a[((i - g) % 6 + 6) % 6]);
+    out.push({ type: "wave", wx, sides });
+    // A bite in the first open side, half a beat before the ring.
+    const open = sides.indexOf(0);
+    out.push({ type: "food", good: true, pts: 1, wx: wx - k / 2, ang: (open + .5) * MG_SIDE });
+  }
+  return out;
+}
+
 // Levels are written in beats of their song, so every hazard lands on the music:
 // the tempo is the difficulty. [beat, gap middle, gap size] for gates.
 const MG_LEVELS = {
@@ -403,6 +443,22 @@ const MG_LEVELS = {
       [[10, 150], [14, 60], [22, 60], [30.5, 150], [44.5, 70], [61.5, 70], [74.5, 60]],
       [[18, 140], [34.5, 150], [48.5, 150], [68.5, 130], [79, 90]]) },
   ],
+  // [beat, ring kind, turned by g sides]
+  pool: [
+    { name: "Low Tide", bpm: 96, song: 6, items: (k) => mgPoolLevel(k, [
+      [8, "c", 0], [12, "c", 1], [16, "c", 2], [20, "c", 3], [24, "v", 1], [28, "v", 2],
+      [32, "c", 3], [36, "c", 0], [40, "half", 4], [44, "half", 1], [48, "alt", 0], [50, "alt", 1], [52, "alt", 0],
+      [56, "c", 3], [60, "c", 5], [64, "v", 0], [68, "c", 2], [72, "half", 3], [76, "c", 0], [80, "c", 3],
+    ]) },
+    { name: "Rising Tide", bpm: 112, song: 7, items: (k) => mgPoolLevel(k, [
+      [8, "c", 0], [10, "c", 1], [12, "c", 2], [14, "c", 3], [16, "c", 4], [18, "c", 5],
+      [22, "alt", 0], [23.5, "alt", 1], [25, "alt", 0], [26.5, "alt", 1], [28, "alt", 0],
+      [32, "two", 3], [34, "two", 5], [36, "two", 1], [38, "two", 3],
+      [42, "c", 0], [44, "c", 5], [46, "c", 4], [48, "c", 3], [50, "c", 2], [52, "c", 1],
+      [56, "v", 0], [58, "v", 1], [60, "v", 2], [62, "half", 0], [65, "half", 3], [68, "c", 4],
+      [71, "alt", 1], [72.5, "alt", 0], [74, "alt", 1], [76, "c", 3], [79, "c", 0], [82, "c", 3],
+    ]) },
+  ],
 };
 
 // A level's things, placed in pixels, and how long it is: a few beats past the last thing.
@@ -438,6 +494,8 @@ const MG_SONGS = [
   { root: 59, prog: [0, 6, 5, 4], lead: [7, 6, 4, -1, 4, 6, 7, 9], scale: [0, 2, 3, 5, 7, 8, 10] },
   { root: 65, prog: [0, 4, 5, 3], lead: [2, -1, 4, -1, 7, -1, 4, 2], scale: [0, 2, 4, 5, 7, 9, 11] },
   { root: 55, prog: [0, 3, 6, 4], lead: [0, 3, 4, 7, 4, 3, 0, 3], scale: [0, 2, 3, 5, 7, 8, 10] },
+  { root: 63, prog: [0, 4, 5, 3], lead: [4, 2, 0, 2, 4, -1, 7, -1], scale: [0, 2, 4, 7, 9, 12, 14] },
+  { root: 58, prog: [0, 5, 6, 4], lead: [0, 2, 3, 5, 7, 5, 3, 2], scale: [0, 2, 3, 5, 7, 8, 10] },
 ];
 const mgAudio = { ctx: null, out: null, noise: null, muted: mgStore.get("muted") === "1" };
 
@@ -539,9 +597,11 @@ let mgStatsIdx = null;
 fetch("/sprites/game_stats.json").then((r) => (r.ok ? r.json() : null)).then((j) => { mgStatsIdx = j; }).catch(() => {});
 const MG_STAT_NAMES = ["Speed", "Jump", "Agility", "Size"];
 
-function mgStats(slug) {
+// Speed depends on the game: a seal is slow on land (Trail Run) and fast in the water.
+function mgStats(slug, game) {
   const v = (mgStatsIdx && mgStatsIdx.stats[slug]) || [3, 3, 3, 3];
-  return { speed: v[0], jump: v[1], agility: v[2], size: v[3] };
+  const place = (mgStatsIdx && mgStatsIdx.speed && mgStatsIdx.speed[slug]) || {};
+  return { speed: place[game] || v[0], jump: v[1], agility: v[2], size: v[3] };
 }
 
 // What the stats do in a game. Level 1 of every stat is the baseline the levels are
@@ -559,11 +619,12 @@ function mgReset(mode) {
   const g = mg.game, lvl = mgLevelOf(g.key, mg.level);
   const rec = mgRec(g.key, mg.level);
   mg.tries = mode === "play" ? (mg.tries || 0) + 1 : mg.tries || 0;
-  const st = mgStats(mg.species.slug);
+  const st = mgStats(mg.species.slug, g.key);
   mg.run = { mode, t: 0, rt: 0, acc: 0, st, p: mgPhysOf(st), score: 0, litter: 0, fx: [], dist: 0, phase: 0, len: lvl.len, lvl,
              things: lvl.things.map((o) => Object.assign({ x: MG_W + 99 }, o)),
              x: g.key === "trail" ? 70 : 72, y: g.key === "trail" ? MG_GROUND : g.key === "sky" ? 90 : 110, vy: 0,
-             flap: 0, ground: true, held: false, overAt: 0, rec, newBest: false, total: mgTreats(lvl) };
+             flap: 0, ground: true, held: false, overAt: 0, rec, newBest: false, total: mgTreats(lvl),
+             ang: -Math.PI / 2 + MG_SIDE / 2, dir: 0 };
 }
 
 // A press: flap, jump or start swimming up. Shared by touch, keys and the level checker.
@@ -621,6 +682,8 @@ function mgPhys(r, key, dt) {
       r.y += r.vy * dt;
       if (r.y >= MG_GROUND) { r.y = MG_GROUND; r.vy = 0; r.ground = true; }
     }
+  } else if (key === "pool") {
+    r.ang += r.dir * MG_POOL.turn * r.p.power * dt;
   } else {
     r.vy += (r.held ? -260 * r.p.power : 200) * dt;
     r.vy = Math.max(-95, Math.min(85, r.vy));
@@ -638,8 +701,30 @@ function mgBox(key, r, pad) {
 }
 const mgTouches = (b, o, x) => !(x + o.w / 2 < b[0] || x - o.w / 2 > b[2] || o.y + o.h / 2 < b[1] || o.y - o.h / 2 > b[3]);
 
+const mgAngDiff = (a, b) => { const d = ((a - b) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI; return Math.abs(d); };
+// How far out a pool thing is now.
+const mgPoolR = (o, r) => MG_POOL.r + (o.wx - r.dist);
+
+// Tide Pool Spin: is the animal inside a foam side of a ring that's reaching it?
+function mgPoolHit(r, things, pad) {
+  const half = (5 + (pad || 0) - r.p.shrink) / MG_POOL.r;  // the animal's width, as an angle
+  for (const o of things) {
+    if (o.good) continue;
+    const d = o.wx - r.dist;
+    if (d > 8) break;
+    if (d < -MG_POOL.thick - 4) continue;
+    for (let i = 0; i < 6; i++) {
+      if (!o.sides[i]) continue;
+      const mid = (i + .5) * MG_SIDE;
+      if (mgAngDiff(r.ang, mid) < MG_SIDE / 2 + half) return true;
+    }
+  }
+  return false;
+}
+
 // Does the animal hit a hazard right now? (Used by the game and the level checker.)
 function mgHit(r, key, things, pad) {
+  if (key === "pool") return mgPoolHit(r, things, pad);
   const b = mgBox(key, r, pad);
   for (const o of things) {
     if (o.good) continue;
@@ -658,11 +743,17 @@ function mgStep(r, dt) {
   while (r.acc >= MG_DT && r.mode === "play") {
     r.acc -= MG_DT;
     mgPress(r, key, mg.down);
+    r.dir = mg.down ? mg.dir || 0 : 0;
     mgPhys(r, key, MG_DT);
     for (const o of r.things) o.x = o.wx - r.dist + r.x;
     const b = mgBox(key, r);
+    if (key === "pool") {
+      r.x = MG_POOL.cx + Math.cos(r.ang) * MG_POOL.r; r.y = MG_POOL.cy + Math.sin(r.ang) * MG_POOL.r;
+      for (const o of r.things) if (o.good) { const rr = mgPoolR(o, r); o.x = MG_POOL.cx + Math.cos(o.ang) * rr; o.y = MG_POOL.cy + Math.sin(o.ang) * rr; }
+    }
     for (const o of r.things) {
-      if (!o.good || o.gone || o.x > b[2] + 20 || !mgTouches(b, o, o.x)) continue;
+      if (!o.good || o.gone) continue;
+      if (key === "pool" ? Math.abs(o.wx - r.dist) > 5 || mgAngDiff(o.ang, r.ang) > .4 : o.x > b[2] + 20 || !mgTouches(b, o, o.x)) continue;
       o.gone = true;
       r.score += o.pts;
       mgSfx("treat");
@@ -717,12 +808,23 @@ function mgFxStep(r, dt) {
 function mgDraw() {
   const cv = document.getElementById("mg-canvas"), r = mg.run;
   if (!cv || !r) return;
+  mgFit(cv);
   const c = cv.getContext("2d");
   c.setTransform(MG_RES, 0, 0, MG_RES, 0, 0);
   c.imageSmoothingEnabled = false;
   const key = mg.game.key;
+  if (key === "pool") {
+    // The whole pool sways round, like Super Hexagon; the waves and you turn with it.
+    const { cx, cy } = MG_POOL, view = r.t * .5 + Math.sin(r.t * .9) * .5;
+    c.save(); c.translate(cx, cy); c.rotate(view); c.translate(-cx, -cy);
+    mgPoolDraw(c, r);
+    for (const f of r.fx) mgFxDraw(c, f);
+    c.restore();
+    mgHud(c, r);
+    return;
+  }
   if (key === "sky") mgSkyBg(c, r); else if (key === "trail") mgTrailBg(c, r); else mgRiverBg(c, r);
-  for (const o of r.things) mgThing(c, o, r);
+  for (const o of r.things) if (!o.gone) mgThing(c, o, r);
   mgPlayer(c, r);
   for (const f of r.fx) mgFxDraw(c, f);
   mgHud(c, r);
@@ -884,6 +986,73 @@ function mgThing(c, o, r) {
   }
 }
 
+// What each tide pool animal eats: [name pattern, food, colour].
+const MG_FOODS = [
+  [/mussel|clam|oyster|scallop|barnacle/, "plankton", "#9be59b"], [/(^|_)star(_|$)/, "mussels", "#3d4a7a"],
+  [/urchin/, "kelp", "#5a8f3a"], [/dogwinkle|whelk/, "barnacles", "#e8e0c8"], [/scotch_bonnet/, "sand dollars", "#d8c49a"],
+  [/anemone/, "shrimp", "#f08a7a"], [/hopkins/, "moss animals", "#c8a0e0"], [/crayfish/, "worms", "#d98a8a"],
+  [/crab|lobster/, "clams", "#d8c8a8"], [/loggerhead/, "jellies", "#e0b0e8"], [/sea_turtle/, "seagrass", "#5aa84a"],
+  [/snapping|softshell/, "fish", "#9ab8d0"], [/tortoise|box_turtle/, "flowers", "#f2c14e"], [/armadillo/, "beetles", "#6a5040"],
+  [/garden_snail|giant_snail|brown_lipped/, "leaves", "#6aae6e"], [/turtle|cooter|slider|terrapin/, "snails", "#c8a070"],
+  [/./, "algae", "#4f9a5a"],
+];
+const mgFood = (slug) => MG_FOODS.find(([re]) => re.test(slug));
+
+function mgPoolDraw(c, r) {
+  const { cx, cy, thick } = MG_POOL, far = 240;
+  const at = (a, d) => [cx + Math.cos(a) * d, cy + Math.sin(a) * d];
+  const quad = (a0, a1, d0, d1, col) => {
+    c.fillStyle = col; c.beginPath();
+    c.moveTo(...at(a0, d0)); c.lineTo(...at(a1, d0)); c.lineTo(...at(a1, d1)); c.lineTo(...at(a0, d1)); c.closePath(); c.fill();
+  };
+  // Six wedges of water in two blues, then the rings of foam washing in.
+  for (let i = 0; i < 6; i++) quad(i * MG_SIDE, (i + 1) * MG_SIDE, 0, far, i % 2 ? "#2f7fa8" : "#3a8fb8");
+  for (const o of r.things) {
+    const d = mgPoolR(o, r);
+    if (d > far || d + thick < 0) continue;
+    if (o.good) {
+      if (o.gone) continue;
+      const [x, y] = at(o.ang, d), col = mgFood(mg.species.slug)[2];
+      c.fillStyle = "rgba(0,0,0,.25)"; c.fillRect(Math.round(x) - 2, Math.round(y) - 1, 5, 4);
+      c.fillStyle = col; c.fillRect(Math.round(x) - 3, Math.round(y) - 3, 5, 5);
+      c.fillStyle = "rgba(255,255,255,.6)"; c.fillRect(Math.round(x) - 2, Math.round(y) - 2, 2, 2);
+      continue;
+    }
+    for (let i = 0; i < 6; i++) {
+      if (!o.sides[i]) continue;
+      quad(i * MG_SIDE, (i + 1) * MG_SIDE, Math.max(0, d), d + thick, "#e9f6ff");
+      quad(i * MG_SIDE, (i + 1) * MG_SIDE, Math.max(0, d), Math.max(0, d) + 2, "#9fd4ec");
+    }
+  }
+  // The rock in the middle, a little bigger on every beat.
+  const beat = r.lvl.spb ? (r.t / r.lvl.spb) % 1 : 0, rock = 20 + (beat < .15 ? 2 : 0);
+  c.fillStyle = "#6e7380"; c.beginPath();
+  for (let i = 0; i < 6; i++) c.lineTo(...at(i * MG_SIDE, rock));
+  c.closePath(); c.fill();
+  c.fillStyle = "#8a8f9e"; c.beginPath();
+  for (let i = 0; i < 6; i++) c.lineTo(...at(i * MG_SIDE, rock - 6));
+  c.closePath(); c.fill();
+  // You, clinging to the rock with your back to the waves.
+  const s = mg.species, raw = mg.imgs[`/sprites/${encodeURIComponent(s.slug)}.png`];
+  if (!raw || !raw.complete || !raw.naturalWidth || (r.mode === "over" && Math.floor(r.phase * 12) % 3 === 0)) return;
+  const [x, y] = at(r.ang, MG_POOL.r - 9), F = raw.naturalWidth, k = 26 / F;
+  c.save(); c.translate(x, y); c.rotate(r.ang + Math.PI / 2); c.scale(k, k);
+  c.drawImage(raw, -F / 2, -F * .75);
+  c.restore();
+}
+
+const mgFrames = {};
+function mgFrame(sheet, slug, row, frame, F) {
+  const key = `${slug}/${row}/${frame}`;
+  if (!mgFrames[key]) {
+    const cv = document.createElement("canvas");
+    cv.width = F; cv.height = F;
+    cv.getContext("2d").drawImage(sheet, frame * F, row * F, F, F, 0, 0, F, F);
+    mgFrames[key] = cv;
+  }
+  return mgFrames[key];
+}
+
 function mgPlayer(c, r) {
   const s = mg.species, key = mg.game.key;
   const raw = mg.imgs[`/sprites/${encodeURIComponent(s.slug)}.png`], sheet = mg.sheets[`/sprites/anim/${encodeURIComponent(s.slug)}.png`];
@@ -914,7 +1083,7 @@ function mgPlayer(c, r) {
   c.scale(-1, 1);
   if (key === "sky" && moving) c.rotate(Math.max(-.35, Math.min(.35, r.vy / 400)));
   if (key === "river" && moving) c.rotate(Math.max(-.3, Math.min(.3, r.vy / 350)));
-  if (framed) c.drawImage(sheet, frame * F, habAnimIdx.rows.indexOf(pose) * F, F, F, -F / 2, -F + bob, F, F);
+  if (framed) c.drawImage(mgFrame(sheet, s.slug, habAnimIdx.rows.indexOf(pose), frame, F), -F / 2, -F + bob);
   else c.drawImage(raw, -F / 2, -F + bob);
   c.restore();
 }
@@ -951,7 +1120,8 @@ function mgHud(c, r) {
   c.fillStyle = "#9be59b"; c.fillRect(60, 7, Math.round(bw * p), 6);
   if (r.rec.pct) { c.fillStyle = "#ffd28a"; c.fillRect(60 + Math.round(bw * r.rec.pct / 100) - 1, 5, 2, 10); }
   c.textAlign = "left"; c.font = "bold 11px system-ui, sans-serif";
-  const label = `${g.key === "river" ? "Score" : g.key === "sky" ? "Berries" : "Acorns"} ${r.score}`;
+  const food = g.key === "pool" ? mgFood(mg.species.slug)[1] : "";
+  const label = `${g.key === "river" ? "Score" : g.key === "sky" ? "Berries" : g.key === "pool" ? food[0].toUpperCase() + food.slice(1) : "Acorns"} ${r.score}`;
   c.fillStyle = "rgba(0,0,0,.35)"; c.fillRect(4, 18, c.measureText(label).width + 10, 16);
   c.fillStyle = "#fff"; c.fillText(label, 9, 30);
   c.font = "bold 10px system-ui, sans-serif"; c.textAlign = "right";
@@ -972,7 +1142,7 @@ function mgHud(c, r) {
     mgPanel(c, lines, Math.min(top, MG_H - 8 - (lines.length * 16 + 14)));
   } else if (r.mode === "done") {
     const lines = [["Level complete!", 15, "#9be59b"], [`${r.points} points as a ${mg.species.common_name}`, 12, "#ffd28a"],
-                   [`${r.score} of ${r.total} ${g.thing[1]} × ${r.p.tempo} speed bonus`, 10]];
+                   [`${r.score} of ${r.total} ${g.key === "pool" ? food : g.thing[1]} × ${r.p.tempo} speed bonus`, 10]];
     if (g.key === "river" && r.litter) lines.push([`You cleaned up ${r.litter} piece${r.litter === 1 ? "" : "s"} of litter`, 10]);
     if (r.score >= r.total) lines.push(["You got every one!", 11, "#9be59b"]);
     if (r.newBest) lines.push(["Your best score yet!", 11, "#9be59b"]);
