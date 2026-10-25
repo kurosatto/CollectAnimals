@@ -257,13 +257,6 @@
   .welcome { border-color:var(--accent); }
   .welcome p { margin:6px 0 0; }
   label.inline { display:flex; align-items:center; gap:6px; font-size:.9rem; color:var(--muted); }
-  .week { display:grid; gap:10px; }
-  .week-row { display:grid; grid-template-columns:22px 1fr auto; gap:8px; align-items:center; font-size:.9rem; }
-  .week-row .tick { width:22px; height:22px; border-radius:50%; border:2px solid var(--line); display:grid;
-                    place-items:center; font-size:.8rem; color:#fff; }
-  .week-row.done .tick { background:var(--accent); border-color:var(--accent); }
-  .week-row.done .what { color:var(--muted); text-decoration:line-through; }
-  .week-row .bar { grid-column:2 / 4; }
   .safety-box { margin-top:10px; padding:8px 10px; border-radius:10px; max-width:360px; font-size:.9rem;
                 background:#fff4d6; color:#5a4200; border:1px solid #f0d58a; }
   .safety-box.danger { background:#ffe3dc; color:#6b1d0c; border-color:#f3b3a2; }
@@ -437,10 +430,15 @@
       </div>
       <div id="result" class="card hidden"></div>
     </div>
-    <div class="card" data-tab="catch" id="week-card">
-      <h2>This week's challenges <span class="muted" id="week-done"></span></h2>
-      <p class="muted" id="week-note" style="margin-top:0"></p>
-      <div id="week-list" class="week"></div>
+    <div class="card" data-tab="catch">
+      <h2>Your habitat</h2>
+      <div id="hab-home">
+      <div id="habitat" class="habitat">
+        <canvas id="hab-canvas" width="480" height="270" aria-label="Your habitat: the animals you've captured"></canvas>
+        <div id="hab-bubble" class="hab-bubble hidden"></div>
+      </div>
+      <div class="hab-bar" id="hab-bar"><span id="hab-note" class="muted"></span><button class="ghost" id="hab-wx-here" hidden>📍 My weather</button><button class="ghost" id="hab-peek"></button></div>
+      </div>
     </div>
     <div class="card off" data-tab="feed">
       <h2>Latest captures</h2>
@@ -449,7 +447,6 @@
       <p class="muted" id="feed-note" style="margin:8px 0 0;font-size:.85rem"></p>
       <div id="feed" class="feed"></div>
       <p><button class="ghost hidden" id="feed-more">Show more</button></p>
-      <label class="inline"><input type="checkbox" id="share-feed"> Show my captures in this feed</label>
     </div>
     <div class="card off" id="hotspots-card" data-tab="parks">
       <h2>Hotspots</h2>
@@ -462,11 +459,6 @@
     </div>
     <div class="card off" data-tab="dex">
       <h2>Field Guide <span id="progress" class="muted"></span></h2>
-      <div id="habitat" class="habitat">
-        <canvas id="hab-canvas" width="480" height="270" aria-label="Your habitat: the animals you've captured"></canvas>
-        <div id="hab-bubble" class="hab-bubble hidden"></div>
-      </div>
-      <div class="hab-bar" id="hab-bar"><span id="hab-note" class="muted"></span><button class="ghost" id="hab-wx-here" hidden>📍 My weather</button><button class="ghost" id="hab-peek"></button></div>
       <div id="grid" class="grid guide"></div>
     </div>
     <div class="card off" data-tab="dex">
@@ -1078,29 +1070,7 @@ const dexSort = (a, b) => RARITY_ORDER.indexOf(a.rarity) - RARITY_ORDER.indexOf(
   || CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category) || a.number - b.number;
 const silhouetteUrl = (number) => `/sprites/silhouette/${number}.png`;
 
-// Weekly challenges (same for everyone in the state, Monday to Sunday) and sets.
-async function loadChallenges() {
-  try {
-    const w = await api(`/me/challenges?state=${myState.code}`);
-    const ends = new Date(w.week_end);
-    const days = Math.max(1, Math.ceil((ends - Date.now()) / 86400000));
-    $("week-done").textContent = `${w.done} / ${w.challenges.length}`;
-    $("week-note").textContent = w.done === w.challenges.length ? "All done this week. New challenges on Monday!"
-      : `New challenges in ${days} day${days > 1 ? "s" : ""}.`;
-    const list = $("week-list");
-    list.innerHTML = "";
-    for (const c of w.challenges) {
-      const row = el("div", "week-row" + (c.done ? " done" : ""));
-      const bar = el("div", "bar");
-      const fill = el("div"); fill.style.width = `${100 * c.progress / c.goal}%`;
-      bar.append(fill);
-      row.append(el("span", "tick", c.done ? "✓" : ""), el("span", "what", c.title),
-                 el("span", "muted", `${c.progress} / ${c.goal}`), bar);
-      list.append(row);
-    }
-  } catch (err) { $("week-list").textContent = err.message; }
-}
-
+// Sets: themed groups to complete.
 async function loadSets() {
   const box = $("sets");
   try {
@@ -1130,7 +1100,7 @@ async function loadSets() {
 
 async function loadCollection() {
   const c = await api(`/me/collection?state=${myState.code}`);
-  loadSets(); loadChallenges();
+  loadSets();
   const entries = [...c.entries].sort((a, b) => dexSort(a.species, b.species));
   caughtNums = new Set(entries.filter((e) => e.caught).map((e) => e.species.number));
   if (hab.visit) hab.visit.home = entries; else habitatSet(entries);
@@ -1399,7 +1369,7 @@ async function setMainState(code) {
   await viewState(code);
 }
 
-// Show another unlocked state's Field Guide, habitat, parks and challenges.
+// Show another unlocked state's Field Guide, habitat and parks.
 async function viewState(code) {
   hotSelected = null;
   await useState(code);
@@ -1932,13 +1902,6 @@ async function openProfile(username) {
   sec("Groups");
   for (const [cat, t] of Object.entries(u.by_category)) box.append(bar(CATEGORY_NAMES[cat] || cat, t));
 
-  sec("Photos");
-  const grid = el("div", "photos");
-  if (!u.photos.length) grid.append(el("p", "muted", "No photos yet."));
-  u.photos.forEach((p) => grid.append(photoCard(p, { showSpecies: true })));
-  box.append(grid);
-  if (u.hidden_photos) box.append(el("p", "muted",
-    `${u.hidden_photos} more photo${u.hidden_photos > 1 ? "s" : ""} of animals you haven't discovered yet.`));
   // Your own profile lists every achievement with progress; anyone else's shows
   // only the ones they've earned.
   const mine = u.friendship === "self";
@@ -2175,10 +2138,6 @@ async function loadFeed(more = false) {
 }
 $("feed-more").onclick = () => loadFeed(true);
 $("feed-uncaught").onchange = () => loadFeed();
-$("share-feed").onchange = async (e) => {
-  try { await api("/me/settings", { method: "PATCH", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ show_in_feed: e.target.checked }) }); } catch { e.target.checked = !e.target.checked; }
-};
 
 // --- friends ------------------------------------------------------------------
 
@@ -2585,7 +2544,6 @@ async function render() {
     try {
       const me = await api("/me");
       $("username").replaceChildren(avatarImg(me.avatar, "small"), me.username);
-      $("share-feed").checked = me.show_in_feed !== false;
       $("reports-open").classList.toggle("hidden", !me.is_admin);
       if (me.is_admin && openReportsOnStart) openReports();
       openReportsOnStart = false;

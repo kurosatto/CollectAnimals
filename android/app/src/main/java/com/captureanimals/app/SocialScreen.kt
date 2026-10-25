@@ -50,7 +50,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -396,10 +395,6 @@ fun AccountDialog(state: UiState, vm: GameViewModel, onDismiss: () -> Unit) {
                                 .clickable { vm.setAvatar(n) })
                         }
                     }
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Show my captures in the news feed", Modifier.weight(1f))
-                    Switch(acct.showInFeed, onCheckedChange = vm::setShowInFeed)
                 }
                 BlockedPlayers()
                 PrivacyLink()

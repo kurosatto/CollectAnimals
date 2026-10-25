@@ -223,8 +223,11 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
         Box(Modifier.padding(padding).fillMaxSize()) {
             when {
                 info == null -> CircularProgressIndicator(Modifier.align(Alignment.Center))
-                TABS[tab].key == "catch" -> CatchScreen(state, vm::capture, vm::dismissResult, vm::pick, vm::saveWhereWhen, vm::chooseState,
-                    vm::changeCaptureState) { dexSlug = it }
+                TABS[tab].key == "catch" -> {
+                    val animals = remember(info, dex, state.collection) { habitatAnimals(info, dex, state.collection) }
+                    CatchScreen(state, animals, vm::capture, vm::dismissResult, vm::pick, vm::saveWhereWhen, vm::chooseState,
+                        vm::changeCaptureState) { dexSlug = it }
+                }
                 TABS[tab].key == "feed" ->
                     SocialScreen(state, social, "feed", onSignIn = { showAccount = true }) { dexSlug = it }
                 TABS[tab].key == "social" ->
@@ -236,7 +239,7 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
                     val sets = remember(state.sets, info, dex, state.stateCode) {
                         state.sets.forState(state.stateCode, info.species.map { it.slug }.toSet()) { dex?.details?.get(it)?.safety }
                     }
-                    CollectionScreen(info, dex, state.stateCode, state.collection, sets) { dexSlug = it }
+                    CollectionScreen(info, dex, state.collection, sets) { dexSlug = it }
                 }
                 TABS[tab].key == "games" -> {
                     val animals = remember(info, dex, state.collection) { habitatAnimals(info, dex, state.collection) }
@@ -264,10 +267,11 @@ private val TABS = listOf(
 )
 
 @Composable
-fun CatchScreen(state: UiState, onCapture: (Uri, Pair<Double, Double>?, Boolean, CropBox?) -> Unit, onDismiss: () -> Unit,
+fun CatchScreen(state: UiState, animals: List<HabitatAnimal>, onCapture: (Uri, Pair<Double, Double>?, Boolean, CropBox?) -> Unit, onDismiss: () -> Unit,
                 onPick: (String?) -> Unit, onSaveWhereWhen: SaveWhereWhen, onMakeMain: (String) -> Unit,
                 onChangeState: (String) -> Unit, onOpenDex: (String) -> Unit) {
     val context = LocalContext.current
+    val habitat = rememberHabitatView()
     var saveLocation by rememberSaveable { mutableStateOf(true) }
     val askLocation = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
         if (granted.values.none { it }) saveLocation = false
@@ -339,7 +343,8 @@ fun CatchScreen(state: UiState, onCapture: (Uri, Pair<Double, Double>?, Boolean,
                     ?.let { st -> st.name to { onMakeMain(st.code) } },
                 changeState = if (r.canChangeState && state.states.size > 1) state.states to onChangeState else null)
         }
-        if (state.account != null) state.week?.let { ChallengesCard(it) }
+        // Your live habitat: the animals you've captured, in your state's scenery.
+        Habitat(habitat, animals, state.stateCode, onOpen = onOpenDex)
     }
 }
 
@@ -429,11 +434,7 @@ fun RarityTag(rarity: String) {
 private val SECTIONS = listOf("Captured", "Not captured yet")
 
 @Composable
-fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, stateCode: String, collection: Map<String, Badge>,
-                     sets: List<SetDef>, onOpen: (String) -> Unit) {
-    // The live habitat sits above the list, as on the website; one WebView for the screen.
-    val habitat = rememberHabitatView()
-    val animals = remember(info, dex, collection) { habitatAnimals(info, dex, collection) }
+fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, collection: Map<String, Badge>, sets: List<SetDef>, onOpen: (String) -> Unit) {
     val categories = remember(info) { listOf("all") + info.species.map { it.category }.distinct() }
     var category by rememberSaveable { mutableStateOf("all") }
     val month = remember { java.util.Calendar.getInstance().get(java.util.Calendar.MONTH) + 1 }
@@ -445,9 +446,6 @@ fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, stateCode: String, colle
     LazyVerticalGrid(columns = GridCells.Adaptive(72.dp), modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(8.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        item(span = { GridItemSpan(maxLineSpan) }, key = "habitat") {
-            Habitat(habitat, animals, stateCode, Modifier.padding(bottom = 4.dp), onOpen = onOpen)
-        }
         item(span = { GridItemSpan(maxLineSpan) }) {
             Row(Modifier.horizontalScrollCompat(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 categories.forEach { c ->

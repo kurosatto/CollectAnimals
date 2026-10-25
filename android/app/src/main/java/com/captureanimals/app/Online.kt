@@ -139,7 +139,6 @@ object Online {
 
     suspend fun me(): Account = Account.parse(JSONObject(call("GET", "/me")))
     suspend fun setState(code: String) { call("PATCH", "/me", JSONObject().put("state", code)) }
-    suspend fun setShowInFeed(on: Boolean) { call("PATCH", "/me/settings", JSONObject().put("show_in_feed", on)) }
     suspend fun setAvatar(n: Int) { call("PATCH", "/me/settings", JSONObject().put("avatar", n)) }
 
     // --- Captures ---------------------------------------------------------------------
@@ -203,9 +202,7 @@ object Online {
         FriendGuide.parse(username, JSONObject(call("GET", "/users/${q(username)}/collection" +
             (state?.let { "?state=${q(it)}" } ?: ""))))
 
-    // --- Challenges and bonds ------------------------------------------------------------
-
-    suspend fun challenges(state: String): Week = Week.parse(JSONObject(call("GET", "/me/challenges?state=${q(state)}")))
+    // --- Bonds and states ----------------------------------------------------------------
 
     /** The player's unlocked states and how much of each they've captured ("Your states"). */
     suspend fun myStates(): List<StateTile> {
