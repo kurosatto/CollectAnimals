@@ -30,9 +30,13 @@ const MG_GAMES = [
   { key: "pool", title: "Tide Pool Spin", pose: "idle", kind: "tide pool animal", thing: ["bite", "bites"],
     how: "Cling to your rock and turn around it. Hold the left or right side to turn through the gaps in the waves, and catch food as it washes in.",
     tip: "Hold left or right to turn" },
+  { key: "claw", title: "Claw Catch", pose: "idle", kind: "animal with claws, talons or a quick tongue", thing: ["catch", "catches"],
+    how: "Food leaps up on the beat: swipe across it to catch it. Don't swipe the bees, and don't let three get away.",
+    tip: "Swipe across the food" },
 ];
 const MG_LAND_ROLES = new Set(["walk", "hop", "shore", "beach", "dangle"]);
 const MG_SHELL = /(?:^|_)(?:mussel|clam|oyster|scallop|cockle|barnacle|limpet|snail|whelk|periwinkle|nerite|conch|bonnet|turban|abalone|chiton|urchin|star|crab|lobster|crayfish|tortoise|turtle|cooter|slider|terrapin|armadillo|softshell|dogwinkle|slippersnail)(?:_|$)/;
+const MG_CLAW = /(?:^|_)(?:bear|raccoon|bobcat|cougar|mountain_lion|lynx|fox|wolf|coyote|otter|badger|wolverine|fisher|marten|ocelot|cat|hawk|eagle|owl|osprey|falcon|kestrel|harrier|kite|crab|lobster|crayfish|mantis|heron|egret|kingfisher|bittern|frog|bullfrog|toad|treefrog)(?:_|$)/;
 const MG_WATER_ROLES = new Set(["swim", "jelly", "float", "paddle"]);
 const mg = { entries: [], game: null, slug: null, run: null, raf: 0, last: 0, visible: true, down: false, built: false,
              imgs: {}, sheets: {} };
@@ -53,6 +57,8 @@ function mgKinds(s) {
   // Animals with a shell or armor (mussels, snails, crabs, turtles, sea stars, urchins)
   // tuck in and turn, and so do the tide pool animals that can't get about at all.
   if (s.category !== "bird" && (MG_SHELL.test(s.slug) || role === "reef")) kinds.push("pool");
+  // Claws, talons, pincers, spear beaks and sticky tongues: the swipe game.
+  if (MG_CLAW.test(s.slug) && !/fox_squirrel|limpet|butterflyfish/.test(s.slug)) kinds.push("claw");
   return kinds;
 }
 
@@ -265,8 +271,11 @@ function mgBuild() {
   cv.addEventListener("pointerdown", (e) => {
     e.preventDefault(); try { cv.setPointerCapture(e.pointerId); } catch {}
     const b = cv.getBoundingClientRect();
+    mg.swipe = [mgGamePt(cv, e)];
     press(true, e.clientX < b.left + b.width / 2 ? -1 : 1);
   });
+  // Claw Catch: the path of your finger while it's down.
+  cv.addEventListener("pointermove", (e) => { if (mg.down && mg.swipe) mg.swipe.push(mgGamePt(cv, e)); });
   ["pointerup", "pointercancel", "lostpointercapture"].forEach((t) => cv.addEventListener(t, () => press(false)));
   cv.addEventListener("contextmenu", (e) => e.preventDefault());
   const keys = (e) => [" ", "ArrowUp", "w", "W", "Enter", "ArrowLeft", "ArrowRight", "a", "A", "d", "D"].includes(e.key);
@@ -276,6 +285,11 @@ function mgBuild() {
   // Stop when the tab is switched away or the page is hidden; the round waits.
   new IntersectionObserver(([en]) => { mg.visible = en.isIntersecting; mgWake(); }).observe(cv);
   document.addEventListener("visibilitychange", mgWake);
+}
+
+function mgGamePt(cv, e) {
+  const b = cv.getBoundingClientRect();
+  return [(e.clientX - b.left) / b.width * MG_W, (e.clientY - b.top) / b.height * MG_H];
 }
 
 function mgList() {
@@ -380,7 +394,7 @@ function mgQuit() {
 // placed by distance along the course (wx: how far you've travelled when it
 // reaches you).
 const MG_DT = 1 / 120;  // fixed physics steps, so a course plays the same every time
-const MG_SPEED = { sky: 75, trail: 100, river: 70, pool: 60 };
+const MG_SPEED = { sky: 75, trail: 100, river: 70, pool: 60, claw: 60 };
 const MG_TOP = 18;      // how high a flier can go
 
 // A gap to fly or swim through: a wall above it and a wall below it.
@@ -465,6 +479,21 @@ function mgPoolLevel(k, rings) {
   return out;
 }
 
+// Claw Catch, like Fruit Ninja but learnable: food leaps up from the bottom and hangs
+// at the top of its leap right on a beat; swipe across it. Bees leap too: swiping one
+// ends the try, and so does letting three bites get away. wx is when a thing is at
+// the top of its leap.
+const MG_CLAW_G = 260;
+function mgClawLevel(k, list) {
+  return list.map(([b, x, kind, top, vx]) => ({ type: kind === "b" ? "bee" : "prey", good: kind !== "b", pts: 1,
+                                                wx: b * k, x0: x, top: top || 60, vx: vx || 0 }));
+}
+// Where a leaping thing is now (null when it's below the screen).
+function mgClawAt(o, r) {
+  const tau = (o.wx - r.dist) / MG_SPEED.claw, y = o.top + MG_CLAW_G * tau * tau / 2;
+  return y > MG_H + 12 ? null : [o.x0 - o.vx * tau, y, tau];
+}
+
 // Levels are written in beats of their song, so every hazard lands on the music:
 // the tempo is the difficulty. [beat, gap middle, gap size] for gates.
 const MG_LEVELS = {
@@ -515,6 +544,32 @@ const MG_LEVELS = {
        [64, 100, 60], [67, 70, 60], [70, 100, 60], [73, 130, 60], [76, 100, 60]],
       [[10, 150], [14, 60], [22, 60], [30.5, 150], [44.5, 70], [61.5, 70], [74.5, 60]],
       [[18, 140], [34.5, 150], [48.5, 150], [68.5, 130], [79, 90]]) },
+  ],
+  // [beat, x, "f" food or "b" bee, height of the leap, sideways drift]
+  claw: [
+    { name: "Salmon Run", bpm: 100, song: 8, items: (k) => mgClawLevel(k, [
+      [6, 160, "f"], [8, 100, "f"], [10, 220, "f"], [12, 160, "f", 50],
+      [14, 90, "f"], [14, 230, "f"], [16, 160, "b", 70], [18, 110, "f"], [18, 210, "f"],
+      [20, 80, "f", 60, 20], [21, 160, "f", 50], [22, 240, "f", 60, -20],
+      [24, 120, "b", 70], [24, 220, "f"], [26, 100, "f"], [26, 230, "b", 70],
+      [28, 140, "f", 45], [29, 180, "f", 45], [30, 220, "f", 45], [32, 160, "b", 80],
+      [34, 90, "f"], [34, 160, "f"], [34, 230, "f"], [36, 160, "f", 40],
+      [38, 120, "f"], [38, 200, "b", 70], [40, 240, "f"], [40, 80, "b", 70],
+      [42, 100, "f", 55, 15], [43, 160, "f", 50], [44, 220, "f", 55, -15], [46, 160, "f", 40],
+    ]) },
+    { name: "Waterfall", bpm: 116, song: 9, items: (k) => mgClawLevel(k, [
+      [6, 120, "f"], [7, 200, "f"], [8, 120, "f"], [9, 200, "f"], [10, 160, "b", 60],
+      [12, 80, "f", 50, 20], [12, 240, "f", 50, -20], [13, 160, "f", 40],
+      [14, 100, "b", 70], [14, 220, "b", 70], [15, 160, "f", 50],
+      [16, 70, "f"], [16.5, 130, "f"], [17, 190, "f"], [17.5, 250, "f"],
+      [19, 160, "b", 55], [19, 90, "f", 70], [19, 230, "f", 70],
+      [21, 120, "f", 45, 10], [21, 200, "f", 45, -10], [22, 160, "b", 80],
+      [23, 100, "f"], [23.5, 160, "f"], [24, 220, "f"], [24.5, 160, "f", 40],
+      [26, 80, "b", 70], [26, 160, "f"], [26, 240, "b", 70], [27, 160, "f", 40],
+      [28, 110, "f", 60, 25], [28, 210, "f", 60, -25], [29, 160, "b", 70],
+      [30, 70, "f"], [30.5, 120, "f"], [31, 170, "f"], [31.5, 220, "f"], [32, 260, "f"],
+      [34, 160, "f", 40], [34, 100, "b", 75], [34, 220, "b", 75], [36, 130, "f"], [36, 190, "f"],
+    ]) },
   ],
   // [beat, ring kind, turned by g sides]
   pool: [
@@ -569,6 +624,8 @@ const MG_SONGS = [
   { root: 55, prog: [0, 3, 6, 4], lead: [0, 3, 4, 7, 4, 3, 0, 3], scale: [0, 2, 3, 5, 7, 8, 10] },
   { root: 63, prog: [0, 4, 5, 3], lead: [4, 2, 0, 2, 4, -1, 7, -1], scale: [0, 2, 4, 7, 9, 12, 14] },
   { root: 58, prog: [0, 5, 6, 4], lead: [0, 2, 3, 5, 7, 5, 3, 2], scale: [0, 2, 3, 5, 7, 8, 10] },
+  { root: 62, prog: [0, 3, 4, 0], lead: [0, -1, 4, 2, 7, -1, 4, 2], scale: [0, 2, 4, 7, 9, 12, 14] },
+  { root: 57, prog: [0, 6, 3, 4], lead: [7, 4, 2, 4, 0, 2, 4, 7], scale: [0, 2, 3, 5, 7, 8, 10] },
 ];
 const mgAudio = { ctx: null, out: null, noise: null, muted: mgStore.get("muted") === "1" };
 
@@ -697,7 +754,7 @@ function mgReset(mode) {
              things: lvl.things.map((o) => Object.assign({ x: MG_W + 99 }, o)),
              x: g.key === "trail" ? 70 : 72, y: g.key === "trail" ? MG_GROUND : g.key === "sky" ? 90 : 110, vy: 0,
              flap: 0, ground: true, held: false, overAt: 0, rec, newBest: false, total: mgTreats(lvl),
-             ang: -Math.PI / 2 + MG_SIDE / 2, dir: 0 };
+             ang: -Math.PI / 2 + MG_SIDE / 2, dir: 0, missed: 0, trail: [], why: null };
 }
 
 // A press: flap, jump or start swimming up. Shared by touch, keys and the level checker.
@@ -757,6 +814,8 @@ function mgPhys(r, key, dt) {
     }
   } else if (key === "pool") {
     r.ang += r.dir * MG_POOL.turn * r.p.power * dt;
+  } else if (key === "claw") {
+    // nothing moves but the food and your swipe
   } else {
     r.vy += (r.held ? -260 * r.p.power : 200) * dt;
     r.vy = Math.max(-95, Math.min(85, r.vy));
@@ -808,6 +867,44 @@ function mgHit(r, key, things, pad) {
   return false;
 }
 
+// Claw Catch, one step: swipe through what's in the air. True when the try is over.
+const mgSegDist = (p, a, b) => {
+  const dx = b[0] - a[0], dy = b[1] - a[1], L = dx * dx + dy * dy;
+  const u = L ? Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / L)) : 0;
+  return Math.hypot(a[0] + dx * u - p[0], a[1] + dy * u - p[1]);
+};
+function mgClawStep(r) {
+  const pts = mg.down && mg.swipe ? mg.swipe : null;
+  const reach = 8 + r.st.size * 1.2;  // a bear's big paw sweeps wider than a mantis
+  if (pts && pts.length > 1) for (const q of pts) r.trail.push([q[0], q[1], r.rt]);
+  for (const o of r.things) {
+    if (o.gone) continue;
+    const at = mgClawAt(o, r);
+    if (!at) {
+      if (o.good && !o.missed && o.wx < r.dist) {
+        o.missed = true; r.missed++;
+        r.fx.push({ kind: "text", x: o.x0, y: MG_H - 14, text: "Got away!", life: .9 });
+        if (r.missed >= 3) { r.why = "missed"; return true; }
+      }
+      continue;
+    }
+    o.x = at[0]; o.y = at[1];
+    if (!pts || pts.length < 2) continue;
+    let hit = false;
+    for (let i = 1; i < pts.length && !hit; i++) hit = mgSegDist(at, pts[i - 1], pts[i]) < (o.good ? reach : 6);
+    if (!hit) continue;
+    if (!o.good) { r.why = "bee"; r.x = o.x; r.y = o.y; return true; }
+    o.gone = true;
+    r.score += o.pts;
+    mgSfx("treat");
+    r.fx.push({ kind: "text", x: o.x, y: o.y - 8, text: `+${o.pts}`, life: .8 });
+    for (let i = 0; i < 5; i++) r.fx.push({ kind: "spark", x: o.x, y: o.y, vx: (i - 2) * 18, vy: -20 - (i % 3) * 18, life: .5 });
+  }
+  if (pts && pts.length) mg.swipe = [pts[pts.length - 1]];
+  r.trail = r.trail.filter((q) => r.rt - q[2] < .15);
+  return false;
+}
+
 function mgStep(r, dt) {
   const key = mg.game.key;
   // Fixed steps: the same presses always give the same flight.
@@ -818,6 +915,11 @@ function mgStep(r, dt) {
     mgPress(r, key, mg.down);
     r.dir = mg.down ? mg.dir || 0 : 0;
     mgPhys(r, key, MG_DT);
+    if (key === "claw") {
+      if (mgClawStep(r)) mgEnd(r, false);
+      else if (r.dist >= r.len) mgEnd(r, true);
+      continue;
+    }
     for (const o of r.things) o.x = o.wx - r.dist + r.x;
     const b = mgBox(key, r);
     if (key === "pool") {
@@ -894,6 +996,12 @@ function mgDraw() {
     mgPoolDraw(c, r);
     for (const f of r.fx) mgFxDraw(c, f);
     c.restore();
+    mgHud(c, r);
+    return;
+  }
+  if (key === "claw") {
+    mgClawDraw(c, r);
+    for (const f of r.fx) mgFxDraw(c, f);
     mgHud(c, r);
     return;
   }
@@ -1072,6 +1180,68 @@ const MG_FOODS = [
 ];
 const mgFood = (slug) => MG_FOODS.find(([re]) => re.test(slug));
 
+// What each hunter catches: [name pattern, prey].
+const MG_PREY = [
+  [/bear/, "salmon"], [/osprey|bald_eagle|kingfisher|heron|egret|bittern|otter/, "fish"], [/raccoon/, "crayfish"],
+  [/crab|lobster|crayfish/, "snails"], [/frog|toad|mantis/, "flies"], [/./, "mice"],
+];
+const mgPrey = (slug) => MG_PREY.find(([re]) => re.test(slug))[1];
+
+function mgClawDraw(c, r) {
+  // A stream at the foot of a little waterfall, in the evening.
+  const sky = c.createLinearGradient(0, 0, 0, MG_H);
+  sky.addColorStop(0, "#f2b880"); sky.addColorStop(.55, "#9ad3ee"); sky.addColorStop(1, "#5aa0c8");
+  c.fillStyle = sky; c.fillRect(0, 0, MG_W, MG_H);
+  mgHills(c, r, 0, 130, 30, 70, "#6aae6e");
+  c.fillStyle = "#8a8f9e"; c.fillRect(196, 96, 70, 64); c.fillStyle = "#9fa4b2"; c.fillRect(196, 96, 70, 6);
+  c.fillStyle = "#7cc4e8"; c.fillRect(212, 96, 38, 64);
+  c.fillStyle = "#e8f8ff";
+  for (let i = 0; i < 5; i++) c.fillRect(215 + i * 7, 96 + ((r.phase * 70 + i * 17) % 56), 2, 8);
+  c.fillStyle = "rgba(255,255,255,.7)"; c.fillRect(206, 156, 50, 4);
+  c.fillStyle = "#3a8fb8"; c.fillRect(0, 160, MG_W, MG_H - 160);
+  c.fillStyle = "#7cc4e8";
+  for (let x = -mgScroll(r, 0, 20) + Math.floor(r.phase * 30) % 20; x < MG_W; x += 20) c.fillRect(x, 166 + (x % 3) * 8, 8, 2);
+  const prey = mgPrey(mg.species.slug);
+  for (const o of r.things) {
+    if (o.gone) continue;
+    const at = mgClawAt(o, r);
+    if (!at) continue;
+    const x = Math.round(at[0]), y = Math.round(at[1]), box = (dx, dy, w, h, col) => { c.fillStyle = col; c.fillRect(x + dx, y + dy, w, h); };
+    if (!o.good) {  // a bee
+      const flap = Math.floor(r.phase * 20) % 2;
+      box(-2, -6 - flap, 3, 3, "rgba(255,255,255,.85)"); box(1, -6 + flap, 3, 3, "rgba(255,255,255,.85)");
+      box(-4, -2, 9, 5, "#f2c14e"); box(-2, -2, 2, 5, "#2a2a2a"); box(2, -2, 2, 5, "#2a2a2a"); box(5, 0, 2, 1, "#2a2a2a");
+      continue;
+    }
+    if (prey === "salmon" || prey === "fish") {
+      const body = prey === "salmon" ? "#e8806a" : "#8fb0c8";
+      box(-6, -2, 11, 5, body); box(-8, -3, 3, 7, body); box(3, -1, 1, 1, "#222"); box(-4, 1, 8, 1, "rgba(255,255,255,.5)");
+    } else if (prey === "mice") {
+      box(-4, -2, 8, 5, "#9a9a9a"); box(3, -3, 2, 2, "#c8a0a0"); box(4, -1, 1, 1, "#222"); box(-7, 1, 3, 1, "#c8a0a0");
+    } else if (prey === "flies") {
+      box(-2, -1, 4, 3, "#2a2a2a"); box(-3, -3, 3, 2, "rgba(220,240,255,.85)"); box(1, -3, 3, 2, "rgba(220,240,255,.85)");
+    } else if (prey === "crayfish") {
+      box(-5, -1, 9, 3, "#c84a3a"); box(4, -3, 3, 2, "#c84a3a"); box(4, 2, 3, 2, "#c84a3a");
+    } else {  // snails
+      box(-4, -3, 7, 6, "#c8a070"); box(-2, -1, 3, 2, "#8a6040"); box(-6, 2, 11, 2, "#d8c8a8");
+    }
+  }
+  // Your claw marks: three streaks along the swipe.
+  if (r.trail.length > 1) {
+    for (const off of [-3, 0, 3]) {
+      c.strokeStyle = "rgba(255,255,255,.85)"; c.lineWidth = 1.5; c.beginPath();
+      r.trail.forEach(([x, y], i) => (i ? c.lineTo(x + off, y + off) : c.moveTo(x + off, y + off)));
+      c.stroke();
+    }
+  }
+  // You, on the bank, watching the stream.
+  const s = mg.species, raw = habSkin(mg.imgs[`/sprites/${encodeURIComponent(s.slug)}.png`], s.slug);
+  if (raw && raw.complete && raw.naturalWidth && !(r.mode === "over" && Math.floor(r.phase * 12) % 3 === 0)) {
+    c.fillStyle = "#7a9a50"; c.fillRect(0, 168, 60, 32);
+    c.save(); c.translate(30, 182); c.scale(-1, 1); c.drawImage(raw, -raw.naturalWidth / 2, -raw.naturalWidth); c.restore();
+  }
+}
+
 function mgPoolDraw(c, r) {
   const { cx, cy, thick } = MG_POOL, far = 240;
   const at = (a, d) => [cx + Math.cos(a) * d, cy + Math.sin(a) * d];
@@ -1196,7 +1366,9 @@ function mgHud(c, r) {
   if (r.rec.pct) { c.fillStyle = "#ffd28a"; c.fillRect(60 + Math.round(bw * r.rec.pct / 100) - 1, 5, 2, 10); }
   c.textAlign = "left"; c.font = "bold 11px system-ui, sans-serif";
   const food = g.key === "pool" ? mgFood(mg.species.slug)[1] : "";
-  const label = `${g.key === "river" ? "Score" : g.key === "sky" ? "Berries" : g.key === "pool" ? food[0].toUpperCase() + food.slice(1) : "Acorns"} ${r.score}`;
+  const word = g.key === "claw" ? mgPrey(mg.species.slug) : food;
+  const label = `${g.key === "river" ? "Score" : g.key === "sky" ? "Berries" : g.key === "trail" ? "Acorns" : word[0].toUpperCase() + word.slice(1)} ${r.score}` +
+    (g.key === "claw" ? `  ${"✕".repeat(Math.min(3, r.missed))}${"·".repeat(Math.max(0, 3 - r.missed))}` : "");
   c.fillStyle = "rgba(0,0,0,.35)"; c.fillRect(4, 18, c.measureText(label).width + 10, 16);
   c.fillStyle = "#fff"; c.fillText(label, 9, 30);
   c.font = "bold 10px system-ui, sans-serif"; c.textAlign = "right";
@@ -1211,13 +1383,13 @@ function mgHud(c, r) {
   if (r.mode === "ready") mgPanel(c, [[`Level ${mg.level + 1}: ${lvl.name}`, 14], [g.tip, 11], ["The course is the same every time. Learn it!", 10, "#cfe"], ["Tap to start", 11, "#ffd28a"]], top);
   else if (r.mode === "paused") mgPanel(c, [["Paused", 15], ["Tap to keep going", 11, "#ffd28a"]], top);
   else if (r.mode === "over") {
-    const lines = [["Bump!", 15], [`You made it ${r.pct}% of the way`, 12, "#ffd28a"]];
+    const lines = [[r.why === "bee" ? "Ouch, a bee!" : r.why === "missed" ? "Three got away!" : "Bump!", 15], [`You made it ${r.pct}% of the way`, 12, "#ffd28a"]];
     lines.push([r.newBest ? "That's your best yet!" : `Best: ${r.rec.pct}%`, 11, r.newBest ? "#9be59b" : "#fff"]);
     lines.push(["Tap to try again", 10, "#cfe"]);
     mgPanel(c, lines, Math.min(top, MG_H - 8 - (lines.length * 16 + 14)));
   } else if (r.mode === "done") {
     const lines = [["Level complete!", 15, "#9be59b"], [`${r.points} points as a ${mg.species.common_name}`, 12, "#ffd28a"],
-                   [`${r.score} of ${r.total} ${g.key === "pool" ? food : g.thing[1]} × ${r.p.tempo} speed bonus`, 10]];
+                   [`${r.score} of ${r.total} ${g.key === "pool" || g.key === "claw" ? word : g.thing[1]} × ${r.p.tempo} speed bonus`, 10]];
     if (g.key === "river" && r.litter) lines.push([`You cleaned up ${r.litter} piece${r.litter === 1 ? "" : "s"} of litter`, 10]);
     if (r.score >= r.total) lines.push(["You got every one!", 11, "#9be59b"]);
     if (r.coins) lines.push([`+${r.coins} coins 🪙`, 11, "#ffd28a"]);

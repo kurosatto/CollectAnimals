@@ -27,7 +27,7 @@ from .social import blocked_ids, friend_ids, revealed_species_ids
 
 router = APIRouter()
 
-LEVEL = re.compile(r"^(sky|trail|river|pool)\.[0-9]{1,2}$")
+LEVEL = re.compile(r"^(sky|trail|river|pool|claw)\.[0-9]{1,2}$")
 MAX_TREATS = 400  # more than any level has
 # Same as mgPhysOf in minigames.js: the game runs faster for a faster animal.
 TEMPO = [.75, .88, 1, 1.15, 1.3]
