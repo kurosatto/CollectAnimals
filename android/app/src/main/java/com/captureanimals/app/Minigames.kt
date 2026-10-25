@@ -1,20 +1,30 @@
 package com.captureanimals.app
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
+import android.content.pm.ActivityInfo
 import android.os.Handler
 import android.os.Looper
 import android.view.ViewGroup
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
@@ -27,10 +37,33 @@ import org.json.JSONObject
  * captured [animals]; each game unlocks once you have an animal of its kind.
  */
 @Composable
-fun MinigamesScreen(animals: List<HabitatAnimal>, modifier: Modifier = Modifier) {
+fun MinigamesScreen(animals: List<HabitatAnimal>, modifier: Modifier = Modifier, onPlaying: (Boolean) -> Unit = {}) {
     val context = LocalContext.current
-    val view = remember { MinigamesWebView(context) }
+    var playing by remember { mutableStateOf(false) }
+    val view = remember { MinigamesWebView(context) { playing = it } }
     DisposableEffect(view) { onDispose { view.destroy() } }
+    // While a game is on, it gets the whole screen: no app or system bars, and the
+    // screen stays the way it's held (turning it would restart the page). Back quits the game.
+    DisposableEffect(playing) {
+        onPlaying(playing)
+        val activity = context.findActivity()
+        if (playing && activity != null) {
+            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
+            WindowCompat.getInsetsController(activity.window, activity.window.decorView).apply {
+                systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                hide(WindowInsetsCompat.Type.systemBars())
+            }
+        }
+        onDispose {
+            if (playing && activity != null) {
+                activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                WindowCompat.getInsetsController(activity.window, activity.window.decorView)
+                    .show(WindowInsetsCompat.Type.systemBars())
+                onPlaying(false)
+            }
+        }
+    }
+    BackHandler(enabled = playing) { view.evaluateJavascript("mgQuit()", null) }
     val json = remember(animals) {
         JSONArray(animals.map { a ->
             JSONObject().put("caught", true).put("species", JSONObject()
@@ -46,7 +79,7 @@ fun MinigamesScreen(animals: List<HabitatAnimal>, modifier: Modifier = Modifier)
 
 /** A WebView serving minigames.html, its scripts and the sprites from the APK's assets. */
 @SuppressLint("SetJavaScriptEnabled", "ViewConstructor")
-class MinigamesWebView(context: Context) : WebView(context) {
+class MinigamesWebView(context: Context, private val onPlaying: (Boolean) -> Unit) : WebView(context) {
     private var ready = false
     private var pending: String? = null
     private val main = Handler(Looper.getMainLooper())
@@ -87,6 +120,11 @@ class MinigamesWebView(context: Context) : WebView(context) {
         }
 
 
+        /** A game started (true) or was left (false): minigames.js goes full screen. */
+        @JavascriptInterface fun playing(on: Boolean) {
+            main.post { onPlaying(on) }
+        }
+
         @JavascriptInterface fun ready() {
             main.post {
                 ready = true
@@ -95,4 +133,10 @@ class MinigamesWebView(context: Context) : WebView(context) {
             }
         }
     }
+}
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }

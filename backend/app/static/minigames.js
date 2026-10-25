@@ -241,6 +241,17 @@ function mgBuild() {
   .mg-stage canvas { display:block; width:100%; height:auto; border-radius:10px;
                      touch-action:none; user-select:none; -webkit-user-select:none; cursor:pointer; }
   .mg-bar { display:flex; justify-content:space-between; align-items:center; margin-top:6px; font-size:.85rem; }
+  /* Playing fills the whole screen. A phone held upright gets the game turned sideways,
+     so it's as big as it can be: turn the phone to play. */
+  .mg-stage.full { position:fixed; inset:0; z-index:1000; background:#0b120b; color:#e6eee6; }
+  .mg-stage.full .mg-turn { position:absolute; inset:0; padding:8px; box-sizing:border-box; display:flex;
+                            flex-direction:column; align-items:center; justify-content:center; container-type:size; }
+  .mg-stage.full canvas, .mg-stage.full .mg-bar { width:min(100cqw, (100cqh - 40px) * 1.6); }
+  .mg-stage.full canvas { border-radius:6px; }
+  @media (orientation: portrait) {
+    .mg-stage.full .mg-turn { inset:auto; top:0; left:100vw; width:100vh; width:100dvh; height:100vw;
+                              transform-origin:top left; transform:rotate(90deg); }
+  }
   .mg-back { font:inherit; font-size:.85rem; padding:4px 12px; border-radius:999px; border:1px solid var(--line);
              background:transparent; color:var(--accent); cursor:pointer; }`;
   document.head.append(css);
@@ -261,7 +272,9 @@ function mgBuild() {
   label();
   bar.append(back, name, mute);
   stage.id = "mg-stage";
-  stage.append(cv, bar);
+  const turn = mgEl("div", "mg-turn");
+  turn.append(cv, bar);
+  stage.append(turn);
   box.append(list, stage);
   const press = (on, dir) => {
     if (on && !mg.down) mgTap();
@@ -270,9 +283,8 @@ function mgBuild() {
   };
   cv.addEventListener("pointerdown", (e) => {
     e.preventDefault(); try { cv.setPointerCapture(e.pointerId); } catch {}
-    const b = cv.getBoundingClientRect();
     mg.swipe = [mgGamePt(cv, e)];
-    press(true, e.clientX < b.left + b.width / 2 ? -1 : 1);
+    press(true, mg.swipe[0][0] < MG_W / 2 ? -1 : 1);
   });
   // Claw Catch: the path of your finger while it's down.
   cv.addEventListener("pointermove", (e) => { if (mg.down && mg.swipe) mg.swipe.push(mgGamePt(cv, e)); });
@@ -289,7 +301,27 @@ function mgBuild() {
 
 function mgGamePt(cv, e) {
   const b = cv.getBoundingClientRect();
+  // Turned sideways (see .mg-stage.full): the game's left is the top of the screen.
+  if (mgTurned()) return [(e.clientY - b.top) / b.height * MG_W, (b.right - e.clientX) / b.width * MG_H];
   return [(e.clientX - b.left) / b.width * MG_W, (e.clientY - b.top) / b.height * MG_H];
+}
+const mgTurned = () => document.getElementById("mg-stage")?.classList.contains("full") && matchMedia("(orientation: portrait)").matches;
+
+// Full screen while playing: the browser's own full screen where it has one (and
+// sideways on phones that allow it), else just the page covered. The Android app
+// hides its bars too (AndroidMinigames.playing).
+function mgFull(on) {
+  const stage = document.getElementById("mg-stage");
+  stage.classList.toggle("full", on);
+  document.documentElement.style.overflow = on ? "hidden" : "";
+  try { window.AndroidMinigames?.playing(on); } catch {}
+  try {
+    if (on && !document.fullscreenElement && stage.requestFullscreen) {
+      stage.requestFullscreen({ navigationUI: "hide" }).then(() => screen.orientation?.lock?.("landscape")).catch(() => {});
+    } else if (!on && document.fullscreenElement) {
+      screen.orientation?.unlock?.(); document.exitFullscreen().catch(() => {});
+    }
+  } catch {}
 }
 
 function mgList() {
@@ -373,8 +405,8 @@ function mgStart(g, s, level) {
   document.getElementById("mg-list").classList.add("hidden");
   document.getElementById("mg-stage").classList.remove("hidden");
   document.getElementById("mg-playing").textContent = `Playing as ${s.common_name}`;
+  mgFull(true);
   mgReset("ready");
-  document.getElementById("mg-stage").scrollIntoView?.({ block: "nearest" });
   mgWake();
 }
 
@@ -382,6 +414,7 @@ function mgQuit() {
   cancelAnimationFrame(mg.raf); mg.raf = 0;
   mgMusicStop(mg.run);
   mg.run = null; mg.down = false;
+  mgFull(false);
   document.getElementById("mg-stage").classList.add("hidden");
   document.getElementById("mg-list").classList.remove("hidden");
   mgList();
@@ -498,31 +531,31 @@ function mgClawAt(o, r) {
 // the tempo is the difficulty. [beat, gap middle, gap size] for gates.
 const MG_LEVELS = {
   sky: [
-    { name: "Meadow Breeze", bpm: 112, song: 0, items: (k) => mgSkyLevel(k, [
-      [8, 100, 72], [12, 85, 72], [16, 110, 72], [20, 95, 72],
-      [24, 70, 72], [28, 60, 70], [32, 75, 70],
-      [38, 120, 70], [42, 130, 70], [46, 115, 70],
-      [52, 90, 68], [55, 80, 68], [58, 70, 68], [61, 60, 68],
-      [66, 100, 68], [70, 130, 68], [74, 95, 68], [78, 60, 68], [82, 100, 68], [86, 110, 68], [90, 80, 68],
+    { name: "Meadow Breeze", bpm: 122, song: 0, items: (k) => mgSkyLevel(k, [
+      [8, 100, 60], [12, 85, 60], [16, 110, 60], [20, 95, 60],
+      [24, 70, 60], [28, 60, 58], [32, 75, 58],
+      [38, 120, 58], [42, 130, 58], [46, 115, 58],
+      [52, 90, 56], [55, 80, 56], [58, 70, 56], [61, 60, 56],
+      [66, 100, 56], [70, 130, 56], [74, 95, 56], [78, 60, 56], [82, 100, 56], [86, 110, 56], [90, 80, 56],
     ], [[14, 145], [26, 140], [40, 52], [64, 140], [76, 140]]) },
-    { name: "Storm Front", bpm: 128, song: 1, items: (k) => mgSkyLevel(k, [
-      [8, 100, 62], [12, 70, 62], [16, 110, 62], [20, 70, 62], [24, 110, 62],
-      [28, 130, 60], [30, 114, 60], [32, 98, 60], [34, 82, 60], [36, 66, 60],
-      [40, 60, 60], [43, 100, 60], [46, 60, 60], [49, 100, 60], [52, 60, 60],
-      [56, 140, 58], [58, 130, 58], [60, 120, 58], [62, 110, 58],
-      [66, 50, 58], [69, 90, 58], [72, 130, 58], [75, 90, 58], [78, 50, 58],
-      [82, 100, 58], [84, 100, 58], [86, 100, 58], [90, 70, 58], [94, 120, 58], [98, 95, 58], [102, 95, 58],
+    { name: "Storm Front", bpm: 138, song: 1, items: (k) => mgSkyLevel(k, [
+      [8, 100, 50], [12, 70, 50], [16, 110, 50], [20, 70, 50], [24, 110, 50],
+      [28, 130, 48], [30, 114, 48], [32, 98, 48], [34, 82, 48], [36, 66, 48],
+      [40, 60, 48], [43, 100, 48], [46, 60, 48], [49, 100, 48], [52, 60, 48],
+      [56, 140, 50], [58, 130, 50], [60, 120, 48], [62, 110, 48],
+      [66, 50, 46], [69, 90, 46], [72, 130, 46], [75, 90, 46], [78, 50, 46],
+      [82, 100, 46], [84, 100, 46], [86, 100, 46], [90, 70, 46], [94, 120, 46], [98, 95, 46], [102, 95, 46],
     ], [[38, 100], [54, 100], [64, 75], [80, 120], [88, 50]]) },
   ],
   trail: [
-    { name: "Forest Path", bpm: 120, song: 2, items: (k) => mgTrailLevel(k, [
+    { name: "Forest Path", bpm: 136, song: 2, items: (k) => mgTrailLevel(k, [
       ["acorns", 4], ["rock", 8], ["rock", 12], ["log", 16], ["acorns", 19],
       ["rock", 22], ["log", 26], ["branch", 30], ["acorns", 33], ["rock", 36],
       ["stump", 40], ["rock", 44], ["rock", 47], ["branch", 52], ["log", 56],
       ["stump", 60], ["acorns", 63], ["rock", 66], ["log", 70], ["branch", 74], ["rock", 78],
       ["log", 82], ["rock", 85], ["rock", 88],
     ]) },
-    { name: "Rocky Ridge", bpm: 132, song: 3, items: (k) => mgTrailLevel(k, [
+    { name: "Rocky Ridge", bpm: 150, song: 3, items: (k) => mgTrailLevel(k, [
       ["rock", 8], ["rock", 11], ["rock", 14], ["log", 18], ["branch", 22],
       ["stump", 26], ["rock", 30], ["branch", 33], ["log", 37], ["rock", 40],
       ["stump", 44], ["stump", 48], ["branch", 52], ["rock", 56], ["rock", 59], ["rock", 62],
@@ -531,23 +564,23 @@ const MG_LEVELS = {
     ]) },
   ],
   river: [
-    { name: "Lazy Creek", bpm: 100, song: 4, items: (k) => mgRiverLevel(k,
-      [[8, 110, 74], [13, 90, 74], [18, 130, 74], [24, 110, 74], [30, 80, 74],
-       [36, 120, 74], [42, 140, 74], [48, 100, 72], [53, 70, 72], [59, 110, 72],
-       [65, 140, 72], [71, 100, 72], [76, 120, 72]],
+    { name: "Lazy Creek", bpm: 112, song: 4, items: (k) => mgRiverLevel(k,
+      [[8, 110, 62], [13, 90, 62], [18, 130, 62], [24, 110, 62], [30, 80, 62],
+       [36, 120, 62], [42, 140, 62], [48, 100, 60], [53, 70, 60], [59, 110, 60],
+       [65, 140, 60], [71, 100, 60], [76, 120, 60]],
       [[10.5, 70], [15.5, 150], [21, 80], [33, 150], [39, 70], [50.5, 150], [62, 70], [68, 80]],
       [[15.5, 100], [27, 90], [45, 120], [56, 90], [73.5, 110]]) },
-    { name: "Rapids", bpm: 116, song: 5, items: (k) => mgRiverLevel(k,
-      [[8, 110, 64], [12, 80, 64], [16, 120, 64], [20, 150, 64], [24, 120, 64], [28, 80, 64],
-       [33, 60, 62], [36, 90, 62], [39, 120, 62], [42, 150, 62],
-       [47, 110, 62], [50, 110, 62], [53, 70, 62], [56, 110, 62], [59, 150, 62],
-       [64, 100, 60], [67, 70, 60], [70, 100, 60], [73, 130, 60], [76, 100, 60]],
+    { name: "Rapids", bpm: 128, song: 5, items: (k) => mgRiverLevel(k,
+      [[8, 110, 54], [12, 80, 54], [16, 120, 54], [20, 150, 54], [24, 120, 54], [28, 80, 54],
+       [33, 60, 52], [36, 90, 52], [39, 120, 52], [42, 150, 52],
+       [47, 110, 52], [50, 110, 52], [53, 70, 52], [56, 110, 52], [59, 150, 52],
+       [64, 100, 50], [67, 70, 50], [70, 100, 50], [73, 130, 50], [76, 100, 50]],
       [[10, 150], [14, 60], [22, 60], [30.5, 150], [44.5, 70], [61.5, 70], [74.5, 60]],
       [[18, 140], [34.5, 150], [48.5, 150], [68.5, 130], [79, 90]]) },
   ],
   // [beat, x, "f" food or "b" bee, height of the leap, sideways drift]
   claw: [
-    { name: "Salmon Run", bpm: 100, song: 8, items: (k) => mgClawLevel(k, [
+    { name: "Salmon Run", bpm: 112, song: 8, items: (k) => mgClawLevel(k, [
       [6, 160, "f"], [8, 100, "f"], [10, 220, "f"], [12, 160, "f", 50],
       [14, 90, "f"], [14, 230, "f"], [16, 160, "b", 70], [18, 110, "f"], [18, 210, "f"],
       [20, 80, "f", 60, 20], [21, 160, "f", 50], [22, 240, "f", 60, -20],
@@ -556,8 +589,9 @@ const MG_LEVELS = {
       [34, 90, "f"], [34, 160, "f"], [34, 230, "f"], [36, 160, "f", 40],
       [38, 120, "f"], [38, 200, "b", 70], [40, 240, "f"], [40, 80, "b", 70],
       [42, 100, "f", 55, 15], [43, 160, "f", 50], [44, 220, "f", 55, -15], [46, 160, "f", 40],
+      [11, 80, "b", 70], [20, 240, "b", 80], [30, 80, "b", 75], [36, 250, "b", 70], [45, 70, "b", 70],
     ]) },
-    { name: "Waterfall", bpm: 116, song: 9, items: (k) => mgClawLevel(k, [
+    { name: "Waterfall", bpm: 130, song: 9, items: (k) => mgClawLevel(k, [
       [6, 120, "f"], [7, 200, "f"], [8, 120, "f"], [9, 200, "f"], [10, 160, "b", 60],
       [12, 80, "f", 50, 20], [12, 240, "f", 50, -20], [13, 160, "f", 40],
       [14, 100, "b", 70], [14, 220, "b", 70], [15, 160, "f", 50],
@@ -569,22 +603,25 @@ const MG_LEVELS = {
       [28, 110, "f", 60, 25], [28, 210, "f", 60, -25], [29, 160, "b", 70],
       [30, 70, "f"], [30.5, 120, "f"], [31, 170, "f"], [31.5, 220, "f"], [32, 260, "f"],
       [34, 160, "f", 40], [34, 100, "b", 75], [34, 220, "b", 75], [36, 130, "f"], [36, 190, "f"],
+      [8, 250, "b", 70], [13, 70, "b", 75], [17, 60, "b", 80], [25, 250, "b", 70], [31, 70, "b", 80], [33, 160, "b", 60],
     ]) },
   ],
   // [beat, ring kind, turned by g sides]
   pool: [
-    { name: "Low Tide", bpm: 96, song: 6, items: (k) => mgPoolLevel(k, [
+    { name: "Low Tide", bpm: 108, song: 6, items: (k) => mgPoolLevel(k, [
       [8, "c", 0], [12, "c", 1], [16, "c", 2], [20, "c", 3], [24, "v", 1], [28, "v", 2],
       [32, "c", 3], [36, "c", 0], [40, "half", 4], [44, "half", 1], [48, "alt", 0], [50, "alt", 1], [52, "alt", 0],
-      [56, "c", 3], [60, "c", 5], [64, "v", 0], [68, "c", 2], [72, "half", 3], [76, "c", 0], [80, "c", 3],
+      [56, "c", 3], [58, "c", 4], [60, "c", 5], [62, "c", 0], [64, "v", 0], [66, "v", 1], [68, "c", 2], [70, "c", 5],
+      [72, "half", 3], [74, "half", 0], [76, "c", 0], [78, "c", 1], [80, "c", 3], [82, "alt", 0], [83.5, "alt", 1], [85, "alt", 0],
     ]) },
-    { name: "Rising Tide", bpm: 112, song: 7, items: (k) => mgPoolLevel(k, [
+    { name: "Rising Tide", bpm: 126, song: 7, items: (k) => mgPoolLevel(k, [
       [8, "c", 0], [10, "c", 1], [12, "c", 2], [14, "c", 3], [16, "c", 4], [18, "c", 5],
       [22, "alt", 0], [23.5, "alt", 1], [25, "alt", 0], [26.5, "alt", 1], [28, "alt", 0],
       [32, "two", 3], [34, "two", 5], [36, "two", 1], [38, "two", 3],
       [42, "c", 0], [44, "c", 5], [46, "c", 4], [48, "c", 3], [50, "c", 2], [52, "c", 1],
       [56, "v", 0], [58, "v", 1], [60, "v", 2], [62, "half", 0], [65, "half", 3], [68, "c", 4],
-      [71, "alt", 1], [72.5, "alt", 0], [74, "alt", 1], [76, "c", 3], [79, "c", 0], [82, "c", 3],
+      [71, "alt", 1], [72.5, "alt", 0], [74, "alt", 1], [76, "c", 3], [78, "two", 0], [80, "c", 0], [82, "c", 3],
+      [84, "c", 2], [85.5, "c", 1], [87, "c", 0], [88.5, "c", 5], [90, "v", 2], [92, "half", 5], [94, "two", 2], [96, "c", 5],
     ]) },
   ],
 };
