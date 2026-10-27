@@ -46,4 +46,5 @@ also serves the policy at `/privacy` and the delete page at `/delete-account`.
 
 - A Google Play developer account ($25 once).
 - A closed test with at least 12 testers for 14 days before going public.
-- Store listing text, screenshots and the 512 px icon (docs/store/icon-512.png, from tools/make_app_icons.py).
+- Store listing text and screenshots. The 512 px icon is docs/store/icon-512.png (tools/make_app_icons.py) and the
+  1024x500 feature graphic is docs/store/feature-graphic.png (tools/make_store_graphics.py).
