@@ -4,6 +4,7 @@ Run from the repo root: python tools/make_store_graphics.py
 Everything is drawn on a 256x125 canvas and scaled up 4x with nearest-neighbour, so it
 keeps the crisp pixel look of the game. Writes docs/store/feature-graphic.png.
 """
+import json
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
@@ -21,11 +22,20 @@ INK, CREAM, SHADOW = (40, 52, 40), (255, 248, 230), (196, 120, 60)
 
 # (sprite, x, bottom y): animals standing on the grass, a flier or two in the sky.
 CAST = [("red_fox", 160, GROUND + 6), ("raccoon", 191, GROUND + 5), ("california_quail", 216, GROUND + 4),
-        ("mule_deer", 241, GROUND + 7), ("bald_eagle", 222, 44), ("annas_hummingbird", 168, 38)]
+        ("mule_deer", 241, GROUND + 7), ("barn_swallow:fly", 222, 44), ("annas_hummingbird", 168, 38)]
 
 
 def sprite(name):
-    im = Image.open(SPRITES / f"{name}.png").convert("RGBA")
+    """A sprite by slug; "slug:fly" takes the first flying frame from its animation sheet
+    (species/sprites/anim: 40x40 frames, one row per action in index.json's "rows")."""
+    slug, _, act = name.partition(":")
+    if act:
+        rows = json.loads((SPRITES / "anim" / "index.json").read_text())["rows"]
+        sheet = Image.open(SPRITES / "anim" / f"{slug}.png").convert("RGBA")
+        r = rows.index(act)
+        im = sheet.crop((0, r * 40, 40, r * 40 + 40))
+    else:
+        im = Image.open(SPRITES / f"{slug}.png").convert("RGBA")
     return im.crop(im.getbbox())
 
 
