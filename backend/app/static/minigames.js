@@ -99,7 +99,7 @@ function mgShopBar(list) {
   list.append(bar);
   if (!open) return;
   const shop = mgEl("div", "mg-shop");
-  shop.append(mgEl("div", "mg-how", "Finish levels to earn coins. Skins recolor any of your animals; decorations go in your habitat."));
+  shop.append(mgEl("div", "mg-how", "Finish levels to earn coins. Skins recolor your animal in the games; decorations go in your habitat."));
   for (const it of d.items) {
     const row = mgEl("div", "mg-item");
     row.append(mgEl("span", null, `${it.kind === "skin" ? "🎨" : "🌼"} ${it.name}`), mgEl("span", "muted", it.kind === "skin" ? "Skin" : "Habitat"));
@@ -118,8 +118,9 @@ function mgShopBar(list) {
   list.append(shop);
 }
 
-// Under the animal picker: its look, from the skins you own.
-function mgLooks(slug) {
+// Under the animal picker: its look, from the skins you own. Picking one recolors the
+// animal in the picker straight away (onPick), then saves it on the server.
+function mgLooks(slug, onPick) {
   const d = mg.shop, owned = d ? d.items.filter((i) => i.kind === "skin" && i.owned) : [];
   const box = mgEl("div", "mg-looks");
   if (!owned.length) return box;
@@ -127,10 +128,27 @@ function mgLooks(slug) {
   box.append(mgEl("i", null, "Look"));
   for (const [skin, name] of [[null, "Normal"], ...owned.map((i) => [i.key.split(".")[1], i.name])]) {
     const b = mgEl("button", "mg-tab" + (skin === now ? " on" : ""), name);
-    b.onclick = () => mgShopDo("/games/shop/skin", { species: slug, skin });
+    b.onclick = () => {
+      if (skin) d.skins[slug] = skin; else delete d.skins[slug];
+      habLookSet(d);
+      box.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
+      onPick?.();
+      mgApi("POST", "/games/shop/skin", { species: slug, skin }).then((r) => { mg.shop = r; habLookSet(r); }).catch((e) => alert(e.message));
+    };
     box.append(b);
   }
   return box;
+}
+
+// A sprite's URL in a skin's colours (a data URL), or the plain sprite; again() runs
+// once the sprite has loaded if it wasn't yet.
+function mgSkinned(slug, skin, again) {
+  const url = `/sprites/${encodeURIComponent(slug)}.png`;
+  if (!skin) return url;
+  const img = mgImg(mg.imgs, url);
+  if (!img.complete || !img.naturalWidth) { img.addEventListener("load", () => again?.(), { once: true }); return url; }
+  const cv = habSkin(img, skin);
+  return cv === img ? url : (cv.dataUrl ||= cv.toDataURL());
 }
 
 // ---- Leaderboards ----------------------------------------------------------------
@@ -346,7 +364,7 @@ function mgList() {
     const stats = mgEl("div", "mg-stats");
     let looks = mgEl("div");
     const showStats = () => {
-      const fresh = mgLooks(pick.slug);
+      const fresh = mgLooks(pick.slug, paint);
       looks.replaceWith(fresh); looks = fresh;
       const st = mgStats(pick.slug, g.key);
       stats.innerHTML = "";
@@ -357,12 +375,16 @@ function mgList() {
       });
     };
     const play = mgEl("button", "mg-play", "Play");
+    const imgs = [];
+    // The picked animal in the colour it will play in.
+    const paint = () => imgs.forEach(([s, img]) => { img.src = mgSkinned(s.slug, s === pick ? habLook.skins[s.slug] : null, paint); });
     for (const s of players) {
       const img = mgEl("img", s === pick ? "on" : "");
+      imgs.push([s, img]);
       img.src = `/sprites/${encodeURIComponent(s.slug)}.png`;
       img.alt = img.title = s.common_name;
       img.onclick = () => {
-        pick = s; name.textContent = s.common_name; mgStore.set("pick." + g.key, s.slug); showStats();
+        pick = s; name.textContent = s.common_name; mgStore.set("pick." + g.key, s.slug); showStats(); paint();
         row.querySelectorAll("img").forEach((i) => i.classList.toggle("on", i === img));
       };
       row.append(img);
@@ -385,7 +407,7 @@ function mgList() {
     });
     play.onclick = () => mgStart(g, pick, lv);
     foot.append(name, play);
-    showStats();
+    showStats(); paint();
     const board = mgEl("div", "mg-board");
     mgBoard(board, `${g.key}.${lv}`, mgStore.get("board") || "all");
     card.append(row, stats, looks, levels, foot, board);
@@ -1272,7 +1294,7 @@ function mgClawDraw(c, r) {
     }
   }
   // You, on the bank, watching the stream.
-  const s = mg.species, raw = habSkin(mg.imgs[`/sprites/${encodeURIComponent(s.slug)}.png`], s.slug);
+  const s = mg.species, raw = habSkin(mg.imgs[`/sprites/${encodeURIComponent(s.slug)}.png`], habLook.skins[s.slug]);
   if (raw && raw.complete && raw.naturalWidth && !(r.mode === "over" && Math.floor(r.phase * 12) % 3 === 0)) {
     c.fillStyle = "#7a9a50"; c.fillRect(0, 168, 60, 32);
     c.save(); c.translate(30, 182); c.scale(-1, 1); c.drawImage(raw, -raw.naturalWidth / 2, -raw.naturalWidth); c.restore();
@@ -1314,7 +1336,7 @@ function mgPoolDraw(c, r) {
   for (let i = 0; i < 6; i++) c.lineTo(...at(i * MG_SIDE, rock - 6));
   c.closePath(); c.fill();
   // You, clinging to the rock with your back to the waves.
-  const s = mg.species, raw = habSkin(mg.imgs[`/sprites/${encodeURIComponent(s.slug)}.png`], s.slug);
+  const s = mg.species, raw = habSkin(mg.imgs[`/sprites/${encodeURIComponent(s.slug)}.png`], habLook.skins[s.slug]);
   if (!raw || !raw.complete || !raw.naturalWidth || (r.mode === "over" && Math.floor(r.phase * 12) % 3 === 0)) return;
   const [x, y] = at(r.ang, MG_POOL.r - 9), F = raw.naturalWidth, k = 26 / F;
   c.save(); c.translate(x, y); c.rotate(r.ang + Math.PI / 2); c.scale(k, k);
@@ -1336,8 +1358,8 @@ function mgFrame(sheet, slug, row, frame, F) {
 
 function mgPlayer(c, r) {
   const s = mg.species, key = mg.game.key;
-  const raw = habSkin(mg.imgs[`/sprites/${encodeURIComponent(s.slug)}.png`], s.slug);
-  const sheet = habSkin(mg.sheets[`/sprites/anim/${encodeURIComponent(s.slug)}.png`], s.slug);
+  const raw = habSkin(mg.imgs[`/sprites/${encodeURIComponent(s.slug)}.png`], habLook.skins[s.slug]);
+  const sheet = habSkin(mg.sheets[`/sprites/anim/${encodeURIComponent(s.slug)}.png`], habLook.skins[s.slug]);
   const acts = (habAnimIdx && habAnimIdx.acts[s.slug]) || [];
   const framed = sheet && sheet.complete && sheet.naturalWidth && acts.length;
   const cyc = (t) => ((Math.floor(t) % 4) + 4) % 4;
