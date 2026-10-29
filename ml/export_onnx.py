@@ -29,7 +29,9 @@ from torch import nn
 from torchvision import transforms
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from fetch_inat import load_states  # noqa: E402
+from fetch_inat import STATES_JSON, load_states  # noqa: E402
+
+SPECIES_DIR = STATES_JSON.parent
 
 
 class WithSoftmax(nn.Module):
@@ -97,6 +99,19 @@ def main():
                    for st in load_states()],
         "val_top1": ckpt.get("val_top1"),
     }
+    # Pets and pests, each state's animals without a Field Guide entry yet, and people:
+    # recognised on the phone as on the server, but none earns a badge.
+    household_csv = SPECIES_DIR / "household.csv"
+    if household_csv.is_file():
+        with open(household_csv, newline="", encoding="utf-8") as fh:
+            meta["household"] = [{k: r[k] for k in ("slug", "common_name", "kind", "note")}
+                                 for r in csv.DictReader(fh) if r["slug"] in classes]
+    extras_json = SPECIES_DIR / "model_extras.json"
+    if extras_json.is_file():
+        meta["extras"] = {code: [s for s in slugs if s in classes]
+                          for code, slugs in json.loads(extras_json.read_text(encoding="utf-8"))["states"].items()}
+    if "person" in classes:
+        meta["person_label"] = "person"
     (out / "model.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
     print(f"wrote {out / 'model.json'}")
 

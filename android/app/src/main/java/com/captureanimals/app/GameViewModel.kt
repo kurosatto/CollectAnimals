@@ -383,13 +383,18 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         // Cropping keeps a part, so decode bigger to keep enough pixels for the model.
         val bitmap = ImageLoader.load(app, uri, minShortSide = if (crop == null) info.resize else info.resize * 3).cropTo(crop)
         // Five guesses: three are shown, all five are offered if the player corrects the model.
-        // Only the chosen state's animals count, as on the website.
-        val allowed = info.species.map { it.slug }.toSet() + info.otherLabel
-        val preds = classifier(info).predict(ImageLoader.toRgb(bitmap), k = 5, allowed = allowed)
+        // Only the chosen state's animals count, as on the website. Pets and pests, the
+        // state's animals that aren't in its Field Guide yet, and people are recognised
+        // too, so a photo of one isn't squeezed onto a look-alike, but none earns a badge.
         val bySlug = info.species.associateBy { it.slug }
+        val pets = info.household.filter { it.slug !in bySlug }.associateBy { it.slug }
+        val unlisted = info.extras[code].orEmpty() - bySlug.keys - pets.keys
+        val allowed = bySlug.keys + pets.keys + unlisted + listOfNotNull(info.personLabel) + info.otherLabel
+        val preds = classifier(info).predict(ImageLoader.toRgb(bitmap), k = 5, allowed = allowed)
         val top = preds.first()
         val species = bySlug[top.label]
-        val matched = species != null && top.probability >= info.matchThreshold
+        val sure = top.probability >= info.matchThreshold
+        val matched = species != null && sure
 
         // A state unlocks with its first captured animal.
         val newlyUnlocked = matched && code !in ui.unlockedStates()
@@ -408,6 +413,10 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             matched && newBadge -> "You captured a ${species!!.commonName}! New badge unlocked."
             matched -> "Another ${species!!.commonName} for your collection."
             species != null -> "Might be a ${species.commonName}, but we're not sure. Try a clearer photo!"
+            sure && top.label in pets -> pets.getValue(top.label).message()
+            sure && top.label == info.personLabel -> "That looks like a person! Only wild animals go in the Field Guide."
+            sure && top.label in unlisted ->
+                "That looks like a wild animal that isn't in the $stateName collection yet. It's coming soon!"
             else -> "We couldn't match this to any animal in the $stateName collection."
         }
         if (newlyUnlocked) message = "📍 You unlocked $stateName! $message"
@@ -423,7 +432,8 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             newBadge = newBadge,
             message = message,
             guesses = preds.take(3).map {
-                RankedGuess(it.label, bySlug[it.label]?.commonName ?: "Something else", it.probability)
+                RankedGuess(it.label, bySlug[it.label]?.commonName ?: pets[it.label]?.commonName ?: "Something else",
+                    it.probability)
             },
             choices = preds.mapNotNull { p -> bySlug[p.label]?.let { RankedGuess(p.label, it.commonName, p.probability) } },
             state = code,
