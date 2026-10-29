@@ -34,6 +34,9 @@ class User(Base):
     coins: Mapped[int | None] = mapped_column(nullable=True, default=0)
     coins_day: Mapped[str | None] = mapped_column(String(10), nullable=True)
     coins_today: Mapped[int | None] = mapped_column(nullable=True, default=0)
+    # "Share photos to teach the game": photos the player names after "None of
+    # these" are kept for training the identifier. Off unless they turn it on.
+    share_training_photos: Mapped[bool | None] = mapped_column(nullable=True, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
@@ -127,6 +130,27 @@ class IdFeedback(Base):
     source: Mapped[str] = mapped_column(String(16))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
+class NamedPhoto(Base):
+    """After "None of these" the player told us what the animal really was, picked
+    from the big name list (species/animal_names.json): a species' scientific name
+    or a broad group ("group:beetle"). These are labels for retraining the model,
+    never a badge. image_path is a small training copy of the photo, kept only
+    while the player shares photos to teach the game. capture_id is None for
+    answers the phone saved offline and sent later."""
+
+    __tablename__ = "named_photos"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    capture_id: Mapped[int | None] = mapped_column(ForeignKey("captures.id"), nullable=True, unique=True)
+    label: Mapped[str] = mapped_column(String(96))
+    # What the model said (a class slug), and the state the photo was played in.
+    predicted_label: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    state: Mapped[str | None] = mapped_column(String(2), nullable=True)
+    image_path: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
 class Badge(Base):

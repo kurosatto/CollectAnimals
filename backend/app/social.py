@@ -23,7 +23,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import and_, delete, func, or_, select
 from sqlalchemy.orm import Session
 
-from . import goals, notices, places
+from . import goals, naming, notices, places
 from .avatars import avatar_of
 from .scoring import to_local
 from . import states
@@ -500,8 +500,13 @@ def update_settings(body: SettingsIn, user: User = Depends(current_user),
         user.is_private = body.is_private
     if body.avatar is not None:
         user.avatar = body.avatar
+    if body.share_training_photos is not None:
+        if not body.share_training_photos and user.share_training_photos:
+            naming.forget_photos(db, user.id)
+        user.share_training_photos = body.share_training_photos
     db.commit()
-    return {"show_in_feed": user.show_in_feed is not False, "is_private": bool(user.is_private)}
+    return {"show_in_feed": user.show_in_feed is not False, "is_private": bool(user.is_private),
+            "share_training_photos": bool(user.share_training_photos)}
 
 
 def _visible_photo(db: Session, photo_id: int, user: User) -> AlbumPhoto:

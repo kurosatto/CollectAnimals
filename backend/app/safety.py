@@ -26,7 +26,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import delete, func, or_, select
 from sqlalchemy.orm import Session
 
-from . import notices
+from . import naming, notices
 from .auth import current_user, verify_password
 from .config import ROOT, settings
 from .db import get_db
@@ -76,6 +76,7 @@ def delete_account(db: Session, user: User) -> None:
     db.execute(delete(AlbumPhoto).where(AlbumPhoto.user_id == uid))
     db.execute(delete(Badge).where(Badge.user_id == uid))
     db.execute(delete(IdFeedback).where(IdFeedback.user_id == uid))
+    naming.forget_photos(db, uid, delete_rows=True)
     storage = get_storage()
     for path in db.scalars(select(Capture.image_path).where(Capture.user_id == uid)):
         if path:

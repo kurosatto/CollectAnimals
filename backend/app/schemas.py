@@ -34,6 +34,8 @@ class UserOut(BaseModel):
     created_at: datetime
     show_in_feed: bool | None = True
     is_private: bool | None = False
+    # Photos the player names after "None of these" are kept to train the identifier.
+    share_training_photos: bool | None = False
     # Profile picture number: /sprites/avatar_<n>.png
     avatar: int | None = 1
     # States the player has captured an animal in, plus their main state.
@@ -47,6 +49,7 @@ class SettingsIn(BaseModel):
     is_private: bool | None = None
     # Profile picture 1-10 (app/avatars.py).
     avatar: int | None = Field(None, ge=1, le=10)
+    share_training_photos: bool | None = None
 
 
 class UserUpdate(BaseModel):

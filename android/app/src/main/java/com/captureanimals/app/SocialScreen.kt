@@ -397,6 +397,14 @@ fun AccountDialog(state: UiState, vm: GameViewModel, onDismiss: () -> Unit) {
                         }
                     }
                 }
+                // Opt-in, off by default: photos named after "None of these" help train the identifier.
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    androidx.compose.material3.Switch(acct.shareTrainingPhotos, onCheckedChange = vm::setShareTraining)
+                    Spacer(Modifier.size(10.dp))
+                    Text("Share photos to teach the game", style = MaterialTheme.typography.titleSmall)
+                }
+                Text("When you tell the game what an animal really was, a small copy of that photo (no location) " +
+                    "is kept to help it learn. Turning this off deletes those copies.", style = MaterialTheme.typography.bodySmall)
                 BlockedPlayers()
                 PrivacyLink()
                 DeleteAccount(vm, onDismiss)

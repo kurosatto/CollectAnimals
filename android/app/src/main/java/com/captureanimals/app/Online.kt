@@ -140,6 +140,7 @@ object Online {
     suspend fun me(): Account = Account.parse(JSONObject(call("GET", "/me")))
     suspend fun setState(code: String) { call("PATCH", "/me", JSONObject().put("state", code)) }
     suspend fun setAvatar(n: Int) { call("PATCH", "/me/settings", JSONObject().put("avatar", n)) }
+    suspend fun setShareTraining(on: Boolean) { call("PATCH", "/me/settings", JSONObject().put("share_training_photos", on)) }
 
     // --- Captures ---------------------------------------------------------------------
 
@@ -174,6 +175,31 @@ object Online {
         place?.let { body.put("latitude", it.first).put("longitude", it.second) }
         return JSONObject(call("PUT", "/captures/$captureId/where-when", body))
     }
+
+    /** "What was it?": names an animal that doesn't count for a badge; returns the thank-you message. */
+    suspend fun nameCapture(captureId: Int, label: String): String =
+        JSONObject(call("POST", "/captures/$captureId/name", JSONObject().put("label", label))).getString("message")
+
+    /** A name picked offline, sent later; [photo] only when the player shares photos to teach the game. */
+    suspend fun sendNamed(label: String, predicted: String?, state: String?, photo: ByteArray?): String =
+        withContext(Dispatchers.IO) {
+            val boundary = "----captureanimals${System.nanoTime()}"
+            val out = ByteArrayOutputStream()
+            fun part(name: String, value: String) = out.write(
+                "--$boundary\r\nContent-Disposition: form-data; name=\"$name\"\r\n\r\n$value\r\n".toByteArray())
+            part("label", label)
+            predicted?.let { part("predicted_label", it) }
+            state?.let { part("state", it) }
+            if (photo != null) {
+                out.write(("--$boundary\r\nContent-Disposition: form-data; name=\"photo\"; filename=\"photo.jpg\"\r\n" +
+                    "Content-Type: image/jpeg\r\n\r\n").toByteArray())
+                out.write(photo)
+                out.write("\r\n".toByteArray())
+            }
+            out.write("--$boundary--\r\n".toByteArray())
+            JSONObject(request("POST", "/me/named-photos", out.toByteArray(), "multipart/form-data; boundary=$boundary"))
+                .getString("message")
+        }
 
     suspend fun pick(captureId: Int, label: String): JSONObject =
         JSONObject(call("POST", "/captures/$captureId/pick", JSONObject().put("label", label)))
@@ -319,12 +345,13 @@ fun JSONObject.optStringOrNull(key: String): String? = if (isNull(key) || !has(k
 fun JSONObject.optIntOrNull(key: String): Int? = if (isNull(key) || !has(key)) null else getInt(key)
 
 data class Account(val username: String, val email: String, val state: String, val showInFeed: Boolean,
-                   val unlockedStates: List<String> = emptyList(), val avatar: Int = 1) {
+                   val unlockedStates: List<String> = emptyList(), val avatar: Int = 1,
+                   val shareTrainingPhotos: Boolean = false) {
     companion object {
         fun parse(o: JSONObject) = Account(o.getString("username"), o.getString("email"), o.getString("state"),
             o.isNull("show_in_feed") || o.optBoolean("show_in_feed", true),
             o.optJSONArray("unlocked_states")?.let { a -> List(a.length()) { a.getString(it) } } ?: emptyList(),
-            o.optInt("avatar", 1))
+            o.optInt("avatar", 1), o.optBoolean("share_training_photos", false))
     }
 }
 
