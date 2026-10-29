@@ -14,6 +14,18 @@ data class Species(
     val rarity: String,
 )
 
+/** A pet or pest the model knows (species/household.csv): named, but not a Field Guide animal. */
+data class HouseholdAnimal(val slug: String, val commonName: String, val kind: String, val note: String) {
+    /** What the capture screen says, as the backend's household.message(). */
+    fun message(): String {
+        val name = commonName.split(" ").joinToString(" ") { w ->
+            if (w.lowercase() in setOf("european", "german", "american")) w else w.lowercase()
+        }
+        return if (kind == "pet") "That's a $name! Pets aren't wild animals, so they don't go in the Field Guide. $note"
+        else "That's a $name. It's a pest, not one of the wild animals in the Field Guide. $note"
+    }
+}
+
 /** Contents of assets/model.json, written by ml/export_onnx.py. */
 class ModelInfo(
     val classes: List<String>,
@@ -24,6 +36,10 @@ class ModelInfo(
     val matchThreshold: Float,
     val otherLabel: String,
     val species: List<Species>,
+    val household: List<HouseholdAnimal> = emptyList(),
+    // Each state's animals the model knows that aren't in its Field Guide yet.
+    val extras: Map<String, Set<String>> = emptyMap(),
+    val personLabel: String? = null,
 ) {
     /** Dex order, as on the website: common to legendary, then by kind, then list order. */
     val dexOrder: List<Species> by lazy {
@@ -40,7 +56,7 @@ class ModelInfo(
 
     /** The same model with one state's species list (its Field Guide order and numbers). */
     fun withSpecies(list: List<Species>) =
-        ModelInfo(classes, imgSize, resize, mean, std, matchThreshold, otherLabel, list)
+        ModelInfo(classes, imgSize, resize, mean, std, matchThreshold, otherLabel, list, household, extras, personLabel)
 
     companion object {
         val RARITY_ORDER = listOf("common", "uncommon", "rare", "legendary")
@@ -64,6 +80,20 @@ class ModelInfo(
                     Species(s.getString("slug"), s.getString("common_name"), s.getString("scientific_name"),
                         s.getString("category"), s.getString("rarity"))
                 },
+                household = o.optJSONArray("household")?.let { a ->
+                    List(a.length()) { i ->
+                        a.getJSONObject(i).let { h ->
+                            HouseholdAnimal(h.getString("slug"), h.getString("common_name"), h.getString("kind"),
+                                h.optString("note"))
+                        }
+                    }
+                }.orEmpty(),
+                extras = o.optJSONObject("extras")?.let { e ->
+                    e.keys().asSequence().associateWith { k ->
+                        e.getJSONArray(k).let { a -> List(a.length()) { a.getString(it) }.toSet() }
+                    }
+                }.orEmpty(),
+                personLabel = o.optString("person_label").ifEmpty { null },
             )
         }
     }
