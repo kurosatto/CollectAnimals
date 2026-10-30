@@ -1,6 +1,6 @@
 """Minigame leaderboards and coins: each player's best points per level, with the animal
-they played as. The game (static/minigames.js) sends how many treats a finished
-run collected and the server works out the points from the animal's Speed, so a
+they played as. The game (static/minigames.js) sends how many treats a try
+collected (finished or not) and the server works out the points from the animal's Speed, so a
 score can't be sent straight in. That's the only check: kuro doesn't want heavy
 anti-cheat, just nothing too easy.
 
@@ -27,7 +27,9 @@ from .social import blocked_ids, friend_ids, revealed_species_ids
 
 router = APIRouter()
 
-LEVEL = re.compile(r"^(sky|trail|river|pool|claw)\.[0-9]{1,2}$")
+LEVEL = re.compile(r"^(sky|trail|river|pool|claw|slide|leap|dig|nectar|plunge|splash|call|echo)\.[0-9]{1,2}$")
+# The newer games use the speed of the place they're set in (MG_PLACE in minigames.js).
+PLACE = {"slide": "trail", "leap": "trail", "dig": "trail", "nectar": "sky", "plunge": "sky", "splash": "river", "echo": "sky"}
 MAX_TREATS = 400  # more than any level has
 # Same as mgPhysOf in minigames.js: the game runs faster for a faster animal.
 TEMPO = [.75, .88, 1, 1.15, 1.3]
@@ -58,6 +60,7 @@ def _stats() -> dict:
 def speed_of(slug: str, game: str) -> int:
     """The animal's Speed in this game's place (land, water, air), as minigames.js has it."""
     d = _stats()
+    game = PLACE.get(game, game)
     return d.get("speed", {}).get(slug, {}).get(game) or d.get("stats", {}).get(slug, [3])[0]
 
 
@@ -74,7 +77,7 @@ class ScoreIn(BaseModel):
 
 @router.post("/games/scores")
 def submit_score(body: ScoreIn, user: User = Depends(current_user), db: Session = Depends(get_db)):
-    """Record a finished run. Keeps the best per (level, animal); you can only play as
+    """Record a try, finished or not. Keeps the best per (level, animal); you can only play as
     an animal you've captured."""
     key = str(user.id)
     if submits.blocked(key):
