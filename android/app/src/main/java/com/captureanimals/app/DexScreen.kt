@@ -49,8 +49,7 @@ import kotlin.math.roundToInt
 
 /** Full-page Field Guide entry for one species. */
 @Composable
-fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: FieldGuide,
-                   bond: @Composable () -> Unit = {}, onBack: () -> Unit) {
+fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: FieldGuide, onBack: () -> Unit) {
     BackHandler(onBack = onBack)
     val details = dex.details[s.slug]
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -91,7 +90,6 @@ fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: FieldGuide,
                 DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(badge.firstCaughtAt)),
                 style = MaterialTheme.typography.bodyMedium)
         }
-        bond()
 
         if (details != null) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {

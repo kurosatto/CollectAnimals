@@ -168,11 +168,7 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
                 val entryDex = if (info.species.any { it.slug == entry.slug }) dex
                     else state.states.firstOrNull { st -> st.species.any { it.slug == entry.slug } }?.fieldGuide ?: dex
                 val badge = state.collection[entry.slug]
-                DexEntryScreen(info.dexNumber(entry.slug), entry, badge, entryDex, bond = {
-                    if (state.account != null && badge != null) {
-                        BondPanel(entry.slug)
-                    }
-                }) { dexSlug = null }
+                DexEntryScreen(info.dexNumber(entry.slug), entry, badge, entryDex) { dexSlug = null }
             }
         }
         return
@@ -385,7 +381,7 @@ fun ResultCard(r: CaptureResult, onDismiss: () -> Unit, onPick: (String?) -> Uni
             }
             if (r.matched && safety != null) SafetyCard(safety)
             if (r.whereWhen != null && onSaveWhereWhen != null) WhereWhenRow(r.whereWhen, parks, onSaveWhereWhen)
-            r.score?.let { ScoreBox(it, r.bondUp) }
+            r.score?.let { ScoreBox(it) }
             Text("Top guesses", style = MaterialTheme.typography.labelLarge)
             r.guesses.forEach { g ->
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {

@@ -25,19 +25,11 @@ class ProgressTest {
     }
 
     @Test
-    fun parsesScoreAndBond() {
+    fun parsesScore() {
         val score = PhotoScore.parse(JSONObject("""{"total": 1250, "stars": 4,
             "parts": [{"label": "Photo", "points": 1000}, {"label": "New animal", "points": 250}]}"""))!!
         assertEquals(PhotoScore(1250, 4, listOf("Photo" to 1000, "New animal" to 250)), score)
         assertNull(PhotoScore.parse(null))
         assertEquals("★★★★☆", stars(4))
-
-        val bond = Bond.parse(JSONObject("""{"species": {"number": 3, "slug": "coyote", "common_name": "Coyote",
-              "scientific_name": "Canis latrans", "category": "mammal", "rarity": "common"},
-              "level": 2, "max_level": 6, "title": "Neighbor",
-              "notes": [{"id": "met", "title": "First meeting", "hint": "Capture it", "progress": 1, "goal": 1, "done": true}]}"""))
-        assertEquals("coyote", bond.slug)
-        assertEquals(2, bond.level)
-        assertEquals(BondNote("First meeting", "Capture it", 1, 1, true), bond.notes.single())
     }
 }
