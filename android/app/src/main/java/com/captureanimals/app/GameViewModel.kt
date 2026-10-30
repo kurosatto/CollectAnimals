@@ -31,9 +31,8 @@ data class CaptureResult(
     val picked: Boolean = false,
     // The server's capture id when signed in (picks go to the server too).
     val captureId: Int? = null,
-    // Signed in: the photo's stars and points, and the field notes it ticked for the bond.
+    // Signed in: the photo's stars and points.
     val score: PhotoScore? = null,
-    val bondUp: List<String> = emptyList(),
     // Signed in: when and where it was taken, which the player can fix.
     val whereWhen: WhereWhen? = null,
     // The state the photo counts in (where it was taken), and set when it was the
@@ -414,7 +413,6 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             picked = prev != null,
             captureId = r.getInt("capture_id"),
             score = PhotoScore.parse(r.optJSONObject("score")),
-            bondUp = r.optJSONArray("bond_up")?.let { a -> List(a.length()) { a.getString(it) } }.orEmpty(),
             whereWhen = WhereWhen.parse(r.optJSONObject("where_when")) ?: prev?.whereWhen,
             state = r.optStringOrNull("state") ?: prev?.state,
             unlockedState = prev?.unlockedState ?: r.optStringOrNull("unlocked_state"),
@@ -546,7 +544,6 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                     if (cur.captureId != id) cur else cur.copy(
                         whereWhen = WhereWhen.parse(res.getJSONObject("where_when")),
                         score = PhotoScore.parse(res.optJSONObject("score")) ?: cur.score,
-                        bondUp = res.optJSONArray("bond_up")?.let { a -> List(a.length()) { a.getString(it) } }.orEmpty(),
                     )
                 })
             }

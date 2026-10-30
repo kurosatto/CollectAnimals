@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session
 
 from . import classifier as clf
 from . import dex
-from . import avatars, bonds, extras, games, goals, household, limits, naming, notices, places, recovery, scoring, social, weather
+from . import avatars, extras, games, goals, household, limits, naming, notices, places, recovery, scoring, social, weather
 from .safety import is_admin, router as safety_router
 from . import states as st
 from .auth import DUMMY_HASH, create_token, current_user, hash_password, optional_user, verify_password
@@ -29,7 +29,7 @@ from .classifier import OTHER_LABEL, Prediction
 from .config import settings
 from .db import Base, SessionLocal, add_missing_columns, engine, get_db
 from .models import AlbumPhoto, Badge, Capture, Friendship, IdFeedback, PhotoLike, Species, StateSpecies, User
-from .schemas import (MyStateOut, BondNoteOut, BondOut, StateAtOut, BondsOut, CaptureOut, HouseholdOut, ChallengeOut, ChallengesOut, ChoiceOut, ScoreOut, ScorePart, SetOut, SetSpecies, SetsOut, CollectionEntry, CollectionOut, DexOut, PlaceOut, HotspotOut, HotspotSpecies,
+from .schemas import (MyStateOut, StateAtOut, CaptureOut, HouseholdOut, ChallengeOut, ChallengesOut, ChoiceOut, ScoreOut, ScorePart, SetOut, SetSpecies, SetsOut, CollectionEntry, CollectionOut, DexOut, PlaceOut, HotspotOut, HotspotSpecies,
                       PickIn, PredictionOut, RegisterIn, SpeciesOut, StateOut, TokenOut, UserOut, UserUpdate,
                       WhereWhenIn, WhereWhenResult)
 from .social import catches_in, find_species, friend_ids, revealed_species_ids, species_out, user_named
@@ -782,7 +782,6 @@ def _identify(db: Session, user: User, model, capture: Capture, image: Image.Ima
     score = (_score_capture(model, capture, top.label, members[top.label].rarity, image, state.code,
                             set(members), new_badge, confidence=top.probability) if matched else None)
     db.commit()
-    bond, bond_up = _bond_after(db, user, capture) if matched else (None, [])
 
     # Don't give away names the player hasn't unlocked yet.
     revealed = revealed_species_ids(db, user)
@@ -791,8 +790,6 @@ def _identify(db: Session, user: User, model, capture: Capture, image: Image.Ima
                    if new_badge else f"Another {names[top.label]} for your collection.")
         if album_photo:
             message += " It's now in your album."
-        if bond_up:
-            message += f" Bond with the {names[top.label]}: {bonds.title(bond)} ({', '.join(bond_up)} ✓)."
     elif species is not None and species.id in revealed:
         message = f"Might be a {names[top.label]}, but we're not sure. Try a clearer photo!"
     elif species is not None:
@@ -839,8 +836,6 @@ def _identify(db: Session, user: User, model, capture: Capture, image: Image.Ima
                            probability=round(p.probability, 4))
                  for p in preds if p.label in species_by_slug],
         score=score,
-        bond=bond,
-        bond_up=bond_up,
         where_when=social.where_when_out(capture, state.utc_offset),
         **(_safety_out(species.slug, state.code) if matched else {}),
         household=HouseholdOut(slug=pet.slug, common_name=pet.common_name, kind=pet.kind, note=pet.note)
@@ -893,7 +888,7 @@ def set_capture_state(capture_id: int, body: UserUpdate, user: User = Depends(cu
 def _safety_out(slug: str, state_code: str | None) -> dict:
     """The capture screen's safety fields for an animal with a safety rating."""
     d = dex.details(slug, state_code)
-    if not bonds.careful(d.get("safety")):
+    if d.get("safety") not in ("caution", "danger"):
         return {}
     return {"safety": d["safety"], "safe_distance": d.get("safe_distance") or None,
             "safety_note": d.get("safety_note") or None}
@@ -1051,18 +1046,15 @@ def pick_capture_species(capture_id: int, body: PickIn, user: User = Depends(cur
         _rescore_picked(db, capture, species, m, user, new_badge)
     _record_feedback(db, capture, user, guesses, species.slug)
     db.commit()
-    bond, bond_up = _bond_after(db, user, capture)
 
     message = (f"Got it: a {name}! New badge unlocked." if new_badge
                else f"Got it: another {name} for your collection.")
     if album_photo:
         message += " It's now in your album."
-    if bond_up:
-        message += f" Bond with the {name}: {bonds.title(bond)} ({', '.join(bond_up)} ✓)."
     return CaptureOut(capture_id=capture.id, matched=True, species=species_out(species, True, m),
                       confidence=capture.confidence, new_badge=new_badge, message=message,
                       top_predictions=[], album_photo_id=album_photo.id if album_photo else None,
-                      score=score_out(capture), bond=bond, bond_up=bond_up,
+                      score=score_out(capture),
                       where_when=social.where_when_out(capture, (st.get(capture.state) or st.get(user.state) or st.get(None)).utc_offset),
                       **_safety_out(species.slug, capture.state or user.state))
 
@@ -1072,8 +1064,7 @@ def set_where_when(capture_id: int, body: WhereWhenIn, user: User = Depends(curr
                    db: Session = Depends(get_db)):
     """The player fixes when and where they took a photo (the photo's metadata
     can be missing or wrong). The place must be in the state the capture counts
-    in and the time no later than the upload. Field notes and the place name
-    follow; the photo score doesn't depend on either."""
+    in and the time no later than the upload. The place name follows; the photo score doesn't depend on either."""
     capture = db.get(Capture, capture_id)
     if capture is None or capture.user_id != user.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Capture not found")
@@ -1090,8 +1081,6 @@ def set_where_when(capture_id: int, body: WhereWhenIn, user: User = Depends(curr
     if body.latitude is not None and not places.in_state(state, body.latitude, body.longitude):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Pick a place in {state.name}")
 
-    before_bond = _sightings(db, user.id, state.utc_offset, capture.species_id).get(capture.species_id, []) \
-        if capture.species_id else []
     old_time = capture.taken_at.replace(tzinfo=None) if capture.taken_at else uploaded
     if taken != old_time.replace(microsecond=0):
         capture.taken_at, capture.time_source = taken, "edited"
@@ -1104,14 +1093,7 @@ def set_where_when(capture_id: int, body: WhereWhenIn, user: User = Depends(curr
         capture.place_source = "edited" if new_place[0] is not None else None
     db.commit()
 
-    bond, bond_up = None, []
-    if capture.species_id is not None:
-        after = _sightings(db, user.id, state.utc_offset, capture.species_id).get(capture.species_id, [])
-        safety = _safety(db, capture.species_id, state.code)
-        bond = bonds.level(bonds.notes(after, safety))
-        bond_up = bonds.newly_done(before_bond, after, safety)
-    return WhereWhenResult(where_when=social.where_when_out(capture, state.utc_offset), score=score_out(capture),
-                           bond=bond, bond_up=bond_up)
+    return WhereWhenResult(where_when=social.where_when_out(capture, state.utc_offset), score=score_out(capture))
 
 
 def _record_feedback(db: Session, capture: Capture, user: User, guesses: list[str], chosen: str | None) -> None:
@@ -1208,8 +1190,6 @@ def _collection(db: Session, owner: User, viewer: User, st_: st.State) -> Collec
         select(AlbumPhoto.species_id, Capture.image_path, Capture.score, Capture.score_stars)
         .join(Capture, Capture.id == AlbumPhoto.capture_id).where(AlbumPhoto.user_id == owner.id))}
     storage = get_storage()
-    bond_levels = {sid: bonds.level(bonds.notes(sg, _safety(db, sid, code)))
-                   for sid, sg in _sightings(db, owner.id, st_.utc_offset).items()}
     entries = []
     for m in state_species(db, code):
         b = here.get(m.species_id)
@@ -1223,8 +1203,7 @@ def _collection(db: Session, owner: User, viewer: User, st_: st.State) -> Collec
             photo_score=photos[m.species_id][1] if m.species_id in photos else None,
             photo_stars=photos[m.species_id][2] if m.species_id in photos else None,
             in_season=dex.in_season(m.species.slug, code, month),
-            activity=dex.activity(m.species.slug, code) if b else None,
-            bond=bond_levels.get(m.species_id, 0) if b else 0))
+            activity=dex.activity(m.species.slug, code) if b else None))
     return CollectionOut(state=code, username=owner.username,
                          caught=sum(e.caught for e in entries), total=len(entries), entries=entries)
 
@@ -1281,61 +1260,3 @@ def my_challenges(state: str | None = Query(None), user: User = Depends(current_
         out.append(ChallengeOut(id=ch.id, title=ch.title, progress=min(p, ch.goal), goal=ch.goal, done=p >= ch.goal))
     return ChallengesOut(state=state.code, week_start=start, week_end=end, challenges=out,
                          done=sum(c.done for c in out))
-
-
-# --- bonds (app/bonds.py) ---------------------------------------------------
-
-def _sightings(db: Session, user_id: int, utc_offset: int, species_id: int | None = None,
-               skip_capture: int | None = None) -> dict[int, list[bonds.Sighting]]:
-    """The player's captures that count for an animal, per species, oldest first."""
-    q = select(Capture).where(Capture.user_id == user_id, Capture.species_id.is_not(None)).order_by(Capture.id)
-    if species_id is not None:
-        q = q.where(Capture.species_id == species_id)
-    out: dict[int, list[bonds.Sighting]] = {}
-    for c in db.scalars(q):
-        if c.id == skip_capture:
-            continue
-        out.setdefault(c.species_id, []).append(bonds.Sighting(
-            bonds.local_time(c.taken_at, c.created_at, utc_offset), c.latitude, c.longitude, c.score_stars))
-    return out
-
-
-def _safety(db: Session, species_id: int, state_code: str | None) -> str:
-    """The animal's safety rating ("none", "caution" or "danger") in the state."""
-    sp = db.get(Species, species_id)
-    return (dex.details(sp.slug, state_code).get("safety") or "none") if sp else "none"
-
-
-def _bond_after(db: Session, user: User, capture: Capture) -> tuple[int, list[str]]:
-    """Bond hearts with the capture's animal now, and the field notes it ticked."""
-    offset = (st.get(user.state) or st.get(None)).utc_offset
-    safety = _safety(db, capture.species_id, capture.state or user.state)
-    after = _sightings(db, user.id, offset, capture.species_id).get(capture.species_id, [])
-    before = _sightings(db, user.id, offset, capture.species_id, skip_capture=capture.id).get(capture.species_id, [])
-    return bonds.level(bonds.notes(after, safety)), bonds.newly_done(before, after, safety)
-
-
-def _bond_out(species: Species, m: StateSpecies | None, sightings: list[bonds.Sighting],
-              state_code: str | None = None) -> BondOut:
-    ns = bonds.notes(sightings, dex.details(species.slug, state_code or (m.state if m else None)).get("safety"))
-    lvl = bonds.level(ns)
-    return BondOut(species=species_out(species, True, m), level=lvl, max_level=len(ns), title=bonds.title(lvl),
-                   notes=[BondNoteOut(id=n.id, title=n.title, hint=n.hint, progress=n.progress, goal=n.goal,
-                                      done=n.done) for n in ns])
-
-
-@app.get("/me/bonds", response_model=BondsOut)
-def my_bonds(species: str | None = Query(None), user: User = Depends(current_user),
-             db: Session = Depends(get_db)):
-    """Bond hearts and field notes for every animal the player has captured
-    (or just ?species=, by number or slug), closest bonds first."""
-    state = state_or_404(user.state)
-    sid = find_species(db, species).id if species else None
-    seen = _sightings(db, user.id, state.utc_offset, sid)
-    members = {m.species_id: m for m in state_species(db, state.code)}
-    out = []
-    for species_id, sightings in seen.items():
-        sp = db.get(Species, species_id)
-        out.append(_bond_out(sp, members.get(species_id), sightings, state.code))
-    out.sort(key=lambda b: (-b.level, b.species.common_name or ""))
-    return BondsOut(state=state.code, bonds=out)

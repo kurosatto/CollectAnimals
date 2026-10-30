@@ -9,31 +9,22 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import org.json.JSONArray
 import org.json.JSONObject
 
-// Photo stars, sets and bonds: the website's versions
-// (backend/app/goals.py, bonds.py, static/index.html), shown the same way in the app.
+// Photo stars and sets: the website's versions
+// (backend/app/goals.py, static/index.html), shown the same way in the app.
 
 // --- Data --------------------------------------------------------------------------------
 
@@ -73,30 +64,9 @@ class SetCatalog(private val sets: List<JSONObject>) {
     }
 }
 
-data class BondNote(val title: String, val hint: String, val progress: Int, val goal: Int, val done: Boolean)
-
-/** Bond hearts and field notes for one captured animal (BondOut). */
-data class Bond(val slug: String, val name: String, val level: Int, val maxLevel: Int, val title: String,
-                val notes: List<BondNote>) {
-    companion object {
-        fun parse(o: JSONObject): Bond {
-            val s = o.getJSONObject("species")
-            val a = o.optJSONArray("notes") ?: JSONArray()
-            return Bond(s.optString("slug"), s.optString("common_name"), o.getInt("level"), o.getInt("max_level"),
-                o.optStringOrNull("title") ?: BOND_TITLES.first(), List(a.length()) { i ->
-                    a.getJSONObject(i).let { BondNote(it.getString("title"), it.optString("hint"), it.getInt("progress"),
-                        it.getInt("goal"), it.getBoolean("done")) }
-                })
-        }
-    }
-}
-
-val BOND_TITLES = listOf("Met", "Neighbor", "Regular", "Friend", "Good friend", "Lifelong friend")
-
 // --- UI ----------------------------------------------------------------------------------
 
 val Gold = Color(0xFFE0A100)
-private val Heart = Color(0xFFE0457B)
 
 fun stars(n: Int) = "★".repeat(n.coerceIn(0, 5)) + "☆".repeat(5 - n.coerceIn(0, 5))
 
@@ -106,17 +76,9 @@ fun Stars(n: Int, modifier: Modifier = Modifier, points: Int? = null) {
         style = MaterialTheme.typography.bodyMedium)
 }
 
-@Composable
-fun Hearts(n: Int, max: Int = 6) {
-    Text(buildAnnotatedString {
-        withStyle(SpanStyle(color = Heart)) { append("♥".repeat(n)) }
-        withStyle(SpanStyle(color = Heart.copy(alpha = 0.25f))) { append("♥".repeat((max - n).coerceAtLeast(0))) }
-    }, style = MaterialTheme.typography.bodyMedium)
-}
-
 /** Stars for the photo itself, then the points with each bonus, as on the website. */
 @Composable
-fun ScoreBox(score: PhotoScore, bondUp: List<String>) {
+fun ScoreBox(score: PhotoScore) {
     Card(colors = CardDefaults.cardColors(containerColor = Gold.copy(alpha = 0.12f)), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
@@ -130,7 +92,6 @@ fun ScoreBox(score: PhotoScore, bondUp: List<String>) {
                     Text("+$points", style = MaterialTheme.typography.bodyMedium)
                 }
             }
-            bondUp.forEach { Text("♥ Field note: $it", color = Heart, style = MaterialTheme.typography.bodyMedium) }
         }
     }
 }
@@ -159,31 +120,3 @@ fun SetCard(set: SetDef, collection: Map<String, Badge>, onOpen: (String) -> Uni
     }
 }
 
-/**
- * Bond hearts and field notes on a captured animal's page.
- * Signed in only: bonds live on the server.
- */
-@Composable
-fun BondPanel(slug: String) {
-    var bond by remember(slug) { mutableStateOf<Bond?>(null) }
-    LaunchedEffect(slug) { bond = runCatching { Online.bond(slug) }.getOrNull() }
-    val b = bond ?: return
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("Bond: ${b.title}", fontWeight = FontWeight.Bold)
-            Hearts(b.level, b.maxLevel)
-            b.notes.forEach { n ->
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(if (n.done) "♥" else "♡", color = Heart)
-                    Column(Modifier.weight(1f)) {
-                        Text(n.title, style = MaterialTheme.typography.bodyMedium)
-                        if (n.hint.isNotBlank()) Text(n.hint, style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.outline)
-                    }
-                    if (!n.done) Text("${n.progress} / ${n.goal}", Modifier.width(48.dp),
-                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
-                }
-            }
-        }
-    }
-}

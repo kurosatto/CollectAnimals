@@ -228,7 +228,7 @@ object Online {
         FriendGuide.parse(username, JSONObject(call("GET", "/users/${q(username)}/collection" +
             (state?.let { "?state=${q(it)}" } ?: ""))))
 
-    // --- Bonds and states ----------------------------------------------------------------
+    // --- States ----------------------------------------------------------------
 
     /** The player's unlocked states and how much of each they've captured ("Your states"). */
     suspend fun myStates(): List<StateTile> {
@@ -238,10 +238,6 @@ object Online {
             StateTile(o.getString("state"), o.getString("name"), o.getInt("caught"), o.getInt("total"), o.getBoolean("main"))
         }
     }
-
-    /** Bond and field notes for one captured animal, or null when it isn't captured. */
-    suspend fun bond(slug: String): Bond? =
-        JSONObject(call("GET", "/me/bonds?species=${q(slug)}")).getJSONArray("bonds").optJSONObject(0)?.let { Bond.parse(it) }
 
     // --- Photos, feed, likes -----------------------------------------------------------
 

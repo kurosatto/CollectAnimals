@@ -13,7 +13,7 @@ earn its badge in their **Field Guide**. Each of the 50 US states has its own
 list of ~100 animals (~930 distinct species overall), each with a 40×40
 pixel-art sprite that lives in an animated **habitat** scene.
 
-Around that core: photo scores (1–5 stars), field notes / bonds per animal,
+Around that core: photo scores (1–5 stars),
 sets and weekly challenges, friends and their Field Guides, galleries with
 likes and comments, a news feed, parks ("hotspots") maps, live weather and
 seasons in the habitat, states unlocked by where your photos were taken.
@@ -28,11 +28,11 @@ seasons in the habitat, states unlocked by where your photos were taken.
 
 | Path | What's there |
 |---|---|
-| `backend/app/main.py` | FastAPI app: auth, states, species/dex, captures (upload → identify → badge), collection, sets, challenges, bonds, weather, app version, static files |
+| `backend/app/main.py` | FastAPI app: auth, states, species/dex, captures (upload → identify → badge), collection, sets, challenges, weather, app version, static files |
 | `backend/app/social.py` | Albums, galleries, likes, comments, feed, friends, profiles, `/media` |
 | `backend/app/notices.py` | Web Push (own RFC 8291 + VAPID implementation) and `/me/activity` polling |
 | `backend/app/classifier.py` | Loads the torch checkpoint lazily; API and tests run without torch |
-| `backend/app/{scoring,bonds,goals,places,states,weather,household,limits,storage}.py` | Photo scores, field notes, sets/challenges, location blurring and place names, state lookup, api.weather.gov, pets-and-pests, rate limits, photo storage |
+| `backend/app/{scoring,goals,places,states,weather,household,limits,storage}.py` | Photo scores, sets/challenges, location blurring and place names, state lookup, api.weather.gov, pets-and-pests, rate limits, photo storage |
 | `backend/app/config.py` | Every setting, read from env vars (see §5) |
 | `backend/app/static/index.html` | The whole web client (~2.3k lines, vanilla JS, no build step) |
 | `backend/app/static/habitat.js` | Habitat engine (scenes per state, perches, motion, weather, seasons, real sun and moon). **Shared with Android** |
@@ -158,7 +158,7 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
 
 **Safety and privacy (kid-friendly)**
 - Danger/caution animals (`safety` column in `details.csv`) get full framing
-  in photo scores and no field notes or quests that push close-ups, night
+  in photo scores and no quests that push close-ups, night
   visits or revisits. No exact locations for danger/protected species.
 - Locations others see are blurred: ~10 km for common animals, park/town only
   for rare, region only for legendary. Friends get ~100 m.

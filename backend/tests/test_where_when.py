@@ -64,16 +64,13 @@ def test_owner_edits_time_and_place(client, fake):
     ww = e.json()["where_when"]
     assert (ww["taken_at"], ww["time_source"], ww["place_source"]) == ("2026-01-10T07:15:00", "edited", "edited")
     assert ww["place"] == "near Santa Cruz"
-    assert e.json()["score"] == r["score"] and e.json()["bond"] >= 1
+    assert e.json()["score"] == r["score"] and "bond" not in e.json()
     # The album photo shows the new date and place, and the owner sees the details.
     p = client.get("/me/album", headers=h).json()["photos"][0]
     assert p["taken_on"] == "2026-01-10" and p["place"] == "near Santa Cruz"
     assert p["where_when"]["capture_id"] == cid
-    # Field notes count the edited day.
-    post(client, fake, h, slug="western_gray_squirrel")
-    bond = client.get("/me/bonds?species=western_gray_squirrel", headers=h).json()
-    days = next(n for n in bond["bonds"][0]["notes"] if n["id"] == "days")
-    assert days["progress"] == 2
+    # Bonds are gone.
+    assert client.get("/me/bonds", headers=h).status_code == 404
 
     # Clearing the place.
     e = client.put(f"/captures/{cid}/where-when", headers=h, json={"taken_at": "2026-01-10T07:15:00"}).json()

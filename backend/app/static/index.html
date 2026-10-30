@@ -330,10 +330,6 @@
   }
   .hab-bar { display:flex; justify-content:space-between; align-items:center; gap:8px; margin:8px 0 12px; font-size:.85rem; }
   .hab-bar button { padding:4px 10px; font-size:.8rem; white-space:nowrap; }
-  /* Bonds (app/bonds.py): hearts are field notes done. */
-  .hearts { color:#d6455d; letter-spacing:.02em; white-space:nowrap; }
-  .hearts .off { color:var(--line); }
-  .guide .tile .status .hearts { font-size:.6rem; letter-spacing:0; }
   /* New capture: the silhouette, then the colour pixel art wipes in row by row. */
   .reveal { position:relative; width:120px; height:120px; margin:4px auto 10px; }
   .reveal img { position:absolute; inset:0; width:100%; height:100%; image-rendering:pixelated; }
@@ -347,14 +343,6 @@
   @keyframes reveal-glow { 30% { opacity:1; transform:scale(1.1); } to { opacity:0; transform:scale(1.25); } }
   @media (prefers-reduced-motion: reduce) {
     .reveal .color { animation:none; clip-path:none; } .reveal .sil, .reveal::after { animation:none; } }
-  .bond { margin-top:12px; border-top:1px solid var(--line); padding-top:10px; }
-  .bond-head { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:6px 12px; }
-  .bond-head button { padding:4px 10px; font-size:.8rem; }
-  .notes { list-style:none; padding:0; margin:8px 0 0; display:grid; gap:6px; font-size:.85rem; }
-  .notes li { display:grid; grid-template-columns:1.2em 1fr auto; gap:6px; align-items:baseline; }
-  .notes li.done { color:var(--muted); }
-  .notes .tick { color:#d6455d; }
-  .notes .hint { display:block; font-size:.78rem; color:var(--muted); }
 </style>
 </head>
 <body>
@@ -506,7 +494,6 @@
       <div class="status" id="dex-status"></div></div>
     <button class="close" id="dex-close" aria-label="Close">×</button>
   </div>
-  <div id="dex-bond" class="bond hidden"></div>
   <div class="dex-body">
     <div class="dex-map"><div id="dex-map"></div><div class="muted" id="dex-map-note" style="font-size:.8rem"></div>
       <p id="dex-where" style="margin:8px 0 0; white-space:pre-line"></p>
@@ -824,7 +811,6 @@ function showCapture(r, file, box) {
   if (sb) box.append(sb);
   if (r.where_when) box.append(whereWhen(r.where_when, (res) => {
     if (res.score) box.querySelector(".score")?.replaceWith(scoreCard(res.score));
-    if (res.bond_up?.length) box.querySelector(".ww").append(el("div", "", `Field notes ✓ ${res.bond_up.join(", ")}`));
     loadCollection(); loadMyPhotos(); loadFeed();
   }));
   if (r.score) box.append(scoreCard(r.score));
@@ -1254,9 +1240,9 @@ function addTile(grid, e, i, tier, owner = null) {
     return;
   }
   if (state === "mine") {
-    st.append(heartsEl(e.bond || 1));
-    if (e.photo_stars) st.append(el("div", "tile-stars", stars(e.photo_stars)));
-    t.title = `Captured. Bond: ${BOND_TITLES[(e.bond || 1) - 1]}` +
+    st.textContent = e.photo_stars ? stars(e.photo_stars) : "✓";
+    st.classList.add(e.photo_stars ? "tile-stars" : "mine");
+    t.title = "Captured" +
       (e.photo_score != null ? `. Album photo: ${e.photo_score.toLocaleString()} pts` : "");
   }
   else if (state === "friend") {
@@ -1266,42 +1252,6 @@ function addTile(grid, e, i, tier, owner = null) {
   }
   t.onclick = () => openDex(s.number, i + 1, e.caught);
   grid.append(t);
-}
-
-// Bonds: six field notes per captured animal, each a heart (app/bonds.py).
-const BOND_MAX = 6;
-const BOND_TITLES = ["Met", "Neighbor", "Regular", "Friend", "Good friend", "Lifelong friend"];
-function heartsEl(n, max = BOND_MAX) {
-  const h = el("span", "hearts");
-  h.append("♥".repeat(n));
-  if (max > n) h.append(el("span", "off", "♥".repeat(max - n)));
-  h.setAttribute("aria-label", `Bond ${n} of ${max}`);
-  return h;
-}
-
-async function showBond(number) {
-  const box = $("dex-bond");
-  box.classList.add("hidden");
-  if (number == null) return;
-  let r;
-  try { r = await api(`/me/bonds?species=${number}`); } catch { return; }
-  const b = r.bonds[0];
-  if (!b) return;
-  box.innerHTML = "";
-  const head = el("div", "bond-head");
-  const left = el("div");
-  left.append(el("strong", "", `Bond: ${b.title} `), heartsEl(b.level, b.max_level));
-  head.append(left);
-  const list = el("ul", "notes");
-  for (const n of b.notes) {
-    const li = el("li", n.done ? "done" : "");
-    const what = el("span", "", n.title);
-    what.append(el("span", "hint", n.hint));
-    li.append(el("span", "tick", n.done ? "♥" : "♡"), what, el("span", "muted", n.done ? "" : `${n.progress} / ${n.goal}`));
-    list.append(li);
-  }
-  box.append(head, list);
-  box.classList.remove("hidden");
 }
 
 // A new animal in the Field Guide: its silhouette, then the colour pixel art.
@@ -1589,7 +1539,6 @@ async function openDex(key, num, caught, stateCode = myState.code) {
     $("dex-fact").append(ul);
   }
   drawSeason(d.season);
-  showBond(d.captured && stateCode === mainCode ? s.number : null);
   gallery = { species: s, scope: "all", sort: "top" };
   loadGallery();
   $("dex").showModal();

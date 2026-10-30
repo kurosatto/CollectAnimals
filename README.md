@@ -42,7 +42,7 @@ Without a trained model the API still runs; captures report that no model is loa
   location is used only for recent photos; without an EXIF time, the upload
   time. Unticking "Save where I captured it" keeps no place at all. Owners can
   fix both (`PUT /captures/{id}/where-when`: no later than the upload, inside
-  their state); field notes and the place name follow. Photo scores never
+  their state); the place name follows. Photo scores never
   depend on time or place. Saved files have EXIF stripped.
 - **Friends.** Send a request by username; when accepted you see each other's
   albums and each other's catches unlock names for you.
