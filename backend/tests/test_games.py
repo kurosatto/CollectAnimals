@@ -83,3 +83,18 @@ def test_coins_buy_skins_and_decorations(client, fake):
     shop = client.post("/games/shop/buy", headers=ana, json={"item": "decor.flowers"}).json()
     assert shop["decor"] == ["flowers"] and shop["coins"] == 50
     assert client.post("/games/shop/decor", headers=ana, json={"item": "decor.flowers", "on": False}).json()["decor"] == []
+
+
+def test_newer_games_take_scores(client, fake):
+    ana = signup(client, "ana")
+    catch(client, fake, ana, "harbor_seal")
+    # Big Splash is in the water, where a seal is fast; Mud Slide is on land.
+    assert score(client, ana, "harbor_seal", 20, level="splash.1").json()["points"] == 260
+    assert score(client, ana, "harbor_seal", 20, level="slide.0").json()["points"] == 150
+    assert score(client, ana, "harbor_seal", 20, level="nope.0").status_code == 422
+
+
+def test_place_table_matches_the_game():
+    js = (Path(__file__).parents[1] / "app/static/minigames.js").read_text()
+    for game, place in games.PLACE.items():
+        assert f'{game}: "{place}"' in js
