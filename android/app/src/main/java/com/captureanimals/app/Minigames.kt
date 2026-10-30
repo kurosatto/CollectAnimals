@@ -40,7 +40,8 @@ import org.json.JSONObject
 fun MinigamesScreen(animals: List<HabitatAnimal>, modifier: Modifier = Modifier, onPlaying: (Boolean) -> Unit = {}) {
     val context = LocalContext.current
     var playing by remember { mutableStateOf(false) }
-    val view = remember { MinigamesWebView(context) { playing = it } }
+    var picking by remember { mutableStateOf(false) }
+    val view = remember { MinigamesWebView(context, { playing = it }, { picking = it }) }
     DisposableEffect(view) { onDispose { view.destroy() } }
     // While a game is on, it gets the whole screen: no app or system bars, and the
     // screen stays the way it's held (turning it would restart the page). Back quits the game.
@@ -63,6 +64,8 @@ fun MinigamesScreen(animals: List<HabitatAnimal>, modifier: Modifier = Modifier,
             }
         }
     }
+    // On a game's page (picking an animal and a level), back goes to the grid of games.
+    BackHandler(enabled = picking && !playing) { view.evaluateJavascript("mgCloseGame()", null) }
     BackHandler(enabled = playing) { view.evaluateJavascript("mgQuit()", null) }
     val json = remember(animals) {
         JSONArray(animals.map { a ->
@@ -79,7 +82,11 @@ fun MinigamesScreen(animals: List<HabitatAnimal>, modifier: Modifier = Modifier,
 
 /** A WebView serving minigames.html, its scripts and the sprites from the APK's assets. */
 @SuppressLint("SetJavaScriptEnabled", "ViewConstructor")
-class MinigamesWebView(context: Context, private val onPlaying: (Boolean) -> Unit) : WebView(context) {
+class MinigamesWebView(
+    context: Context,
+    private val onPlaying: (Boolean) -> Unit,
+    private val onPicking: (Boolean) -> Unit = {},
+) : WebView(context) {
     private var ready = false
     private var pending: String? = null
     private val main = Handler(Looper.getMainLooper())
@@ -123,6 +130,11 @@ class MinigamesWebView(context: Context, private val onPlaying: (Boolean) -> Uni
         /** A game started (true) or was left (false): minigames.js goes full screen. */
         @JavascriptInterface fun playing(on: Boolean) {
             main.post { onPlaying(on) }
+        }
+
+        /** A game's page was opened (true) or left for the grid of games (false). */
+        @JavascriptInterface fun picking(on: Boolean) {
+            main.post { onPicking(on) }
         }
 
         @JavascriptInterface fun ready() {

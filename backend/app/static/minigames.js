@@ -209,6 +209,17 @@ function mgBuild() {
   const css = mgEl("style");
   css.textContent = `
   .mg-list { display:grid; gap:10px; }
+  .mg-grid { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:8px; }
+  .mg-tile { font:inherit; color:inherit; background:transparent; border:1px solid var(--line); border-radius:12px; padding:6px 4px 7px;
+             cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:4px; min-width:0; }
+  .mg-thumb { width:100%; aspect-ratio:1; border-radius:9px; display:flex; align-items:center; justify-content:center;
+              font-size:1.6rem; position:relative; }
+  .mg-thumb img { width:62%; height:62%; image-rendering:pixelated; }
+  .mg-thumb .mg-padlock { position:absolute; right:3px; bottom:2px; font-size:.85rem; }
+  .mg-tile b { font-size:.74rem; line-height:1.15; text-align:center; }
+  .mg-tile span { font-size:.68rem; color:var(--muted); }
+  .mg-tile.mg-locked .mg-thumb { filter:grayscale(.8); }
+  .mg-stat-how { margin-top:2px; font-size:.72rem; color:var(--muted); }
   .mg-game { border:1px solid var(--line); border-radius:12px; padding:10px 12px; }
   .mg-game h3 { margin:0; font-size:1.05rem; display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
   .mg-best { font-size:.8rem; font-weight:400; color:var(--muted); }
@@ -278,7 +289,7 @@ function mgBuild() {
   list.id = "mg-list";
   const cv = mgEl("canvas");
   cv.width = MG_W * MG_RES; cv.height = MG_H * MG_RES; cv.id = "mg-canvas";
-  const bar = mgEl("div", "mg-bar"), back = mgEl("button", "mg-back", "← All games"), name = mgEl("span", "muted");
+  const bar = mgEl("div", "mg-bar"), back = mgEl("button", "mg-back", "← Back"), name = mgEl("span", "muted");
   name.id = "mg-playing";
   back.onclick = mgQuit;
   const mute = mgEl("button", "mg-back");
@@ -342,12 +353,54 @@ function mgFull(on) {
   } catch {}
 }
 
+// The Games tab: a grid of games, four to a row. Tapping one opens it to pick an
+// animal and a level (mgGame); mg.open remembers which, so a game you quit goes back there.
+const MG_TILES = { sky: ["☁️", "#cfe8f7"], trail: ["🌲", "#d6ecc6"], river: ["🌊", "#bfdcef"], pool: ["🐚", "#c7ece6"],
+                   claw: ["🐾", "#f6dcc0"] };
 function mgList() {
   mgBuild();
   const list = document.getElementById("mg-list");
   list.innerHTML = "";
+  const g = MG_GAMES.find((x) => x.key === mg.open);
+  try { window.AndroidMinigames?.picking?.(!!g); } catch {}
+  if (g) return mgGame(list, g);
   mgShopBar(list);
+  const grid = mgEl("div", "mg-grid");
   for (const g of MG_GAMES) {
+    const players = mgPlayers(g.key), lvls = MG_LEVELS[g.key];
+    const cleared = lvls.filter((_, i) => mgRec(g.key, i).pct >= 100).length;
+    const tile = mgEl("button", "mg-tile" + (players.length ? "" : " mg-locked"));
+    const [icon, bg] = MG_TILES[g.key] || ["🎮", "#ddd"];
+    const thumb = mgEl("div", "mg-thumb");
+    thumb.style.background = bg;
+    if (players.length) {
+      const saved = mgStore.get("pick." + g.key), s = players.find((p) => p.slug === saved) || players[0];
+      const img = mgEl("img");
+      img.src = `/sprites/${encodeURIComponent(s.slug)}.png`; img.alt = "";
+      thumb.append(img);
+    } else {
+      thumb.append(icon, mgEl("span", "mg-padlock", "🔒"));
+    }
+    tile.append(thumb, mgEl("b", null, g.title),
+                mgEl("span", null, players.length ? `${cleared}/${lvls.length} cleared` : "Locked"));
+    tile.onclick = () => { mg.open = g.key; mgList(); scrollTo?.(0, 0); };
+    grid.append(tile);
+  }
+  list.append(grid);
+}
+
+// Back from a game's page to the grid (the Android back button calls this too).
+function mgCloseGame() {
+  mg.open = null;
+  mgList();
+}
+
+function mgGame(list, g) {
+  const back = mgEl("button", "mg-back", "← All games");
+  back.onclick = mgCloseGame;
+  list.append(mgEl("div", "mg-shopbar"));
+  list.lastChild.append(back);
+  {
     const players = mgPlayers(g.key), card = mgEl("div", "mg-game" + (players.length ? "" : " mg-locked"));
     const h = mgEl("h3", null, g.title), lvls = MG_LEVELS[g.key];
     const cleared = lvls.filter((_, i) => mgRec(g.key, i).pct >= 100).length;
@@ -356,23 +409,26 @@ function mgList() {
     if (!players.length) {
       card.append(mgEl("div", "mg-lock", `🔒 Capture a ${g.kind} to unlock this game.`));
       list.append(card);
-      continue;
+      return;
     }
     const saved = mgStore.get("pick." + g.key);
     let pick = players.find((s) => s.slug === saved) || players[0];
     const row = mgEl("div", "mg-pick"), foot = mgEl("div", "mg-row"), name = mgEl("span", "mg-name", pick.common_name);
-    const stats = mgEl("div", "mg-stats");
+    const stats = mgEl("div", "mg-stats"), statHow = mgEl("div", "mg-stat-how");
     let looks = mgEl("div");
     const showStats = () => {
       const fresh = mgLooks(pick.slug, paint);
       looks.replaceWith(fresh); looks = fresh;
       const st = mgStats(pick.slug, g.key);
       stats.innerHTML = "";
-      [st.speed, st.jump, st.agility, st.size].forEach((v, i) => {
-        const cell = mgEl("span", "mg-stat");
-        cell.append(mgEl("i", null, MG_STAT_NAMES[i]), mgEl("b", null, "●".repeat(v) + "○".repeat(5 - v)));
+      const used = MG_GAME_STATS[g.key] || [];
+      used.forEach(([name, field]) => {
+        const v = st[field], [label, how] = MG_STAT_INFO[name], cell = mgEl("span", "mg-stat");
+        cell.title = `${label}: ${how}`;
+        cell.append(mgEl("i", null, label), mgEl("b", null, "●".repeat(v) + "○".repeat(5 - v)));
         stats.append(cell);
       });
+      statHow.textContent = used.map(([name]) => `${MG_STAT_INFO[name][0]}: ${MG_STAT_INFO[name][1]}`).join(" · ");
     };
     const play = mgEl("button", "mg-play", "Play");
     const imgs = [];
@@ -410,7 +466,7 @@ function mgList() {
     showStats(); paint();
     const board = mgEl("div", "mg-board");
     mgBoard(board, `${g.key}.${lv}`, mgStore.get("board") || "all");
-    card.append(row, stats, looks, levels, foot, board);
+    card.append(row, stats, statHow, looks, levels, foot, board);
     list.append(card);
   }
 }
@@ -846,7 +902,25 @@ function mgSfx(kind) {
 // animal can finish it.
 let mgStatsIdx = null;
 fetch("/sprites/game_stats.json").then((r) => (r.ok ? r.json() : null)).then((j) => { mgStatsIdx = j; }).catch(() => {});
-const MG_STAT_NAMES = ["Speed", "Jump", "Agility", "Size"];
+// The stats each game uses, named for what they do there; the rest don't show.
+// Agility is how hard a flier flaps, a swimmer swims up or a shell turns; Size is how
+// big a target you are, except in Claw Catch, where a big paw reaches further.
+const MG_STAT_INFO = {
+  speed: ["Speed", "faster tempo, more points"],
+  jump: ["Jump", "jumps higher"],
+  flap: ["Flap", "flaps lift you higher"],
+  swim: ["Swim", "swims up faster"],
+  turn: ["Turn", "turns faster"],
+  size: ["Size", "smaller slips through tighter gaps"],
+  reach: ["Reach", "bigger paws swipe wider"],
+};
+const MG_GAME_STATS = {
+  sky: [["speed", "speed"], ["flap", "agility"], ["size", "size"]],
+  trail: [["speed", "speed"], ["jump", "jump"], ["size", "size"]],
+  river: [["speed", "speed"], ["swim", "agility"], ["size", "size"]],
+  pool: [["speed", "speed"], ["turn", "agility"], ["size", "size"]],
+  claw: [["speed", "speed"], ["reach", "size"]],
+};
 
 // Speed depends on the game: a seal is slow on land (Trail Run) and fast in the water.
 function mgStats(slug, game) {
