@@ -46,6 +46,8 @@ data class CaptureResult(
     // Offline: the photo and crop, to identify it again in another state.
     val uri: Uri? = null,
     val crop: CropBox? = null,
+    // "What was it?": the thank-you once the player named an animal that didn't count.
+    val named: String? = null,
 )
 
 /** The player's main state; [UiState.stateCode] is the one on screen, which can be any unlocked state. */
@@ -94,6 +96,8 @@ data class UiState(
 
 class GameViewModel(app: Application) : AndroidViewModel(app) {
     private val store = CollectionStore(app.filesDir)
+    private val nameQueue = NameQueue(app.filesDir)
+    private var names: AnimalNames? = null
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state
 
@@ -147,6 +151,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                     select(me.state)
                 }
                 refreshCollection()
+                sendQueuedNames()
             } catch (e: Online.ApiError) {
                 // Signed out by the server (401): back to the badges saved on this phone.
                 if (!Online.signedIn) _state.update { it.copy(account = null, collection = store.load(it.stateCode)) }
@@ -179,6 +184,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 } else {
                     refreshCollection()
                 }
+                sendQueuedNames()
             } catch (e: Exception) {
                 _state.update { it.copy(accountBusy = false, accountError = e.message ?: "Something went wrong") }
             }
@@ -210,6 +216,58 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         val acct = _state.value.account ?: return
         _state.update { it.copy(account = acct.copy(avatar = n)) }
         viewModelScope.launch { runCatching { Online.setAvatar(n) } }
+    }
+
+    /** "Share photos to teach the game" (off by default). Turning it off deletes the server's copies. */
+    fun setShareTraining(on: Boolean) {
+        val acct = _state.value.account ?: return
+        _state.update { it.copy(account = acct.copy(shareTrainingPhotos = on)) }
+        viewModelScope.launch {
+            runCatching { Online.setShareTraining(on) }.onFailure { e ->
+                _state.update { it.copy(account = it.account?.copy(shareTrainingPhotos = !on), error = e.message) }
+            }
+        }
+    }
+
+    /** The bundled name list for "What was it?" (read once). */
+    suspend fun animalNames(): AnimalNames? = names ?: withContext(Dispatchers.IO) {
+        runCatching {
+            AnimalNames.parse(getApplication<Application>().assets.open("animal_names.json").bufferedReader().use { it.readText() })
+        }.getOrNull()
+    }?.also { names = it }
+
+    /**
+     * The player names the animal in a photo that didn't count. Signed in, it goes
+     * straight to the server; offline (or if that fails) it waits on the phone.
+     */
+    fun nameAnimal(entry: AnimalName) {
+        val r = _state.value.result ?: return
+        viewModelScope.launch {
+            val sent = r.captureId?.let { id -> runCatching { Online.nameCapture(id, entry.label) }.getOrNull() }
+            val message = sent ?: run {
+                val predicted = r.guesses.firstOrNull()?.label
+                withContext(Dispatchers.IO) { nameQueue.add(entry.label, predicted, r.state ?: _state.value.stateCode, r.photo) }
+                if (Online.signedIn) sendQueuedNames()
+                "Thanks! You said it's ${withArticle(entry.name)}. " +
+                    if (Online.signedIn) "That helps the game learn." else "It's saved on this phone and helps the game learn once you sign in."
+            }
+            _state.update { s -> s.copy(result = s.result?.let { if (it.photo === r.photo) it.copy(named = message) else it }) }
+        }
+    }
+
+    /** Sends names picked offline. Photos go only if the player shares photos to teach the game. */
+    private suspend fun sendQueuedNames() {
+        val acct = _state.value.account ?: return
+        for (p in withContext(Dispatchers.IO) { nameQueue.all() }) {
+            try {
+                val photo = if (acct.shareTrainingPhotos) withContext(Dispatchers.IO) { nameQueue.photoBytes(p) } else null
+                Online.sendNamed(p.label, p.predicted, p.state, photo)
+            } catch (e: Online.ApiError) {
+                // Offline, or the daily limit: try again later. Anything else can't be fixed by retrying.
+                if (e.code == 0 || e.code == 429 || e.code >= 500) return
+            }
+            withContext(Dispatchers.IO) { nameQueue.remove(p.id) }
+        }
     }
 
     /** After the Photos tab deletes an album photo, the badge may be gone too. */

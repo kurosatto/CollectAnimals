@@ -188,7 +188,9 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
 - **Features kuro rejected; don't re-propose**: seasonal events that need
   upkeep, weekly outing-day goals or streaks, keeping every photo per animal,
   card duels, "first in state" badges, the buddy system (removed in #65),
-  typed species search in "None of these" (removed in #47). kuro prefers features that **run
+  typed species search that *awards a badge* in "None of these" (removed in
+  #47). Typed naming came back on 2026-10-29 as **training labels only**
+  (see "What was it?" below). kuro prefers features that **run
   themselves** and **cost little storage**.
 - Hosting: stay on the PC ($0) until there are users. If moving, the
   recommendation on record is FastAPI on a cheap host + Postgres + Cloudflare
@@ -223,6 +225,20 @@ hardening (#68: login limits, image size cap, headers).
 - The quick-tunnel URL changes on every restart, which breaks installed PWAs;
   a named tunnel on a custom domain (~$10/yr via Cloudflare) fixes it, but
   kuro postponed that.
+
+## 8b. "What was it?" (player labels for retraining)
+
+After "None of these" (or a photo with nothing to pick) the player can type and
+pick what the animal really was from `species/animal_names.json`: ~8,800 North
+American animals plus ~55 broad groups ("Some kind of beetle", "No animal in the
+photo"). It never awards a badge. Answers land in the `named_photos` table
+(`label` = scientific name or `group:<id>`, plus the model's guess and state).
+A 512 px training copy of the photo is kept only while the player has "Share
+photos to teach the game" on (off by default); turning it off or deleting the
+account deletes the copies. Android bundles the list and queues answers on the
+phone (`NameQueue`) until signed in and online (`POST /me/named-photos`).
+Rebuild the list with `ml/build_animal_names.py` (iNaturalist Open Dataset
+counts for ranking, common names from the CC BY 4.0 common-species dataset).
 
 ## 9. Gotchas
 

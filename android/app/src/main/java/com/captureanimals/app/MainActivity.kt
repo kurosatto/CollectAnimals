@@ -228,7 +228,7 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
                 TABS[tab].key == "catch" -> {
                     val animals = remember(info, dex, state.collection) { habitatAnimals(info, dex, state.collection) }
                     CatchScreen(state, animals, vm::capture, vm::dismissResult, vm::pick, vm::saveWhereWhen, vm::chooseState,
-                        vm::changeCaptureState) { dexSlug = it }
+                        vm::changeCaptureState, NameActions(vm::animalNames, vm::nameAnimal)) { dexSlug = it }
                 }
                 TABS[tab].key == "feed" ->
                     SocialScreen(state, social, "feed", onSignIn = { showAccount = true }) { dexSlug = it }
@@ -271,7 +271,7 @@ private val TABS = listOf(
 @Composable
 fun CatchScreen(state: UiState, animals: List<HabitatAnimal>, onCapture: (Uri, Pair<Double, Double>?, Boolean, CropBox?) -> Unit, onDismiss: () -> Unit,
                 onPick: (String?) -> Unit, onSaveWhereWhen: SaveWhereWhen, onMakeMain: (String) -> Unit,
-                onChangeState: (String) -> Unit, onOpenDex: (String) -> Unit) {
+                onChangeState: (String) -> Unit, naming: NameActions? = null, onOpenDex: (String) -> Unit) {
     val context = LocalContext.current
     val habitat = rememberHabitatView()
     var saveLocation by rememberSaveable { mutableStateOf(true) }
@@ -343,7 +343,8 @@ fun CatchScreen(state: UiState, animals: List<HabitatAnimal>, onCapture: (Uri, P
                 makeMain = r.unlockedState?.takeIf { it != state.mainState() }
                     ?.let { code -> state.states.firstOrNull { it.code == code } }
                     ?.let { st -> st.name to { onMakeMain(st.code) } },
-                changeState = if (r.canChangeState && state.states.size > 1) state.states to onChangeState else null)
+                changeState = if (r.canChangeState && state.states.size > 1) state.states to onChangeState else null,
+                naming = naming, sharing = state.account?.shareTrainingPhotos == true, signedIn = state.account != null)
         }
         // Your live habitat: the animals you've captured, in your state's scenery.
         Habitat(habitat, animals, state.stateCode, onOpen = onOpenDex)
@@ -354,7 +355,8 @@ fun CatchScreen(state: UiState, animals: List<HabitatAnimal>, onCapture: (Uri, P
 fun ResultCard(r: CaptureResult, onDismiss: () -> Unit, onPick: (String?) -> Unit, onOpenDex: (String) -> Unit,
                parks: List<Park> = emptyList(), onSaveWhereWhen: SaveWhereWhen? = null,
                safety: SpeciesDetails? = null, makeMain: Pair<String, () -> Unit>? = null,
-               changeState: Pair<List<StateInfo>, (String) -> Unit>? = null) {
+               changeState: Pair<List<StateInfo>, (String) -> Unit>? = null,
+               naming: NameActions? = null, sharing: Boolean = false, signedIn: Boolean = false) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Image(r.photo.asImageBitmap(), contentDescription = "Your photo",
@@ -392,6 +394,11 @@ fun ResultCard(r: CaptureResult, onDismiss: () -> Unit, onPick: (String?) -> Uni
                 }
             }
             if (!r.picked) PickPanel(r, onPick)
+            // "What was it?" once the photo doesn't count: after "None of these", or nothing to pick from.
+            if (naming != null && !r.matched && (r.picked || r.choices.isEmpty())) {
+                r.named?.let { Text("🙏 $it", style = MaterialTheme.typography.bodyMedium) }
+                    ?: NamePanel(naming, sharing, signedIn, key = r.photo)
+            }
             Row(Modifier.align(Alignment.End)) {
                 if (r.matched && r.species != null) {
                     TextButton(onClick = { onOpenDex(r.species.slug) }) { Text("Field Guide entry") }
@@ -421,6 +428,50 @@ fun PickPanel(r: CaptureResult, onPick: (String?) -> Unit) {
             }
             TextButton(onClick = { onPick(null) }) { Text("None of these") }
         }
+    }
+}
+
+/** Loads the bundled name list and sends the player's pick (GameViewModel). */
+class NameActions(val load: suspend () -> AnimalNames?, val onName: (AnimalName) -> Unit)
+
+/**
+ * "What was it?": type to search the big name list (or tap a broad group) and pick
+ * one. It helps train the identifier and never counts for a badge.
+ */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+fun NamePanel(naming: NameActions, sharing: Boolean, signedIn: Boolean, key: Any) {
+    var names by remember { mutableStateOf<AnimalNames?>(null) }
+    LaunchedEffect(Unit) { names = naming.load() }
+    var query by remember(key) { mutableStateOf("") }
+    var skipped by remember(key) { mutableStateOf(false) }
+    var sent by remember(key) { mutableStateOf(false) }
+    if (skipped) return
+    val list = names ?: return
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text("What was it? Pick a name to help the game learn animals. It won't count for a badge.",
+            style = MaterialTheme.typography.labelLarge)
+        androidx.compose.material3.OutlinedTextField(query, { query = it }, singleLine = true,
+            modifier = Modifier.fillMaxWidth(), placeholder = { Text("Type an animal, like robin or beetle") })
+        val hits = remember(query, list) { if (query.isBlank()) list.groups.take(8) else list.search(query) }
+        androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            hits.forEach { e ->
+                OutlinedButton(enabled = !sent, onClick = { sent = true; naming.onName(e) }) {
+                    Text(e.name, fontStyle = if (e.isGroup) FontStyle.Italic else FontStyle.Normal)
+                }
+            }
+        }
+        if (query.isNotBlank() && hits.isEmpty()) {
+            Text("No match. Try a shorter word, or pick a group like \u201csome kind of bird\u201d.",
+                style = MaterialTheme.typography.bodySmall)
+        }
+        Text(when {
+            sharing -> "Your photo is shared to help teach the game (you can turn this off in your account)."
+            signedIn -> "Only the name is saved. To share photos too, turn on \u201cShare photos to teach the game\u201d in your account."
+            else -> "It's saved on this phone and sent once you sign in. Photos are shared only if you turn that on in your account."
+        }, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+        Text(list.about, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+        TextButton(onClick = { skipped = true }, contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) { Text("Skip") }
     }
 }
 

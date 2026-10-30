@@ -237,7 +237,7 @@ def test_news_feed(client, fake):
 
     # Opting out hides your catches from everyone else's feed, not your own.
     assert client.patch("/me/settings", headers=cyd, json={"show_in_feed": False}).json() == \
-        {"show_in_feed": False, "is_private": False}
+        {"show_in_feed": False, "is_private": False, "share_training_photos": False}
     assert client.get("/me", headers=cyd).json()["show_in_feed"] is False
     assert {p["username"] for p in client.get("/feed", headers=ana).json()["photos"]} == {"ana", "bob"}
     assert len([p for p in client.get("/feed", headers=cyd).json()["photos"] if p["is_mine"]]) == 2
@@ -432,7 +432,7 @@ def test_private_player(client, fake):
     catch(client, fake, ana, "coyote")
     catch(client, fake, bob, "coyote")
     assert client.patch("/me/settings", headers=admin, json={"is_private": True}).json() == \
-        {"show_in_feed": True, "is_private": True}
+        {"show_in_feed": True, "is_private": True, "share_training_photos": False}
     assert client.get("/me", headers=admin).json()["is_private"] is True
     befriend(client, admin, bob, "bob", "admin")
     admin_photo = client.get("/me/album", headers=admin).json()["photos"][0]["id"]

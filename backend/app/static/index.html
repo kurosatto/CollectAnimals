@@ -49,6 +49,11 @@
   .pick .none { border-style:dashed; }
   .pick-panel { margin-top:10px; }
   .pick-panel > p { margin:0; }
+  .name-panel { margin-top:12px; display:grid; gap:6px; }
+  .name-panel > p { margin:0; }
+  .name-panel .pick { margin-top:0; }
+  .name-panel .link { justify-self:start; }
+  .small { font-size:.85rem; } .tiny { font-size:.72rem; }
   .tile { cursor:pointer; }
   .tile:hover { border-color:var(--accent); }
   .hidden, .off { display:none !important; }
@@ -825,6 +830,7 @@ function showCapture(r, file, box) {
   if (r.score) box.append(scoreCard(r.score));
   const pp = pickPanel(r, box);
   if (pp) box.append(pp);
+  else if (!r.matched && r.capture_id) box.append(namePanel(r.capture_id));
   if (r.matched && !r.album_photo_id) keepWhich(r.species, r.capture_id, file, box, r.score && r.score.total);
   if (r.can_change_state) {
     // No place in a game state (no GPS in the file, or taken elsewhere): the
@@ -1042,6 +1048,7 @@ function pickPanel(r, box) {
       const sb = safetyBox(res);
       if (sb) h.after(sb);
       if (res.matched && !res.album_photo_id) keepWhich(res.species, r.capture_id, r.file, box, res.score && res.score.total);
+      if (!res.matched) box.append(namePanel(r.capture_id));
       loadCollection(); loadFeed();
     } catch (err) {
       b.textContent = err.message;
@@ -1059,6 +1066,80 @@ function pickPanel(r, box) {
   none.onclick = () => choose("none", none);
   list.append(none);
   wrap.append(list);
+  return wrap;
+}
+
+// "What was it?": after "None of these" the player can name the animal from a big
+// text-only list (species/animal_names.json) to help train the identifier. It never
+// counts for a badge. Search: every typed word must start a word of the name.
+let animalNames = null;
+const foldName = (t) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+async function loadAnimalNames() {
+  if (!animalNames) animalNames = api("/species/names").then((d) => {
+    const groups = d.groups.map(([id, name, words]) => ({ label: "group:" + id, name, group: true,
+      words: foldName(name + " " + (words || "")).split(" ") }));
+    const species = d.names.map(([name, sci]) => ({ label: sci, name, sci,
+      words: foldName(name + " " + sci).split(" "), full: foldName(name) }));
+    return { groups, species, about: d.about };
+  }).catch((err) => { animalNames = null; throw err; });
+  return animalNames;
+}
+function searchNames(list, q, max = 8) {
+  const words = foldName(q).split(" ").filter(Boolean);
+  if (!words.length) return [];
+  const fits = (e) => words.every((w) => e.words.some((x) => x.startsWith(w)));
+  const whole = foldName(q);
+  const starts = [], others = [];
+  for (const e of list.species) {
+    if (!fits(e)) continue;
+    (e.full.startsWith(whole) ? starts : others).push(e);
+    if (starts.length >= max) break;
+  }
+  const groups = list.groups.filter(fits).slice(0, 3);
+  return [...starts, ...groups, ...others].slice(0, max);
+}
+let shareTraining = false;
+function namePanel(captureId) {
+  const wrap = el("div", "name-panel");
+  wrap.append(el("p", "", "What was it? Pick a name to help the game learn animals. It won't count for a badge."));
+  const input = el("input");
+  input.type = "search"; input.placeholder = "Type an animal, like robin or beetle";
+  input.setAttribute("aria-label", "Animal name"); input.autocomplete = "off";
+  const results = el("div", "pick");
+  const note = el("p", "muted small", shareTraining ? "Your photo is shared to help teach the game (you can turn this off in your account)."
+    : "Only the name is saved. To share photos too, turn on \u201cShare photos to teach the game\u201d in your account.");
+  const skip = el("button", "link", "Skip");
+  skip.type = "button"; skip.onclick = () => wrap.remove();
+  wrap.append(input, results, note, skip);
+  const pick = async (e, b) => {
+    results.querySelectorAll("button").forEach((x) => { x.disabled = true; });
+    try {
+      const res = await api(`/captures/${captureId}/name`, { method: "POST",
+        headers: { "Content-Type": "application/json" }, body: JSON.stringify({ label: e.label }) });
+      wrap.replaceChildren(el("p", "muted", "🙏 " + res.message));
+    } catch (err) {
+      b.textContent = err.message;
+      results.querySelectorAll("button").forEach((x) => { x.disabled = false; });
+    }
+  };
+  const show = (list) => {
+    results.innerHTML = "";
+    const q = input.value.trim();
+    const hits = q ? searchNames(list, q) : list.groups.slice(0, 8);
+    for (const e of hits) {
+      const b = el("button", e.group ? "none" : "", e.name);
+      b.type = "button";
+      if (e.sci) b.title = e.sci;
+      b.onclick = () => pick(e, b);
+      results.append(b);
+    }
+    if (q && !hits.length) results.append(el("span", "muted", "No match. Try a shorter word, or pick a group like \u201csome kind of bird\u201d."));
+  };
+  loadAnimalNames().then((list) => {
+    show(list);
+    input.oninput = () => show(list);
+    wrap.append(el("p", "muted tiny", list.about));
+  }).catch(() => { results.append(el("span", "muted", "Couldn't load the name list.")); });
   return wrap;
 }
 
@@ -1948,6 +2029,20 @@ async function accountSection(box) {
   const pol = el("a", "", "Privacy policy"); pol.href = "/privacy"; pol.target = "_blank"; pol.rel = "noopener";
   const rules = el("a", "", "Community rules"); rules.href = "/rules"; rules.target = "_blank"; rules.rel = "noopener";
   links.append(pol, " · ", rules);
+  // Opt-in, off by default: photos the player names after "None of these" are kept to train the identifier.
+  const share = el("label", "share-train");
+  const cb = el("input"); cb.type = "checkbox"; cb.checked = shareTraining;
+  share.append(cb, " Share photos to teach the game");
+  const shareNote = el("p", "muted small", "When you tell the game what an animal really was, a small copy of that " +
+    "photo (no location) is kept to help it learn. Turning this off deletes those copies.");
+  cb.onchange = async () => {
+    try {
+      const r = await api("/me/settings", { method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ share_training_photos: cb.checked }) });
+      shareTraining = r.share_training_photos;
+    } catch (err) { cb.checked = !cb.checked; alert(err.message); }
+  };
+  box.append(share, shareNote);
   const del = el("button", "ghost danger", "Delete account");
   del.onclick = async () => {
     if (!confirm("Delete your account? Your photos, Field Guide, friends, likes and comments are all deleted for good.")) return;
@@ -2551,6 +2646,7 @@ async function render() {
     try {
       const me = await api("/me");
       $("username").replaceChildren(avatarImg(me.avatar, "small"), me.username);
+      shareTraining = !!me.share_training_photos;
       $("reports-open").classList.toggle("hidden", !me.is_admin);
       if (me.is_admin && openReportsOnStart) openReports();
       openReportsOnStart = false;
