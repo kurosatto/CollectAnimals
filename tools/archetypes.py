@@ -604,10 +604,11 @@ def pinniped(s: Sprite, fur, light, *, spots=None, ears=False, proboscis=None, w
     w = s.wave() if act in ("walk", "swim") else 0
     hump = (0, 1.6, 0.6, -0.4)[f] if act == "walk" else 0
     if swim:
-        # stretched out, level, flippers sweeping up and down
-        spine = [(28.5, 19 + w), (22, 18.6), (14, 18.2), (8.5, 18.5)]
+        # stretched out and rippling, the neck arched and the head held up out of the
+        # water (not level like a fish), hind flippers sweeping side to side
+        spine = [(28.5, 21.5 + w), (22, 20 - 0.5 * w), (14.5, 18.6), (9.5, 16)]
         rad = (1.6, 4.0)
-        head = (5.5, 18, 3.3, 2.8)
+        head = (6.5, 11.5 + 0.4 * w, 3.3, 2.8)
     elif act == "sit":
         # banana: belly on the ground, both ends curled up (the tail end bobs a little)
         lift = (0, 0.5, 1, 0.5)[f]
@@ -658,7 +659,7 @@ def pinniped(s: Sprite, fur, light, *, spots=None, ears=False, proboscis=None, w
 
     # near front flipper
     if swim:
-        s.ellipse(fx + 1.5, fy + 2 - w, 3.2, 1.1, flipper, rot=20 + 15 * w)
+        s.ellipse(fx + 0.5 + 0.8 * w, fy + 3.6 - 0.6 * w, 3.4, 1.2, flipper, rot=35 + 25 * w)  # a breast stroke
     elif act == "sleep":
         s.ellipse(fx + 1, ground - 0.8, 2.8, 1.0, flipper, rot=10)
     elif upright:
