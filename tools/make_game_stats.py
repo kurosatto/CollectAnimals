@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import csv
 import json
+import math
 import re
 from pathlib import Path
 
@@ -42,6 +43,42 @@ JUMP = [
         r"manatee|walrus|limpet|periwinkle|nerite|whelk|dogwinkle|slippersnail|jelly|nettle|caecilian|amphiuma|siren"),
     (2, r"salamander|newt|mudpuppy|hellbender|beetle|crab|crayfish|lobster|skunk|opossum|porcupine|armadillo|beaver|"
         r"woodchuck|groundhog|mole|shrew|vole|duck|goose|swan|heron|egret|crane|pelican"),
+]
+# Birds and bugs come in big families that the rules above lump together; these tell a
+# dove from a wren and a bee from a butterfly: (pattern, speed, jump, agility), None keeps
+# what the other rules said. First match wins.
+FAMILY = [
+    (r"heron|egret|bittern|crane|stork|ibis|spoonbill|limpkin|flamingo", 2, 2, 2),
+    (r"vulture|condor", 2, 2, 1),
+    (r"pelican|swan|goose|brant", 3, 2, 2),
+    (r"eagle|osprey|owl", 3, 3, 3),
+    (r"crow|raven|magpie|jay|nutcracker", 3, 3, 4),
+    (r"dove|pigeon", 4, 2, 3),
+    (r"swallow|martin|swift|nighthawk", 5, 2, 5),
+    (r"grackle|blackbird|starling|cowbird|bobolink|meadowlark", 4, 3, 4),
+    (r"woodpecker|flicker|sapsucker|nuthatch|creeper", 3, 4, 4),
+    (r"robin|thrush|bluebird|thrasher|mockingbird|catbird|waxwing", 3, 3, 4),
+    (r"warbler|kinglet|gnatcatcher|chickadee|titmouse|bushtit|wren|vireo|verdin", 3, 3, 5),
+    (r"sparrow|junco|towhee|finch|goldfinch|siskin|grosbeak|bunting|cardinal|longspur", 3, 4, 4),
+    (r"phoebe|flycatcher|kingbird|pewee", 4, 3, 5),
+    (r"quail|grouse|bobwhite|turkey|pheasant|chachalaca|prairie_chicken", 2, 3, 2),
+    (r"sandpiper|plover|killdeer|dunlin|sanderling|yellowlegs|dowitcher|turnstone|willet|curlew|godwit", 4, 3, 4),
+    (r"gull|tern|skimmer", 4, 2, 3),
+    (r"bee|bumble|wasp|hornet|yellowjacket", 3, 2, 5),
+    (r"dragonfly|darner|skimmer|dasher|pennant|meadowhawk|pondhawk|whitetail|saddlebags|glider", 5, 2, 5),
+    (r"damselfly|bluet|dancer|forktail|spreadwing|jewelwing", 3, 2, 4),
+    (r"butterfly|swallowtail|monarch|skipper|fritillary|sulphur|admiral|hairstreak|painted_lady|buckeye|checkerspot|"
+     r"crescent|longwing|mourning_cloak|queen|copper|blue|white|azure|satyr|wood_nymph|emperor|leafwing", 2, 2, 4),
+    (r"moth|sphinx|hawkmoth|underwing|tiger_moth", 3, 2, 3),
+    (r"fly|mosquito|midge|gnat", 4, 2, 5),
+    (r"beetle|weevil|ladybug|lady_beetle|bug|stink|cicada|cockroach", 2, 2, 3),
+    (r"ant|ants|termite", 2, 1, 3),
+    (r"mantis", 2, 3, 3),
+    (r"orbweaver|spider|widow|tarantula|recluse", 2, 2, 3),
+    (r"fiddler_crab|ghost_crab|sand_crab|shore_crab|swimming_crab|blue_crab", 3, 2, 4),
+    (r"hermit_crab|crab|crayfish|lobster", 2, 2, 3),
+    (r"salamander|newt|ensatina|mudpuppy|hellbender", 2, 2, 3),
+    (r"scorpion|centipede", 3, 2, 3),
 ]
 CATEGORY_SPEED = {"mammal": 3, "bird": 3, "reptile": 2, "amphibian": 2, "fish": 3, "marine": 3, "invertebrate": 2}
 CATEGORY_JUMP = {"mammal": 3, "bird": 3, "reptile": 3, "amphibian": 3, "fish": 3, "marine": 3, "invertebrate": 2}
@@ -111,13 +148,45 @@ def rule(table, slug, default):
     return default
 
 
-def size_of(kg: float | None, category: str) -> int:
-    if kg is None:
+UNIT_CM = {"cm": 1, "mm": .1, "m": 100, "in": 2.54, "ft": 30.48}
+
+
+def length_cm(text: str) -> float | None:
+    """The middle of a range like '16–21 in long (40–53 cm)', in centimetres."""
+    best = None
+    for lo, hi, unit in re.findall(r"([\d.,]+)(?:\s*[–-]\s*([\d.,]+))?\s*(cm|mm|m|in|ft)\b", text or ""):
+        a = float(lo.replace(",", "")); b = float(hi.replace(",", "")) if hi else a
+        cm = (a + b) / 2 * UNIT_CM[unit]
+        if unit in ("cm", "mm", "m"):
+            return cm
+        best = best or cm
+    return best
+
+
+def bulk(kg: float | None, cm: float | None, category: str) -> float:
+    """How big the animal is, from 1 to 5 in steps of a tenth: its weight and its length
+    together, so a tall egret comes out bigger than a crow of about the same weight."""
+    marks = []
+    if kg is not None:
+        # 5 g is a 1, 300 g a 2, 4 kg a 3, 60 kg a 4 and more is a 5, smoothly in between.
+        marks.append(1 + math.log10(max(kg, 1e-4) / .005) / math.log10(.3 / .005) if kg < .3 else
+                     2 + math.log10(kg / .3) / math.log10(4 / .3) if kg < 4 else
+                     3 + math.log10(kg / 4) / math.log10(60 / 4) if kg < 60 else 4 + math.log10(kg / 60) / math.log10(10))
+    if cm is not None:
+        # 4 cm is a 1, 18 cm a 2, 55 cm a 3, 150 cm a 4 and more is a 5.
+        marks.append(1 + math.log10(max(cm, .5) / 4) / math.log10(18 / 4) if cm < 18 else
+                     2 + math.log10(cm / 18) / math.log10(55 / 18) if cm < 55 else
+                     3 + math.log10(cm / 55) / math.log10(150 / 55) if cm < 150 else 4 + math.log10(cm / 150) / math.log10(3))
+    if not marks:
         return {"invertebrate": 1, "amphibian": 2, "reptile": 2, "fish": 2, "marine": 2, "bird": 2}.get(category, 3)
-    for limit, size in ((.005, 1), (.3, 2), (4, 3), (60, 4)):
-        if kg < limit:
-            return size
-    return 5
+    return max(1, min(5, sum(marks) / len(marks) + 1))
+
+
+def family(slug: str):
+    for pattern, speed, jump, agility in FAMILY:
+        if re.search(rf"(?:^|_)(?:{pattern})(?:_|$)", slug):
+            return speed, jump, agility
+    return None
 
 
 def main() -> None:
@@ -140,11 +209,20 @@ def main() -> None:
             stats[slug] = list(STARS[slug])
             continue
         d = details.get(slug, {})
-        size = size_of(weight_kg(d.get("weight", "")), cat)
+        big = bulk(weight_kg(d.get("weight", "")), length_cm(d.get("size", "")), cat)
+        size = max(1, min(5, int(big)))
         speed = rule(SPEED, slug, CATEGORY_SPEED.get(cat, 3))
         jump = rule(JUMP, slug, CATEGORY_JUMP.get(cat, 3))
         # Small things and fliers turn on a dime; big heavy ones don't.
-        agility = max(1, min(5, 6 - size + (1 if cat in ("bird", "invertebrate") else 0)))
+        agility = max(1, min(5, round(6.9 - big + (.8 if cat in ("bird", "invertebrate") else 0))))
+        fam = family(slug) if cat != "mammal" else None
+        if fam:
+            # The family says how it moves; a tiny one is a bit nimbler, a big one less so.
+            speed, jump = fam[0], fam[1]
+            agility = max(1, min(5, fam[2] + (1 if big < 1.8 and fam[2] < 4 else 0) - (1 if big >= 4.1 else 0)))
+        elif cat in ("mammal", "reptile", "amphibian") and speed == CATEGORY_SPEED.get(cat) and jump == CATEGORY_JUMP.get(cat):
+            # No rule named it: big land animals cover ground faster, tiny ones dart about.
+            speed = 2 if big < 2.3 else 4 if big >= 4.7 else speed
         if speed == 1:
             agility = min(agility, 2)  # crawlers can't dodge
         elif speed >= 4 or jump >= 4:
