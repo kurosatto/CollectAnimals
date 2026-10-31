@@ -234,9 +234,12 @@ def _(s):
 
 @sprite("barred_owl")
 def _(s):
-    owl(s, "#8a7a6a", "#d8cec0", eye_col=None, belly="#ece4d8", beak="#e8c060", bars="#8a6a50")
-    for x in (11, 15, 19):
-        s.paint(s.m_line(x, 23, x, 28), "#7a5a40")
+    # Barred across the chest, streaked down the belly.
+    def front(s):
+        for x in (11, 15, 19):
+            s.paint(s.m_line(x, 23, x, 28), "#7a5a40")
+    owl(s, "#8a7a6a", "#d8cec0", eye_col=None, belly="#ece4d8", beak="#e8c060", bars="#8a6a50", streaks="#7a5a40",
+        spots="#e4dcd0", front=front)
 
 
 @sprite("belted_kingfisher")
@@ -254,7 +257,6 @@ def _(s):
     s.px([(9, 9)], WHITE)
     s.poly([(6, 10.5), (-1, 12.5), (6, 13.5)], "#2b2630")
     s.eye(8, 10)
-    s.blush(7, 13)
 
 
 @sprite("white_ibis")
@@ -496,7 +498,6 @@ def _(s):
     s.ellipse(7, 22, 6.5, 3.6, c, edge=True)
     s.paint(s.m_line(1, 23, 8, 24), mix(c, "#000000", 0.4))
     s.px([(4, 20)], EYE)
-    s.blush(6, 23)
 
 
 # --------------------------------------------------------------------------- invertebrates

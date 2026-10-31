@@ -23,7 +23,6 @@ def _(s):
     s.px([(2, 16), (3, 17), (2, 18), (4, 19)], mix(light, "#000000", 0.35))
     s.px([(1, 17), (1, 18)], "#3a3a40")
     s.eye(8, 14)
-    s.blush(8, 17)
 
 
 @sprite("tamanends_bottlenose_dolphin")
@@ -66,8 +65,6 @@ def _(s):
     s.px([(15, 13), (17, 13)], "#2b2226")
     s.eye(14, 11)
     s.eye(18, 11)
-    s.blush(13, 13)
-    s.blush(19, 13)
 
 
 @sprite("eastern_mole")
@@ -87,7 +84,6 @@ def _(s):
     s.path([(9, 21), (2, 23)], (2.6, 1.0), fur)  # pointed snout
     s.ellipse(1.5, 23.5, 1.4, 1.2, pink)
     s.px([(6, 20)], "#2b2226")  # tiny eye in the fur
-    s.blush(8, 23)
     if s.act == "walk" and s.f % 2:
         s.shift(0, -1)
 
@@ -383,8 +379,6 @@ def _(s):
         s.ellipse(x, y, 1.3, 1.3, "#d8302a")
     s.eye(14, 18)
     s.eye(18, 18)
-    s.blush(13, 21)
-    s.blush(19, 21)
 
 
 @sprite("blue_dasher")
@@ -423,5 +417,3 @@ def _(s):
     s.paint(s.m_ellipse(13, 16, 7, 2), "#c8b0f0", within=m)
     s.eye(11, 13)
     s.eye(17, 12)
-    s.blush(9, 16)
-    s.blush(19, 15)

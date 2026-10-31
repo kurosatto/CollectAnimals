@@ -37,8 +37,6 @@ def _bat(s, fur, wing, bone, *, frost=None, throat=None):
     s.px([(15, 13), (17, 13)], "#1a1210")
     s.eye(14, 11)
     s.eye(18, 11)
-    s.blush(13, 13)
-    s.blush(19, 13)
 
 
 def _reef(s, body, *, cx=16, cy=16, rx=9, ry=8, fin=None, tail=None, fins=None, dorsal=None, anal=None,
@@ -70,7 +68,6 @@ def _reef(s, body, *, cx=16, cy=16, rx=9, ry=8, fin=None, tail=None, fins=None, 
         s.ellipse(cx - 1, cy + 2, 2.6, 1.5, mix(fin, "#ffffff", 0.25), rot=25, shade=False)
     ex, ey = eye
     s.eye(ex, ey)
-    s.blush(ex, ey + 3)
     if mouth:
         s.px(mouth, mix(body, "#000000", 0.5))
     return m
@@ -79,8 +76,6 @@ def _reef(s, body, *, cx=16, cy=16, rx=9, ry=8, fin=None, tail=None, fins=None, 
 def _urchin_face(s, y=15):
     s.eye(12, y)
     s.eye(18, y)
-    s.blush(10, y + 3)
-    s.blush(20, y + 3)
 
 
 # --------------------------------------------------------------------------- mammals
@@ -615,7 +610,6 @@ def _(s):
     if s.act != "sleep" and s.f % 2 == 0:
         s.px([(1, 24), (0, 24), (-1, 23), (-1, 25)], "#e04a5a")
     s.eye(5, 20, size=1)
-    s.blush(6, 23)
 
 
 # --------------------------------------------------------------------------- amphibians
@@ -656,7 +650,6 @@ def _(s):
     s.line(4 - stretch, 20, 2 - stretch, 15, "#9a8a7a")
     s.line(7 - stretch, 20, 8 - stretch, 15, "#9a8a7a")
     s.eye(4 - stretch, 22)
-    s.blush(6 - stretch, 24)
 
 
 @sprite("hawaiian_garden_spider")
@@ -686,8 +679,6 @@ def _(s):
     s.paint(s.m_ellipse(16, 22.5, 6, 1.5), "#d87a3a", within=m)
     s.eye(14, 18)
     s.eye(18, 18)
-    s.blush(13, 20)
-    s.blush(19, 20)
 
 
 @sprite("black_witch")
@@ -721,7 +712,6 @@ def _(s):
     s.line(5, 13, 3, 8, "#2b2226")
     s.line(8, 13, 9, 8, "#2b2226")
     s.eye(4, 16, color="#11080f", shine="#ffffff")
-    s.blush(4, 19, color="#ff8fa8")
 
 
 @sprite("hawaiian_black_nerite")
@@ -738,8 +728,6 @@ def _(s):
         s.line(7 - st, 22, 8 - st, 19, "#6a6a70")
     s.eye(14, 19)
     s.eye(20, 19)
-    s.blush(12, 22)
-    s.blush(21, 22)
 
 
 @sprite("hawaiian_snakehead_cowrie")
@@ -753,8 +741,6 @@ def _(s):
     s.paint(s.m_ellipse(16, 25, 13, 12) & ~s.m_ellipse(16, 25, 12, 11), "#3a2016", within=m)
     s.eye(11, 20)
     s.eye(18, 19)
-    s.blush(9, 23)
-    s.blush(20, 22)
 
 
 @sprite("dotted_periwinkle")
@@ -768,8 +754,6 @@ def _(s):
             WHITE, within=m)
     s.eye(13, 17)
     s.eye(18, 17)
-    s.blush(11, 20)
-    s.blush(20, 20)
 
 
 @sprite("day_octopus")
@@ -790,8 +774,6 @@ def _(s):
     s.ellipse(20.5, 12.5, 2.2, 2.2, "#f0e0a0", shade=False)
     s.eye(11, 12)
     s.eye(20, 12)
-    s.blush(10, 15)
-    s.blush(21, 15)
 
 
 # --------------------------------------------------------------------------- sea life
@@ -836,8 +818,6 @@ def _(s):
         s.ellipse(x, 26.5, 1.5, 1.8, "#4a1a2c" if x % 2 else "#5a2236")
     s.eye(12, 19)
     s.eye(18, 19)
-    s.blush(10, 22)
-    s.blush(20, 22)
 
 
 @sprite("red_pencil_urchin")
@@ -867,8 +847,6 @@ def _(s):
         s.ellipse(x - st, 18 + abs(x - 5), 1.2, 1.2, "#e8d8c0")
     s.eye(7 - st, 20)
     s.eye(12 - st, 20)
-    s.blush(6 - st, 23)
-    s.blush(13 - st, 23)
 
 
 @sprite("hawaiian_convict_surgeonfish")
@@ -904,7 +882,6 @@ def _(s):
     s.px([(2, 19)], BLACK)
     s.ellipse(11, 15, 1.4, 1.2, "#f4f0e8", shade=False)
     s.eye(10, 14)
-    s.blush(11, 18, color="#f59aa8")
 
 
 @sprite("yellow_tang")
@@ -1003,7 +980,6 @@ def _(s):
     s.ellipse(14, 19, 2.4, 1.4, "#6a7ad8", rot=25, shade=False)
     s.ellipse(3.5, 18, 1.6, 1.3, "#f0b0a0")
     s.eye(8, 14)
-    s.blush(8, 17)
 
 
 @sprite("hawaiian_spotted_toby")
@@ -1089,7 +1065,6 @@ def _(s):
     s.paint(s.m_line(4, 20, 9, 20), "#6a5a40")
     s.px([(6, 11), (7, 10), (5, 10)], "#c8b08a")
     s.eye(5, 15)
-    s.blush(6, 18)
 
 
 @sprite("whitemouth_moray")
@@ -1108,4 +1083,3 @@ def _(s):
     s.paint(s.m_px([(14, 9), (12, 7), (17, 13), (19, 16), (21, 20), (22, 24), (19, 22), (16, 18), (15, 11), (10, 8)]),
             "#f0e8d8")
     s.eye(10, 8)
-    s.blush(10, 12)

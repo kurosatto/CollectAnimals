@@ -101,7 +101,7 @@ def _(s):
         flecks(s, g["body"], "#c8c0b0", every=5)
         back_stripes(s, g, [WHITE], top=0.1, width=0.8)
     critter(s, "#8a8278", "#e8e0d0", build="badger", ear_in="#4a3e36", tail="short", tail_col="#a89a80",
-            feet="#2b2226", blush=False, face=face, markings=back)
+            feet="#2b2226", face=face, markings=back)
 
 
 @sprite("american_bison")
@@ -250,17 +250,17 @@ def _(s):
 @sprite("burrowing_owl")
 def _(s):
     # A long-legged little ground owl: brown with white spots, white brows and a white chin.
-    owl(s, "#8a6a48", "#b8966c", eye_col="#f6d030", belly="#ecdcc0", bars="#a08058")
-    s.paint(s.m_line(8, 6, 14, 6) | s.m_line(9, 5, 13, 5), "#f4ecdc", mirror=True,
-            within=s.m_ellipse(16, 10, 10, 8))
-    s.paint(s.m_ellipse(16, 16.5, 4.5, 1.2), "#f4ecdc")
-    s.paint(s.m_px([(9, 4), (16, 3), (23, 4), (7, 17), (25, 17), (6, 22), (26, 22), (8, 26), (24, 26), (5, 19),
-                    (27, 19)]), "#f4ecdc")
-    if s.act != "fly":
+    def front(s):
+        s.paint(s.m_line(11, 7, 15, 7), "#f4ecdc", mirror=True)
+        s.paint(s.m_ellipse(16, 15.5, 3, 1), "#f4ecdc")
+        s.paint(s.m_px([(12, 5), (16, 4), (20, 5), (10, 18), (22, 18), (10, 22), (22, 22), (11, 26), (21, 26),
+                        (10, 20), (22, 20)]), "#f4ecdc")
         s.shift(0, -3)
         for x in (13, 19):
             s.line(x, 26, x, 30, "#c8b890")
             s.px([(x - 1, 30), (x + 1, 30)], "#c8b890")
+    owl(s, "#8a6a48", "#b8966c", eye_col="#f6d030", belly="#ecdcc0", bars="#a08058", spots="#f4ecdc",
+        throat="#f4ecdc", brows="#f4ecdc", long_legs=True, front=front)
 
 
 @sprite("upland_sandpiper")
@@ -425,7 +425,6 @@ def _(s):
     s.paint(s.m_path([(11, 18), (10, 23), (11, 27)], 0.5), "#6e6252")  # the fold behind the head
     s.ellipse(9, 28.5, 2.4, 1.4, c)
     s.eye(6, 21)
-    s.blush(7, 24)
     if hop:
         s.shift(0, -2)
 
@@ -448,7 +447,6 @@ def _bumble(s, bands, *, head="#2b2226", cap=None):
     s.line(6, 12, 4, 6, "#2b2226")
     s.line(9, 12, 10, 6, "#2b2226")
     s.eye(5, 16, color="#11080f", shine="#ffffff")
-    s.blush(5, 19, color="#ff8fa8")
 
 
 @sprite("fuzzy_horned_bumble_bee")
@@ -491,7 +489,6 @@ def _(s):
     s.path([(6, 12), (4, 8), (1, 6)], 0.5, "#e0802a", shade=False)
     s.path([(8, 12), (8, 7), (6, 4)], 0.5, "#e0802a", shade=False)
     s.eye(4, 14, color="#11080f", shine="#ffffff")
-    s.blush(5, 17, color="#ff8fa8")
 
 
 @sprite("woodland_skipper")
@@ -537,7 +534,6 @@ def _(s):
     s.path([(4, 16.5), (2, 12), (0, 7)], 0.4, "#3a3430", shade=False)
     s.path([(6, 16.5), (6, 11), (4, 7)], 0.4, "#3a3430", shade=False)
     s.eye(5, 17)
-    s.blush(6, 19)
 
 
 @sprite("western_boxelder_bug")
@@ -615,7 +611,6 @@ def _(s):
     s.px([(2, 12), (7, 12)], "#5a5458")
     s.px([(4, 19), (5, 19), (4, 20), (5, 20)], EYE)
     s.px([(4, 19)], WHITE)
-    s.blush(6, 21)
 
 
 @sprite("yellow_spotted_millipede")
@@ -636,7 +631,6 @@ def _(s):
     s.ellipse(6.5, 22, 3.5, 3.5, "#2b2226", edge=True)
     s.line(4, 19, 0, 16, "#3a3028")
     s.eye(5, 21)
-    s.blush(6, 24)
 
 
 # --------------------------------------------------------------------------- freshwater mussels
@@ -669,8 +663,6 @@ def _mussel(s, shell, *, rx=13, ry=8, rot=-15, rays=None, ridges=None, bumps=Non
     s.paint(s.m_ellipse(ux, uy + 1, 2.4, 1.6), mix(shell, "#ffffff", 0.35), within=m)  # the worn beak (umbo)
     s.eye(12, 18)
     s.eye(18, 17)
-    s.blush(11, 21)
-    s.blush(19, 20)
 
 
 @sprite("three_ridge_mussel")
@@ -733,8 +725,6 @@ def _(s):
     _anemone(s, 16, 30, 1.0, "#b8e0a8", "#f07aa8", "#6aa86a")
     s.eye(12, 24)
     s.eye(18, 24)
-    s.blush(10, 27)
-    s.blush(20, 27)
 
 
 @sprite("horned_nudibranch")
@@ -757,8 +747,6 @@ def _(s):
     s.line(3 - st, 27, 0 - st, 29, "#e8eef4")
     s.eye(5 - st, 24)
     s.eye(10 - st, 24)
-    s.blush(4 - st, 27)
-    s.blush(11 - st, 27)
 
 
 @sprite("orange_sea_cucumber")
@@ -774,8 +762,6 @@ def _(s):
     s.ellipse(8.5, 17.5, 3.6, 3.2, mix(c, "#ffffff", 0.1), edge=True)
     s.eye(14, 20)
     s.eye(20, 21)
-    s.blush(13, 23)
-    s.blush(21, 24)
 
 
 @sprite("frilled_dogwinkle")
@@ -792,8 +778,6 @@ def _(s):
         s.paint(s.m_line(9, y + 1, 25, y - 1) | s.m_line(9, y + 2, 25, y), "#c87a3a", within=m)
     s.eye(13, 18)
     s.eye(19, 18)
-    s.blush(11, 21)
-    s.blush(20, 21)
 
 
 @sprite("dungeness_crab")
@@ -844,8 +828,6 @@ def _(s):
     s.px([(11, 9), (20, 9)], EYE)
     s.eye(12, 16)
     s.eye(18, 16)
-    s.blush(11, 19)
-    s.blush(19, 19)
 
 
 def _crayfish(s, body, dark, spots, tip):
@@ -870,7 +852,6 @@ def _crayfish(s, body, dark, spots, tip):
     s.line(9, 17, 4, 13, dark)
     s.line(8, 18, 2, 16, dark)
     s.eye(9, 18)
-    s.blush(10, 21)
 
 
 @sprite("calico_crayfish")
@@ -993,7 +974,6 @@ def _(s):
     s.ellipse(12, 21, 2, 1.2, fin, rot=20)
     s.paint(s.m_line(2, 18, 7, 18), "#2a3a1e", within=m)
     s.eye(5, 15)
-    s.blush(7, 17)
 
 
 @sprite("walleye")

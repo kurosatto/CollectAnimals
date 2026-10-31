@@ -47,8 +47,6 @@ def _(s):
     s.px([(15, 13), (17, 13)], "#2b2226")
     s.eye(14, 11)
     s.eye(18, 11)
-    s.blush(13, 13)
-    s.blush(19, 13)
 
 
 # --------------------------------------------------------------------------- birds
@@ -165,7 +163,6 @@ def _(s):
     s.ellipse(6.5, 22, 3.5, 3.5, mix(g, "#000000", 0.15), edge=True)
     s.line(4, 19, 0, 16, "#3a3a44")
     s.eye(5, 21)
-    s.blush(6, 24)
 
 
 @sprite("nosy_pill_woodlouse")
@@ -177,4 +174,3 @@ def _(s):
     s.ellipse(3.2, 21.5, 1.4, 1.2, mix(g, "#000000", 0.1))  # the "nose" ridge on its head
     s.line(4, 19, 1, 15, "#3a3a34")
     s.eye(5, 21)
-    s.blush(6, 24)

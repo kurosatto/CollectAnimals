@@ -26,6 +26,12 @@ const habImgs = {};
 const habSheets = {};
 let habAnimIdx = null;
 fetch("/sprites/anim/index.json").then((r) => (r.ok ? r.json() : null)).then((j) => { habAnimIdx = j; }).catch(() => {});
+// How big each animal is drawn, next to a 1.0 crow: from 0.4 for a bee to 1.5 for a
+// whale (tools/make_game_stats.py), so a seal is bigger than a banana slug.
+let habScaleIdx = {};
+fetch("/sprites/game_stats.json").then((r) => (r.ok ? r.json() : null)).then((j) => { habScaleIdx = (j && j.scale) || {}; })
+  .catch(() => {});
+const habScale = (slug) => habScaleIdx[slug] || 1;
 const habStill = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const HAB_ROLES = [
   [/millipede|centipede|woodlouse/, "walk"],
@@ -915,30 +921,35 @@ function habSprite(c, p) {
   // Frame size from the image (40 px: a 32 px drawing with room for wings, tails
   // and antlers), feet on its bottom row.
   const F = framed ? sheet.naturalWidth / habAnimIdx.frames : raw.naturalWidth;
-  p.box = [x - F / 2, y - F, x + F / 2, y];
+  // Fliers and swimmers turn and squash around their middle, the rest around
+  // their feet.
+  const mid = p.sky || a.role === "swim" || a.role === "jelly" ? 16 : 0;
+  // Small animals still get a fingertip-sized box to tap.
+  const k = habScale(a.s.slug), side = Math.max(F * k, 16), top = y - mid + (mid - F) * k;
+  p.box = [x - side / 2, top, x + side / 2, top + side];
   if (p.hidden) return;
   if (!p.sky && !p.roost && !HAB_NO_SHADOW.has(a.role)) {
     const gy = a.role === "hop" && p.awake ? Math.round(a.y) : y;
+    const sw = (n) => Math.max(2, Math.round(n * k));
     c.fillStyle = "rgba(20,32,10,.25)";
-    c.fillRect(x - 7, gy - 1, 14, 1); c.fillRect(x - 9, gy, 18, 1); c.fillRect(x - 6, gy + 1, 12, 1);
+    c.fillRect(x - sw(7), gy - 1, sw(7) * 2, 1); c.fillRect(x - sw(9), gy, sw(9) * 2, 1); c.fillRect(x - sw(6), gy + 1, sw(6) * 2, 1);
   }
   if (a.role === "wade" && p.awake) {
     c.fillStyle = "rgba(225,245,255,.6)";
     c.fillRect(x - 10, y - 1, 5, 1); c.fillRect(x + 5, y - 1, 5, 1);
   }
   c.save();
-  if (a.role === "paddle") { c.beginPath(); c.rect(0, 0, hab.L.w, y - 8); c.clip(); }
+  if (a.role === "paddle") { c.beginPath(); c.rect(0, 0, hab.L.w, y - Math.round(8 * k)); c.clip(); }
   // A diving bird disappears into the water as it goes in.
   if (a.role === "dive" && p.awake && a.mode === "dive") { c.beginPath(); c.rect(0, 0, hab.L.w, habPool(a)[2] + 1); c.clip(); }
   if (a.role === "dangle" && !a.dv) {
     c.fillStyle = "rgba(255,255,255,.7)";
-    c.fillRect(x, 104, 1, y - 104 - 26);
+    c.fillRect(x, 104, 1, y - 104 - Math.round(26 * k));
   }
   if (!p.awake && !framed) c.globalAlpha = .85;
-  // Fliers and swimmers turn and squash around their middle, the rest around
-  // their feet. Sprites face left; mirror the ones heading right.
-  const mid = p.sky || a.role === "swim" || a.role === "jelly" ? 16 : 0;
+  // Sprites face left; mirror the ones heading right.
   c.translate(x, y - mid);
+  if (k !== 1) c.scale(k, k);
   if (a.dir > 0 && a.role !== "reef") c.scale(-1, 1);
   if (p.tilt) c.rotate(-p.tilt);
   if (p.sx !== 1 || p.sy !== 1) c.scale(p.sx, p.sy);

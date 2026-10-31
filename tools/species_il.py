@@ -40,8 +40,6 @@ def _(s):
     s.px([(15, 13), (17, 13)], "#0e0a0e")
     s.eye(14, 11, color="#0e0a0e", shine="#ffffff")
     s.eye(18, 11, color="#0e0a0e", shine="#ffffff")
-    s.blush(13, 13)
-    s.blush(19, 13)
 
 
 # --------------------------------------------------------------------------- birds
@@ -138,7 +136,6 @@ def _(s):
     s.line(6, 12, 4, 6, "#2a2228")
     s.line(9, 12, 10, 6, "#2a2228")
     s.eye(5, 16, color="#11080f", shine="#ffffff")
-    s.blush(5, 19, color="#ff8fa8")
 
 
 @sprite("black_swallowtail")
@@ -169,4 +166,3 @@ def _(s):
     s.ellipse(6.5, 22, 3.5, 3.5, mix(g, "#000000", 0.15), edge=True)
     s.line(4, 19, 0, 16, "#3a3028")
     s.eye(5, 21)
-    s.blush(6, 24)

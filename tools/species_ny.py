@@ -34,7 +34,6 @@ def _(s):
     s.path([(10, 21), (3, 23)], (2.6, 0.9), fur)  # pointy snout
     s.ellipse(2.5, 23.2, 1.1, 1, "#e0a0a8")
     s.px([(7, 20)], "#1a1420")
-    s.blush(9, 23)
     if s.act == "walk" and s.f % 2:
         s.shift(0, -1)
 
@@ -57,7 +56,6 @@ def _(s):
     s.ellipse(8, 22, 5, 4.5, "#4a3e36", edge=True)
     s.ellipse(4.5, 23.5, 2, 1.6, "#2b2226")
     s.eye(7, 21)
-    s.blush(8, 24)
     if s.act == "walk" and s.f % 2:
         s.shift(0, -1)
 
@@ -289,7 +287,6 @@ def _(s):
     s.line(6, 12, 4, 6, "#2b2226")
     s.line(9, 12, 10, 6, "#2b2226")
     s.eye(5, 16, color="#11080f", shine="#ffffff")
-    s.blush(5, 19, color="#ff8fa8")
 
 
 @sprite("brown_belted_bumble_bee")
@@ -307,7 +304,6 @@ def _(s):
     s.line(6, 12, 4, 6, "#2b2226")
     s.line(9, 12, 10, 6, "#2b2226")
     s.eye(5, 16, color="#11080f", shine="#ffffff")
-    s.blush(5, 19, color="#ff8fa8")
 
 
 @sprite("eastern_carpenter_bee")
@@ -325,7 +321,6 @@ def _(s):
     s.line(5, 13, 3, 8, "#2b2226")
     s.line(8, 13, 9, 8, "#2b2226")
     s.eye(4, 16, color="#11080f", shine="#ffffff")
-    s.blush(4, 19, color="#ff8fa8")
 
 
 @sprite("spotted_lanternfly")
@@ -408,7 +403,6 @@ def _(s):
     s.ellipse(6.5, 22, 3.5, 3.5, "#6a5a4a", edge=True)
     s.line(4, 19, 0, 16, "#4a3e34")
     s.eye(5, 21)
-    s.blush(6, 24)
 
 
 @sprite("common_shiny_woodlouse")
@@ -428,7 +422,6 @@ def _(s):
     s.ellipse(6.5, 22, 3.5, 3.5, "#5a5a64", edge=True)
     s.line(4, 19, 0, 16, "#3a3a44")
     s.eye(5, 21)
-    s.blush(6, 24)
 
 
 @sprite("house_centipede")

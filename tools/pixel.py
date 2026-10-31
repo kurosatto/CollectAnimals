@@ -118,6 +118,7 @@ class Sprite:
         self.acts = {"idle", "sleep"}
         self.eye_px = np.zeros((N, N), bool)
         self.eye_boxes: list[tuple[int, int, int, int]] = []
+        self.fwd, self.xs, self.ys = None, _XS, _YS
 
     def wave(self, off: float = 0.0) -> float:
         """Goes 0, 1, 0, -1 over the four frames (shifted by off, in cycles)."""
@@ -145,6 +146,8 @@ class Sprite:
 
     def eye_box(self, x0, y0, x1, y1, mirror=False):
         """Mark a big eye (x0..x1, y0..y1 inclusive) to be closed when asleep."""
+        if self.fwd is not None:
+            (x0, y0), (x1, y1) = (tuple(round(v) for v in self._to(x, y)) for x, y in ((x0, y0), (x1, y1)))
         x0, y0, x1, y1 = x0 + PAD_X, y0 + PAD_TOP, x1 + PAD_X, y1 + PAD_TOP  # stored as canvas pixels
         self.eye_boxes.append((x0, y0, x1, y1))
         if mirror:
@@ -186,16 +189,45 @@ class Sprite:
             self.shaded[self.n] = False
 
     # -- masks -----------------------------------------------------------------
-    @staticmethod
-    def m_ellipse(cx, cy, rx, ry, rot=0.0):
-        x, y = _XS - cx, _YS - cy
+    def set_warp(self, fwd):
+        """Bend everything drawn from now on through fwd(x, y) -> (x', y') (numpy arrays
+        in, arrays out): a body plan uses it to re-proportion a drawing without moving
+        the details each species adds in the plan's own coordinates."""
+        self.fwd = fwd
+        qx, qy = _XS.copy(), _YS.copy()
+        for _ in range(40):  # invert fwd numerically: the source point of each pixel
+            fx, fy = fwd(qx, qy)
+            qx, qy = qx + 0.7 * (_XS - fx), qy + 0.7 * (_YS - fy)
+        self.xs, self.ys = qx, qy
+
+    def unwarped(self):
+        """Context manager: draw in plain canvas coordinates for a while."""
+        sprite = self
+
+        class _Plain:
+            def __enter__(self):
+                self.saved = sprite.fwd, sprite.xs, sprite.ys
+                sprite.fwd, sprite.xs, sprite.ys = None, _XS, _YS
+
+            def __exit__(self, *exc):
+                sprite.fwd, sprite.xs, sprite.ys = self.saved
+        return _Plain()
+
+    def _to(self, x, y):
+        """Where a drawing coordinate lands on the canvas."""
+        if self.fwd is None:
+            return x, y
+        fx, fy = self.fwd(np.float32(x), np.float32(y))
+        return float(fx), float(fy)
+
+    def m_ellipse(self, cx, cy, rx, ry, rot=0.0):
+        x, y = self.xs - cx, self.ys - cy
         if rot:
             c, s = math.cos(math.radians(rot)), math.sin(math.radians(rot))
             x, y = x * c + y * s, -x * s + y * c
         return (x / rx) ** 2 + (y / ry) ** 2 <= 1.0
 
-    @staticmethod
-    def m_poly(pts):
+    def m_poly(self, pts):
         inside = np.zeros((N, N), bool)
         n = len(pts)
         for i in range(n):
@@ -203,13 +235,12 @@ class Sprite:
             x1, y1 = pts[(i + 1) % n]
             if y0 == y1:
                 continue
-            cond = (y0 > _YS) != (y1 > _YS)
-            xint = x0 + (_YS - y0) * (x1 - x0) / (y1 - y0)
-            inside ^= cond & (_XS < xint)
+            cond = (y0 > self.ys) != (y1 > self.ys)
+            xint = x0 + (self.ys - y0) * (x1 - x0) / (y1 - y0)
+            inside ^= cond & (self.xs < xint)
         return inside
 
-    @staticmethod
-    def m_path(pts, r):
+    def m_path(self, pts, r):
         """Thick polyline; r may be a number or a (start, end) taper."""
         r0, r1 = (r, r) if not isinstance(r, tuple) else r
         segs = list(zip(pts, pts[1:]))
@@ -223,14 +254,14 @@ class Sprite:
                 t = k / steps
                 x, y = a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t
                 rr = r0 + (r1 - r0) * (acc + L * t) / total
-                m |= np.hypot(_XS - x, _YS - y) <= rr
+                m |= np.hypot(self.xs - x, self.ys - y) <= rr
             acc += L
         return m
 
-    @staticmethod
-    def m_line(x0, y0, x1, y1):
+    def m_line(self, x0, y0, x1, y1):
         """1-pixel Bresenham line."""
         m = np.zeros((N, N), bool)
+        (x0, y0), (x1, y1) = self._to(x0, y0), self._to(x1, y1)
         x0, y0, x1, y1 = (int(round(v)) for v in (x0, y0, x1, y1))
         dx, dy = abs(x1 - x0), -abs(y1 - y0)
         sx, sy = (1 if x0 < x1 else -1), (1 if y0 < y1 else -1)
@@ -249,10 +280,11 @@ class Sprite:
                 y0 += sy
         return m
 
-    @staticmethod
-    def m_px(pts):
+    def m_px(self, pts):
         m = np.zeros((N, N), bool)
         for x, y in pts:
+            if self.fwd is not None:
+                x, y = (round(v) for v in self._to(x, y))
             if 0 <= x + PAD_X < N and 0 <= y + PAD_TOP < N:
                 m[int(y) + PAD_TOP, int(x) + PAD_X] = True
         return m
@@ -307,22 +339,19 @@ class Sprite:
         return self.fill(self.m_px(pts), color, **kw)
 
     def rect(self, x0, y0, x1, y1, color, **kw):
-        m = (_XS >= x0) & (_XS < x1 + 1) & (_YS >= y0) & (_YS < y1 + 1)
+        m = (self.xs >= x0) & (self.xs < x1 + 1) & (self.ys >= y0) & (self.ys < y1 + 1)
         return self.fill(m, color, **kw)
 
     def erase(self, mask):
         self.reg[mask] = 0
         self.col[mask] = 0
 
-    # -- cute details ----------------------------------------------------------
+    # -- details -----------------------------------------------------------------
     def eye(self, x, y, size=2, color="#1d1428", shine="#ffffff", mirror=False):
         pts = [(x + i, y + j) for i in range(size) for j in range(size)]
         self.px(pts, color, mirror=mirror)
         if size >= 2 and shine:
             self.px([(x, y)], shine, mirror=mirror)
-
-    def blush(self, x, y, w=2, color="#f59aa8", mirror=False):
-        self.px([(x + i, y) for i in range(w)], color, mirror=mirror)
 
     # -- output ----------------------------------------------------------------
     def render(self):

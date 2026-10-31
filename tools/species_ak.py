@@ -7,9 +7,9 @@ import math
 import numpy as np
 
 from archetypes import (BLACK, EYE, S, WHITE, _far_wing, _ripples, _wing_beat, back_stripes, beetle_top, bird,
-                        butterfly, critter, dolphin, duck, fish, flecks, frog, jelly, lizard, pinniped, quad,
-                        sea_turtle, sprite, star, wader)
-from pixel import _XS, _YS, mix
+                        butterfly, critter, dolphin, duck, fish, flecks, frog, jelly, lizard, lying_flat, pinniped,
+                        quad, sea_turtle, sprite, star, wader)
+from pixel import mix
 from species_tx import _segmented
 
 
@@ -640,7 +640,6 @@ def _bumble(s, bands):
     s.line(6, 12, 4, 6, "#2b2226")
     s.line(9, 12, 10, 6, "#2b2226")
     s.eye(5, 16, color="#11080f", shine="#ffffff")
-    s.blush(5, 19, color="#ff8fa8")
 
 
 @sprite("black_tailed_bumble_bee")
@@ -768,8 +767,6 @@ def _(s):
     s.paint(s.m_poly([(11, 25), (20, 25), (15.5, 30)]), "#5a3a2a", within=m)
     s.px([(13, 6), (18, 6)], EYE)
     s.px([(13, 6)], WHITE)
-    s.blush(12, 9)
-    s.blush(18, 9)
 
 
 @sprite("pacific_banana_slug_ariolimax")
@@ -790,8 +787,6 @@ def _(s):
     s.path([(8, 25), (5, 28), (3, 29)], 0.5, "#b89a6a", shade=False)
     s.eye(12, 17)
     s.eye(18, 14)
-    s.blush(12, 20)
-    s.blush(20, 17)
 
 
 def _chiton(s, girdle, plate, *, lines=None, plate_w=7):
@@ -813,8 +808,6 @@ def _(s):
     # Shiny red-orange plates painted with zigzag blue and white lines.
     _chiton(s, "#c87a5a", "#e05a3a", lines="#3a3a6a", plate_w=6)
     s.paint(s.m_px([(12, 9), (20, 12), (13, 18), (19, 21), (14, 27)]), WHITE)
-    s.blush(11, 7)
-    s.blush(19, 7)
 
 
 @sprite("black_leather_chiton")
@@ -823,8 +816,6 @@ def _(s):
     _chiton(s, "#24222a", "#e0d0b8", plate_w=2.4)
     s.px([(13, 4), (18, 4)], WHITE)
     s.paint(s.m_px([(10, 10), (22, 14), (11, 22), (21, 24)]), "#4a4652")
-    s.blush(11, 7)
-    s.blush(19, 7)
 
 
 @sprite("golden_crayfish")
@@ -851,7 +842,6 @@ def _(s):
     s.line(9, 17, 4, 13, dark)
     s.line(8, 18, 2, 16, dark)
     s.eye(9, 18)
-    s.blush(10, 21)
 
 
 # --------------------------------------------------------------------------- marine
@@ -863,11 +853,10 @@ def _(s):
 
 
 def _many_arms(s, color, n, arms, rot=-90):
-    x, y = _XS - 16, _YS - 16.5
-    ang = np.arctan2(y, x) - math.radians(rot)
-    r = np.hypot(x, y)
-    rr = 14.5 * ((1 - arms) + arms * (0.5 + 0.5 * np.cos(n * ang)) ** 1.6)
-    return s.fill(r <= rr, color, edge=True)
+    def shape(x, y):
+        ang = np.arctan2(y, x) - math.radians(rot)
+        return np.hypot(x, y) <= 14.5 * ((1 - arms) + arms * (0.5 + 0.5 * np.cos(n * ang)) ** 1.6)
+    return lying_flat(s, shape, color)
 
 
 @sprite("sunflower_sea_star")
@@ -876,11 +865,6 @@ def _(s):
     m = _many_arms(s, "#a8508a", 18, 0.35)
     s.paint(s.m_ellipse(16, 16.5, 8, 8), "#d87a5a", within=m)
     s.paint(s.m_ellipse(16, 16.5, 4, 4), "#e8a070", within=m)
-    s.eye(12, 14)
-    s.eye(18, 14)
-    s.px([(15, 18), (16, 18)], "#5a2a3a")
-    s.blush(10, 17)
-    s.blush(20, 17)
 
 
 @sprite("leather_star")
@@ -902,8 +886,6 @@ def _(s):
     s.px([(11, 13), (13, 11), (19, 12), (21, 15), (12, 20), (20, 21)], "#8ab85a")
     s.eye(12, 15)
     s.eye(18, 15)
-    s.blush(10, 18)
-    s.blush(20, 18)
 
 
 def _anemone(s, column, tent_a, tent_b, disk, *, band=None, column_spots=None):
@@ -921,8 +903,6 @@ def _anemone(s, column, tent_a, tent_b, disk, *, band=None, column_spots=None):
     s.ellipse(16, 15, 2.5, 1.2, "#e89ab0", shade=False)
     s.eye(12, 20)
     s.eye(18, 20)
-    s.blush(10, 23)
-    s.blush(20, 23)
 
 
 @sprite("painted_anemone")

@@ -146,7 +146,6 @@ def _(s):
     s.poly([(10, 9), (0, 10.5), (3, 13.5), (10, 12.5)], "#f0a040")
     s.px([(13, 4), (14, 3)], "#f0d080")  # breeding knob on the bill top
     s.eye(11, 6)
-    s.blush(11, 9)
 
 
 @sprite("mountain_bluebird")
@@ -746,7 +745,6 @@ def _bumble(s, bands, *, base="#2b2226"):
     s.line(6, 12, 4, 6, "#2b2226")
     s.line(9, 12, 10, 6, "#2b2226")
     s.eye(5, 16, color="#11080f", shine="#ffffff")
-    s.blush(5, 19, color="#ff8fa8")
     return m
 
 
@@ -779,7 +777,6 @@ def _(s):
     s.line(5, 13, 2, 6, "#e8802a")
     s.line(8, 13, 9, 6, "#e8802a")
     s.eye(4, 16, color="#11080f", shine="#ffffff")
-    s.blush(4, 19, color="#ff8fa8")
 
 
 @sprite("two_tailed_swallowtail")
@@ -1024,4 +1021,3 @@ def _(s):
     s.line(9, 17, 4, 13, dark)
     s.line(8, 18, 2, 16, dark)
     s.eye(9, 18)
-    s.blush(10, 21)

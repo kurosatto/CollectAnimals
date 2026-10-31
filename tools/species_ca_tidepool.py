@@ -38,7 +38,6 @@ def _(s):
     s.line(8, 15, 4, 8, "#f0903a")
     s.line(10, 15, 11, 8, "#f0903a")
     s.px([(7, 17), (10, 17)], EYE)
-    s.blush(7, 20)
 
 
 @sprite("black_turban_snail")
@@ -53,8 +52,6 @@ def _(s):
     s.paint(s.m_px([(17, 6), (18, 7)]), "#c8b8d8", within=m)
     s.eye(13, 18)
     s.eye(19, 18)
-    s.blush(11, 21)
-    s.blush(20, 21)
     s.px([(16, 21), (17, 21)], "#c8b8d8")
 
 
@@ -68,8 +65,6 @@ def _(s):
     s.path([(7, 26), (4, 29), (2, 30)], 0.5, "#b89a6a", shade=False)
     s.eye(12, 17)
     s.eye(18, 14)
-    s.blush(12, 20)
-    s.blush(20, 17)
 
 
 @sprite("gooseneck_barnacle")
@@ -83,8 +78,6 @@ def _(s):
         s.paint(s.m_line(x + lean - 3, top + 5, x + lean + 3, top + 5), "#2b2630", within=hm)
     s.eye(13, 11)
     s.eye(18, 11)
-    s.blush(12, 13)
-    s.blush(19, 13)
 
 
 @sprite("owl_limpet")
@@ -96,8 +89,6 @@ def _(s):
     s.paint(s.m_ellipse(16, 24, 13, 13) & ~s.m_ellipse(16, 24, 11.5, 11.5), "#a88a66", within=m)
     s.eye(12, 18)
     s.eye(18, 18)
-    s.blush(10, 21)
-    s.blush(20, 21)
 
 
 @sprite("california_sea_hare")
@@ -111,7 +102,6 @@ def _(s):
     s.ellipse(10, 11, 1.6, 4, c, rot=15)
     s.paint(s.m_px([(6, 9), (10, 9)]), "#d8a0a8")
     s.eye(5, 17)
-    s.blush(6, 20)
 
 
 @sprite("hopkins_rose")
@@ -126,8 +116,6 @@ def _(s):
     s.line(10, 17, 11, 11, c)
     s.eye(9, 20)
     s.eye(14, 20)
-    s.blush(8, 23)
-    s.blush(15, 23)
 
 
 @sprite("tidepool_sculpin")
@@ -150,6 +138,4 @@ def _(s):
     s.paint(s.m_ellipse(16, 23, 9, 2.6) & ~s.m_ellipse(16, 23, 7.5, 1.6), "#6a9ae8")
     s.eye(11, 22)
     s.eye(19, 22)
-    s.blush(9, 24)
-    s.blush(21, 24)
     s.px([(15, 25), (16, 25)], "#1d2a5a")

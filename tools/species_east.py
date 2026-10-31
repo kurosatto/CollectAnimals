@@ -39,8 +39,6 @@ def _bat(s, fur, wing, bone, *, belly=None, ears=None):
     s.px([(15, 13), (17, 13)], "#2b2226")
     s.eye(14, 11)
     s.eye(18, 11)
-    s.blush(13, 13)
-    s.blush(19, 13)
     return m
 
 
@@ -76,7 +74,6 @@ def _(s):
     s.ellipse(12, 23, 3.6, 1.5, mix(body, "#000000", 0.2), rot=30)
     s.px([(5, 19), (6, 19), (7, 18)], mix(body, "#000000", 0.5))
     s.eye(7, 15)
-    s.blush(8, 18)
 
 
 # --------------------------------------------------------------------------- birds
@@ -595,7 +592,6 @@ def _(s):
     s.paint(s.m_path([(10, 16), (10.5, 20), (10, 24)], 0.5), "#3a2e2a", within=m)
     s.ellipse(9, 28, 2.4, 1.4, mix(c, "#000000", 0.1))
     s.eye(5, 21)
-    s.blush(6, 24)
     if hop:
         s.shift(0, -2)
 
@@ -726,8 +722,6 @@ def _(s):
     s.px([(16, 11), (16, 14), (16, 17)], "#e8dcc4")
     s.eye(12, 11)
     s.eye(19, 11)
-    s.blush(11, 14)
-    s.blush(20, 14)
 
 
 # --------------------------------------------------------------------------- butterflies and moths
@@ -843,8 +837,6 @@ def _delta_moth(s, wing, mark, body):
     s.path([(17, 8), (21, 12), (24, 18)], 0.5, mix(body, "#000000", 0.3), shade=False)
     s.eye(13, 8, size=2)
     s.eye(17, 8, size=2)
-    s.blush(13, 10)
-    s.blush(18, 10)
 
 
 @sprite("celery_leaftier_moth")
@@ -864,7 +856,6 @@ def _caterpillar(s, n, body, head, fn):
     hx, hy = pts[0]
     s.ellipse(hx - 1, hy, 3.3, 3, head, edge=True)
     s.eye(round(hx - 2), round(hy - 1))
-    s.blush(round(hx - 2), round(hy + 1))
     return pts
 
 
@@ -910,7 +901,6 @@ def _bumble(s, bands, wing="#e6f4fc"):
     s.line(6, 12, 4, 6, "#2b2226")
     s.line(9, 12, 10, 6, "#2b2226")
     s.eye(5, 16, color="#11080f", shine="#ffffff")
-    s.blush(5, 19, color="#ff8fa8")
     return m
 
 
@@ -937,7 +927,6 @@ def _(s):
     s.line(5, 13, 3, 7, "#2b2226")
     s.line(7, 13, 8, 7, "#2b2226")
     s.eye(4, 16, color="#11080f", shine="#ffffff")
-    s.blush(4, 19, color="#ff8fa8")
 
 
 def _hoverfly(s, marks):
@@ -956,7 +945,6 @@ def _hoverfly(s, marks):
     s.ellipse(13, 8, 2.4, 2.8, "#9a3a22", shade=False, mirror=True)
     s.px([(12, 7)], WHITE, mirror=True)
     s.px([(13, 9)], EYE, mirror=True)
-    s.blush(15, 10, w=2)
 
 
 @sprite("margined_calligrapher")
@@ -1104,7 +1092,6 @@ def _(s):
     hm = s.ellipse(12, 20, 5.5, 4.6, c, edge=True)
     s.paint(s.m_px([(12, 17), (14, 19), (11, 22), (15, 22)]), acc, within=hm)
     s.eye(9, 18)
-    s.blush(10, 21)
 
 
 def _hermit(s, shell, spiral, body, claw, *, long_claw=False, leg_mark=None):
@@ -1125,7 +1112,6 @@ def _hermit(s, shell, spiral, body, claw, *, long_claw=False, leg_mark=None):
     s.line(8, 15, 4, 8, mix(body, "#000000", 0.2))
     s.line(10, 15, 11, 8, mix(body, "#000000", 0.2))
     s.px([(7, 17), (10, 17)], EYE)
-    s.blush(7, 20)
 
 
 @sprite("long_claw_hermit_crab")
@@ -1154,8 +1140,6 @@ def _(s):
     s.paint(s.m_path([(26, 18), (24, 23), (17, 26), (9, 22)], 0.4), "#a89888", within=m)
     s.eye(10, 19)
     s.eye(16, 20)
-    s.blush(9, 22)
-    s.blush(17, 23)
 
 
 @sprite("common_periwinkle")
@@ -1173,8 +1157,6 @@ def _(s):
     s.paint(s.m_ellipse(11, 24, 3, 2.2), "#ece0cc", within=m)
     s.eye(13, 19)
     s.eye(19, 19)
-    s.blush(11, 21)
-    s.blush(21, 22)
 
 
 @sprite("common_atlantic_slippersnail")
@@ -1187,8 +1169,6 @@ def _(s):
     s.paint(s.m_line(13, 15, 15, 19) | s.m_line(21, 13, 23, 19), "#a8704a", within=t)
     s.eye(11, 23)
     s.eye(17, 23)
-    s.blush(9, 25)
-    s.blush(19, 25)
 
 
 @sprite("brown_lipped_snail")
@@ -1251,8 +1231,6 @@ def _(s):
     s.paint(s.m_px([(11, 21), (20, 20), (13, 27), (21, 26)]), "#b8301e", within=m)
     s.eye(13, 22)
     s.eye(18, 22)
-    s.blush(11, 25)
-    s.blush(20, 25)
 
 
 @sprite("northern_acorn_barnacle")
@@ -1271,8 +1249,6 @@ def _(s):
         s.paint(s.m_ellipse(x, top + 0.5, hw * 0.35, 0.9), "#4a4040", within=m)
     s.eye(13, 19)
     s.eye(18, 19)
-    s.blush(11, 22)
-    s.blush(20, 22)
 
 
 @sprite("magnificent_bryozoan")
@@ -1287,5 +1263,3 @@ def _(s):
         s.paint(s.m_px([(cx, cy)]), "#e8f0d8", within=m)
     s.eye(12, 19)
     s.eye(18, 19)
-    s.blush(10, 22)
-    s.blush(20, 22)
