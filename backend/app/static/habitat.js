@@ -494,6 +494,8 @@ function habLeavePerch(a) {
 // Where a sleeping (or sheltering) animal rests, or null if it sleeps where it is:
 // sea birds on the coastal landmark while there's room, other fliers in the tree.
 function habRestSpot(a, awake, counter) {
+  const home = habDecorRest(a, awake);  // a birdhouse, bat box, tent... of your own
+  if (home) return home;
   // Small fliers wait out the rain in the tree.
   if (awake) return habSheltering(a) ? habRoost(counter.n++) : null;
   if (HAB_SEABIRDS.test(a.s.slug)) {
@@ -608,6 +610,7 @@ function habPerchStep(a, dt) {
 function habStep(a, dt, awake) {
   a.phase += dt;
   habWxReact(a, dt, awake);
+  if (habDecorStep(a, dt, awake)) return;
   if (awake && HAB_SEABIRDS.test(a.s.slug) && HAB_FLIERS.has(a.role) && habPerchStep(a, dt)) return;
   if (!awake && (a.mode === "toPerch" || a.mode === "perched")) a.mode = a.role === "dive" ? "fly" : null;
   // Awake birds that don't fly to perches (oystercatchers wading) give theirs up.
@@ -687,6 +690,8 @@ function habFlap(a, rate) {
 // bob, wingbeat or squash that goes with how it moves.
 function habPose(a, awake, roost) {
   if (roost) return roost;
+  const visiting = habDecorPose(a, awake);
+  if (visiting) return visiting;
   if (awake && a.mode === "perched") return [a.x, a.y, HAB_PERCH_SCALE, HAB_PERCH_SCALE, 0];
   let { x, y } = a, sx = 1, sy = 1;
   const tilt = a.tilt || 0;
@@ -744,7 +749,7 @@ function habAnim(a, awake, roost) {
   const has = (k) => acts.includes(k);
   const cyc = (t) => ((Math.floor(t) % 4) + 4) % 4;
   if (!awake) return ["sleep", cyc(a.phase * 1.2)];
-  if (roost) return ["idle", 0];  // sheltering from the rain
+  if (roost || habDecorAnim(a, awake)) return ["idle", 0];  // sheltering from the rain, or perched on a decoration
   if (a.mode === "perched") return ["idle", 0];
   if (a.mode === "toPerch") return has("fly") ? ["fly", cyc(a.phase * 9 / (2 * Math.PI) * 4)] : ["idle", 0];
   switch (a.role) {
@@ -774,6 +779,7 @@ function habDraw() {
   const cv = $("hab-canvas");
   if (!hab.L || !cv) return;
   const L = hab.L, phase = habPhase(), lights = habLights(L, phase);
+  habDecorPlace();
   // The sun and moon creep across the sky, so the scenery is redrawn every few pixels they move.
   const spot = (b) => (b ? b.xy.map((v) => v >> 2).join(",") + (b.lit ? "/" + Math.round(b.lit * 40) : "") : "-");
   const key = `${L.w}/${phase}/${habState()}/${habSeason()}/${spot(lights.sun)}/${spot(lights.moon)}`;
@@ -794,21 +800,27 @@ function habDraw() {
     // squash that stood in for them (hops and jellies keep theirs).
     if (anim && anim[0] !== "idle" && a.role !== "hop" && a.role !== "jelly" && a.mode !== "rise" && !(roost && roost[2])) sx = sy = 1;
     const perched = awake && a.mode === "perched";
+    // Landed on a decoration: drawn with it, not in the sky (unless it's the balloon).
+    const landed = habDecorLanded(a) && a.dv.d.it.area !== "sky";
     return { a, awake, phase, anim, roost: !!roost || perched, x: Math.round(x), y: Math.round(y), sx, sy, tilt,
-             sky: awake && HAB_FLIERS.has(a.role) && !perched && !roost, hidden: awake && a.mode === "under" };
+             sky: awake && HAB_FLIERS.has(a.role) && !perched && !roost && !landed,
+             hidden: awake && a.mode === "under" || habDecorHidden(a, awake), z: habDecorZ(a, Math.round(y)) };
   });
   const sea = poses.filter((p) => HAB_SEA.has(p.a.role) && !p.sky).sort((p, q) => p.y - q.y);
-  const land = poses.filter((p) => !HAB_SEA.has(p.a.role) && !p.sky).sort((p, q) => p.y - q.y);
+  // The meadow's animals and decorations, back to front.
+  const land = [...poses.filter((p) => !HAB_SEA.has(p.a.role) && !p.sky), ...habDecorDepth()].sort((p, q) => p.z - q.z);
   const sky = poses.filter((p) => p.sky);
   sea.forEach((p) => habSprite(c, p));
   // Seawater over everything in the sea.
   c.fillStyle = { day: "rgba(40,140,210,.31)", dawn: "rgba(80,100,180,.31)", dusk: "rgba(80,80,160,.31)",
                   night: "rgba(20,40,100,.35)" }[phase];
   c.fillRect(L.sea, L.water + 3, L.w - L.sea, HAB_H);
-  habDecor(c, L, phase);
-  land.forEach((p) => habSprite(c, p));
+  habDecorDrawArea(c, phase, "sea");
+  land.forEach((p) => (p.decor ? habDecorSprite(c, p.decor, phase) : habSprite(c, p)));
+  habDecorDrawArea(c, phase, "sky");
   sky.forEach((p) => habSprite(c, p));
   habFx(c, phase);
+  habDecorFx(c, phase);
   habWxDraw(c, L, phase, poses);
   for (const p of poses) {
     if (/firefly/.test(p.a.s.slug) && p.awake && phase !== "day") {
@@ -842,10 +854,11 @@ const HAB_NO_SHADOW = new Set(["swim", "jelly", "reef", "float", "paddle", "wade
 const habFrameCache = new WeakMap();
 // Skins and decorations bought with minigame coins (app/games.py). Skins only show in
 // the minigames (kuro: animals keep their real colours everywhere else); decorations go
-// in your own habitat, not a friend's. minigames.js and habitat.html call habLookSet().
+// in your own habitat, not a friend's (decor.js). minigames.js and habitat.html call habLookSet().
 let habLook = { skins: {}, decor: [] };
 function habLookSet(look) {
   habLook = { skins: (look && look.skins) || {}, decor: (look && look.decor) || [] };
+  hab.decorKey = "";  // decor.js places them again
 }
 const habMine = () => !hab.visit;
 // Each skin recolours the animal by brightness, keeping the darkest outline pixels.
@@ -878,30 +891,6 @@ function habSkin(img, skin) {
     habSkinCache.set(key, cv);
   }
   return habSkinCache.get(key);
-}
-
-// Decorations in your meadow, drawn behind the animals.
-function habDecor(c, L, phase) {
-  if (!habMine() || !habLook.decor.length) return;
-  const px = (x, y, w, h, col) => { c.fillStyle = col; c.fillRect(Math.round(x), Math.round(y), w, h); };
-  for (const d of habLook.decor) {
-    if (d === "flowers") {
-      const x = Math.round(L.land * .15), y = 252;
-      px(x - 14, y, 28, 5, "#7a5232"); px(x - 13, y - 1, 26, 2, "#5b3f28");
-      [["#e05a7a", -10], ["#f2c14e", -4], ["#b070e0", 2], ["#ffffff", 8]].forEach(([col, dx], i) => {
-        px(x + dx, y - 6 - (i % 2) * 2, 1, 6, "#3f8d58"); px(x + dx - 1, y - 8 - (i % 2) * 2, 3, 3, col); px(x + dx, y - 7 - (i % 2) * 2, 1, 1, "#ffe27a");
-      });
-    } else if (d === "birdbath") {
-      const x = Math.round(L.land * .82), y = 214;
-      px(x - 2, y - 10, 4, 10, "#b8bcc8"); px(x - 5, y, 10, 2, "#9a9eaa");
-      px(x - 9, y - 14, 18, 4, "#c8ccd8"); px(x - 7, y - 14, 14, 2, phase === "night" ? "#3a5a8a" : "#7cc4e8");
-    } else if (d === "lantern") {
-      const x = Math.round(L.land * .62), y = 202, lit = phase !== "day";
-      px(x, y - 26, 2, 26, "#3a3a44"); px(x - 3, y - 28, 8, 2, "#3a3a44");
-      if (lit) { c.fillStyle = "rgba(255,220,120,.25)"; c.fillRect(x - 9, y - 32, 20, 18); }
-      px(x - 3, y - 26, 8, 8, lit ? "#ffe27a" : "#d8c890"); px(x - 3, y - 26, 8, 1, "#3a3a44"); px(x - 3, y - 19, 8, 1, "#3a3a44");
-    }
-  }
 }
 
 function habFrame(sheet, row, frame, F) {
@@ -941,7 +930,7 @@ function habSprite(c, p) {
   if (a.role === "paddle") { c.beginPath(); c.rect(0, 0, hab.L.w, y - 8); c.clip(); }
   // A diving bird disappears into the water as it goes in.
   if (a.role === "dive" && p.awake && a.mode === "dive") { c.beginPath(); c.rect(0, 0, hab.L.w, habPool(a)[2] + 1); c.clip(); }
-  if (a.role === "dangle") {
+  if (a.role === "dangle" && !a.dv) {
     c.fillStyle = "rgba(255,255,255,.7)";
     c.fillRect(x, 104, 1, y - 104 - 26);
   }
@@ -1156,6 +1145,7 @@ function habLoop(now) {
   const phase = habPhase();
   hab.t += dt;
   habWeather();
+  habDecorTick(dt);
   hab.animals.forEach((a) => habStep(a, dt, habAwake(a, phase)));
   habFxStep(dt);
   habWxStep(dt);

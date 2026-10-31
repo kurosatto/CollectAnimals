@@ -36,6 +36,9 @@ class Settings:
         "DETAILS_CSV", ROOT / "species" / "details.csv")))
     sets_json: Path = field(default_factory=lambda: Path(os.getenv(
         "SETS_JSON", ROOT / "species" / "sets.json")))
+    # The habitat decorations sold in the minigame shop (tools/make_decor.py).
+    decor_json: Path = field(default_factory=lambda: Path(os.getenv(
+        "DECOR_JSON", ROOT / "species" / "decor.json")))
     sprites_dir: Path = field(default_factory=lambda: Path(os.getenv(
         "SPRITES_DIR", ROOT / "species" / "sprites")))
     model_path: Path = field(default_factory=lambda: Path(os.getenv(

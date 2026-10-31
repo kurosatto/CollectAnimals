@@ -103,3 +103,43 @@ def test_place_table_matches_the_game():
     js = (Path(__file__).parents[1] / "app/static/minigames.js").read_text()
     for game, place in games.PLACE.items():
         assert f'{game}: "{place}"' in js
+
+
+def test_decorations_need_room(client, fake):
+    from app.db import SessionLocal
+    from app.models import User
+    ana = signup(client, "ana")
+    with SessionLocal() as db:
+        db.query(User).filter(User.username == "ana").update({"coins": 2000})
+        db.commit()
+    shop = client.get("/games/shop", headers=ana).json()
+    decor = [i for i in shop["items"] if i["kind"] == "decor"]
+    assert len(decor) == 103 and all(i["note"] and i["area"] in games.ROOM for i in decor)
+    # The pond holds three; a fourth waits in your shop until you hide one.
+    for k in ("rubber_duck", "lily_pads", "basking_rock", "rowboat"):
+        shop = client.post("/games/shop/buy", headers=ana, json={"item": f"decor.{k}"}).json()
+    assert shop["decor"] == ["rubber_duck", "lily_pads", "basking_rock"]
+    r = client.post("/games/shop/decor", headers=ana, json={"item": "decor.rowboat", "on": True})
+    assert r.status_code == 409 and "pond" in r.json()["detail"]
+    client.post("/games/shop/decor", headers=ana, json={"item": "decor.lily_pads", "on": False})
+    shop = client.post("/games/shop/decor", headers=ana, json={"item": "decor.rowboat", "on": True}).json()
+    assert shop["decor"] == ["rubber_duck", "basking_rock", "rowboat"]
+
+
+def test_decor_catalog_matches_the_sprites():
+    import json
+    root = Path(__file__).resolve().parents[2] / "species"
+    for d in json.loads((root / "decor.json").read_text()):
+        assert (root / "sprites" / "decor" / f"{d['key']}.png").is_file(), d["key"]
+        assert len(f"decor.{d['key']}") <= 32
+
+
+def test_admin_owns_everything(client, fake, monkeypatch):
+    from app.config import settings
+    monkeypatch.setattr(settings, "admin_usernames", frozenset({"admin"}))
+    admin = signup(client, "admin")
+    shop = client.get("/games/shop", headers=admin).json()
+    assert all(i["owned"] for i in shop["items"]) and shop["decor"] == []
+    shop = client.post("/games/shop/decor", headers=admin, json={"item": "decor.tent", "on": True}).json()
+    assert shop["decor"] == ["tent"]
+    assert not any(i["owned"] for i in client.get("/games/shop", headers=signup(client, "bob")).json()["items"])

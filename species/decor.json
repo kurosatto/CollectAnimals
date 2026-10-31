@@ -1,0 +1,2756 @@
+[
+ {
+  "key": "flowers",
+  "name": "Flower bed",
+  "price": 100,
+  "group": "Garden",
+  "area": "ground",
+  "row": "front",
+  "frames": 1,
+  "note": "Butterflies and bees visit",
+  "visits": [
+   {
+    "who": "bug",
+    "act": "hover",
+    "x": 10,
+    "y": 22,
+    "when": "day",
+    "n": 1
+   },
+   {
+    "who": "bee",
+    "act": "hover",
+    "x": 22,
+    "y": 23,
+    "when": "day",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "birdbath",
+  "name": "Bird bath",
+  "price": 150,
+  "group": "Water",
+  "area": "ground",
+  "row": "any",
+  "frames": 1,
+  "note": "Birds drink and splash in it",
+  "visits": [
+   {
+    "who": "smallbird",
+    "act": "bathe",
+    "x": 10,
+    "y": 16,
+    "when": "day",
+    "n": 1
+   },
+   {
+    "who": "smallbird",
+    "act": "bathe",
+    "x": 22,
+    "y": 16,
+    "when": "day",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "lantern",
+  "name": "Lantern",
+  "price": 200,
+  "group": "Lights and night",
+  "area": "ground",
+  "row": "back",
+  "frames": 1,
+  "note": "Moths flutter around it at night",
+  "visits": [
+   {
+    "who": "moth",
+    "act": "hover",
+    "x": 16,
+    "y": 2,
+    "when": "night",
+    "n": 1
+   }
+  ],
+  "fx": "lanternglow"
+ },
+ {
+  "key": "sunflowers",
+  "name": "Sunflowers",
+  "price": 120,
+  "group": "Garden",
+  "area": "ground",
+  "row": "back",
+  "frames": 4,
+  "note": "Songbirds perch on the heads; bees visit",
+  "visits": [
+   {
+    "who": "songbird",
+    "act": "perch",
+    "x": 10,
+    "y": 1,
+    "when": "day",
+    "n": 1
+   },
+   {
+    "who": "bee",
+    "act": "hover",
+    "x": 22,
+    "y": 4,
+    "when": "day",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "tulips",
+  "name": "Tulip row",
+  "price": 90,
+  "group": "Garden",
+  "area": "ground",
+  "row": "front",
+  "frames": 1,
+  "note": "Butterflies and bees land on them",
+  "visits": [
+   {
+    "who": "bug",
+    "act": "hover",
+    "x": 12,
+    "y": 22,
+    "when": "day",
+    "n": 1
+   },
+   {
+    "who": "bee",
+    "act": "hover",
+    "x": 21,
+    "y": 22,
+    "when": "day",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "rose_bush",
+  "name": "Rose bush",
+  "price": 110,
+  "group": "Garden",
+  "area": "ground",
+  "row": "any",
+  "frames": 1,
+  "note": "Small birds hide inside; rabbits nibble the leaves",
+  "visits": [
+   {
+    "who": "smallbird",
+    "act": "hide",
+    "x": 16,
+    "y": 26,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "rabbit",
+    "act": "eat",
+    "x": 4,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "lavender",
+  "name": "Lavender patch",
+  "price": 90,
+  "group": "Garden",
+  "area": "ground",
+  "row": "front",
+  "frames": 1,
+  "note": "Bees and butterflies hover over it",
+  "visits": [
+   {
+    "who": "bee",
+    "act": "hover",
+    "x": 12,
+    "y": 20,
+    "when": "day",
+    "n": 1
+   },
+   {
+    "who": "bug",
+    "act": "hover",
+    "x": 21,
+    "y": 19,
+    "when": "day",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "mushroom_ring",
+  "name": "Mushroom ring",
+  "price": 80,
+  "group": "Garden",
+  "area": "ground",
+  "row": "front",
+  "frames": 1,
+  "note": "Toads sit in the middle; snails come in the rain",
+  "visits": [
+   {
+    "who": "frog",
+    "act": "sit",
+    "x": 16,
+    "y": 30,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "snail",
+    "act": "sit",
+    "x": 22,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "toadstool",
+  "name": "Giant toadstool",
+  "price": 120,
+  "group": "Garden",
+  "area": "ground",
+  "row": "any",
+  "frames": 1,
+  "note": "Frogs sit on top; lizards shelter under it",
+  "visits": [
+   {
+    "who": "frog",
+    "act": "perch",
+    "x": 16,
+    "y": 11,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "lizard",
+    "act": "sit",
+    "x": 9,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "veggies",
+  "name": "Vegetable patch",
+  "price": 130,
+  "group": "Garden",
+  "area": "ground",
+  "row": "front",
+  "frames": 1,
+  "note": "Rabbits and squirrels sneak in for a nibble",
+  "visits": [
+   {
+    "who": "rabbit",
+    "act": "eat",
+    "x": 10,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "squirrel",
+    "act": "eat",
+    "x": 22,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "strawberries",
+  "name": "Strawberry patch",
+  "price": 100,
+  "group": "Garden",
+  "area": "ground",
+  "row": "front",
+  "frames": 1,
+  "note": "Songbirds and box turtles stop to eat berries",
+  "visits": [
+   {
+    "who": "songbird",
+    "act": "eat",
+    "x": 8,
+    "y": 31,
+    "when": "day",
+    "n": 1
+   },
+   {
+    "who": "turtle",
+    "act": "eat",
+    "x": 22,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "cactus",
+  "name": "Potted cactus",
+  "price": 80,
+  "group": "Garden",
+  "area": "ground",
+  "row": "any",
+  "frames": 1,
+  "note": "Lizards bask beside it; desert birds perch on top",
+  "visits": [
+   {
+    "who": "lizard",
+    "act": "bask",
+    "x": 25,
+    "y": 31,
+    "when": "day",
+    "n": 1
+   },
+   {
+    "who": "bird",
+    "act": "perch",
+    "x": 16,
+    "y": 5,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "ferns",
+  "name": "Fern corner",
+  "price": 80,
+  "group": "Garden",
+  "area": "ground",
+  "row": "front",
+  "frames": 1,
+  "note": "Salamanders and newts rest in the shade",
+  "visits": [
+   {
+    "who": "salamander",
+    "act": "sit",
+    "x": 16,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "flower_basket",
+  "name": "Hanging flower basket",
+  "price": 130,
+  "group": "Garden",
+  "area": "ground",
+  "row": "back",
+  "frames": 1,
+  "note": "Hummingbirds hover and sip",
+  "visits": [
+   {
+    "who": "hummingbird",
+    "act": "hover",
+    "x": 24,
+    "y": 6,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "berry_bush",
+  "name": "Berry bush",
+  "price": 120,
+  "group": "Garden",
+  "area": "ground",
+  "row": "any",
+  "frames": 1,
+  "note": "Bears, foxes and songbirds stop to eat berries",
+  "visits": [
+   {
+    "who": "bear",
+    "act": "eat",
+    "x": 2,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "fox",
+    "act": "eat",
+    "x": 30,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "songbird",
+    "act": "perch",
+    "x": 16,
+    "y": 9,
+    "when": "day",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "cherry_tree",
+  "name": "Cherry blossom sapling",
+  "price": 250,
+  "group": "Garden",
+  "area": "ground",
+  "row": "back",
+  "frames": 1,
+  "note": "Songbirds perch in the branches",
+  "visits": [
+   {
+    "who": "songbird",
+    "act": "perch",
+    "x": 9,
+    "y": 6,
+    "when": "day",
+    "n": 1
+   },
+   {
+    "who": "songbird",
+    "act": "perch",
+    "x": 23,
+    "y": 4,
+    "when": "day",
+    "n": 1
+   }
+  ],
+  "fx": "petals"
+ },
+ {
+  "key": "hedge_tunnel",
+  "name": "Hedge tunnel",
+  "price": 150,
+  "group": "Garden",
+  "area": "ground",
+  "row": "any",
+  "frames": 1,
+  "note": "Rabbits and small mammals run through it",
+  "visits": [
+   {
+    "who": "smallmammal",
+    "act": "through",
+    "x": 16,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "clover",
+  "name": "Clover patch",
+  "price": 100,
+  "group": "Garden",
+  "area": "ground",
+  "row": "front",
+  "frames": 1,
+  "note": "Rabbits and deer graze on it; one clover sparkles",
+  "visits": [
+   {
+    "who": "rabbit",
+    "act": "eat",
+    "x": 10,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "deer",
+    "act": "eat",
+    "x": 24,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ],
+  "fx": "sparkle"
+ },
+ {
+  "key": "rose_arch",
+  "name": "Rose arch",
+  "price": 220,
+  "group": "Garden",
+  "area": "ground",
+  "row": "back",
+  "frames": 1,
+  "note": "Birds perch on top; a spider spins a web inside",
+  "visits": [
+   {
+    "who": "bird",
+    "act": "perch",
+    "x": 16,
+    "y": -3,
+    "when": "day",
+    "n": 1
+   },
+   {
+    "who": "spider",
+    "act": "dangle",
+    "x": 16,
+    "y": 14,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "lily_pads",
+  "name": "Lily pads",
+  "price": 200,
+  "group": "Water",
+  "area": "pond",
+  "row": "any",
+  "frames": 1,
+  "note": "Frogs sit on the pads; ducks paddle between them",
+  "visits": [
+   {
+    "who": "frog",
+    "act": "sit",
+    "x": 9,
+    "y": 29,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "frog",
+    "act": "sit",
+    "x": 24,
+    "y": 30,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "duck",
+    "act": "swim",
+    "x": 16,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "fountain",
+  "name": "Pond fountain",
+  "price": 260,
+  "group": "Water",
+  "area": "pond",
+  "row": "any",
+  "frames": 1,
+  "note": "Birds splash in the spray; ducks circle it",
+  "visits": [
+   {
+    "who": "smallbird",
+    "act": "bathe",
+    "x": 9,
+    "y": 25,
+    "when": "day",
+    "n": 1
+   },
+   {
+    "who": "duck",
+    "act": "swim",
+    "x": 26,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ],
+  "fx": "spray"
+ },
+ {
+  "key": "waterfall",
+  "name": "Rock waterfall",
+  "price": 280,
+  "group": "Water",
+  "area": "pond",
+  "row": "any",
+  "frames": 1,
+  "note": "Herons fish at the bottom; birds bathe in the trickle",
+  "visits": [
+   {
+    "who": "wader",
+    "act": "fish",
+    "x": 26,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "smallbird",
+    "act": "bathe",
+    "x": 7,
+    "y": 18,
+    "when": "day",
+    "n": 1
+   }
+  ],
+  "fx": "trickle"
+ },
+ {
+  "key": "footbridge",
+  "name": "Footbridge",
+  "price": 240,
+  "group": "Water",
+  "area": "pond",
+  "row": "any",
+  "frames": 1,
+  "note": "Ground animals walk across; ducks swim underneath",
+  "visits": [
+   {
+    "who": "walker",
+    "act": "cross",
+    "x": 16,
+    "y": 22,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "duck",
+    "act": "swim",
+    "x": 16,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "rowboat",
+  "name": "Rowboat",
+  "price": 220,
+  "group": "Water",
+  "area": "pond",
+  "row": "any",
+  "frames": 1,
+  "note": "Turtles climb on to bask; ducks stand on the bow",
+  "visits": [
+   {
+    "who": "turtle",
+    "act": "ride",
+    "x": 12,
+    "y": 25,
+    "when": "day",
+    "n": 1
+   },
+   {
+    "who": "duck",
+    "act": "ride",
+    "x": 23,
+    "y": 24,
+    "when": "any",
+    "n": 1
+   }
+  ],
+  "fx": "bob"
+ },
+ {
+  "key": "basking_rock",
+  "name": "Basking rock",
+  "price": 180,
+  "group": "Water",
+  "area": "pond",
+  "row": "any",
+  "frames": 1,
+  "note": "Turtles, lizards and snakes sun on it by day",
+  "visits": [
+   {
+    "who": "turtle",
+    "act": "bask",
+    "x": 11,
+    "y": 22,
+    "when": "day",
+    "n": 1
+   },
+   {
+    "who": "lizard",
+    "act": "bask",
+    "x": 21,
+    "y": 21,
+    "when": "day",
+    "n": 1
+   },
+   {
+    "who": "snake",
+    "act": "bask",
+    "x": 17,
+    "y": 24,
+    "when": "day",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "trough",
+  "name": "Drinking trough",
+  "price": 120,
+  "group": "Water",
+  "area": "ground",
+  "row": "any",
+  "frames": 1,
+  "note": "Deer, foxes and other land animals stop to drink",
+  "visits": [
+   {
+    "who": "deer",
+    "act": "drink",
+    "x": 1,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "walker",
+    "act": "drink",
+    "x": 31,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "puddle",
+  "name": "Puddle",
+  "price": 90,
+  "group": "Water",
+  "area": "ground",
+  "row": "front",
+  "frames": 1,
+  "note": "Fills when it rains; birds bathe and frogs hop in",
+  "visits": [
+   {
+    "who": "smallbird",
+    "act": "bathe",
+    "x": 12,
+    "y": 30,
+    "when": "day",
+    "n": 1
+   },
+   {
+    "who": "frog",
+    "act": "sit",
+    "x": 20,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ],
+  "fx": "rainfill"
+ },
+ {
+  "key": "rubber_duck",
+  "name": "Rubber duck",
+  "price": 100,
+  "group": "Water",
+  "area": "pond",
+  "row": "any",
+  "frames": 1,
+  "note": "Real ducks swim beside it; a frog sometimes rides it",
+  "visits": [
+   {
+    "who": "duck",
+    "act": "swim",
+    "x": 26,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "frog",
+    "act": "ride",
+    "x": 14,
+    "y": 21,
+    "when": "any",
+    "n": 1
+   }
+  ],
+  "fx": "bob"
+ },
+ {
+  "key": "sailboat",
+  "name": "Sailboat",
+  "price": 400,
+  "group": "Water",
+  "area": "sea",
+  "row": "any",
+  "frames": 1,
+  "note": "Gulls and pelicans ride the mast as it drifts",
+  "visits": [
+   {
+    "who": "seabird",
+    "act": "ride",
+    "x": 16,
+    "y": -6,
+    "when": "any",
+    "n": 1
+   }
+  ],
+  "fx": "drift"
+ },
+ {
+  "key": "dock",
+  "name": "Wooden dock",
+  "price": 300,
+  "group": "Water",
+  "area": "sand",
+  "row": "any",
+  "frames": 1,
+  "note": "Seals and sea lions haul out on it; gulls stand on the posts",
+  "visits": [
+   {
+    "who": "seal",
+    "act": "sit",
+    "x": 15,
+    "y": 25,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "seabird",
+    "act": "perch",
+    "x": 3,
+    "y": 18,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "seabird",
+    "act": "perch",
+    "x": 30,
+    "y": 18,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "buoy",
+  "name": "Buoy",
+  "price": 120,
+  "group": "Water",
+  "area": "sea",
+  "row": "any",
+  "frames": 1,
+  "note": "A seal naps on it; gulls perch on top; it blinks at night",
+  "visits": [
+   {
+    "who": "seabird",
+    "act": "perch",
+    "x": 16,
+    "y": 5,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "seal",
+    "act": "ride",
+    "x": 16,
+    "y": 22,
+    "when": "any",
+    "n": 1
+   }
+  ],
+  "fx": "bob"
+ },
+ {
+  "key": "birdhouse",
+  "name": "Birdhouse",
+  "price": 160,
+  "group": "Animal homes",
+  "area": "ground",
+  "row": "back",
+  "frames": 1,
+  "note": "A songbird moves in and sleeps inside at night",
+  "visits": [
+   {
+    "who": "songbird",
+    "act": "home",
+    "x": 16,
+    "y": 6,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "songbird",
+    "act": "perch",
+    "x": 16,
+    "y": 9,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "bird_feeder",
+  "name": "Bird feeder",
+  "price": 180,
+  "group": "Animal homes",
+  "area": "ground",
+  "row": "back",
+  "frames": 1,
+  "note": "Songbirds eat; dropped seeds draw quail, doves and squirrels",
+  "visits": [
+   {
+    "who": "songbird",
+    "act": "perch",
+    "x": 9,
+    "y": 13,
+    "when": "day",
+    "n": 1
+   },
+   {
+    "who": "songbird",
+    "act": "perch",
+    "x": 23,
+    "y": 13,
+    "when": "day",
+    "n": 1
+   },
+   {
+    "who": "groundbird",
+    "act": "eat",
+    "x": 7,
+    "y": 31,
+    "when": "day",
+    "n": 1
+   },
+   {
+    "who": "squirrel",
+    "act": "eat",
+    "x": 25,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ],
+  "fx": "seeds"
+ },
+ {
+  "key": "hummingbird_feeder",
+  "name": "Hummingbird feeder",
+  "price": 160,
+  "group": "Animal homes",
+  "area": "ground",
+  "row": "back",
+  "frames": 1,
+  "note": "Hummingbirds hover and sip",
+  "visits": [
+   {
+    "who": "hummingbird",
+    "act": "hover",
+    "x": 9,
+    "y": 12,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "hummingbird",
+    "act": "hover",
+    "x": 23,
+    "y": 12,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "bug_hotel",
+  "name": "Bug hotel",
+  "price": 140,
+  "group": "Animal homes",
+  "area": "ground",
+  "row": "any",
+  "frames": 1,
+  "note": "Bees and beetles go in and out",
+  "visits": [
+   {
+    "who": "bee",
+    "act": "home",
+    "x": 16,
+    "y": 14,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "beetle",
+    "act": "home",
+    "x": 16,
+    "y": 22,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "bat_box",
+  "name": "Bat box",
+  "price": 160,
+  "group": "Animal homes",
+  "area": "ground",
+  "row": "back",
+  "frames": 1,
+  "note": "Bats sleep inside by day and fly out at dusk",
+  "visits": [
+   {
+    "who": "bat",
+    "act": "home",
+    "x": 16,
+    "y": 8,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "beehive",
+  "name": "Beehive box",
+  "price": 200,
+  "group": "Animal homes",
+  "area": "ground",
+  "row": "any",
+  "frames": 1,
+  "note": "Honey bees fly between the hive and flowers",
+  "visits": [
+   {
+    "who": "bee",
+    "act": "home",
+    "x": 16,
+    "y": 21,
+    "when": "any",
+    "n": 1
+   }
+  ],
+  "fx": "bees"
+ },
+ {
+  "key": "milkweed",
+  "name": "Milkweed patch",
+  "price": 140,
+  "group": "Animal homes",
+  "area": "ground",
+  "row": "any",
+  "frames": 1,
+  "note": "Butterflies land and rest; monarchs love it",
+  "visits": [
+   {
+    "who": "butterfly",
+    "act": "perch",
+    "x": 10,
+    "y": 9,
+    "when": "day",
+    "n": 1
+   },
+   {
+    "who": "butterfly",
+    "act": "perch",
+    "x": 22,
+    "y": 12,
+    "when": "day",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "owl_box",
+  "name": "Owl nest box",
+  "price": 170,
+  "group": "Animal homes",
+  "area": "ground",
+  "row": "back",
+  "frames": 1,
+  "note": "Owls sleep inside by day and peek out at dusk",
+  "visits": [
+   {
+    "who": "owl",
+    "act": "home",
+    "x": 16,
+    "y": 3,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "corn_feeder",
+  "name": "Squirrel corn feeder",
+  "price": 140,
+  "group": "Animal homes",
+  "area": "ground",
+  "row": "any",
+  "frames": 1,
+  "note": "Squirrels and chipmunks sit and munch",
+  "visits": [
+   {
+    "who": "squirrel",
+    "act": "eat",
+    "x": 9,
+    "y": 22,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "squirrel",
+    "act": "eat",
+    "x": 25,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "toad_house",
+  "name": "Toad house",
+  "price": 110,
+  "group": "Animal homes",
+  "area": "ground",
+  "row": "front",
+  "frames": 1,
+  "note": "Toads and frogs hide inside and peek out",
+  "visits": [
+   {
+    "who": "frog",
+    "act": "hide",
+    "x": 16,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "nest_platform",
+  "name": "Nest platform",
+  "price": 220,
+  "group": "Animal homes",
+  "area": "ground",
+  "row": "back",
+  "frames": 1,
+  "note": "Hawks, eagles and ospreys land and rest",
+  "visits": [
+   {
+    "who": "raptor",
+    "act": "perch",
+    "x": 16,
+    "y": -2,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "brush_pile",
+  "name": "Brush pile",
+  "price": 70,
+  "group": "Animal homes",
+  "area": "ground",
+  "row": "front",
+  "frames": 1,
+  "note": "Rabbits, mice, snakes and lizards dart in to hide",
+  "visits": [
+   {
+    "who": "smallmammal",
+    "act": "hide",
+    "x": 16,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "reptile",
+    "act": "hide",
+    "x": 16,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "bench",
+  "name": "Garden bench",
+  "price": 120,
+  "group": "Picnic and seats",
+  "area": "ground",
+  "row": "any",
+  "frames": 1,
+  "note": "Birds perch on the back; small animals nap underneath",
+  "visits": [
+   {
+    "who": "bird",
+    "act": "perch",
+    "x": 8,
+    "y": 13,
+    "when": "day",
+    "n": 1
+   },
+   {
+    "who": "smallmammal",
+    "act": "sit",
+    "x": 16,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "picnic",
+  "name": "Picnic blanket and basket",
+  "price": 150,
+  "group": "Picnic and seats",
+  "area": "ground",
+  "row": "front",
+  "frames": 1,
+  "note": "Squirrels, raccoons and birds sneak a snack",
+  "visits": [
+   {
+    "who": "squirrel",
+    "act": "eat",
+    "x": 6,
+    "y": 29,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "raccoon",
+    "act": "eat",
+    "x": 26,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "songbird",
+    "act": "eat",
+    "x": 15,
+    "y": 28,
+    "when": "day",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "picnic_table",
+  "name": "Picnic table",
+  "price": 170,
+  "group": "Picnic and seats",
+  "area": "ground",
+  "row": "any",
+  "frames": 1,
+  "note": "Raccoons climb on top; birds perch on the edge",
+  "visits": [
+   {
+    "who": "raccoon",
+    "act": "sit",
+    "x": 16,
+    "y": 16,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "bird",
+    "act": "perch",
+    "x": 4,
+    "y": 16,
+    "when": "day",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "hammock",
+  "name": "Hammock",
+  "price": 220,
+  "group": "Picnic and seats",
+  "area": "ground",
+  "row": "back",
+  "frames": 4,
+  "note": "A raccoon, opossum or squirrel naps in it",
+  "visits": [
+   {
+    "who": "napper",
+    "act": "ride",
+    "x": 16,
+    "y": 24,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "leaf_pile",
+  "name": "Leaf pile",
+  "price": 80,
+  "group": "Picnic and seats",
+  "area": "ground",
+  "row": "front",
+  "frames": 1,
+  "note": "Squirrels jump in; animals sleep in it at night",
+  "visits": [
+   {
+    "who": "squirrel",
+    "act": "hide",
+    "x": 16,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "smallmammal",
+    "act": "sleep",
+    "x": 16,
+    "y": 30,
+    "when": "night",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "beach_umbrella",
+  "name": "Beach umbrella and chair",
+  "price": 180,
+  "group": "Picnic and seats",
+  "area": "sand",
+  "row": "any",
+  "frames": 1,
+  "note": "Crabs and shorebirds rest in the shade",
+  "visits": [
+   {
+    "who": "crab",
+    "act": "sit",
+    "x": 14,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "shorebird",
+    "act": "sit",
+    "x": 24,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "sandcastle",
+  "name": "Sandcastle",
+  "price": 140,
+  "group": "Picnic and seats",
+  "area": "sand",
+  "row": "front",
+  "frames": 1,
+  "note": "Crabs climb on it; shorebirds peck around it",
+  "visits": [
+   {
+    "who": "crab",
+    "act": "perch",
+    "x": 16,
+    "y": 17,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "shorebird",
+    "act": "eat",
+    "x": 3,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "driftwood",
+  "name": "Driftwood log",
+  "price": 110,
+  "group": "Picnic and seats",
+  "area": "sand",
+  "row": "any",
+  "frames": 1,
+  "note": "Seals and shorebirds rest on it",
+  "visits": [
+   {
+    "who": "seal",
+    "act": "sit",
+    "x": 16,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "shorebird",
+    "act": "perch",
+    "x": 22,
+    "y": 23,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "stumps",
+  "name": "Stump stools and table",
+  "price": 90,
+  "group": "Picnic and seats",
+  "area": "ground",
+  "row": "any",
+  "frames": 1,
+  "note": "Squirrels and chipmunks sit on the stumps to eat",
+  "visits": [
+   {
+    "who": "squirrel",
+    "act": "sit",
+    "x": 5,
+    "y": 24,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "squirrel",
+    "act": "sit",
+    "x": 27,
+    "y": 24,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "bird_swing",
+  "name": "Swinging perch",
+  "price": 150,
+  "group": "Picnic and seats",
+  "area": "ground",
+  "row": "back",
+  "frames": 4,
+  "note": "Birds land on a little swing and ride it",
+  "visits": [
+   {
+    "who": "smallbird",
+    "act": "ride",
+    "x": 16,
+    "y": 21,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "pinwheel",
+  "name": "Pinwheel",
+  "price": 150,
+  "group": "Play",
+  "area": "ground",
+  "row": "any",
+  "frames": 4,
+  "note": "Spins; curious animals stop to watch it",
+  "visits": [
+   {
+    "who": "walker",
+    "act": "watch",
+    "x": 4,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "walker",
+    "act": "watch",
+    "x": 28,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "kite",
+  "name": "Kite",
+  "price": 300,
+  "group": "Play",
+  "area": "ground",
+  "row": "back",
+  "frames": 4,
+  "note": "Flies over the meadow by day; birds fly alongside it",
+  "visits": [
+   {
+    "who": "flier",
+    "act": "escort",
+    "x": 0,
+    "y": -60,
+    "when": "day",
+    "n": 1
+   }
+  ],
+  "fx": "kite"
+ },
+ {
+  "key": "bubbles",
+  "name": "Bubble maker",
+  "price": 220,
+  "group": "Play",
+  "area": "ground",
+  "row": "any",
+  "frames": 1,
+  "note": "Animals look up and chase the bubbles",
+  "visits": [
+   {
+    "who": "walker",
+    "act": "watch",
+    "x": 30,
+    "y": 31,
+    "when": "day",
+    "n": 1
+   },
+   {
+    "who": "smallmammal",
+    "act": "chase",
+    "x": 8,
+    "y": 31,
+    "when": "day",
+    "n": 1
+   }
+  ],
+  "fx": "bubbles"
+ },
+ {
+  "key": "beach_ball",
+  "name": "Beach ball",
+  "price": 70,
+  "group": "Play",
+  "area": "ground",
+  "row": "front",
+  "frames": 4,
+  "note": "Animals bump it and it rolls across the meadow",
+  "visits": [
+   {
+    "who": "walker",
+    "act": "bump",
+    "x": 16,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ],
+  "fx": "ball"
+ },
+ {
+  "key": "acorn_wagon",
+  "name": "Acorn wagon",
+  "price": 110,
+  "group": "Play",
+  "area": "ground",
+  "row": "any",
+  "frames": 1,
+  "note": "Squirrels and jays carry acorns off",
+  "visits": [
+   {
+    "who": "squirrel",
+    "act": "eat",
+    "x": 4,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "jay",
+    "act": "perch",
+    "x": 20,
+    "y": 20,
+    "when": "day",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "stepping_stones",
+  "name": "Stepping stones",
+  "price": 80,
+  "group": "Play",
+  "area": "ground",
+  "row": "front",
+  "frames": 1,
+  "note": "Frogs hop across from stone to stone",
+  "visits": [
+   {
+    "who": "frog",
+    "act": "hopacross",
+    "x": 16,
+    "y": 30,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "tunnel",
+  "name": "Tunnel tube",
+  "price": 120,
+  "group": "Play",
+  "area": "ground",
+  "row": "any",
+  "frames": 1,
+  "note": "Small mammals run through it",
+  "visits": [
+   {
+    "who": "smallmammal",
+    "act": "through",
+    "x": 16,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "soccer",
+  "name": "Soccer goal and ball",
+  "price": 160,
+  "group": "Play",
+  "area": "ground",
+  "row": "any",
+  "frames": 1,
+  "note": "Animals nudge the ball; a sparkle when it goes in",
+  "visits": [
+   {
+    "who": "walker",
+    "act": "bump",
+    "x": 28,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ],
+  "fx": "soccer"
+ },
+ {
+  "key": "sprinkler",
+  "name": "Sprinkler",
+  "price": 160,
+  "group": "Play",
+  "area": "ground",
+  "row": "front",
+  "frames": 1,
+  "note": "Birds bathe, frogs and ducks play, others shake off",
+  "visits": [
+   {
+    "who": "smallbird",
+    "act": "bathe",
+    "x": 7,
+    "y": 31,
+    "when": "day",
+    "n": 1
+   },
+   {
+    "who": "frog",
+    "act": "sit",
+    "x": 25,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "duck",
+    "act": "sit",
+    "x": 27,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ],
+  "fx": "sprinkler"
+ },
+ {
+  "key": "swing_set",
+  "name": "Swing set",
+  "price": 250,
+  "group": "Play",
+  "area": "ground",
+  "row": "back",
+  "frames": 4,
+  "note": "Birds ride the swings, which sway when they land",
+  "visits": [
+   {
+    "who": "smallbird",
+    "act": "ride",
+    "x": 10,
+    "y": 21,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "smallbird",
+    "act": "ride",
+    "x": 23,
+    "y": 21,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "seesaw",
+  "name": "Seesaw",
+  "price": 200,
+  "group": "Play",
+  "area": "ground",
+  "row": "any",
+  "frames": 4,
+  "note": "Two animals ride it up and down",
+  "visits": [
+   {
+    "who": "smallmammal",
+    "act": "ride",
+    "x": 3,
+    "y": 23,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "smallmammal",
+    "act": "ride",
+    "x": 29,
+    "y": 23,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "slide",
+  "name": "Slide",
+  "price": 220,
+  "group": "Play",
+  "area": "ground",
+  "row": "back",
+  "frames": 1,
+  "note": "Small animals slide down; otters especially",
+  "visits": [
+   {
+    "who": "slider",
+    "act": "slide",
+    "x": 6,
+    "y": 3,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "sandbox",
+  "name": "Sandbox",
+  "price": 160,
+  "group": "Play",
+  "area": "ground",
+  "row": "front",
+  "frames": 1,
+  "note": "Quail take dust baths; small animals dig",
+  "visits": [
+   {
+    "who": "groundbird",
+    "act": "bathe",
+    "x": 12,
+    "y": 30,
+    "when": "day",
+    "n": 1
+   },
+   {
+    "who": "smallmammal",
+    "act": "dig",
+    "x": 22,
+    "y": 30,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "tire_swing",
+  "name": "Tire swing",
+  "price": 180,
+  "group": "Play",
+  "area": "ground",
+  "row": "back",
+  "frames": 4,
+  "note": "A raccoon sits in it and swings",
+  "visits": [
+   {
+    "who": "raccoon",
+    "act": "ride",
+    "x": 16,
+    "y": 23,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "string_lights",
+  "name": "String lights",
+  "price": 250,
+  "group": "Lights and night",
+  "area": "ground",
+  "row": "back",
+  "frames": 1,
+  "note": "Birds perch on the wire by day; moths gather at night",
+  "visits": [
+   {
+    "who": "smallbird",
+    "act": "perch",
+    "x": 10,
+    "y": 4,
+    "when": "day",
+    "n": 1
+   },
+   {
+    "who": "smallbird",
+    "act": "perch",
+    "x": 22,
+    "y": 4,
+    "when": "day",
+    "n": 1
+   },
+   {
+    "who": "moth",
+    "act": "hover",
+    "x": 16,
+    "y": 4,
+    "when": "night",
+    "n": 1
+   }
+  ],
+  "fx": "lights"
+ },
+ {
+  "key": "paper_lanterns",
+  "name": "Paper lanterns",
+  "price": 220,
+  "group": "Lights and night",
+  "area": "ground",
+  "row": "back",
+  "frames": 1,
+  "note": "Moths flutter around them at night",
+  "visits": [
+   {
+    "who": "moth",
+    "act": "hover",
+    "x": 8,
+    "y": 8,
+    "when": "night",
+    "n": 1
+   },
+   {
+    "who": "moth",
+    "act": "hover",
+    "x": 24,
+    "y": 8,
+    "when": "night",
+    "n": 1
+   }
+  ],
+  "fx": "lanterns"
+ },
+ {
+  "key": "path_lights",
+  "name": "Garden path lights",
+  "price": 140,
+  "group": "Lights and night",
+  "area": "ground",
+  "row": "front",
+  "frames": 1,
+  "note": "Frogs and toads wait under them at night to catch bugs",
+  "visits": [
+   {
+    "who": "frog",
+    "act": "sit",
+    "x": 9,
+    "y": 31,
+    "when": "night",
+    "n": 1
+   },
+   {
+    "who": "frog",
+    "act": "sit",
+    "x": 23,
+    "y": 31,
+    "when": "night",
+    "n": 1
+   }
+  ],
+  "fx": "pathlights"
+ },
+ {
+  "key": "glow_mushrooms",
+  "name": "Glowing mushrooms",
+  "price": 200,
+  "group": "Lights and night",
+  "area": "ground",
+  "row": "front",
+  "frames": 1,
+  "note": "Glow at night; salamanders and frogs sit beside them",
+  "visits": [
+   {
+    "who": "salamander",
+    "act": "sit",
+    "x": 16,
+    "y": 31,
+    "when": "night",
+    "n": 1
+   },
+   {
+    "who": "frog",
+    "act": "sit",
+    "x": 27,
+    "y": 31,
+    "when": "night",
+    "n": 1
+   }
+  ],
+  "fx": "glowshrooms"
+ },
+ {
+  "key": "moon_lamp",
+  "name": "Moon lamp",
+  "price": 200,
+  "group": "Lights and night",
+  "area": "ground",
+  "row": "back",
+  "frames": 1,
+  "note": "Owls and night birds perch on it",
+  "visits": [
+   {
+    "who": "owl",
+    "act": "perch",
+    "x": 19,
+    "y": -3,
+    "when": "night",
+    "n": 1
+   },
+   {
+    "who": "nightbird",
+    "act": "perch",
+    "x": 19,
+    "y": -3,
+    "when": "night",
+    "n": 1
+   }
+  ],
+  "fx": "moonglow"
+ },
+ {
+  "key": "telescope",
+  "name": "Telescope",
+  "price": 250,
+  "group": "Lights and night",
+  "area": "ground",
+  "row": "any",
+  "frames": 1,
+  "note": "Owls perch on it at night",
+  "visits": [
+   {
+    "who": "owl",
+    "act": "perch",
+    "x": 21,
+    "y": 8,
+    "when": "night",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "night_flowers",
+  "name": "Night flowers",
+  "price": 160,
+  "group": "Lights and night",
+  "area": "ground",
+  "row": "front",
+  "frames": 1,
+  "note": "Open at dusk; moths and bats visit at night",
+  "visits": [
+   {
+    "who": "moth",
+    "act": "hover",
+    "x": 10,
+    "y": 20,
+    "when": "night",
+    "n": 1
+   },
+   {
+    "who": "bat",
+    "act": "hover",
+    "x": 22,
+    "y": 14,
+    "when": "night",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "porch_light",
+  "name": "Porch light post",
+  "price": 120,
+  "group": "Lights and night",
+  "area": "ground",
+  "row": "back",
+  "frames": 1,
+  "note": "Moths and bats circle it at night",
+  "visits": [
+   {
+    "who": "moth",
+    "act": "hover",
+    "x": 16,
+    "y": 0,
+    "when": "night",
+    "n": 1
+   },
+   {
+    "who": "bat",
+    "act": "hover",
+    "x": 22,
+    "y": -4,
+    "when": "night",
+    "n": 1
+   }
+  ],
+  "fx": "porchlight"
+ },
+ {
+  "key": "hollow_log",
+  "name": "Hollow log",
+  "price": 120,
+  "group": "Lights and night",
+  "area": "ground",
+  "row": "front",
+  "frames": 1,
+  "note": "Squirrels run through it; foxes nap inside",
+  "visits": [
+   {
+    "who": "smallmammal",
+    "act": "through",
+    "x": 16,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "fox",
+    "act": "hide",
+    "x": 16,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "wind_chimes",
+  "name": "Wind chimes",
+  "price": 150,
+  "group": "Lights and night",
+  "area": "ground",
+  "row": "back",
+  "frames": 4,
+  "note": "Sway with the wind; birds flutter off when they ring",
+  "visits": [
+   {
+    "who": "smallbird",
+    "act": "perch",
+    "x": 8,
+    "y": -2,
+    "when": "day",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "tent",
+  "name": "Camping tent",
+  "price": 300,
+  "group": "Camping and explorers",
+  "area": "ground",
+  "row": "back",
+  "frames": 1,
+  "note": "A fox or raccoon peeks out and sleeps inside",
+  "visits": [
+   {
+    "who": "fox",
+    "act": "home",
+    "x": 16,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "raccoon",
+    "act": "home",
+    "x": 16,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ],
+  "fx": "tentglow"
+ },
+ {
+  "key": "cabin",
+  "name": "Log cabin",
+  "price": 450,
+  "group": "Camping and explorers",
+  "area": "ground",
+  "row": "back",
+  "frames": 1,
+  "note": "Squirrels run along the roof; birds nest under the eaves",
+  "visits": [
+   {
+    "who": "squirrel",
+    "act": "perch",
+    "x": 9,
+    "y": 6,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "songbird",
+    "act": "perch",
+    "x": 30,
+    "y": 12,
+    "when": "day",
+    "n": 1
+   }
+  ],
+  "fx": "windows"
+ },
+ {
+  "key": "canoe",
+  "name": "Canoe on the shore",
+  "price": 180,
+  "group": "Camping and explorers",
+  "area": "ground",
+  "row": "front",
+  "frames": 1,
+  "note": "Turtles and frogs climb in",
+  "visits": [
+   {
+    "who": "turtle",
+    "act": "sit",
+    "x": 12,
+    "y": 27,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "frog",
+    "act": "sit",
+    "x": 21,
+    "y": 27,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "signpost",
+  "name": "Trail signpost",
+  "price": 90,
+  "group": "Camping and explorers",
+  "area": "ground",
+  "row": "any",
+  "frames": 1,
+  "note": "Birds perch on the arrows; animals stop to look",
+  "visits": [
+   {
+    "who": "bird",
+    "act": "perch",
+    "x": 25,
+    "y": 4,
+    "when": "day",
+    "n": 1
+   },
+   {
+    "who": "walker",
+    "act": "watch",
+    "x": 6,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "trail_camera",
+  "name": "Trail camera",
+  "price": 200,
+  "group": "Camping and explorers",
+  "area": "ground",
+  "row": "any",
+  "frames": 1,
+  "note": "Flashes and says \"Caught on camera!\" when an animal walks past",
+  "visits": [
+   {
+    "who": "walker",
+    "act": "pose",
+    "x": 28,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ],
+  "fx": "camera"
+ },
+ {
+  "key": "salt_lick",
+  "name": "Salt lick",
+  "price": 120,
+  "group": "Camping and explorers",
+  "area": "ground",
+  "row": "front",
+  "frames": 1,
+  "note": "Deer, elk, moose and sheep visit and lick it",
+  "visits": [
+   {
+    "who": "deer",
+    "act": "drink",
+    "x": 1,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "deer",
+    "act": "drink",
+    "x": 31,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "duck_house",
+  "name": "Duck house",
+  "price": 180,
+  "group": "Camping and explorers",
+  "area": "pond",
+  "row": "any",
+  "frames": 1,
+  "note": "Sits on the pond; ducks rest inside",
+  "visits": [
+   {
+    "who": "duck",
+    "act": "home",
+    "x": 16,
+    "y": 30,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "lookout_tower",
+  "name": "Lookout tower",
+  "price": 450,
+  "group": "Camping and explorers",
+  "area": "ground",
+  "row": "back",
+  "frames": 1,
+  "note": "Hawks and eagles perch on top",
+  "visits": [
+   {
+    "who": "raptor",
+    "act": "perch",
+    "x": 16,
+    "y": -7,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "fossil_dig",
+  "name": "Fossil dig",
+  "price": 260,
+  "group": "Camping and explorers",
+  "area": "ground",
+  "row": "front",
+  "frames": 1,
+  "note": "Small animals dig there; lizards bask on the bones",
+  "visits": [
+   {
+    "who": "lizard",
+    "act": "bask",
+    "x": 16,
+    "y": 26,
+    "when": "day",
+    "n": 1
+   },
+   {
+    "who": "smallmammal",
+    "act": "dig",
+    "x": 28,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "rock_pile",
+  "name": "Rock pile",
+  "price": 100,
+  "group": "Camping and explorers",
+  "area": "ground",
+  "row": "any",
+  "frames": 1,
+  "note": "Chipmunks, pikas and marmots sit on top as lookouts",
+  "visits": [
+   {
+    "who": "lookout",
+    "act": "sit",
+    "x": 15,
+    "y": 15,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "barn",
+  "name": "Red barn",
+  "price": 450,
+  "group": "Farm and village",
+  "area": "ground",
+  "row": "back",
+  "frames": 1,
+  "note": "Barn owls sleep in the loft and fly out at night",
+  "visits": [
+   {
+    "who": "owl",
+    "act": "home",
+    "x": 16,
+    "y": 5,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "bird",
+    "act": "perch",
+    "x": 16,
+    "y": -7,
+    "when": "day",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "hay_bales",
+  "name": "Hay bales",
+  "price": 90,
+  "group": "Farm and village",
+  "area": "ground",
+  "row": "any",
+  "frames": 1,
+  "note": "Rabbits and deer nibble; mice hide",
+  "visits": [
+   {
+    "who": "rabbit",
+    "act": "eat",
+    "x": 3,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "deer",
+    "act": "eat",
+    "x": 30,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "mouse",
+    "act": "hide",
+    "x": 16,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "wheelbarrow",
+  "name": "Wheelbarrow of flowers",
+  "price": 100,
+  "group": "Farm and village",
+  "area": "ground",
+  "row": "any",
+  "frames": 1,
+  "note": "Butterflies and bees visit",
+  "visits": [
+   {
+    "who": "bug",
+    "act": "hover",
+    "x": 12,
+    "y": 13,
+    "when": "day",
+    "n": 1
+   },
+   {
+    "who": "bee",
+    "act": "hover",
+    "x": 20,
+    "y": 14,
+    "when": "day",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "nut_basket",
+  "name": "Nut basket",
+  "price": 90,
+  "group": "Farm and village",
+  "area": "ground",
+  "row": "front",
+  "frames": 1,
+  "note": "Squirrels and jays carry nuts off and bury them",
+  "visits": [
+   {
+    "who": "squirrel",
+    "act": "eat",
+    "x": 4,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "jay",
+    "act": "eat",
+    "x": 27,
+    "y": 31,
+    "when": "day",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "shed",
+  "name": "Garden shed",
+  "price": 300,
+  "group": "Farm and village",
+  "area": "ground",
+  "row": "back",
+  "frames": 1,
+  "note": "Animals shelter under the roof when it rains",
+  "visits": [
+   {
+    "who": "walker",
+    "act": "shelter",
+    "x": 4,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "walker",
+    "act": "shelter",
+    "x": 28,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "greenhouse",
+  "name": "Greenhouse",
+  "price": 400,
+  "group": "Farm and village",
+  "area": "ground",
+  "row": "back",
+  "frames": 1,
+  "note": "Butterflies and hummingbirds visit the flowers inside",
+  "visits": [
+   {
+    "who": "butterfly",
+    "act": "hover",
+    "x": 9,
+    "y": 16,
+    "when": "day",
+    "n": 1
+   },
+   {
+    "who": "hummingbird",
+    "act": "hover",
+    "x": 24,
+    "y": 12,
+    "when": "day",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "mailbox",
+  "name": "Mailbox",
+  "price": 90,
+  "group": "Farm and village",
+  "area": "ground",
+  "row": "any",
+  "frames": 1,
+  "note": "A small bird nests in it and pops out",
+  "visits": [
+   {
+    "who": "smallbird",
+    "act": "home",
+    "x": 16,
+    "y": 12,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "fence",
+  "name": "Picket fence",
+  "price": 100,
+  "group": "Farm and village",
+  "area": "ground",
+  "row": "back",
+  "frames": 1,
+  "note": "Birds perch along it; squirrels run along the top",
+  "visits": [
+   {
+    "who": "bird",
+    "act": "perch",
+    "x": 6,
+    "y": 17,
+    "when": "day",
+    "n": 1
+   },
+   {
+    "who": "bird",
+    "act": "perch",
+    "x": 22,
+    "y": 17,
+    "when": "day",
+    "n": 1
+   },
+   {
+    "who": "squirrel",
+    "act": "perch",
+    "x": 14,
+    "y": 17,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "balloon",
+  "name": "Hot air balloon",
+  "price": 500,
+  "group": "Sky",
+  "area": "sky",
+  "row": "any",
+  "frames": 1,
+  "note": "Drifts across by day; birds fly alongside and ride the basket",
+  "visits": [
+   {
+    "who": "flier",
+    "act": "ride",
+    "x": 16,
+    "y": 26,
+    "when": "day",
+    "n": 1
+   }
+  ],
+  "fx": "drift"
+ },
+ {
+  "key": "paper_plane",
+  "name": "Paper airplane",
+  "price": 150,
+  "group": "Sky",
+  "area": "sky",
+  "row": "any",
+  "frames": 1,
+  "note": "Glides past now and then; birds chase it",
+  "visits": [
+   {
+    "who": "flier",
+    "act": "escort",
+    "x": 10,
+    "y": 0,
+    "when": "day",
+    "n": 1
+   }
+  ],
+  "fx": "glide"
+ },
+ {
+  "key": "windsock",
+  "name": "Windsock",
+  "price": 100,
+  "group": "Sky",
+  "area": "ground",
+  "row": "back",
+  "frames": 4,
+  "note": "Points with the real wind; birds perch on its pole",
+  "visits": [
+   {
+    "who": "bird",
+    "act": "perch",
+    "x": 4,
+    "y": -6,
+    "when": "day",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "weathervane",
+  "name": "Weathervane",
+  "price": 200,
+  "group": "Sky",
+  "area": "ground",
+  "row": "back",
+  "frames": 4,
+  "note": "A bird rides it as it turns with the wind",
+  "visits": [
+   {
+    "who": "bird",
+    "act": "perch",
+    "x": 16,
+    "y": -6,
+    "when": "day",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "gnome",
+  "name": "Garden gnome",
+  "price": 100,
+  "group": "Landmarks",
+  "area": "ground",
+  "row": "any",
+  "frames": 1,
+  "note": "Animals sniff it; a bird sits on its hat",
+  "visits": [
+   {
+    "who": "smallbird",
+    "act": "perch",
+    "x": 16,
+    "y": 8,
+    "when": "day",
+    "n": 1
+   },
+   {
+    "who": "walker",
+    "act": "watch",
+    "x": 28,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "owl_statue",
+  "name": "Stone owl statue",
+  "price": 150,
+  "group": "Landmarks",
+  "area": "ground",
+  "row": "any",
+  "frames": 1,
+  "note": "Real owls perch beside it",
+  "visits": [
+   {
+    "who": "owl",
+    "act": "perch",
+    "x": 25,
+    "y": 23,
+    "when": "night",
+    "n": 1
+   }
+  ]
+ },
+ {
+  "key": "sundial",
+  "name": "Sundial",
+  "price": 160,
+  "group": "Landmarks",
+  "area": "ground",
+  "row": "any",
+  "frames": 1,
+  "note": "Lizards bask on it; its shadow follows the real sun",
+  "visits": [
+   {
+    "who": "lizard",
+    "act": "bask",
+    "x": 13,
+    "y": 18,
+    "when": "day",
+    "n": 1
+   }
+  ],
+  "fx": "sundial"
+ },
+ {
+  "key": "golden_acorn",
+  "name": "Golden acorn statue",
+  "price": 1000,
+  "group": "Landmarks",
+  "area": "ground",
+  "row": "back",
+  "frames": 1,
+  "note": "Squirrels gather around it; it sparkles",
+  "visits": [
+   {
+    "who": "squirrel",
+    "act": "watch",
+    "x": 4,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "squirrel",
+    "act": "watch",
+    "x": 28,
+    "y": 31,
+    "when": "any",
+    "n": 1
+   },
+   {
+    "who": "jay",
+    "act": "perch",
+    "x": 16,
+    "y": -3,
+    "when": "any",
+    "n": 1
+   }
+  ],
+  "fx": "sparkle"
+ }
+]
