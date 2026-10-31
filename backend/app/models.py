@@ -294,6 +294,8 @@ class GameScore(Base):
     level: Mapped[str] = mapped_column(String(16), index=True)
     species_id: Mapped[int] = mapped_column(ForeignKey("species.id"))
     points: Mapped[int] = mapped_column(Integer)
+    # The skin the animal wore for that best score ("frosty"), or None for its own colors.
+    skin: Mapped[str | None] = mapped_column(String(16), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     user: Mapped[User] = relationship()

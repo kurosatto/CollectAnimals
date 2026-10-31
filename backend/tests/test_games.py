@@ -80,6 +80,10 @@ def test_coins_buy_skins_and_decorations(client, fake):
     assert client.post("/games/shop/skin", headers=ana, json={"species": "bobcat", "skin": "golden"}).status_code == 400
     assert client.post("/games/shop/skin", headers=ana, json={"species": "bobcat", "skin": "frosty"}).json()["skins"] == \
         {"bobcat": "frosty"}
+    # A best score remembers the skin the animal wore, and the board shows it.
+    assert board(client, ana)["you"]["skin"] is None
+    score(client, ana, "bobcat", 61)
+    assert board(client, ana)["you"]["skin"] == "frosty"
     shop = client.post("/games/shop/buy", headers=ana, json={"item": "decor.flowers"}).json()
     assert shop["decor"] == ["flowers"] and shop["coins"] == 50
     assert client.post("/games/shop/decor", headers=ana, json={"item": "decor.flowers", "on": False}).json()["decor"] == []

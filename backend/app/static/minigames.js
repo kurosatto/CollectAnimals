@@ -29,7 +29,7 @@ const MG_GAMES = [
   { key: "sky", title: "Sky Glide", pose: "fly", kind: "flying animal", thing: ["berry", "berries"],
     how: "Tap to flap through the gaps in the storm clouds, and grab the berries on the way.", tip: "Tap to flap your wings" },
   { key: "trail", title: "Trail Run", pose: "walk", kind: "land animal", thing: ["acorn", "acorns"],
-    how: "Tap to hop over rocks and logs, hold for a big jump over stumps, and stay low under branches.", tip: "Tap to jump, hold to jump higher" },
+    how: "Tap to hop over rocks and logs, hold for a big jump, and stay low under branches. Land on rocks, logs, stumps and ledges to cross creeks and thorns.", tip: "Tap to jump, hold to jump higher" },
   { key: "river", title: "River Swim", pose: "swim", kind: "water animal", thing: ["point", "points"],
     how: "Hold to swim up, let go to dive. Slip between the rocks and roots, eat snacks and scoop up litter.", tip: "Hold to swim up, let go to dive" },
   { key: "pool", title: "Tide Pool Spin", pose: "idle", kind: "tide pool animal", thing: ["bite", "bites"],
@@ -243,10 +243,16 @@ function mgBoard(box, level, scope) {
   const row = (e) => {
     const li = mgEl("li", e.you ? "you" : "");
     li.append(mgEl("span", "mg-rank", `${e.rank}.`));
-    const img = mgEl("img");
-    if (e.species.slug) { img.src = `/sprites/${encodeURIComponent(e.species.slug)}.png`; img.alt = e.species.common_name; }
-    else img.style.visibility = "hidden";
-    li.append(img, mgEl("span", "mg-who", `${e.you ? "You" : e.username} as ${e.species.common_name}`), mgEl("span", "mg-pts", e.points));
+    const img = mgEl("img"), skin = e.skin && HAB_SKINS[e.skin] ? e.skin : null;
+    if (e.species.slug) {
+      // In the skin it wore for the score, like a Frosty bobcat.
+      const src = `/sprites/${encodeURIComponent(e.species.slug)}.png`;
+      if (skin) { const raw = new Image(); raw.onload = () => { const cv = habSkin(raw, skin); if (cv !== raw) img.src = cv.toDataURL(); }; raw.src = src; }
+      else img.src = src;
+      img.alt = e.species.common_name;
+    } else img.style.visibility = "hidden";
+    const name = skin ? `${e.skin[0].toUpperCase()}${e.skin.slice(1)} ${e.species.common_name}` : e.species.common_name;
+    li.append(img, mgEl("span", "mg-who", `${e.you ? "You" : e.username} as ${name}`), mgEl("span", "mg-pts", e.points));
     return li;
   };
   Promise.resolve(mg.posting).then(() => mgApi("GET", `/games/scores/${level}?scope=${scope}`)).then((d) => {
@@ -655,14 +661,32 @@ function mgRiverLevel(k, gates, snags, litter) {
 }
 
 // Trail obstacles: rocks and logs to hop, tall stumps that need a big jump (hold),
-// and low branches you must stay under (don't jump!).
+// and low branches you must stay under (don't jump!). Rocks, logs and stumps can be
+// stood on, and so can ledges up in the air: they carry you over creeks and thorns,
+// or up to acorns.
+//   ["ledge", beat, height, width, acorns]  a ledge whose top is that high up
+//   ["pit", beat, width]                    a creek to jump; falling in ends the try
+//   ["stones", beat, n]                     a wide creek with n stepping stones
+//   ["bridge", beat, width, height]         thorns too long to jump, with a ledge over them
 function mgTrailLevel(k, list) {
   const out = [], g = MG_GROUND;
-  for (const [type, b] of list) {
+  const ledge = (wx, h, w, n) => out.push({ type: "ledge", plat: true, wx, y: g - h + 3, w, h: 6 },
+    ...(n ? mgTrail("acorn", wx - w / 2 + 10, g - h - 11, wx + w / 2 - 10, g - h - 11, n) : []));
+  for (const [type, b, a, c, n] of list) {
     const wx = b * k;
-    if (type === "rock") out.push({ type, wx, y: g - 5 }, ...mgTrail("acorn", wx - 18, g - 34, wx + 18, g - 34, 3));
-    else if (type === "log") out.push({ type, wx, y: g - 4 }, ...mgTrail("acorn", wx - 20, g - 36, wx + 20, g - 36, 3));
-    else if (type === "stump") out.push({ type, wx, y: g - 10 }, ...mgTrail("acorn", wx - 14, g - 48, wx + 14, g - 48, 2));
+    if (type === "rock") out.push({ type, plat: true, wx, y: g - 5 }, ...mgTrail("acorn", wx - 18, g - 34, wx + 18, g - 34, 3));
+    else if (type === "log") out.push({ type, plat: true, wx, y: g - 4 }, ...mgTrail("acorn", wx - 20, g - 36, wx + 20, g - 36, 3));
+    else if (type === "stump") out.push({ type, plat: true, wx, y: g - 10 }, ...mgTrail("acorn", wx - 14, g - 48, wx + 14, g - 48, 2));
+    else if (type === "ledge") ledge(wx, a, c, n);
+    else if (type === "pit") out.push({ type, wx, y: g + 14, w: a, h: 28 }, ...mgTrail("acorn", wx - 10, g - 40, wx + 10, g - 40, 2));
+    else if (type === "stones") {
+      const gap = 36, w = 26, span = a * w + (a + 1) * gap;
+      out.push({ type: "pit", wx: wx + span / 2, y: g + 14, w: span, h: 28 });
+      for (let i = 0; i < a; i++) {
+        const x = wx + gap + w / 2 + i * (w + gap);
+        out.push({ type: "stone", plat: true, wx: x, y: g + 3, w, h: 6 }, ...mgTrail("acorn", x, g - 26, x, g - 26, 1));
+      }
+    } else if (type === "bridge") { out.push({ type: "thorns", wx, y: g - 5, w: a, h: 10 }); ledge(wx - 14, c, a + 36, Math.round(a / 22)); }
     else if (type === "branch") out.push({ type, wx, y: g - 35 }, ...mgTrail("acorn", wx - 12, g - 8, wx + 12, g - 8, 2));
     else if (type === "acorns") out.push(...mgTrail("acorn", wx - 20, g - 8, wx + 20, g - 8, 3));
   }
@@ -740,30 +764,43 @@ const MG_LEVELS = {
   trail: [
     { name: "Forest Path", bpm: 136, song: 2, items: (k) => mgTrailLevel(k, [
       ["acorns", 4], ["rock", 8], ["rock", 12], ["log", 16], ["acorns", 19],
-      ["rock", 22], ["log", 26], ["branch", 30], ["acorns", 33], ["rock", 36],
-      ["stump", 40], ["rock", 44], ["rock", 47], ["branch", 52], ["log", 56],
-      ["stump", 60], ["acorns", 63], ["rock", 66], ["log", 70], ["branch", 74], ["rock", 78],
-      ["log", 82], ["rock", 85], ["rock", 88],
+      // Your first ledge: hop up for the acorns, or run underneath.
+      ["ledge", 23, 26, 70, 3], ["rock", 28], ["branch", 31], ["acorns", 34],
+      ["pit", 38, 44], ["rock", 42], ["log", 46], ["stump", 50], ["acorns", 53],
+      ["ledge", 57, 26, 60, 2], ["ledge", 59.5, 48, 60, 3], ["rock", 64], ["branch", 67.5],
+      ["pit", 71, 48], ["log", 75], ["bridge", 80, 66, 26], ["rock", 86], ["rock", 89],
       // The second half: faster combinations.
-      ["stump", 92], ["rock", 95], ["stump", 97.5], ["rock", 100.5], ["branch", 103], ["log", 106.5],
-      ["log", 110], ["stump", 113], ["rock", 115.5], ["stump", 118.5], ["rock", 121.5], ["rock", 124],
-      ["stump", 127], ["stump", 130.5], ["rock", 133.5], ["stump", 137], ["rock", 139.5], ["branch", 143],
-      ["stump", 145.5], ["stump", 148], ["rock", 151], ["rock", 154], ["rock", 157], ["rock", 160],
-      ["branch", 163.5], ["log", 166.5],
+      ["stump", 93], ["rock", 96], ["stump", 98.5], ["pit", 102, 48], ["branch", 105.5], ["log", 108.5],
+      ["stones", 111, 2], ["rock", 117], ["stump", 120], ["ledge", 122.5, 44, 56, 3], ["pit", 126, 52],
+      ["branch", 129.5], ["bridge", 133.5, 88, 28], ["stump", 140], ["rock", 142.5], ["pit", 145.5, 52],
+      ["ledge", 149.5, 26, 56, 2], ["ledge", 152, 50, 56, 3], ["ledge", 154.5, 26, 56, 2], ["rock", 158],
+      ["stones", 160, 3], ["stump", 167], ["rock", 169.5], ["branch", 172.5], ["log", 175.5],
     ]) },
     { name: "Rocky Ridge", bpm: 150, song: 3, items: (k) => mgTrailLevel(k, [
       ["rock", 8], ["rock", 11], ["rock", 14], ["log", 18], ["branch", 22],
-      ["stump", 26], ["rock", 30], ["branch", 33], ["log", 37], ["rock", 40],
-      ["stump", 44], ["stump", 48], ["branch", 52], ["rock", 56], ["rock", 59], ["rock", 62],
-      ["branch", 66], ["log", 69], ["stump", 73], ["branch", 77], ["rock", 81], ["log", 84],
-      ["stump", 88], ["rock", 92], ["branch", 95], ["rock", 99], ["stump", 103], ["log", 107], ["rock", 110],
+      ["stump", 26], ["rock", 30], ["branch", 33], ["log", 37], ["pit", 41, 48],
+      ["stump", 44], ["stump", 48], ["branch", 52], ["ledge", 56, 28, 60, 3], ["pit", 59, 52], ["rock", 62],
+      ["branch", 66], ["log", 69], ["stump", 73], ["branch", 77], ["bridge", 81, 66, 26], ["log", 87],
+      ["stump", 90], ["rock", 93], ["branch", 96], ["stones", 99, 3], ["stump", 106], ["log", 109.5], ["rock", 112.5],
       // The second half: faster combinations.
-      ["rock", 114], ["stump", 117], ["branch", 119.5], ["rock", 122], ["stump", 124.5], ["stump", 127.5],
-      ["stump", 130.5], ["stump", 133], ["rock", 136], ["rock", 139], ["stump", 142], ["rock", 145],
-      ["branch", 147.5], ["rock", 150], ["branch", 152.5], ["branch", 155.5], ["log", 158], ["rock", 160.5],
-      ["branch", 163.5], ["rock", 166.5], ["log", 169], ["stump", 171.5], ["rock", 174], ["stump", 177],
-      ["stump", 180], ["rock", 182.5], ["rock", 185.5], ["log", 188], ["rock", 191], ["rock", 193.5],
-      ["rock", 196], ["branch", 198.5],
+      ["rock", 116], ["stump", 119], ["branch", 121.5], ["pit", 124.5, 52], ["stump", 127.5], ["stump", 130.5],
+      ["ledge", 134, 26, 50, 2], ["ledge", 136.5, 50, 50, 2], ["ledge", 139, 74, 50, 3], ["rock", 143],
+      ["bridge", 146, 100, 30], ["branch", 152], ["pit", 155, 52], ["log", 158], ["rock", 160.5],
+      ["stones", 163, 4], ["stump", 172], ["rock", 174.5], ["branch", 177.5], ["pit", 180.5, 54],
+      ["stump", 183.5], ["bridge", 187, 76, 28], ["rock", 192.5], ["stump", 195.5], ["branch", 198], ["rock", 201],
+    ]) },
+    { name: "Creek Canyon", bpm: 144, song: 7, items: (k) => mgTrailLevel(k, [
+      ["acorns", 4], ["pit", 8, 44], ["pit", 12, 48], ["stones", 15, 2], ["rock", 21], ["log", 24],
+      ["ledge", 28, 26, 56, 2], ["ledge", 30.5, 50, 56, 3], ["ledge", 33, 74, 56, 3], ["ledge", 35.5, 50, 56, 2],
+      ["pit", 39.5, 52], ["branch", 43], ["bridge", 47, 88, 28], ["stump", 53], ["pit", 56, 52],
+      ["stones", 59, 3], ["branch", 65.5], ["stump", 68.5], ["ledge", 71, 44, 50, 3], ["pit", 74.5, 56],
+      ["rock", 78], ["bridge", 81.5, 100, 30], ["pit", 88, 52], ["log", 91], ["branch", 94],
+      // The second half: the canyon gets steep.
+      ["stones", 97, 4], ["stump", 106], ["pit", 109, 54], ["ledge", 112.5, 26, 48, 2], ["ledge", 115, 50, 48, 2],
+      ["ledge", 117.5, 74, 48, 3], ["ledge", 120, 98, 48, 3], ["ledge", 122.5, 74, 48, 2], ["ledge", 125, 50, 48, 2],
+      ["pit", 128.5, 56], ["stump", 131.5], ["branch", 134.5], ["bridge", 138, 110, 30], ["pit", 144.5, 54],
+      ["stones", 147.5, 4], ["rock", 156], ["stump", 158.5], ["pit", 161.5, 56], ["branch", 165], ["log", 168],
+      ["bridge", 171.5, 88, 28], ["stump", 178], ["pit", 181, 56], ["rock", 184.5], ["branch", 187.5],
     ]) },
   ],
   river: [
@@ -878,6 +915,12 @@ function mgLevelOf(key, n) {
     lvl.len = lvl.things[lvl.things.length - 1].wx + 4 * k;
   }
   return lvl;
+}
+
+// The animal you're playing as, with its skin when it wears one: "Frosty Bobcat".
+function mgWho() {
+  const s = mg.species, skin = habLook.skins[s.slug];
+  return skin && HAB_SKINS[skin] ? `${skin[0].toUpperCase()}${skin.slice(1)} ${s.common_name}` : s.common_name;
 }
 
 function mgRec(key, n) {
@@ -1127,12 +1170,16 @@ function mgPhys(r, key, dt) {
     if (r.y < MG_TOP) { r.y = MG_TOP; r.vy = Math.max(0, r.vy); }
     if (r.y > MG_GROUND - 14) { r.y = MG_GROUND - 14; r.vy = 0; }  // glides along the meadow
   } else if (key === "trail") {
+    const was = r.y;
     if (!r.ground) {
       // Let go early for a small hop.
       r.vy += (r.vy < 0 && !r.held ? 760 * 2.2 : 760) * dt;
       r.y += r.vy * dt;
-      if (r.y >= MG_GROUND) { r.y = MG_GROUND; r.vy = 0; r.ground = true; }
     }
+    // Land on whatever is under your feet, or fall when it runs out.
+    const floor = mgTrailFloor(r, was);
+    if (r.ground) { if (floor === null || floor > r.y + .5) { r.ground = false; r.vy = 0; } }
+    else if (r.vy >= 0 && floor !== null && r.y >= floor) { r.y = floor; r.vy = 0; r.ground = true; }
   } else if (key === "pool") {
     r.ang += r.dir * MG_POOL.turn * r.p.power * dt;
   } else if (key === "claw") {
@@ -1144,6 +1191,23 @@ function mgPhys(r, key, dt) {
     if (r.y < MG_SURFACE + 12) { r.y = MG_SURFACE + 12; r.vy = Math.max(0, r.vy); }
     if (r.y > MG_BED - 12) { r.y = MG_BED - 12; r.vy = Math.min(0, r.vy); }
   }
+}
+
+// Trail Run: the highest thing to stand on under the animal's feet that it was above
+// a moment ago (the trail, a rock, a ledge), or null over a creek.
+function mgTrailFloor(r, was) {
+  const plats = r.plats || (r.plats = r.things.filter((o) => o.plat || o.type === "pit").sort((a, b) => a.wx - b.wx));
+  let floor = Infinity, pit = false;
+  for (const o of plats) {
+    const x = o.wx - r.dist + r.x;
+    if (x - o.w / 2 > r.x + 10) break;
+    if (o.type === "pit") { if (r.x - 5 > x - o.w / 2 && r.x + 5 < x + o.w / 2) pit = true; continue; }
+    // Ledges and stones need your feet on them; rocks, logs and stumps your body.
+    const top = o.y - o.h / 2, reach = o.w / 2 + (o.type === "ledge" || o.type === "stone" ? 5 : 8 - r.p.shrink);
+    if (Math.abs(x - r.x) < reach && top >= was - .01) floor = Math.min(floor, top);
+  }
+  if (!pit && MG_GROUND >= was - .01) floor = Math.min(floor, MG_GROUND);
+  return floor === Infinity ? null : floor;
 }
 
 // What of the player touches things: a box around its body, a bit smaller than the
@@ -1178,9 +1242,10 @@ function mgPoolHit(r, things, pad) {
 // Does the animal hit a hazard right now? (Used by the game and the level checker.)
 function mgHit(r, key, things, pad) {
   if (key === "pool") return mgPoolHit(r, things, pad);
+  if (key === "trail" && r.y > MG_GROUND + 12) return true;  // fell in the creek
   const b = mgBox(key, r, pad);
   for (const o of things) {
-    if (o.good) continue;
+    if (o.good || o.type === "ledge" || o.type === "stone" || o.type === "pit") continue;
     const x = o.wx - r.dist + r.x;
     if (x > b[2] + 40) break;  // things are in course order
     if (mgTouches(b, o, x)) return true;
@@ -1293,7 +1358,7 @@ function mgEnd(r, cleared) {
     // The server works the points out again from the treats and the animal.
     mg.posting = mgApi("POST", "/games/scores", { level: `${mg.game.key}.${mg.level}`, species: slug, treats: r.score })
       .then((d) => { r.coins = d.coins_earned; if (mg.shop) mg.shop.coins = d.coins; }).catch(() => {});
-    if (pts > rec.points) { r.newBest = true; rec.points = pts; mgStore.set(rec.k + ".points", pts); mgStore.set(rec.k + ".who", mg.species.common_name); }
+    if (pts > rec.points) { r.newBest = true; rec.points = pts; mgStore.set(rec.k + ".points", pts); mgStore.set(rec.k + ".who", mgWho()); }
     else if (cleared) r.newBest = false;
     r.bestPoints = pts >= rec.points;
   }
@@ -1345,7 +1410,9 @@ function mgDraw() {
     return;
   }
   if (key === "sky") mgSkyBg(c, r); else if (key === "trail") mgTrailBg(c, r); else mgRiverBg(c, r);
-  for (const o of r.things) if (!o.gone) mgThing(c, o, r);
+  // Creeks first, so the stepping stones sit in them.
+  for (const o of r.things) if (o.type === "pit" && o.x > -o.w && o.x < MG_W + o.w) mgThing(c, o, r);
+  for (const o of r.things) if (!o.gone && o.type !== "pit") mgThing(c, o, r);
   mgPlayer(c, r);
   for (const f of r.fx) mgFxDraw(c, f);
   mgHud(c, r);
@@ -1501,6 +1568,44 @@ function mgThing(c, o, r) {
       box(-17, -2, 34, 4, "#7a5232"); box(-17, -2, 34, 1, "#a8744a");
       box(-15, -6, 8, 4, "#3f8d58"); box(-3, -7, 8, 5, "#2f7d4f"); box(9, -6, 7, 4, "#3f8d58"); box(-10, 2, 6, 3, "#2f7d4f");
       break;
+    case "ledge": {
+      // A mossy stone shelf: grass on top, dark underneath, a few roots hanging down.
+      const w = o.w, l = x - Math.round(w / 2), t = y - 3;
+      c.fillStyle = "#7d6a55"; c.fillRect(l + 1, t + 2, w - 2, 5); c.fillRect(l + 4, t + 7, w - 8, 2);
+      c.fillStyle = "#5e4f40"; c.fillRect(l + 4, t + 8, w - 8, 1);
+      c.fillStyle = "#58a662"; c.fillRect(l, t, w, 3);
+      c.fillStyle = "#7cc47f"; c.fillRect(l + 1, t, w - 2, 1);
+      c.fillStyle = "#3f8d58";
+      for (let dx = 5; dx < w - 3; dx += 9) c.fillRect(l + dx, t + 7, 1, 3 + (dx % 4));
+      break;
+    }
+    case "stone":
+      box(-13, -3, 26, 5, "#8a8f9e"); box(-11, -4, 22, 2, "#a3a8b5"); box(-9, -4, 5, 1, "#c4c8d2"); box(-13, 2, 26, 2, "#5e6372");
+      c.fillStyle = "rgba(255,255,255,.7)"; c.fillRect(x - 15 + Math.round(Math.sin(r.phase * 3 + o.wx) * 1.5), y + 3, 30, 1);
+      break;
+    case "pit": {
+      // A creek across the trail: earth banks, and water at the bottom.
+      const l = x - Math.round(o.w / 2), w = Math.round(o.w), g = MG_GROUND;
+      c.fillStyle = "#6b4a2e"; c.fillRect(l, g - 10, w, MG_H - g + 10);
+      c.fillStyle = "#4f3620"; c.fillRect(l + 3, g - 10, w - 6, 8);
+      c.fillStyle = "#2f7fa8"; c.fillRect(l + 3, g - 2, w - 6, MG_H - g + 2);
+      c.fillStyle = "#3a8fb8"; c.fillRect(l + 3, g + 6, w - 6, 4);
+      c.fillStyle = "rgba(255,255,255,.6)";
+      for (let dx = 6; dx < w - 8; dx += 12) c.fillRect(l + dx + Math.round(Math.sin(r.phase * 2 + dx) * 2), g - 1, 5, 1);
+      break;
+    }
+    case "thorns": {
+      // A long, low bramble with sharp spikes and red berries.
+      const l = x - Math.round(o.w / 2), w = Math.round(o.w);
+      c.fillStyle = "#3b5a2e"; c.fillRect(l, y - 3, w, 8);
+      c.fillStyle = "#2c4423";
+      for (let dx = 0; dx < w; dx += 7) { c.beginPath(); c.arc(l + dx + 3, y - 3, 4, 0, Math.PI * 2); c.fill(); }
+      c.fillStyle = "#d8cfb0";
+      for (let dx = 2; dx < w - 1; dx += 5) { c.fillRect(l + dx, y - 8 - (dx % 3), 1, 3); c.fillRect(l + dx + 2, y + ((dx * 3) % 4) - 2, 2, 1); }
+      c.fillStyle = "#c0392b";
+      for (let dx = 4; dx < w - 2; dx += 11) c.fillRect(l + dx, y - 2 + (dx % 3), 2, 2);
+      break;
+    }
     case "snag":
       box(-13, -3, 26, 6, "#5b4030"); box(-13, -3, 26, 1, "#7a5a40"); box(-6, -8, 2, 5, "#5b4030"); box(4, 3, 2, 5, "#5b4030");
       box(-8, -9, 4, 2, "#5b4030"); break;
@@ -1690,7 +1795,7 @@ function mgPlayer(c, r) {
   let x = Math.round(r.x), y = Math.round(r.y), bob = 0;
   if (!framed) bob = Math.round(Math.sin(r.phase * 8) * 2);
   if (key === "trail" && r.ground) {
-    c.fillStyle = "rgba(20,32,10,.25)"; c.fillRect(x - 9, MG_GROUND - 1, 18, 2);
+    c.fillStyle = "rgba(20,32,10,.25)"; c.fillRect(x - 9, y - 1, 18, 2);
   }
   c.save();
   // Sprites face left; the games run to the right.
@@ -2024,10 +2129,12 @@ function mgCallLevel(k, seed, calls, from0, from1, to0, to1) {
   const rnd = mgRand(seed), out = [];
   for (let i = 0; i < calls; i++) {
     const u = i / (calls - 1), lo = Math.round(from0 + (from1 - from0) * u), hi = Math.round(to0 + (to1 - to0) * u);
-    const pat = MG_CALLS[lo + Math.floor(rnd() * (hi - lo + 1))], b = 4 + i * 8;
+    // A quiet lead-in, then each round: listen for a bar, two quiet beats to get ready,
+    // your bar, and two more quiet beats before the next call.
+    const pat = MG_CALLS[lo + Math.floor(rnd() * (hi - lo + 1))], b = 6 + i * 12, a = b + 6;
     for (const t of pat) {
       out.push({ type: "m_call", wx: (b + t) * k, beat: b + t, bar: b, call: i });
-      out.push({ type: "m_answer", good: true, pts: 1, wx: (b + 4 + t) * k, beat: b + 4 + t, bar: b + 4, call: i });
+      out.push({ type: "m_answer", good: true, pts: 1, wx: (a + t) * k, beat: a + t, bar: a, lis: b, call: i });
     }
   }
   return out;
@@ -2101,11 +2208,11 @@ MG_MORE.call = {
     const k = MG_SPEED.call * r.lvl.spb, beat = r.dist / k;
     // The bar being played now: a row of beats with the rhythm's dots on it.
     const now = r.things.find((o) => o.good && beat < o.bar + 4 + .5) || r.things[r.things.length - 1];
-    const call = now ? now.call : 0, bar = now ? now.bar - 4 : 0, yours = beat >= bar + 4 - .25;
+    const call = now ? now.call : 0, lis = now ? now.lis : 0, mine = now ? now.bar : 4, yours = beat >= mine - .25;
     const x0 = 40 + ox, w = 240, at = (t) => x0 + t / 4 * w;
     c.fillStyle = "rgba(20,30,24,.55)"; c.fillRect(x0 - 10, 30, w + 20, 46);
     c.font = "bold 9px system-ui, sans-serif"; c.textAlign = "left"; c.fillStyle = "#fff";
-    c.fillText(yours ? "Your turn!" : "Listen…", x0 - 4, 42);
+    c.fillText(yours ? "Your turn!" : beat >= lis + 4 ? "Get ready…" : "Listen…", x0 - 4, 42);
     for (let t = 0; t <= 4; t++) { c.fillStyle = "rgba(255,255,255,.35)"; c.fillRect(Math.round(at(t)), 48, 1, 22); }
     for (const o of r.things) {
       if (o.call !== call) continue;
@@ -2119,7 +2226,7 @@ MG_MORE.call = {
       }
     }
     // Where in the bar we are.
-    const t = yours ? beat - bar - 4 : beat - bar;
+    const t = yours ? beat - mine : beat - lis;
     if (t >= 0 && t <= 4) { c.fillStyle = "#fff"; c.fillRect(Math.round(at(t)), 46, 2, 26); }
     // Notes rising from whoever is calling.
     const sing = r.t - r.heard < .25, tapped = r.flap > 0;
@@ -2681,8 +2788,8 @@ Object.assign(MG_LEVELS, {
     { name: "Whale Waters", bpm: 116, song: 8, items: (k) => mgSplashLevel(k, 72, 38, 6, 4.5, 3.5, .6, 1.2) },
   ],
   call: [
-    { name: "Woodland Chat", bpm: 96, song: 0, items: (k) => mgCallLevel(k, 31, 18, 0, 4, 4, 10) },
-    { name: "Night Chorus", bpm: 108, song: 7, items: (k) => mgCallLevel(k, 32, 20, 4, 9, 10, 17) },
+    { name: "Woodland Chat", bpm: 96, song: 0, items: (k) => mgCallLevel(k, 31, 15, 0, 4, 4, 10) },
+    { name: "Night Chorus", bpm: 108, song: 7, items: (k) => mgCallLevel(k, 32, 17, 4, 9, 10, 17) },
   ],
   echo: [
     { name: "Bat Cave", bpm: 112, song: 1, items: (k) => mgEchoLevel(k, 51, 55, 6, 64, 50, 2.5, 1.75) },

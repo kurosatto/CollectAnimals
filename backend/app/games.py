@@ -92,10 +92,12 @@ def submit_score(body: ScoreIn, user: User = Depends(current_user), db: Session 
     row = db.scalar(select(GameScore).where(GameScore.user_id == user.id, GameScore.level == body.level,
                                             GameScore.species_id == sp.id))
     best = row is None or pts > row.points
+    # The board shows the animal in the skin it wore, as the server knows it.
+    skin = db.scalar(select(AnimalSkin.skin).where(AnimalSkin.user_id == user.id, AnimalSkin.species_id == sp.id))
     if row is None:
-        db.add(GameScore(user_id=user.id, level=body.level, species_id=sp.id, points=pts))
+        db.add(GameScore(user_id=user.id, level=body.level, species_id=sp.id, points=pts, skin=skin))
     elif best:
-        row.points = pts
+        row.points, row.skin = pts, skin
     db.commit()
     return {"points": pts, "animal_best": best, "coins_earned": earned, "coins": user.coins or 0}
 
@@ -213,7 +215,7 @@ def leaderboard(level: str, scope: str = Query("all", pattern="^(all|friends)$")
         entry = {"rank": len(seen), "username": u.username, "avatar": u.avatar, "points": s.points,
                  "species": {"slug": sp.slug if known else None,
                              "common_name": sp.common_name if known else f"a mystery {sp.category}"},
-                 "you": u.id == user.id}
+                 "skin": s.skin if known else None, "you": u.id == user.id}
         if len(rows) < 10:
             rows.append(entry)
         if u.id == user.id:
