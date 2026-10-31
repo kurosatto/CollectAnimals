@@ -295,10 +295,12 @@ function mgBuild() {
   .mg-thumb { width:100%; aspect-ratio:1; border-radius:9px; display:flex; align-items:center; justify-content:center;
               font-size:1.6rem; position:relative; }
   .mg-thumb img { width:62%; height:62%; image-rendering:pixelated; }
+  .mg-thumb.mg-art { background-size:cover; image-rendering:pixelated; align-items:flex-end; }
+  .mg-thumb.mg-art img { width:56%; height:56%; margin-bottom:4%; filter:drop-shadow(0 1px 0 rgba(0,0,0,.35)); }
   .mg-thumb .mg-padlock { position:absolute; right:3px; bottom:2px; font-size:.85rem; }
   .mg-tile b { font-size:.74rem; line-height:1.15; text-align:center; }
   .mg-tile span { font-size:.68rem; color:var(--muted); }
-  .mg-tile.mg-locked .mg-thumb { filter:grayscale(.8); }
+  .mg-tile.mg-locked .mg-thumb { filter:grayscale(.6) brightness(.95); }
   .mg-stat-how { margin-top:2px; font-size:.72rem; color:var(--muted); }
   .mg-game { border:1px solid var(--line); border-radius:12px; padding:10px 12px; }
   .mg-game h3 { margin:0; font-size:1.05rem; display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
@@ -483,10 +485,176 @@ addEventListener("resize", () => mgFill());
 
 // The Games tab: a grid of games, four to a row. Tapping one opens it to pick an
 // animal and a level (mgGame); mg.open remembers which, so a game you quit goes back there.
-const MG_TILES = { sky: ["☁️", "#cfe8f7"], trail: ["🌲", "#d6ecc6"], river: ["🌊", "#bfdcef"], pool: ["🐚", "#c7ece6"],
-                   claw: ["🐾", "#f6dcc0"], slide: ["🪵", "#e2cfb2"], leap: ["🌳", "#cde6b8"], dig: ["🕳️", "#d8c3a5"],
-                   nectar: ["🌸", "#f6d6e6"], plunge: ["🐟", "#c4e2f2"], splash: ["🐬", "#b8d8f0"], call: ["🎵", "#efe2b8"],
-                   echo: ["🦇", "#c9c6e0"], feeder: ["🌻", "#f4e4b0"], school: ["🐠", "#b8dcec"], freeze: ["🦊", "#f2d2b8"] };
+// Each tile shows a little pixel-art scene of its game, 32 pixels square, drawn here
+// in the same chunky style as the animals.
+const MG_TILE_ART = {
+  sky(p) {
+    p.sky("#8fd0f0", "#d8f0fa");
+    p.r(0, 0, 7, 11, "#6f7488"); p.r(0, 20, 7, 12, "#6f7488"); p.r(6, 9, 3, 3, "#7a7f92"); p.r(6, 20, 3, 3, "#7a7f92");
+    p.r(24, 0, 8, 7, "#6f7488"); p.r(24, 17, 8, 15, "#6f7488"); p.r(22, 5, 3, 3, "#7a7f92"); p.r(22, 17, 3, 3, "#7a7f92");
+    p.r(26, 10, 1, 3, "#f2c14e"); p.r(27, 12, 1, 3, "#f2c14e");
+    for (const x of [11, 15, 19]) { p.r(x, 15, 2, 2, "#d9534f"); p.r(x, 14, 1, 1, "#2f7d4f"); }
+    p.r(0, 29, 32, 3, "#7cc47f");
+  },
+  trail(p) {
+    p.sky("#9ad3ee", "#e4f4e0");
+    for (const [x, h] of [[1, 12], [9, 15], [25, 13]]) for (let k = 0; k < h; k++) { const w = Math.round(k * .4); p.r(x + 3 - w, 20 - h + k, w * 2 + 1, 1, "#2f7d4f"); }
+    p.r(0, 20, 32, 3, "#58a662"); p.r(0, 23, 32, 9, "#c79a64"); p.r(3, 27, 2, 1, "#a87c4c"); p.r(20, 29, 3, 1, "#a87c4c");
+    p.r(15, 12, 14, 2, "#58a662"); p.r(16, 14, 12, 2, "#7d6a55"); p.r(19, 9, 3, 3, "#c78a3e"); p.r(19, 8, 3, 1, "#62402a");
+    p.r(5, 19, 6, 4, "#8a8f9e"); p.r(6, 18, 4, 1, "#9fa4b2");
+  },
+  river(p) {
+    p.r(0, 0, 32, 6, "#a9dcf0"); p.r(0, 4, 32, 2, "#6aae6e");
+    p.sky("#3d9cc9", "#1d5d86", 6);
+    p.r(0, 6, 32, 1, "#cfeefa");
+    p.r(8, 6, 6, 9, "#5b4030"); p.r(9, 15, 1, 2, "#5b4030"); p.r(12, 15, 1, 3, "#5b4030");
+    p.r(20, 19, 8, 13, "#6e7380"); p.r(21, 18, 6, 2, "#8a8f9e"); p.r(22, 18, 3, 1, "#3f8d58");
+    p.r(0, 29, 32, 3, "#d9c18a"); p.r(3, 24, 1, 5, "#3f8d58"); p.r(16, 25, 1, 4, "#3f8d58");
+    p.r(15, 11, 1, 1, "#e6f6ff"); p.r(17, 8, 1, 1, "#e6f6ff"); p.r(4, 14, 2, 2, "#f2a541");
+  },
+  pool(p) {
+    p.r(0, 0, 32, 32, "#2f7fa8");
+    p.ring(16, 16, 14, 2, "#3a8fb8");
+    p.ring(16, 16, 11, 2, "#f4fbff", 0, 4.2); p.ring(16, 16, 13, 1, "#7cc3e0", 0, 4.2);
+    p.disc(16, 16, 6, "#4f545e"); p.disc(15, 15, 5, "#6e7380"); p.disc(14, 14, 3, "#8a8f9e"); p.r(13, 13, 2, 1, "#a3a8b5");
+    p.r(18, 13, 1, 1, "#d9d4c4"); p.r(12, 19, 2, 1, "#3f7a4a"); p.r(26, 6, 2, 2, "#e86a8a");
+  },
+  claw(p) {
+    p.sky("#f6dcc0", "#f2b880");
+    p.r(0, 26, 32, 6, "#3d9cc9"); p.r(0, 26, 32, 1, "#cfeefa");
+    p.r(9, 13, 9, 4, "#c97a6a"); p.r(16, 12, 4, 6, "#c97a6a"); p.r(6, 14, 3, 2, "#c97a6a"); p.r(4, 13, 2, 4, "#c97a6a");
+    p.r(10, 16, 7, 1, "#e8b0a0"); p.r(17, 13, 1, 1, "#222");
+    for (let i = 0; i < 3; i++) for (let k = 0; k < 9; k++) p.r(20 + i * 3 + k * .4, 4 + k, 1, 1, "rgba(255,255,255,.9)");
+    p.r(5, 22, 1, 3, "#cfeefa"); p.r(9, 24, 1, 2, "#cfeefa");
+  },
+  slide(p) {
+    p.sky("#9ad3ee", "#e4f4e0");
+    p.r(0, 8, 32, 2, "#58a662"); p.r(0, 10, 32, 22, "#8a6440");
+    for (const y of [11, 18, 25]) p.r(0, y, 32, 5, "#9c7450");
+    p.r(4, 17, 6, 1, "#6e4e30"); p.r(18, 24, 6, 1, "#6e4e30");
+    p.r(18, 10, 9, 5, "#7a5232"); p.r(18, 10, 9, 1, "#a8744a"); p.r(26, 10, 2, 5, "#d8b07a");
+    p.r(6, 26, 5, 3, "#8fb0c8"); p.r(4, 26, 2, 4, "#8fb0c8"); p.r(9, 26, 1, 1, "#222");
+    p.r(0, 30, 32, 2, "#58a662");
+  },
+  leap(p) {
+    p.sky("#bfe6f6", "#e8f6e0");
+    p.r(0, 0, 32, 4, "#3f8d58"); p.disc(4, 2, 4, "#2f7d4f"); p.disc(18, 1, 4, "#2f7d4f"); p.disc(29, 3, 4, "#3f8d58");
+    p.r(0, 22, 12, 3, "#7a5232"); p.r(0, 22, 12, 1, "#a8744a"); p.r(19, 14, 13, 3, "#7a5232"); p.r(19, 14, 13, 1, "#a8744a");
+    p.r(9, 20, 3, 2, "#3f8d58"); p.r(27, 12, 3, 2, "#3f8d58");
+    for (let k = 0; k < 8; k++) p.r(12 + k * 1.2, 19 - Math.sin(k / 7 * Math.PI) * 6, 1, 1, "rgba(255,255,255,.8)");
+    p.r(24, 10, 3, 3, "#c78a3e"); p.r(24, 9, 3, 1, "#62402a");
+  },
+  dig(p) {
+    p.r(0, 0, 32, 6, "#9ad3ee"); p.r(0, 5, 32, 2, "#58a662");
+    p.sky("#a07850", "#6b4a2e", 7);
+    p.r(2, 9, 2, 1, "#c4a072"); p.r(25, 26, 3, 1, "#c4a072"); p.r(12, 28, 2, 1, "#c4a072");
+    p.r(4, 6, 4, 9, "#3a2616"); p.r(4, 14, 14, 4, "#3a2616"); p.r(16, 17, 4, 7, "#3a2616");
+    p.r(22, 9, 7, 5, "#8a8f9e"); p.r(23, 9, 4, 1, "#a3a8b5");
+    p.r(9, 23, 4, 1, "#5b4030"); p.r(10, 24, 1, 3, "#5b4030");
+    p.r(24, 20, 4, 2, "#f0e0b8"); p.r(27, 20, 1, 1, "#c98a60");
+    p.disc(26, 28, 3, "#2f7fa8");
+  },
+  nectar(p) {
+    p.sky("#a8daf0", "#f4f0d0");
+    p.r(0, 27, 32, 5, "#6aae6e");
+    MG_PETALS.forEach((col, i) => {
+      const x = 4 + i * 8, y = 12 + (i % 2) * 4;
+      p.r(x, y + 3, 1, 27 - y - 3, "#3f8d58");
+      for (const [dx, dy] of [[-2, 0], [2, 0], [0, -2], [0, 2]]) p.r(x + dx - 1, y + dy - 1, 3, 3, col);
+      p.r(x - 1, y - 1, 3, 3, "#f8e08a");
+    });
+    p.ring(12, 16, 5, 1, "rgba(255,255,255,.9)");
+  },
+  plunge(p) {
+    p.sky("#bfe6f6", "#e8f4fa"); p.sky("#3d9cc9", "#1d5d86", 16);
+    p.r(0, 16, 32, 1, "#cfeefa"); p.r(13, 13, 1, 3, "#e6f6ff"); p.r(17, 12, 1, 4, "#e6f6ff"); p.r(15, 11, 1, 3, "#e6f6ff");
+    for (let k = 0; k < 9; k++) p.r(6 + k, 2 + k, 1, 1, "rgba(255,255,255,.8)");
+    p.r(18, 22, 6, 3, "#c0c8d0"); p.r(23, 21, 2, 5, "#c0c8d0"); p.r(19, 22, 1, 1, "#222");
+    p.r(5, 25, 4, 3, "rgba(240,160,220,.85)"); p.r(5, 28, 1, 2, "rgba(240,160,220,.85)"); p.r(8, 28, 1, 2, "rgba(240,160,220,.85)");
+  },
+  splash(p) {
+    p.sky("#9ad3ee", "#d8f0fa"); p.sky("#3d9cc9", "#1d5d86", 21);
+    p.r(0, 21, 32, 1, "#cfeefa");
+    p.ring(16, 10, 6, 1, "#f2c14e");
+    for (let k = 0; k < 14; k++) p.r(4 + k * 1.7, 22 - Math.sin(k / 13 * Math.PI) * 18, 1, 1, "rgba(255,255,255,.8)");
+    p.r(3, 19, 1, 2, "#e6f6ff"); p.r(6, 18, 1, 3, "#e6f6ff"); p.r(25, 19, 1, 2, "#e6f6ff");
+    p.r(18, 26, 9, 3, "#7a5232"); p.r(26, 26, 2, 3, "#d8b07a");
+  },
+  call(p) {
+    p.sky("#f2b880", "#f6e2b8");
+    p.r(0, 22, 32, 10, "#6a8a4a");
+    for (const x of [4, 20]) { p.r(x, 20, 8, 6, "#7a5232"); p.r(x, 19, 8, 2, "#d8b07a"); }
+    for (const [x, y] of [[9, 9], [14, 5], [21, 10]]) { p.r(x, y, 2, 2, "#fff"); p.r(x + 1, y - 4, 1, 4, "#fff"); p.r(x + 2, y - 4, 2, 1, "#fff"); }
+    p.r(4, 3, 24, 1, "rgba(20,30,24,.3)");
+  },
+  echo(p) {
+    p.r(0, 0, 32, 32, "#120f20");
+    p.r(0, 0, 32, 5, "#2b2742"); p.r(6, 5, 3, 4, "#2b2742"); p.r(20, 5, 4, 7, "#2b2742");
+    p.r(0, 26, 32, 6, "#2b2742"); p.r(13, 21, 4, 5, "#2b2742");
+    p.ring(10, 16, 6, 1, "rgba(160,200,255,.7)"); p.ring(10, 16, 10, 1, "rgba(160,200,255,.35)");
+    p.r(26, 14, 1, 1, "#f2e29a"); p.r(28, 19, 1, 1, "#f2e29a");
+  },
+  feeder(p) {
+    p.sky("#a8daf0", "#eef6e0");
+    p.r(0, 27, 32, 5, "#6aae6e");
+    p.r(15, 11, 2, 18, "#7a5232");
+    for (let k = 0; k < 6; k++) p.r(9 + k, 7 - k, 14 - k * 2, 1, "#b5523b");
+    p.r(10, 7, 12, 5, "#d8b07a"); p.r(10, 11, 12, 1, "#a8744a");
+    p.r(12, 10, 1, 1, "#c78a3e"); p.r(15, 9, 1, 1, "#c78a3e"); p.r(18, 10, 1, 1, "#c78a3e");
+    p.r(3, 18, 26, 1, "#8a5a35");
+    p.r(7, 13, 2, 2, "#6e4e30"); p.r(24, 15, 2, 2, "#6e4e30");
+    p.r(23, 22, 7, 1, "rgba(30,30,50,.3)");
+  },
+  school(p) {
+    p.sky("#5fb4d6", "#1d5d86");
+    p.r(0, 29, 32, 3, "#d9c18a");
+    p.r(22, 0, 6, 11, "#6e7380"); p.r(22, 20, 6, 12, "#6e7380"); p.r(22, 0, 2, 11, "#8a8f9e"); p.r(22, 20, 2, 12, "#8a8f9e");
+    for (const [x, y, c] of [[5, 9, "#f2a541"], [10, 7, "#f2c14e"], [8, 12, "#f2a541"], [5, 19, "#f2c14e"], [11, 21, "#f2a541"], [8, 24, "#f2c14e"]]) {
+      p.r(x, y, 4, 2, c); p.r(x - 1, y - 1, 1, 4, c); p.r(x + 3, y, 1, 1, "#222");
+    }
+    p.r(14, 15, 6, 2, "#6b8a4a"); p.r(19, 14, 2, 4, "#6b8a4a"); p.r(15, 15, 1, 1, "#fff");
+    p.r(27, 14, 2, 2, "rgba(200,240,170,.9)");
+  },
+  freeze(p) {
+    p.sky("#9ad3ee", "#f6d6a8");
+    p.r(0, 20, 32, 12, "#6aae6e"); p.r(0, 23, 32, 5, "#c79a64");
+    p.r(19, 14, 11, 9, "#8a8f9e"); p.r(20, 13, 9, 2, "#9fa4b2");
+    p.r(22, 8, 6, 6, "#d9733a"); p.r(20, 6, 4, 4, "#d9733a"); p.r(20, 4, 1, 2, "#b85a28"); p.r(23, 4, 1, 2, "#b85a28");
+    p.r(20, 8, 1, 1, "#222"); p.r(19, 9, 2, 1, "#f4e6d4"); p.r(27, 11, 4, 2, "#d9733a"); p.r(30, 11, 1, 2, "#f4e6d4");
+    p.r(14, 2, 2, 4, "#e84a4a"); p.r(14, 7, 2, 1, "#e84a4a");
+    p.r(3, 18, 2, 2, "#3f9d48"); p.r(9, 19, 2, 2, "#3f9d48");
+  },
+};
+
+// Draws one game's scene: p.r is a block of colour, p.sky a top-to-bottom gradient,
+// p.disc a filled circle and p.ring part of a circle's outline (from angle a0 to a1).
+function mgTileImage(key) {
+  mgTileImage.cache = mgTileImage.cache || {};
+  if (mgTileImage.cache[key] !== undefined) return mgTileImage.cache[key];
+  const draw = MG_TILE_ART[key];
+  let url = null;
+  try {
+    const cv = document.createElement("canvas"); cv.width = cv.height = 32;
+    const c = cv.getContext("2d");
+    const p = {
+      r: (x, y, w, h, col) => { c.fillStyle = col; c.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h))); },
+      sky: (top, bottom, y0 = 0) => {
+        for (let y = y0; y < 32; y++) { c.fillStyle = mgMix(top, bottom, (y - y0) / Math.max(1, 31 - y0)); c.fillRect(0, y, 32, 1); }
+      },
+      disc: (x, y, rad, col) => { for (let dy = -rad; dy <= rad; dy++) { const w = Math.round(Math.sqrt(rad * rad - dy * dy)); p.r(x - w, y + dy, w * 2 + 1, 1, col); } },
+      ring: (x, y, rad, th, col, a0 = 0, a1 = Math.PI * 2) => {
+        for (let a = a0; a < a1; a += .5 / rad) for (let t = 0; t < th; t++) p.r(x + Math.cos(a) * (rad - t), y + Math.sin(a) * (rad - t), 1, 1, col);
+      },
+    };
+    if (draw) { draw(p); url = cv.toDataURL(); }
+  } catch {}
+  return (mgTileImage.cache[key] = url);
+}
+// A colour part of the way from a to b (both "#rrggbb").
+function mgMix(a, b, u) {
+  const h = (s, i) => parseInt(s.slice(1 + i * 2, 3 + i * 2), 16);
+  return `rgb(${[0, 1, 2].map((i) => Math.round(h(a, i) + (h(b, i) - h(a, i)) * u)).join(",")})`;
+}
 function mgList() {
   mgBuild();
   const list = document.getElementById("mg-list");
@@ -500,16 +668,15 @@ function mgList() {
     const players = mgPlayers(g.key), lvls = MG_LEVELS[g.key];
     const cleared = lvls.filter((_, i) => mgRec(g.key, i).pct >= 100).length;
     const tile = mgEl("button", "mg-tile" + (players.length ? "" : " mg-locked"));
-    const [icon, bg] = MG_TILES[g.key] || ["🎮", "#ddd"];
-    const thumb = mgEl("div", "mg-thumb");
-    thumb.style.background = bg;
+    const thumb = mgEl("div", "mg-thumb"), art = mgTileImage(g.key);
+    if (art) { thumb.style.backgroundImage = `url(${art})`; thumb.classList.add("mg-art"); }
     if (players.length) {
       const saved = mgStore.get("pick." + g.key), s = players.find((p) => p.slug === saved) || players[0];
       const img = mgEl("img");
       img.src = `/sprites/${encodeURIComponent(s.slug)}.png`; img.alt = "";
       thumb.append(img);
     } else {
-      thumb.append(icon, mgEl("span", "mg-padlock", "🔒"));
+      thumb.append(mgEl("span", "mg-padlock", "🔒"));
     }
     tile.append(thumb, mgEl("b", null, g.title),
                 mgEl("span", null, players.length ? `${cleared}/${lvls.length} cleared` : "Locked"));
