@@ -2,17 +2,15 @@
 (Ringtail, Black Oystercatcher and the tide-pool animals)."""
 from __future__ import annotations
 
-from archetypes import BLACK, EYE, WHITE, bird, fish, mammal, sprite
+from archetypes import (BLACK, EYE, WHITE, bird, critter, fish, sprite)
 from pixel import mix
 
 
 @sprite("ringtail")
 def _(s):
-    def face(s):
-        s.paint(s.m_ellipse(11.5, 12.5, 2.6, 2.4) | s.m_ellipse(20.5, 12.5, 2.6, 2.4), "#f4ece0", within=s.last)
-    mammal(s, "#a88a6a", "#f0e6d6", ears="round", ear_in="#e8c8b0", tail="ringed", tail_col="#f2ecdf",
-           tail_tip="#2b2630", nose="#3a2a2a", head_r=(8.5, 7.5), markings=face)
-    s.eye(11, 12, mirror=True)
+    # Cat-sized, slim, with a huge black-and-white ringed tail and white eye rings.
+    critter(s, "#a88a6a", "#f0e6d6", build="ringtail", ears="round", ear_in="#e8c8b0", tail="ringed",
+            tail_col="#f2ecdf", tail_tip="#2b2630", nose="#3a2a2a", eye_ring="#f4ece0")
 
 
 @sprite("black_oystercatcher")

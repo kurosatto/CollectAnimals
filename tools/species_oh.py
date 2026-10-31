@@ -1,25 +1,24 @@
 """Sprites for the Ohio species that aren't on an earlier state's list."""
 from __future__ import annotations
 
-from archetypes import BLACK, WHITE, dragonfly, fish, frog, lizard, mammal, sprite, turtle
+from archetypes import (BLACK, WHITE, critter, dragonfly, fish, frog, lizard, sprite, turtle)
 from pixel import mix
 
 
 # --------------------------------------------------------------------------- mammals
 @sprite("southern_flying_squirrel")
 def _(s):
-    # Huge dark eyes and the furry gliding flaps stretched between its legs.
-    def flaps(s):
-        s.poly([(6, 18), (2, 24), (8, 28), (24, 28), (30, 24), (26, 18)], "#9a8a7a", edge=True)
-    mammal(s, "#a8927a", "#f4ece0", ears="small", ear_in="#d8b8a0", tail="squirrel", tail_col="#9a8670",
-           head_r=(8, 7), behind=flaps)
-    s.eye(11, 12, size=3, mirror=True)
+    # Huge dark eyes and the furry gliding flap stretched between its legs.
+    def flap(s, g):
+        if g["act"] in ("idle", "walk", "look", "back"):
+            s.paint(s.m_ellipse(g["bx"], g["by"] + g["bry"] * 0.75, g["brx"] * 0.85, 1.3), "#7a6a5a", within=g["body"])
+    critter(s, "#a8927a", "#f4ece0", build="squirrel", ear_in="#d8b8a0", tail="squirrel", tail_col="#9a8670",
+            eye_size=3, markings=flap)
 
 
 @sprite("eastern_meadow_vole")
 def _(s):
-    mammal(s, "#6a5440", "#b8a890", ears="small", ear_in="#a08070", tail="short", head_r=(8.5, 7),
-           nose="#3a2a24")
+    critter(s, "#6a5440", "#b8a890", build="vole", ear_in="#a08070", tail="short", nose="#3a2a24")
 
 
 # --------------------------------------------------------------------------- reptiles

@@ -6,7 +6,7 @@ import math
 
 import numpy as np
 
-from pixel import N, PAD_TOP, _XS, _YS, Sprite, mix
+from pixel import N, PAD_TOP, PAD_X, _XS, _YS, Sprite, mix
 
 PINK = "#f2a7b4"
 
@@ -27,75 +27,6 @@ EYE = "#1d1428"
 
 
 # --------------------------------------------------------------------------- mammals
-def mammal(s: Sprite, fur, light=WHITE, *, ears="point", ear_in=PINK, tail="long",
-           tail_col=None, tail_tip=None, nose=NOSE, muzzle=None, belly=True, feet=None,
-           head=None, head_r=(9, 7.5), blush=True, behind=None, markings=None, eye_col=EYE):
-    """Front-facing chibi: big head, small body, tail peeking out on the right.
-    Walks by stepping its feet (with a little hop) and wagging its tail."""
-    s.can("walk")
-    w = s.wave() if s.act == "walk" else 0
-    tail_col = tail_col or fur
-    head = head or fur
-    muzzle = muzzle or light
-    if behind:
-        behind(s)
-
-    # tail
-    if tail == "long":
-        s.path([(21, 27), (26, 24), (28, 18), (27, 14)], (1.8, 1.4), tail_col)
-        if tail_tip:
-            s.paint(s.m_ellipse(27, 14.5, 2, 2.5), tail_tip, within=s.last)
-    elif tail == "bushy":
-        s.ellipse(25, 19, 4.2, 7.5, tail_col, rot=15)
-        if tail_tip:
-            s.paint(s.m_ellipse(27, 13, 3.5, 3.5), tail_tip, within=s.last)
-    elif tail == "ringed":
-        m = s.ellipse(25, 19, 3.6, 7.5, tail_col, rot=12)
-        for y in (13, 17, 21, 25):
-            s.paint(s.m_poly([(18, y), (32, y - 2), (32, y - 0.5), (18, y + 1.5)]), tail_tip or BLACK, within=m)
-    elif tail == "squirrel":
-        m = s.path([(20, 27), (26, 25), (28, 18), (26, 9), (21, 6)], (3.2, 4.2), tail_col)
-        if tail_tip:
-            s.paint(m & ~s.m_path([(20, 27), (26, 25), (28, 18), (26, 9), (21, 6)], (2.2, 3.0)), tail_tip, within=m)
-    elif tail == "short":
-        s.ellipse(22.5, 24, 2.2, 2, tail_col)
-        if tail_tip:
-            s.paint(s.m_ellipse(23.5, 23, 1.2, 1.2), tail_tip, within=s.last)
-    elif tail == "cotton":
-        s.ellipse(23, 27, 2.5, 2.2, tail_col)
-    elif tail == "rat":
-        s.path([(21, 27), (26, 28), (29, 25), (29, 21)], (1.3, 0.6), tail_col)
-    elif tail == "skunk":
-        m = s.ellipse(24.5, 16, 5.5, 9.5, tail_col, rot=10)
-        s.paint(s.m_ellipse(24.5, 15, 1.8, 8.5, rot=10), tail_tip or WHITE, within=m)
-
-    # body (breathing when asleep)
-    breath = 0.4 * max(0, s.wave()) if s.act == "sleep" else 0
-    s.ellipse(16, 24, 7 + breath, 5.5 + breath, fur)
-    if belly:
-        s.ellipse(16, 25.5, 4, 3.5, light)
-    fc = feet or mix(fur, "#000000", 0.15)
-    s.ellipse(12, 29 - 1.4 * max(0, w), 2.4, 1.6, fc)
-    s.ellipse(20, 29 - 1.4 * max(0, -w), 2.4, 1.6, fc)
-
-    # ears
-    _ears(s, ears, fur if head == fur else head, ear_in)
-
-    # head
-    rx, ry = head_r
-    s.ellipse(16, 13, rx, ry, head, edge=True)
-    if markings:
-        markings(s)
-    s.ellipse(16, 17, 4.2, 2.8, muzzle)
-    s.px([(15, 15), (16, 15)], nose)
-    s.px([(15, 16), (16, 16)], mix(muzzle, nose, 0.35))
-    s.eye(11, 12, color=eye_col, mirror=True)
-    if blush:
-        s.blush(9, 15, mirror=True)
-    if s.act == "walk" and s.f % 2:
-        _lift(s, 1)
-
-
 def _lift(s: Sprite, dy: int):
     """Raise everything but the bottom row of feet (a bob in the stride)."""
     keep_col, keep_reg = s.col[28 + PAD_TOP:].copy(), s.reg[28 + PAD_TOP:].copy()
@@ -104,36 +35,407 @@ def _lift(s: Sprite, dy: int):
     s.col[28 + PAD_TOP:][feet], s.reg[28 + PAD_TOP:][feet] = keep_col[feet], keep_reg[feet]
 
 
-def _ears(s: Sprite, kind, fur, inner):
+# --------------------------------------------------------------------------- small mammals
+# Side-view proportions for the small mammals, all facing left with feet on the ground
+# line. body/hip/head are ellipses (cx, cy, rx, ry[, rot]); hip is the hind thigh.
+# snout runs from the head to its tip with (radius at the head, radius at the tip).
+# fx is where the front leg starts and hx where the hind foot sits; tail is where the
+# tail joins the rump. sit is the same animal up on its haunches.
+CRITTERS = {
+    # tree squirrels: slim, arched, big plumed tail
+    "squirrel": dict(body=(17, 24, 6.2, 3.6, -14), hip=(21, 25.5, 3.6, 3.6), head=(9.5, 20.5, 3.6, 3.2),
+                     snout=((7.5, 21), (5, 21.8), (2.0, 1.3)), fx=12.5, hx=20.5, leg=0.9, foot=2.6,
+                     tail=(23.5, 24), ear=(1.2, -3.2),
+                     sit=dict(body=(19, 22, 3.8, 5.6, 12), hip=(20, 27, 4, 3.4), head=(15.5, 15, 3.5, 3.1))),
+    # ground squirrels and chipmunks: a little lower and longer, smaller tail
+    "ground": dict(body=(17, 24.5, 6.6, 3.5, -8), hip=(21.5, 25.8, 3.5, 3.4), head=(9.2, 21.5, 3.6, 3.1),
+                   snout=((7.2, 22), (4.8, 22.8), (2.0, 1.3)), fx=12.5, hx=21, leg=0.9, foot=2.6,
+                   tail=(24, 24.5), ear=(1.2, -3.0),
+                   sit=dict(body=(19, 22, 3.8, 5.6, 12), hip=(20, 27, 4, 3.4), head=(15.5, 15, 3.5, 3.1))),
+    # marmots, groundhogs and prairie dogs: heavy, low, short legs
+    "marmot": dict(body=(17.5, 24.5, 8.2, 4.6, -4), hip=(22.5, 25.5, 4.4, 4.2), head=(8.2, 22, 4.0, 3.5),
+                   snout=((6, 22.8), (3.4, 23.5), (2.4, 1.6)), fx=12, hx=22, leg=1.3, foot=2.6,
+                   tail=(25.5, 23.5), ear=(1.3, -3.2),
+                   sit=dict(body=(18.5, 21.5, 4.6, 6.4, 8), hip=(19.5, 26.8, 4.8, 3.8), head=(15.5, 13.5, 4.0, 3.5))),
+    # rabbits and hares: hunched, rump high, long hind feet
+    "rabbit": dict(body=(18, 23.5, 7.0, 4.8, -12), hip=(22, 25, 4.6, 4.8), head=(9.5, 19.5, 3.8, 3.4),
+                   snout=((7.5, 20.5), (5.6, 21.3), (2.2, 1.6)), fx=12.5, hx=22, leg=1.0, foot=3.6,
+                   tail=(25.5, 21), ear=(2.0, -2.6),
+                   sit=dict(body=(18.5, 21.5, 4.6, 6.4, 8), hip=(20, 26.5, 5, 4), head=(15, 13.5, 3.8, 3.4))),
+    "hare":   dict(body=(18, 21.5, 7.4, 4.4, -14), hip=(22.5, 23, 4.4, 4.6), head=(9.2, 17, 3.6, 3.2),
+                   snout=((7.2, 18), (5.2, 18.8), (2.0, 1.5)), fx=13, hx=22.5, leg=1.0, foot=4.0,
+                   tail=(25.8, 19), ear=(2.0, -2.4),
+                   sit=dict(body=(18.5, 20.5, 4.4, 6.6, 8), hip=(20, 26, 5, 4.4), head=(15, 12, 3.6, 3.2))),
+    # mice, rats and voles: low, pointed nose, long thin tail
+    "mouse":  dict(body=(16.5, 26, 6.0, 3.6, -6), hip=(20, 27, 3.2, 3.0), head=(9.5, 24.5, 3.4, 2.9),
+                   snout=((7.5, 25.2), (4.6, 26.2), (1.9, 0.9)), fx=12, hx=20, leg=0.7, foot=2.2,
+                   tail=(22.5, 26), ear=(1.0, -3.0),
+                   sit=dict(body=(18, 24, 3.6, 4.8, 10), hip=(19, 28, 3.6, 2.8), head=(14.5, 18.5, 3.4, 2.9))),
+    "vole":   dict(body=(16.5, 26, 6.6, 4.0, -2), hip=(20.5, 27, 3.4, 3.2), head=(9.6, 25, 3.6, 3.2),
+                   snout=((7.5, 25.6), (5.2, 26.4), (2.2, 1.2)), fx=12, hx=20.5, leg=0.7, foot=2.0,
+                   tail=(23, 26.5), ear=(1.2, -2.6),
+                   sit=dict(body=(18, 24, 3.8, 4.8, 10), hip=(19, 28, 3.8, 2.8), head=(14.5, 18.5, 3.6, 3.2))),
+    # hamsters and pikas: round, no neck, tiny legs
+    "round":  dict(body=(17.5, 25, 7.2, 5.0, 0), hip=(21.5, 26, 4.0, 4.0), head=(10.5, 23, 4.4, 4.0),
+                   snout=((8, 24), (6.2, 24.6), (2.6, 1.6)), fx=13, hx=21, leg=0.9, foot=2.0,
+                   tail=(24.5, 25), ear=(1.0, -3.4),
+                   sit=dict(body=(18, 23.5, 5.0, 6.0, 6), hip=(19, 28, 4.6, 2.8), head=(15, 16, 4.4, 4.0))),
+    # otters: long and low, thick tapering tail
+    "otter":  dict(body=(16.5, 25, 9.0, 3.4, -3), hip=(23, 25.5, 3.4, 3.2), head=(6.2, 23.5, 3.2, 2.8),
+                   snout=((4.2, 24.2), (2.2, 24.8), (2.0, 1.4)), fx=10, hx=23, leg=1.1, foot=2.2,
+                   tail=(25, 26), ear=(1.0, -2.6),
+                   sit=dict(body=(17, 22, 3.6, 6.2, 6), hip=(18, 27.5, 4, 3), head=(14, 13.5, 3.2, 2.8))),
+    # beavers, muskrats and coypu: a big humped back, short legs, nose low
+    "beaver": dict(body=(17.5, 24.5, 8.4, 5.0, -2), hip=(22.5, 25.5, 4.6, 4.2), head=(8, 23, 3.8, 3.4),
+                   snout=((6, 24), (3.4, 24.8), (2.4, 1.6)), fx=12, hx=22, leg=1.2, foot=2.6,
+                   tail=(25.5, 26), ear=(1.2, -3.0),
+                   sit=dict(body=(18.5, 21.5, 4.6, 6.4, 8), hip=(19.5, 26.8, 4.8, 3.8), head=(15, 13.5, 3.8, 3.4))),
+    # badgers: flat and wide, wedge head, very short legs
+    "badger": dict(body=(17.5, 25, 9.5, 4.2, 0), hip=(23.5, 25.8, 4.0, 3.6), head=(7, 25, 4.0, 3.2),
+                   snout=((4.6, 25.8), (2.0, 26.6), (2.2, 1.2)), fx=11, hx=23.5, leg=1.6, foot=2.4,
+                   tail=(27, 23.5), ear=(1.6, -2.6),
+                   sit=dict(body=(17.5, 22, 4.6, 6, 6), hip=(18.5, 27, 5, 3.4), head=(14, 15, 4, 3.2))),
+    # ringtails: slim cat-like body on longer legs, fox face, huge tail
+    "ringtail": dict(body=(15.5, 23, 6.4, 3.2, -4), hip=(19.5, 23.5, 3.2, 3.2), head=(7.6, 19.5, 3.4, 3.0),
+                     snout=((5.6, 20.4), (3.0, 21.2), (1.8, 0.9)), fx=11, hx=19.5, leg=0.9, foot=1.8,
+                     tail=(21.5, 22), ear=(1.0, -3.0),
+                     sit=dict(body=(17, 21.5, 3.8, 5.6, 8), hip=(18, 26.5, 4, 3.4), head=(13.5, 14, 3.4, 3))),
+}
+
+
+def critter(s: Sprite, fur, light=WHITE, *, build="ground", ears="small", ear_in=PINK, tail="long",
+            tail_col=None, tail_tip=None, nose=NOSE, muzzle=None, belly=True, feet=None, head=None,
+            eye_col=EYE, eye_size=2, blush=True, eye_ring=None, cheeks=None, ear_tip=None, markings=None,
+            face=None, behind=None, floats=False):
+    """A small mammal from the side, walking left: squirrels, chipmunks, rabbits,
+    mice, marmots, otters and the like.
+
+    Poses: idle, walk (a bounding gait), sleep (curled up), sit (up on its haunches,
+    nibbling), look (head turned to you) and back (looking back over its shoulder).
+    Otters and beavers also swim, low in the water with the head up; floats=True
+    (the sea otter) lies on its back in the water instead.
+    markings(s, g) and face(s, g) add patterns to the body and head; g holds the
+    proportions, the body and head masks and the way the head is turned
+    (g["view"]: "side", "front" or "back")."""
+    if floats:
+        s.can("swim")
+        return _floating(s, fur, light, head or fur, muzzle or light, nose, feet or mix(fur, "#1a1420", 0.12),
+                         tail_col or fur, eye_col)
+    s.can("walk", "sit", "look", "back")
+    if build in ("otter", "beaver"):
+        s.can("swim")
+    b = CRITTERS[build]
+    act, f = s.act, s.f
+    tail_col = tail_col or fur
+    head = head or fur
+    muzzle = muzzle or light
+    feet = feet or mix(fur, "#1a1420", 0.12)
+    far = lambda c: mix(c, "#1a1420", 0.3)  # noqa: E731  (limbs and ear on the far side)
+    sitting = act == "sit"
+    lying = act == "sleep"
+    swimming = act == "swim"
+    view = {"look": "front", "back": "back"}.get(act, "side")
+    ground = 30.5
+    geo = dict(b["sit"]) if sitting else {}
+    bx, by, brx, bry, brot = geo.get("body", b["body"])
+    hx, hy, hrx, hry = geo.get("head", b["head"])
+    px_, py_, prx, pry = geo.get("hip", b["hip"])
+    tx, ty = b["tail"]
+    if sitting:
+        tx, ty = px_ + prx - 0.5, py_ + 1.5
+    if swimming:
+        # Low in the water, back and head showing, tail trailing out behind.
+        by, py_, ty = 24.5, 25, 25
+        bry *= 0.9
+        brot = 0
+        hy -= 1.5
+    if lying:
+        # Curled up low: the head drops onto the front paws.
+        drop = round(ground - 0.4 - (by + bry))
+        by, py_, ty = by + drop, py_ + drop, ty + drop
+        hy = min(ground - hry - 0.3, hy + drop + 1.5)
+        hx += 1
+    # Bounding gait: gather, push off, stretch out in the air, land.
+    reach, push, lift = ((0, 0, 0), (0.6, 1.8, 1), (2.4, 2.6, 2), (1.6, 0.4, 1))[f] if act == "walk" else (0, 0, 0)
+    if swimming:
+        reach, push = 1.2 * s.wave(), -1.2 * s.wave()
+    g = dict(b, view=view, build=build, act=act, hx=hx, hy=hy, hrx=hrx, hry=hry, bx=bx, by=by, brx=brx, bry=bry,
+             brot=brot)
+    if behind:
+        behind(s, g)
+
+    # far legs
+    if swimming:
+        s.ellipse(b["fx"] + 1 - reach, 28, 1.6, 1.0, far(feet))
+    elif not lying and not sitting:
+        _critter_leg(s, b["fx"] + 1.6, by, ground, b["leg"], far(fur), reach * 0.6 - 0.8, far(feet))
+        s.ellipse(b["hx"] + 2.2 + push * 0.6, ground - 0.6, b["foot"] * 0.9, 0.9, far(feet))
+    _critter_tail(s, tail, tx, ty, tail_col, tail_tip, act, f)
+    # far ear peeks out behind the head
+    if view != "front":
+        _critter_ear(s, ears, hx, hy, hrx, hry, b["ear"], far(head), None, view, ear_tip, near=False)
+
+    # body
+    breath = 0.35 * max(0, s.wave()) if lying else 0
+    body = s.ellipse(bx, by, brx + breath, bry + breath, fur, rot=brot)
+    if belly:
+        s.fill(s.m_ellipse(bx - 0.5, by + bry * 0.8, brx * 0.78, bry * 0.5, brot) & body, light, shade=False)
+    if swimming:
+        hip = s.ellipse(px_, py_, prx, pry * 0.8, fur)
+    elif not lying:
+        hip = s.ellipse(px_, py_, prx, pry, fur)
+        if belly and sitting:
+            s.fill(s.m_ellipse(bx - 2, by + 1, 2.2, bry * 0.8, brot) & body, light, shade=False)
+    else:
+        hip = s.ellipse(px_ + 0.5, py_ + 0.5, prx * 0.9, pry * 0.8, fur)
+    g["body"] = body | hip
+    if markings:
+        markings(s, g)
+
+    # near legs
+    if sitting:
+        s.ellipse(px_ - 1.5, ground - 0.6, b["foot"] + 0.6, 1.0, feet)
+        # front paws held up to the mouth, nibbling
+        up = (0, 1, 0, 1)[f]
+        s.path([(bx - 2, by - 2.5), (hx + 0.5, hy + hry + 1.2 - up)], 0.9, fur)
+        s.ellipse(hx + 0.2, hy + hry + 1.2 - up, 1.3, 1.1, feet)
+    elif swimming:
+        s.ellipse(b["fx"] - reach, 28.5, 1.8, 1.0, feet)
+        s.ellipse(px_ + 1 - push, 29, 2.2, 1.0, feet)
+    elif lying:
+        s.ellipse(hx - 1.2, ground - 0.8, 2.0, 1.0, feet)
+        s.ellipse(px_ - 1.5, ground - 0.6, b["foot"], 0.9, feet)
+    else:
+        _critter_leg(s, b["fx"], by, ground, b["leg"], fur, reach - 0.4 * push, feet)
+        s.ellipse(b["hx"] - push * 0.4 - 1 + push, ground - 0.6, b["foot"], 1.0, feet)
+
+    # neck, head and face
+    if not lying:
+        s.path([(bx - brx * 0.55, by - bry * 0.35), (hx + 0.8, hy + 0.8)], min(hry, bry) * 0.75, fur)
+    _critter_head(s, g, head, muzzle, nose, ears, ear_in, ear_tip, eye_col, eye_size, blush, eye_ring, cheeks, face)
+    if lift:
+        s.shift(0, -lift)
+
+
+def _floating(s: Sprite, fur, light, head, muzzle, nose, feet, tail_col, eye_col):
+    """A sea otter on its back in the water, paws folded on its chest, looking at you.
+    It sleeps the same way; walking and swimming paddle the hind feet."""
+    w = s.wave() if s.act in ("walk", "swim") else 0
+    breath = 0.3 * max(0, s.wave()) if s.act == "sleep" else 0
+    s.path([(24, 27), (28, 26.5 - w * 0.6), (31, 25.5)], (1.8, 1.0), tail_col)
+    s.ellipse(25.5, 23.6 + w * 0.8, 1.6, 2.2, feet, rot=-25)
+    s.ellipse(16.5, 27, 8.6, 3.2 + breath, fur)
+    s.fill(s.m_ellipse(16, 25.2, 6.5, 1.3), mix(fur, light, 0.25), shade=False)
+    s.ellipse(23.5, 24.2 - w * 0.8, 1.6, 2.2, feet, rot=-30)
+    hm = s.ellipse(7, 23.8, 3.6, 3.3, head, edge=True)
+    s.ellipse(6.6, 25.4, 1.9, 1.3, muzzle, shade=False)
+    s.ellipse(3.8, 21.5, 1.1, 1.1, head)
+    s.ellipse(10.2, 21.5, 1.1, 1.1, head)
+    s.px([(6, 24)], nose)
+    s.eye(4, 22, color=eye_col)
+    s.eye(8, 22, color=eye_col)
+    s.px([(3, 25), (10, 25)], "#f59aa8")
+    s.ellipse(12, 24.4, 1.5, 1.2, feet)
+    s.ellipse(14.4, 24.6, 1.5, 1.2, feet)
+    return hm
+
+
+def back_stripes(s: Sprite, g, cols, top=0.5, width=1.0):
+    """Lengthwise stripes along the back, one per colour from the spine down."""
+    bx, by, brx, bry = g["bx"], g["by"], g["brx"], g["bry"]
+    rot = g["brot"]
+    m = s.m_ellipse(bx + 0.5, by, brx * 0.85, bry, rot)
+    for k, col in enumerate(cols):
+        off = top + k * width
+        band = s.m_ellipse(bx, by + off, brx, bry, rot) & ~s.m_ellipse(bx, by + off + width, brx, bry, rot)
+        s.paint(band & m, col, within=g["body"])
+
+
+def flecks(s: Sprite, mask, col, every=5, seed=0):
+    """A scatter of single-pixel flecks inside mask."""
+    ys, xs = np.where(mask)
+    pts = [(x - PAD_X, y - PAD_TOP) for x, y in zip(xs, ys) if (x * 7 + y * 13 + seed) % every == 0]
+    s.paint(s.m_px(pts), col, within=mask)
+
+
+def face_stripes(s: Sprite, g, dark, pale):
+    """Chipmunk face: a dark stripe through the eye with pale ones above and below."""
+    ey = round(g["hy"] - g["hry"] * 0.35)
+    h = g["head_m"]
+    s.paint(s.m_line(-4, ey - 1, 40, ey - 1) | s.m_line(-4, ey + 2, 40, ey + 2), pale, within=h)
+    s.paint(s.m_line(-4, ey + 1, 40, ey + 1), dark, within=h)
+
+
+def teeth(s: Sprite, g, col="#f0a030"):
+    """Big orange gnawing teeth below the nose (beavers and their kin)."""
+    (sx0, sy0), (sx1, sy1), (r0, r1) = g["snout"]
+    dx, dy = g["hx"] - g["head"][0], g["hy"] - g["head"][1]
+    if g["view"] == "front":
+        x, y = round(g["hx"] + 0.1), round(g["hy"] + g["hry"] + 0.2)
+        s.px([(x, y), (x, y + 1)], col)
+        return
+    d = 1 if g["view"] == "back" else -1
+    x = round((sx1 if d < 0 else 2 * g["hx"] - sx1) + dx - d * 0.4)
+    y = round(sy1 + dy + r1 + 0.2)
+    s.px([(x, y), (x, y + 1)], col)
+
+
+def _critter_leg(s: Sprite, x, top_y, ground, r, col, reach, foot):
+    """A front leg from the chest down to a small paw; reach > 0 swings it forward."""
+    fx = x - reach
+    lift = 0.8 * max(0.0, reach - 1)
+    s.path([(x + 0.4, top_y), (fx, ground - 0.8 - lift)], (r * 1.3, r), col)
+    s.ellipse(fx - 0.6, ground - 0.6 - lift, r + 0.8, 0.9, foot)
+
+
+def _critter_head(s: Sprite, g, head, muzzle, nose, ears, ear_in, ear_tip, eye_col, eye_size, blush, eye_ring, cheeks,
+                  face):
+    hx, hy, hrx, hry, view = g["hx"], g["hy"], g["hrx"], g["hry"], g["view"]
+    (sx0, sy0), (sx1, sy1), (sr0, sr1) = g["snout"]
+    if (hx, hy) != tuple(g["head"][:2]):
+        dx, dy = hx - g["head"][0], hy - g["head"][1]
+        sx0, sx1, sy0, sy1 = sx0 + dx, sx1 + dx, sy0 + dy, sy1 + dy
+    if view == "front":
+        # Turned to face you: a rounder head, both eyes, the nose in the middle.
+        cx = hx + 0.6
+        if ears != "none":
+            for d in (-1, 1):
+                _critter_ear(s, ears, cx + d * hrx * 0.55, hy, hrx * 0.6, hry, (0, -3.0), head, ear_in, "front",
+                             ear_tip)
+        hm = s.ellipse(cx, hy, hrx * 1.05, hry * 1.02, head, edge=True)
+        s.ellipse(cx, hy + hry * 0.5, max(1.6, sr0 * 0.95), max(1.2, sr0 * 0.6), muzzle, shade=False)
+        g["head_m"] = hm
+        if face:
+            face(s, g)
+        if cheeks:
+            s.paint(s.m_ellipse(cx - hrx * 0.7, hy + hry * 0.3, 1.4, 1.2)
+                    | s.m_ellipse(cx + hrx * 0.7, hy + hry * 0.3, 1.4, 1.2), cheeks, within=hm)
+        ex = [round(cx - hrx * 0.5 - 0.5), round(cx + hrx * 0.5 - 0.5)]
+        ey = round(hy - hry * 0.3)
+        for x in ex:
+            if eye_ring:
+                r = eye_size / 2
+                s.paint(s.m_ellipse(x + r, ey + r, r + 1, r + 1), eye_ring, within=hm)
+            s.eye(x, ey, size=eye_size, color=eye_col)
+        n = round(cx - 0.5)
+        s.px([(n, round(hy + hry * 0.35))], nose)
+        if blush:
+            s.px([(ex[0] - 1, ey + eye_size + 1), (ex[1] + eye_size, ey + eye_size + 1)], "#f59aa8")
+        return
+    d = 1 if view == "back" else -1  # which way the face points
+    if d > 0:  # mirror the snout around the head's centre
+        sx0, sx1 = 2 * hx - sx0, 2 * hx - sx1
+    hm = s.ellipse(hx, hy, hrx, hry, head, edge=True)
+    sm = s.path([(sx0, sy0), (sx1, sy1)], (sr0, sr1), head)
+    jaw = s.m_path([(sx0, sy0 + sr0 * 0.55), (sx1 - d * 0.3, sy1 + sr1 * 0.5)], (sr0 * 0.55, sr1 * 0.5))
+    s.paint(jaw, muzzle, within=sm | hm)
+    g["head_m"] = hm | sm
+    if face:
+        face(s, g)
+    if cheeks:
+        s.paint(s.m_ellipse(hx + d * 0.2, hy + hry * 0.45, 1.8, 1.3), cheeks, within=hm)
+    _critter_ear(s, ears, hx, hy, hrx, hry, g["ear"], head, ear_in, view, ear_tip)
+    # nose at the tip
+    tip = round(sx1 + d * (sr1 - 0.6))
+    s.px([(tip, round(sy1 - sr1 * 0.4))], nose)
+    ex = round(hx + d * hrx * 0.38 - (eye_size - 1) * (d < 0))
+    ey = round(hy - hry * 0.35)
+    if eye_ring:
+        r = eye_size / 2
+        s.paint(s.m_ellipse(ex + r, ey + r, r + 1, r + 0.9), eye_ring, within=hm)
+    s.eye(ex, ey, size=eye_size, color=eye_col)
+    if blush:
+        s.px([(ex - d, ey + eye_size + 1)], "#f59aa8")
+
+
+def _critter_ear(s: Sprite, kind, hx, hy, hrx, hry, off, col, inner, view, tip_col=None, near=True):
+    """One ear (tip_col colours its tip). Rabbits' long ears sweep back; the rest stand up."""
+    if kind == "none":
+        return
+    d = 1 if view == "back" else -1
+    ox, oy = off
+    if view == "front":
+        x, y = hx, hy + oy
+    else:
+        x, y = hx - d * ox * (1 if near else 0.3) + (0 if near else 1.0 * -d), hy + oy + (0 if near else 0.4)
+    shade = inner is not None
+    if kind in ("long", "xlong"):
+        L = 5.6 if kind == "long" else 7.2
+        if view == "front":
+            tip = (x + (x - hx) * 0.4, y - L)
+        else:
+            tip = (x - d * 2.4, y - L)
+            if not near:
+                tip = (tip[0] - d * 1.6, tip[1] + 0.6)
+        m = s.path([(x, y + 1), tip], (1.5, 1.2), col, shade=shade)
+        if inner:
+            s.path([(x, y), (tip[0] + (0.2 if view == "front" else -d * 0.3), tip[1] + 1.4)], (0.7, 0.5), inner,
+                   shade=False)
+        if tip_col:
+            s.paint(s.m_ellipse(tip[0], tip[1] + 0.3, 1.7, 1.5), tip_col, within=m)
+        return
+    if kind == "tuft":
+        s.poly([(x - 1.5, y + 1.2), (x - d * 0.3, y - 2.8), (x + 1.5, y + 1.2)], col, shade=shade)
+        s.px([(round(x - d * 0.3), round(y - 3.8)), (round(x - d * 0.3), round(y - 4.8))], tip_col or col)
+        if inner:
+            s.px([(round(x), round(y))], inner)
+        return
     if kind == "point":
-        s.poly([(7.5, 10), (8, 1.5), (14, 6)], fur, mirror=True)
-        s.poly([(9, 8), (9.3, 4), (12, 6.5)], inner, mirror=True, shade=False)
-    elif kind == "big":
-        s.poly([(6.5, 10), (6, 0.5), (14, 5.5)], fur, mirror=True)
-        s.poly([(8, 8), (7.6, 3), (12, 6)], inner, mirror=True, shade=False)
-    elif kind == "tuft":
-        s.poly([(7.5, 10), (8, 2.5), (14, 6)], fur, mirror=True)
-        s.poly([(9, 8), (9.2, 4.5), (12, 6.5)], inner, mirror=True, shade=False)
-        s.px([(8, 1), (8, 2), (7, 0)], BLACK, mirror=True)
-    elif kind == "round":
-        s.ellipse(8.5, 6, 3.4, 3.4, fur, mirror=True)
-        s.ellipse(8.5, 6, 1.8, 1.8, inner, mirror=True, shade=False)
-    elif kind == "small":
-        s.ellipse(9, 6.5, 2.3, 2.3, fur, mirror=True)
-        s.ellipse(9, 6.5, 1.0, 1.0, inner, mirror=True, shade=False)
-    elif kind == "long":
-        s.ellipse(11.5, 4.5, 2.4, 6, fur, rot=-8, mirror=True)
-        s.ellipse(11.5, 4.8, 1.0, 4.5, inner, rot=-8, mirror=True, shade=False)
-    elif kind == "xlong":
-        s.ellipse(11, 3.8, 2.4, 7, fur, rot=-12, mirror=True)
-        s.ellipse(11, 4.2, 1.0, 5.2, inner, rot=-12, mirror=True, shade=False)
-        s.paint(s.m_ellipse(10.2, -1.5, 3, 2.6, rot=-12), BLACK, mirror=True)
-    elif kind == "mule":
-        s.ellipse(5.5, 8, 4.6, 2.6, fur, rot=-20, mirror=True)
-        s.ellipse(5.8, 8, 2.8, 1.2, inner, rot=-20, mirror=True, shade=False)
-    elif kind == "side":
-        s.ellipse(6.5, 9, 3, 2, fur, rot=-25, mirror=True)
-        s.ellipse(6.7, 9, 1.5, 0.8, inner, rot=-25, mirror=True, shade=False)
+        s.poly([(x - 1.8, y + 1.4), (x - d * 0.4, y - 3.4), (x + 1.8, y + 1.4)], col, shade=shade)
+        if inner:
+            s.poly([(x - 0.8, y + 0.8), (x - d * 0.4, y - 1.6), (x + 0.8, y + 0.8)], inner, shade=False)
+        return
+    r = {"small": 1.5, "round": 2.3, "big": 2.8, "tiny": 1.0}[kind]
+    s.ellipse(x, y - 0.3, r, r * 1.05, col, shade=shade)
+    if inner and r >= 1.5:
+        s.ellipse(x - d * 0.2, y - 0.1, r * 0.5, r * 0.55, inner, shade=False)
+
+
+def _critter_tail(s: Sprite, kind, x, y, col, tip, act, f):
+    """The tail, joined to the rump at (x, y). Bushy tails sway a little as they go."""
+    sway = (0, 0.6, 1, 0.4)[f] if act == "walk" else 0
+    if act == "sleep" and kind in ("squirrel", "bushy", "ringed"):
+        # wrapped over the back like a blanket
+        m = s.path([(x, y + 1), (x - 3, y - 3.5), (x - 8, y - 4.5), (x - 12, y - 3)], (2.6, 2.2), col)
+        if tip:
+            s.paint(s.m_path([(x - 3, y - 5.5), (x - 8, y - 6.5), (x - 12, y - 5)], 1.0), tip, within=m)
+        return
+    if kind == "squirrel":
+        pts = [(x - 1, y + 0.5), (x + 3, y - 2), (x + 4.5 + sway, y - 7), (x + 3 + sway, y - 12),
+               (x - 0.5 + sway, y - 14.5), (x - 2.5 + sway * 0.5, y - 13)]
+        m = s.path(pts, (1.6, 3.4), col)
+        if tip:
+            s.paint(m & ~s.m_path([(x - 1, y), (x + 2, y - 2), (x + 3 + sway, y - 7), (x + 1.8 + sway, y - 11.5),
+                                   (x - 0.5 + sway, y - 13)], (1.0, 2.2)), tip, within=m)
+    elif kind == "bushy":
+        m = s.path([(x - 1, y), (x + 3, y - 1.5), (x + 6, y - 4 - sway), (x + 7, y - 7 - sway)], (1.6, 2.6), col)
+        if tip:
+            s.paint(s.m_ellipse(x + 6.5, y - 6.5 - sway, 2.2, 2.0), tip, within=m)
+    elif kind == "long":  # chipmunks and ground squirrels hold theirs up and out
+        m = s.path([(x - 1, y), (x + 3, y - 1.5), (x + 5.5, y - 4.5 - sway), (x + 6.5, y - 8 - sway)], (1.2, 1.6), col)
+        if tip:
+            s.paint(m & ~s.m_path([(x - 1, y), (x + 3, y - 1.5), (x + 5.5, y - 4.5 - sway), (x + 6.5, y - 8 - sway)],
+                                  (0.6, 0.8)), tip, within=m)
+    elif kind == "short":
+        m = s.ellipse(x + 1.6, y - 0.6, 2.2, 1.3, col, rot=-30)
+        if tip:
+            s.paint(s.m_ellipse(x + 3.2, y - 1.5, 1.2, 1.1), tip, within=m)
+    elif kind == "cotton":
+        s.ellipse(x + 0.8, y, 1.8, 1.9, col)
+    elif kind == "rat":
+        s.path([(x - 1, y), (x + 3, y + 2), (x + 6, y + 4.2), (x + 9.5, y + 4.5 - sway)], (1.0, 0.5), col)
+    elif kind == "otter":
+        s.path([(x - 2, y - 1), (x + 3, y + 1), (x + 7.5, y + 3.5 - sway)], (2.4, 0.8), col)
+    elif kind == "paddle":
+        m = s.ellipse(x + 4.5, y + 3.4, 4.6, 1.4, col, rot=8)
+        for k in (2.5, 4.5, 6.5):
+            s.paint(s.m_line(x + k, y + 2.5, x + k + 0.5, y + 4.5), mix(col, "#000000", 0.25), within=m)
+    elif kind == "ringed":
+        pts = [(x - 1, y), (x + 3, y - 1), (x + 7, y - 4 - sway), (x + 8, y - 10 - sway)]
+        m = s.path(pts, (1.6, 2.2), col)
+        for k in range(4):
+            yy = y - 1.5 - k * 2.6
+            s.paint(s.m_poly([(x, yy), (x + 12, yy - 2.5), (x + 12, yy - 1.2), (x, yy + 1.3)]), tip or BLACK, within=m)
 
 
 # Proportions for the side-view walkers: body (cx, cy, rx, ry), leg radius, front and
@@ -291,36 +593,112 @@ def _tail(s: Sprite, kind, x, y, col, tip):
         s.path([(x - 1, y + 2), (x + 3, y + 4), (x + 5.5, y + 3), (x + 6.5, y)], (1.1, 0.5), col)
 
 def pinniped(s: Sprite, fur, light, *, spots=None, ears=False, proboscis=None, whisker=None,
-             flipper=None, belly=True):
-    """Seal / sea lion sitting up, front view. Walking humps it along; swimming
-    sweeps the front flippers."""
-    s.can("walk", "swim")
-    w = s.wave() if s.act in ("walk", "swim") else 0
-    flipper = flipper or mix(fur, "#000000", 0.2)
-    s.ellipse(10, 29, 4, 1.8, flipper, rot=20, mirror=True)
-    s.ellipse(16, 21, 9, 8.5, fur)
-    if belly:
-        s.ellipse(16, 23, 5.5, 6, light)
-    if s.act == "swim":
-        s.ellipse(6.5, 22 - 3 * w, 2, 4.5, flipper, rot=25 + 40 * w, mirror=True)
+             flipper=None, belly=True, upright=None, blotch=None):
+    """Seal or sea lion from the side, facing left. Seals lie along the ground with
+    the head raised; sea lions (ears=True) prop themselves up on their front flippers.
+    Walking humps the body along, swimming stretches it out and beats the hind
+    flippers. look and back turn the head to you or over the shoulder."""
+    s.can("walk", "swim", "look", "back")
+    act, f = s.act, s.f
+    upright = ears if upright is None else upright
+    flipper = flipper or mix(fur, "#000000", 0.25)
+    view = {"look": "front", "back": "back"}.get(act, "side")
+    ground = 30.5
+    swim = act == "swim"
+    w = s.wave() if act in ("walk", "swim") else 0
+    hump = (0, 1.6, 0.6, -0.4)[f] if act == "walk" else 0
+    if swim:
+        # stretched out, level, flippers sweeping up and down
+        spine = [(28.5, 19 + w), (22, 18.6), (14, 18.2), (8.5, 18.5)]
+        rad = (1.6, 4.0)
+        head = (5.5, 18, 3.3, 2.8)
+    elif act == "sleep":
+        spine = [(28.5, 28.6), (21, 27.2), (13, 26.8), (8, 27.4)]
+        rad = (1.8, 4.0)
+        head = (5.5, 27.2, 3.3, 2.8)
+    elif upright:
+        spine = [(28.5, 28.4), (22, 27.2 - hump), (15.5, 25.5), (11.5, 21.5)]
+        rad = (1.8, 4.0)
+        head = (9, 14.5, 3.0, 2.6)
     else:
-        s.ellipse(6.5, 22, 2, 4.5, flipper, rot=25, mirror=True)
-    s.ellipse(16, 11, 8.5, 7.5, fur, edge=True)
+        spine = [(28.5, 28.4), (21, 27 - hump), (13, 26.4), (8.5, 25)]
+        rad = (1.8, 4.2)
+        head = (6.2, 21.5, 3.4, 2.9)
+    hx, hy, hrx, hry = head
+    if act == "back":
+        hx += 2.5
+
+    # hind flippers: a fan behind the tail, beating when it swims
+    tx, ty = spine[0]
+    beat = 2.4 * w if swim else 0
+    s.poly([(tx - 1, ty - 0.8), (tx + 4.2, ty - 2.6 - beat), (tx + 3.4, ty - 0.2 - beat * 0.6)], flipper)
+    s.poly([(tx - 1, ty + 0.4), (tx + 4.2, ty + 1.8 - beat), (tx + 3.0, ty - 0.2 - beat * 0.6)],
+           mix(flipper, "#1a1420", 0.2))
+    # far front flipper
+    fx, fy = spine[-2][0] - 1, spine[-2][1] + 1.5
+    if upright and not swim and act != "sleep":
+        s.path([(fx + 1.5, fy - 1), (fx + 2.6, ground - 0.4)], (1.4, 1.0), mix(flipper, "#1a1420", 0.25))
+
+    body = s.path(spine, rad, fur)
+    neck = s.path([spine[-1], (hx + 1, hy + 1)], (3.6, 2.2) if upright else 3.2, fur)
+    body = body | neck
+    if belly:
+        s.paint(s.m_path([(x - 0.5, y + 2.6) for x, y in spine[1:]], rad[1] * 0.45), light, within=body)
     if spots:
-        s.paint(s.m_px(spots), mix(fur, "#000000", 0.4))
-    if ears:
-        s.px([(8, 9), (8, 10)], flipper, mirror=True)
-    s.ellipse(16, 15, 4.5, 2.8, light)
-    s.eye(10, 10, size=3, mirror=True)
-    s.px([(10, 10)], WHITE, mirror=True)
+        k = 0
+        for x in range(4, 30):
+            for y in range(10, 31):
+                if body[y + PAD_TOP, x + PAD_X] and (x * 7 + y * 13) % 11 == 0 and k < spots:
+                    s.paint(s.m_px([(x, y)]), mix(fur, "#000000", 0.4))
+                    k += 1
+    if blotch:
+        blotch(s, body)
+
+    # near front flipper
+    if swim:
+        s.ellipse(fx + 1.5, fy + 2 - w, 3.2, 1.1, flipper, rot=20 + 15 * w)
+    elif act == "sleep":
+        s.ellipse(fx + 1, ground - 0.8, 2.8, 1.0, flipper, rot=10)
+    elif upright:
+        s.path([(fx, fy - 1.5), (fx - 0.8 + 0.8 * w, ground - 0.5)], (1.6, 1.1), flipper)
+        s.ellipse(fx - 1.6 + 0.8 * w, ground - 0.5, 2.0, 0.8, flipper)
+    else:
+        s.ellipse(fx + 0.5, ground - 0.9 + 0.3 * hump, 2.6, 1.1, flipper, rot=25)
+
+    # head
+    if view == "front":
+        cx = hx + 0.6
+        hm = s.ellipse(cx, hy, hrx * 1.05, hry * 1.05, fur, edge=True)
+        s.ellipse(cx, hy + hry * 0.55, 2.0, 1.3, light, shade=False)
+        if proboscis:
+            s.ellipse(cx, hy + 1.2, 1.4, 2.2, proboscis)
+        if ears:
+            s.px([(round(cx - hrx), round(hy - 0.5)), (round(cx + hrx - 1), round(hy - 0.5))], flipper)
+        ey = round(hy - hry * 0.3)
+        for x in (round(cx - hrx * 0.5 - 0.8), round(cx + hrx * 0.5 - 0.6)):
+            s.eye(x, ey, size=2)
+        s.px([(round(cx - 0.5), round(hy + hry * 0.3))], NOSE)
+        s.px([(round(cx - 2.5), round(hy + hry * 0.7)), (round(cx + 1.5), round(hy + hry * 0.7))],
+             whisker or mix(light, "#000000", 0.35))
+        return
+    d = 1 if view == "back" else -1
+    long_nose = 3.6 if proboscis else 2.6 if upright else 3.0
+    tip = (hx + d * (hrx + long_nose - 1.2), hy + 1.0)
+    hm = s.ellipse(hx, hy, hrx, hry, fur, edge=True)
+    sm = s.path([(hx + d * 1.2, hy + 0.6), tip], (2.2, 1.4), fur)
+    s.paint(s.m_path([(hx + d * 1.2, hy + 1.8), (tip[0] - d * 0.4, tip[1] + 0.8)], (1.2, 0.9)), light, within=hm | sm)
     if proboscis:
-        s.ellipse(16, 15.5, 2.6, 4, proboscis)
-    s.px([(15, 14), (16, 14)], NOSE)
-    s.px([(13, 15), (13, 17)], whisker or mix(light, "#000000", 0.35), mirror=True)
-    s.blush(9, 14, mirror=True)
-    s.eye_box(10, 10, 12, 12, mirror=True)
-    if s.act == "walk" and w > 0:
-        _lift(s, 1)
+        s.path([(tip[0] - d * 1.2, tip[1] - 1), (tip[0] + d * 0.6, tip[1] + 0.4), (tip[0] + d * 0.4, tip[1] + 2.8)],
+               (1.4, 1.2), proboscis)
+    else:
+        s.px([(round(tip[0] + d * 0.6), round(tip[1] - 0.8))], NOSE)
+    s.px([(round(tip[0] - d * 1.5), round(tip[1] + 0.6))], whisker or mix(light, "#000000", 0.35))
+    if ears:
+        s.px([(round(hx - d * 1.8), round(hy - 1)), (round(hx - d * 1.8), round(hy))], flipper)
+    ex = round(hx + d * hrx * 0.25 - (d < 0))
+    ey = round(hy - hry * 0.4)
+    s.eye(ex, ey, size=2)
+    s.px([(ex - d, ey + 2)], "#f59aa8")
 
 
 def _fluke(s: Sprite, pts, col, w, pivot_x=24):

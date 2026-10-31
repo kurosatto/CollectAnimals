@@ -1,8 +1,8 @@
 """Sprites for the Florida species that aren't on an earlier state's list."""
 from __future__ import annotations
 
-from archetypes import (BLACK, WHITE, bird, butterfly, dolphin, dragonfly, duck, fish, frog, lizard,
-                        mammal, snake, spider_top, sprite, turtle, wader)
+from archetypes import (BLACK, WHITE, bird, butterfly, critter, dolphin, dragonfly, duck, fish, flecks, frog,
+                        lizard, snake, spider_top, sprite, turtle, wader)
 from pixel import mix
 from species_tx import _segmented
 
@@ -33,9 +33,9 @@ def _(s):
 
 @sprite("hispid_cotton_rat")
 def _(s):
-    mammal(s, "#7a6448", "#c8bca8", ears="round", ear_in="#d8a8a0", tail="rat", tail_col="#6a5a4a",
-           muzzle="#a89478", nose="#e88a90", head_r=(8, 7), feet="#9a8a7a",
-           markings=lambda s: s.paint(s.m_px([(12, 9), (19, 9), (15, 7), (17, 11)]), "#5a4a34", within=s.last))
+    critter(s, "#7a6448", "#c8bca8", build="vole", ears="round", ear_in="#d8a8a0", tail="rat", tail_col="#6a5a4a",
+            muzzle="#a89478", nose="#e88a90", feet="#9a8a7a",
+            markings=lambda s, g: flecks(s, g["body"], "#5a4a34", every=4))
 
 
 @sprite("mexican_free_tailed_bat")

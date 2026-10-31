@@ -2,7 +2,7 @@
 but the capture screen names them)."""
 from __future__ import annotations
 
-from archetypes import BLACK, EYE, WHITE, bird, fish, mammal, quad, sprite
+from archetypes import (BLACK, EYE, WHITE, bird, critter, fish, quad, sprite)
 from pixel import mix
 
 
@@ -30,16 +30,14 @@ def _(s):
 
 @sprite("domestic_rabbit")
 def _(s):
-    mammal(s, "#f1ece4", "#ffffff", ears="xlong", ear_in="#f2b0bc", tail="cotton", tail_col=WHITE,
-           nose="#e88a9a", head_r=(8.5, 7.5))
-    s.paint(s.m_ellipse(10.2, -1.5, 3, 2.6, rot=-12), "#f1ece4", mirror=True)  # no black ear tips
+    critter(s, "#f1ece4", "#ffffff", build="rabbit", ears="xlong", ear_in="#f2b0bc", tail="cotton", tail_col=WHITE,
+            nose="#e88a9a")
 
 
 @sprite("golden_hamster")
 def _(s):
-    mammal(s, "#e2a35c", "#fbf3e6", ears="small", ear_in="#f2a7b4", tail="none", head_r=(9.5, 8),
-           nose="#e88a9a")
-    s.paint(s.m_ellipse(9, 16.5, 2.4, 1.8) | s.m_ellipse(23, 16.5, 2.4, 1.8), "#fbf3e6")  # full cheeks
+    critter(s, "#e2a35c", "#fbf3e6", build="round", ears="small", ear_in="#f2a7b4", tail="none", nose="#e88a9a",
+            cheeks="#fbf3e6")  # full cheeks
 
 
 @sprite("budgerigar")
@@ -87,8 +85,8 @@ def _(s):
 
 @sprite("house_mouse")
 def _(s):
-    mammal(s, "#9c948c", "#e6e0d8", ears="round", ear_in="#f2b0bc", tail="rat", tail_col="#efb6bf",
-           nose="#e88a9a", head_r=(8.5, 7))
+    critter(s, "#9c948c", "#e6e0d8", build="mouse", ears="round", ear_in="#f2b0bc", tail="rat", tail_col="#efb6bf",
+            nose="#e88a9a")
 
 
 @sprite("rock_pigeon")

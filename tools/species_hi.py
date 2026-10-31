@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import math
 
-from archetypes import (BLACK, WHITE, _fluke, bird, butterfly, crab, dolphin, duck, frog, goose,
-                        lizard, mammal, pinniped, quad, spider_top, sprite)
+from archetypes import (BLACK, WHITE, _fluke, bird, butterfly, crab, critter, dolphin, duck, frog, goose, lizard,
+                        pinniped, quad, spider_top, sprite)
 from pixel import mix
 
 
@@ -87,7 +87,6 @@ def _urchin_face(s, y=15):
 @sprite("hawaiian_monk_seal")
 def _(s):
     pinniped(s, "#8a8c92", "#d8d4c8", flipper="#6a6c72")
-    s.paint(s.m_px([(12, 20), (21, 19), (19, 25)]), "#a8a49a")
 
 
 @sprite("small_indian_mongoose")
@@ -147,8 +146,8 @@ def _(s):
 
 @sprite("polynesian_rat")
 def _(s):
-    mammal(s, "#8a6e52", "#d8cab4", ears="round", ear_in="#e8a8a8", tail="rat", tail_col="#b89a8a",
-           nose="#e88a90", head_r=(8, 7), feet="#e0c0b0")
+    critter(s, "#8a6e52", "#d8cab4", build="mouse", ears="round", ear_in="#e8a8a8", tail="rat", tail_col="#b89a8a",
+            nose="#e88a90", feet="#e0c0b0")
 
 
 # --------------------------------------------------------------------------- birds

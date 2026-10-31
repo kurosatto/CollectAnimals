@@ -113,6 +113,7 @@ function habSpawn(a) {
   [a.x, a.y] = habSpot(a);
   [a.tx, a.ty] = habSpot(a);
   a.pause = rnd(0, 3);
+  a.rest = habRestPose();
   a.dir = Math.random() < .5 ? -1 : 1;
   a.odo = 0;
   a.phase = rnd(0, 6.3);
@@ -667,6 +668,7 @@ function habStep(a, dt, awake) {
   if (d <= step) {
     a.x = a.tx; a.y = a.ty;
     a.pause = a.role === "hover" ? rnd(.4, 1.4) : rnd(1, 5);
+    a.rest = habRestPose();
     [a.tx, a.ty] = habSpot(a);
     return;
   }
@@ -727,6 +729,13 @@ function habPose(a, awake, roost) {
   return [x, y, sx, sy, tilt];
 }
 
+// What a ground animal does while it stands still: just stand, sit up on its
+// haunches, turn its head to look at you, or glance back over its shoulder
+// (only the animals whose sheets draw that pose).
+function habRestPose() {
+  return ["idle", "idle", "sit", "look", "back"][Math.floor(Math.random() * 5)];
+}
+
 // Which pose of the animation sheet to show, and which of its four frames:
 // [pose, frame], or null when the species has no sheet.
 function habAnim(a, awake, roost) {
@@ -739,10 +748,14 @@ function habAnim(a, awake, roost) {
   if (a.mode === "perched") return ["idle", 0];
   if (a.mode === "toPerch") return has("fly") ? ["fly", cyc(a.phase * 9 / (2 * Math.PI) * 4)] : ["idle", 0];
   switch (a.role) {
-    case "walk": case "shore": case "wade": case "beach":
-      return a.pause > 0 || a.peck > 0 || !has("walk") ? ["idle", 0] : ["walk", cyc(a.odo / 3)];
-    case "hop":
-      return a.pause > 0 || !has("walk") ? ["idle", 0] : ["walk", cyc((a.odo % 18) / 18 * 4)];
+    case "walk": case "shore": case "wade": case "beach": case "hop": {
+      if (a.peck > 0) return ["idle", 0];
+      if (a.pause > 0 || !has("walk")) {
+        const r = a.rest && has(a.rest) ? a.rest : "idle";
+        return [r, r === "sit" ? cyc(a.phase * 2.5) : 0];  // sitting up, it nibbles
+      }
+      return ["walk", a.role === "hop" ? cyc((a.odo % 18) / 18 * 4) : cyc(a.odo / 3)];
+    }
     case "fly": case "soar": case "dive": case "skim": case "hover": case "flutter": {
       if (!has("fly")) return ["idle", 0];
       if (a.role === "dive" && a.mode === "dive") return ["fly", 3];

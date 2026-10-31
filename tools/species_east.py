@@ -5,8 +5,8 @@ from __future__ import annotations
 
 import math
 
-from archetypes import (BLACK, EYE, WHITE, _fluke, beetle_top, bird, butterfly, crab, dragonfly, duck, fish,
-                        frog, goose, jelly, lizard, mammal, pinniped, snake, spider_top, sprite, star, turtle,
+from archetypes import (BLACK, EYE, WHITE, _fluke, beetle_top, bird, butterfly, crab, critter, dragonfly, duck,
+                        fish, flecks, frog, goose, jelly, lizard, pinniped, snake, spider_top, sprite, star, turtle,
                         wader)
 from pixel import _XS, _YS, mix
 from species_tx import _segmented
@@ -53,19 +53,14 @@ def _(s):
 @sprite("white_footed_mouse")
 def _(s):
     # Warm brown back, snowy white belly and feet, big ears and bulging eyes.
-    mammal(s, "#a8683a", WHITE, ears="round", ear_in="#f2b0bc", tail="rat", tail_col="#c89a80",
-           feet=WHITE, nose="#e88a9a", head_r=(8.5, 7))
-    s.eye(10, 11, size=3, mirror=True)
-    s.px([(10, 11)], WHITE, mirror=True)
+    critter(s, "#a8683a", WHITE, build="mouse", ears="big", ear_in="#f2b0bc", tail="rat", tail_col="#c89a80",
+            feet=WHITE, nose="#e88a9a", eye_size=3)
 
 
 @sprite("grey_seal")
 def _(s):
     # Darker than a harbor seal, with pale blotches and a long, sloping "horse head" nose.
-    pinniped(s, "#767a84", "#b4b8c0", belly=False)
-    blot = "#a8acb6"
-    s.paint(s.m_ellipse(8, 21, 1.6, 1.2) | s.m_ellipse(23, 19, 1.8, 1.3) | s.m_ellipse(12, 26, 1.4, 1)
-            | s.m_ellipse(20, 26, 1.6, 1.1) | s.m_ellipse(10, 6, 1.4, 1) | s.m_ellipse(22, 7, 1.5, 1), blot)
+    pinniped(s, "#767a84", "#b4b8c0", belly=False, blotch=lambda s, body: flecks(s, body, "#a8acb6", every=9))
 
 
 @sprite("harbour_porpoise")

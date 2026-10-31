@@ -6,8 +6,10 @@
     python tools/make_sprites.py --anim-sheet anim.png     # preview of every animation
 
 Each species also gets an animation sheet, species/sprites/anim/<slug>.png: one row
-per pose (idle, walk, fly, swim, sleep) of four 40x40 frames. anim/index.json lists
-the poses each species really draws; the others repeat its idle row.
+per pose (idle, walk, fly, swim, sleep, sit, look, back) of four 40x40 frames.
+anim/index.json lists the poses each species really draws; the others repeat its
+idle row. sit is up on the haunches, look turns the head to you and back glances
+back over the shoulder (the small mammals and seals draw these).
 
 Species come from every list in species/states.json; one sprite per slug is shared
 by all states.
@@ -45,9 +47,9 @@ import species_sw  # noqa: E402,F401
 import species_mtn  # noqa: E402,F401
 import species_nw  # noqa: E402,F401
 import species_east  # noqa: E402,F401
-from archetypes import (BLACK, NOSE, PINK, WHITE, beetle_top, bee, bird, butterfly,  # noqa: E402
-                        dragonfly, duck, frog, goose, hummingbird, lizard, mammal, owl, pelican,
-                        mantis, pinniped, quad, S, snake, sprite, star, turtle, vulture, wader, whale)
+from archetypes import (BLACK, NOSE, PINK, S, WHITE, bee, beetle_top, bird, butterfly, critter,  # noqa: E402
+                        dragonfly, duck, flecks, frog, goose, hummingbird, lizard, mantis, owl, pelican, pinniped, quad, snake,
+                        sprite, star, turtle, vulture, wader, whale)
 from pixel import ACTS, FRAMES, N, Sprite, mix, silhouette  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -171,62 +173,54 @@ def _(s):
 
 @sprite("western_gray_squirrel")
 def _(s):
-    mammal(s, "#8f939c", "#f4f1ea", ears="small", ear_in="#d6b0a8", tail="squirrel", tail_col="#7f838c",
-           tail_tip="#d6d6dc", head_r=(8, 7))
+    critter(s, "#8f939c", "#f4f1ea", build="squirrel", ear_in="#d6b0a8", tail="squirrel", tail_col="#7f838c",
+            tail_tip="#d6d6dc")
 
 
 @sprite("fox_squirrel")
 def _(s):
-    mammal(s, "#b67a4a", "#eebb88", ears="small", ear_in="#e8a888", tail="squirrel", tail_col="#c4834e",
-           tail_tip="#e8a868", head_r=(8, 7))
+    critter(s, "#b67a4a", "#eebb88", build="squirrel", ear_in="#e8a888", tail="squirrel", tail_col="#c4834e",
+            tail_tip="#e8a868")
 
 
 @sprite("california_ground_squirrel")
 def _(s):
-    def specks(s):
-        s.px([(9, 10), (22, 10), (12, 8), (19, 8), (8, 14), (23, 14)], "#e4d6c0")
-    mammal(s, "#8a7058", "#e4d6c0", ears="small", ear_in="#c8a088", tail="squirrel", tail_col="#8a7562",
-           tail_tip="#bcab98", head_r=(8, 7), markings=specks)
-    s.px([(11, 23), (13, 21), (20, 22), (18, 20), (22, 25)], "#e4d6c0")
-    s.paint(s.m_ellipse(10, 11, 2.5, 2.5) | s.m_ellipse(21, 11, 2.5, 2.5), "#f0e6d6")
-    s.eye(11, 12, mirror=True)
+    # Mottled brown with a pale cape over the shoulders and a bushy tail.
+    def cape(s, g):
+        flecks(s, g["body"], "#e4d6c0", every=5)
+        s.paint(s.m_ellipse(g["bx"] - g["brx"] * 0.4, g["by"] - g["bry"] * 0.3, 2.4, 1.4), "#c8b8a0", within=g["body"])
+    critter(s, "#8a7058", "#e4d6c0", build="ground", ear_in="#c8a088", tail="bushy", tail_col="#8a7562",
+            tail_tip="#bcab98", eye_ring="#f0e6d6", markings=cape)
 
 
 @sprite("desert_cottontail")
 def _(s):
-    mammal(s, "#b8a083", "#f5efe4", ears="long", ear_in="#efb6b0", tail="cotton", tail_col=WHITE,
-           nose="#e08a96", head_r=(8, 7))
+    critter(s, "#b8a083", "#f5efe4", build="rabbit", ears="long", ear_in="#efb6b0", tail="cotton", tail_col=WHITE,
+            nose="#e08a96")
 
 
 @sprite("brush_rabbit")
 def _(s):
-    def ears(s):
-        s.ellipse(11.5, 5.5, 2.6, 4.6, "#7a6250", rot=-10, mirror=True)
-        s.ellipse(11.5, 5.8, 1.0, 3.2, "#d6a0a0", rot=-10, mirror=True, shade=False)
-    mammal(s, "#7a6250", "#d8c8b4", ears="none", tail="cotton", tail_col="#c4b4a0",
-           nose="#e08a96", head_r=(8.5, 7.5), behind=ears)
+    critter(s, "#7a6250", "#d8c8b4", build="rabbit", ears="long", ear_in="#d6a0a0", tail="cotton", tail_col="#c4b4a0",
+            nose="#e08a96")
 
 
 @sprite("black_tailed_jackrabbit")
 def _(s):
-    mammal(s, "#b39a78", "#efe6d6", ears="xlong", ear_in="#e8b4ac", tail="short", tail_col=BLACK,
-           nose="#d88a8a", head_r=(7.5, 7))
+    critter(s, "#b39a78", "#efe6d6", build="hare", ears="xlong", ear_in="#e8b4ac", ear_tip=BLACK, tail="short",
+            tail_col=BLACK, nose="#d88a8a")
 
 
 @sprite("sea_otter")
 def _(s):
-    mammal(s, "#6a4c3a", "#d8c8b0", ears="small", ear_in="#4a3428", tail="none", head="#d8c8b0",
-           muzzle="#efe4d2", nose="#2b2226", belly=False, head_r=(9, 7.5))
-    s.ellipse(16, 25, 4, 3.2, "#8a6a56")
-    s.ellipse(12.5, 23, 1.8, 1.4, "#4e3628", mirror=True)
-    s.px([(12, 17), (11, 18), (20, 17), (21, 18)], WHITE)
+    # Floats on its back with a pale, whiskery face.
+    critter(s, "#6a4c3a", "#d8c8b0", head="#d8c8b0", muzzle="#efe4d2", nose="#2b2226", feet="#4e3628", floats=True)
 
 
 @sprite("north_american_river_otter")
 def _(s):
-    mammal(s, "#6a4a36", "#c8ac90", ears="small", ear_in="#4a3428", tail="long", tail_col="#5e4230",
-           muzzle="#c8ac90", nose="#2b2226", head_r=(8.5, 7))
-    s.px([(12, 17), (11, 18), (20, 17), (21, 18)], WHITE)
+    critter(s, "#6a4a36", "#c8ac90", build="otter", ear_in="#4a3428", tail="otter", tail_col="#5e4230",
+            muzzle="#c8ac90", nose="#2b2226")
 
 
 @sprite("california_sea_lion")
@@ -236,9 +230,7 @@ def _(s):
 
 @sprite("harbor_seal")
 def _(s):
-    spots = [(9, 8), (21, 7), (12, 5), (19, 5), (7, 13), (24, 12), (9, 20), (22, 19), (10, 26), (23, 25),
-             (13, 18), (20, 27), (8, 23)]
-    pinniped(s, "#9aa0aa", "#d6d8de", spots=spots, belly=False)
+    pinniped(s, "#9aa0aa", "#d6d8de", spots=14, belly=False)
 
 
 @sprite("northern_elephant_seal")
@@ -253,23 +245,20 @@ def _(s):
 
 @sprite("yellow_bellied_marmot")
 def _(s):
-    mammal(s, "#7a6248", "#e8b04a", ears="small", ear_in="#5a4a3a", tail="short", tail_col="#6a5240",
-           muzzle="#efe4d2", head_r=(9, 7.5),
-           markings=lambda s: s.paint(s.m_poly([(13, 10), (19, 10), (17, 12), (15, 12)]), "#efe4d2", within=s.last))
-    s.ellipse(16, 25, 5, 4.2, "#e8b04a")
+    # Yellow belly and a white band across the nose.
+    def band(s, g):
+        s.paint(s.m_ellipse(g["hx"] - (0 if g["view"] == "front" else 1.5), g["hy"] - g["hry"] * 0.2, 1.4, 0.8)
+                if g["view"] == "front" else s.m_ellipse(g["hx"] - 2.5 if g["view"] == "side" else g["hx"] + 2.5,
+                                                          g["hy"] - 0.2, 1.4, 1.0), "#efe4d2", within=g["head_m"])
+    critter(s, "#7a6248", "#e8b04a", build="marmot", ear_in="#5a4a3a", tail="short", tail_col="#6a5240",
+            muzzle="#efe4d2", face=band)
 
 
 @sprite("american_pika")
 def _(s):
-    mammal(s, "#9c8a76", "#d6c8b4", ears="round", ear_in="#e8d8c4", tail="none", head_r=(9.5, 8),
-           belly=False, nose="#2b2226")
-    s.ellipse(16, 24, 8, 6, "#9c8a76")
-    s.ellipse(16, 13, 9.5, 8, "#9c8a76", edge=True)
-    s.ellipse(16, 17, 4.2, 2.8, "#d6c8b4")
-    s.px([(15, 15), (16, 15)], "#2b2226")
-    s.eye(11, 12, mirror=True)
-    s.blush(9, 15, mirror=True)
-    s.px([(5, 3), (26, 3)], "#f4ecdf")
+    # A round little rock rabbit: no tail and round, pale-rimmed ears.
+    critter(s, "#9c8a76", "#d6c8b4", build="round", ears="round", ear_in="#f4ecdf", tail="none", belly=False,
+            nose="#2b2226")
 
 
 # --------------------------------------------------------------------------- birds

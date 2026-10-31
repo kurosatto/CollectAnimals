@@ -1,8 +1,8 @@
 """Sprites for the New York species that aren't on an earlier state's list."""
 from __future__ import annotations
 
-from archetypes import (BLACK, WHITE, bird, butterfly, crab, frog, goose, lizard, mammal, quad, snake, sprite,
-                        turtle)
+from archetypes import (BLACK, WHITE, back_stripes, bird, butterfly, crab, critter, frog, goose, lizard, quad,
+                        snake, sprite, teeth, turtle)
 from pixel import mix
 from species_tx import _segmented
 
@@ -10,20 +10,15 @@ from species_tx import _segmented
 # --------------------------------------------------------------------------- mammals
 @sprite("american_red_squirrel")
 def _(s):
-    mammal(s, "#b0582a", "#f4ece0", ears="tuft", ear_in="#d8906a", tail="squirrel", tail_col="#a04a22",
-           tail_tip="#c87a4a", head_r=(8, 7),
-           markings=lambda s: s.paint(s.m_ellipse(11, 12, 2, 1.6) | s.m_ellipse(21, 12, 2, 1.6), WHITE, within=s.last))
-    s.eye(11, 12)
-    s.eye(21, 12)
+    critter(s, "#b0582a", "#f4ece0", build="squirrel", ears="tuft", ear_in="#d8906a", tail="squirrel",
+            tail_col="#a04a22", tail_tip="#c87a4a", eye_ring=WHITE,
+            markings=lambda s, g: back_stripes(s, g, ["#2b2226"], top=g["bry"] * 1.1))  # black line along the side
 
 
 @sprite("muskrat")
 def _(s):
-    def tail(s):
-        s.path([(21, 27), (26, 28), (30, 26), (32, 22)], (1.4, 0.9), "#3a2e2a")
-    mammal(s, "#6a4a30", "#a88a6a", ears="small", ear_in="#4a3020", tail="none", muzzle="#9a7a5a",
-           nose="#2b2226", head_r=(8.5, 7), behind=tail)
-    s.px([(15, 18), (16, 18), (15, 19), (16, 19)], "#f0a030")
+    critter(s, "#6a4a30", "#a88a6a", build="beaver", ear_in="#4a3020", tail="rat", tail_col="#3a2e2a",
+            muzzle="#9a7a5a", nose="#2b2226", face=teeth)
 
 
 @sprite("northern_short_tailed_shrew")
