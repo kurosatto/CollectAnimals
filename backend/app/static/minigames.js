@@ -11,7 +11,12 @@
 // hazards sit on the beat. A bump ends the try, and the next one starts right away,
 // so you get further by learning the course. Finishing a level unlocks the next.
 // Progress stays in this browser (localStorage), nothing goes to the server.
-const MG_W = 320, MG_H = 200;
+// The game is 200 high. Its width follows the screen while you play (320 to 480), so a
+// wide phone is filled edge to edge: the scrolling games just see further ahead, and the
+// ones laid out on one screen are centred (mgOx).
+let MG_W = 320;
+const MG_H = 200, MG_W0 = 320;
+const mgOx = () => (MG_W - MG_W0) / 2;
 // The canvas has as many real pixels per game pixel as the screen shows, so text stays
 // sharp and pixel art isn't squeezed (squeezing dropped pixels and left dark specks).
 let MG_RES = 4;
@@ -323,10 +328,14 @@ function mgBuild() {
   /* Playing fills the whole screen. A phone held upright gets the game turned sideways,
      so it's as big as it can be: turn the phone to play. */
   .mg-stage.full { position:fixed; inset:0; z-index:1000; background:#0b120b; color:#e6eee6; }
-  .mg-stage.full .mg-turn { position:absolute; inset:0; padding:8px; box-sizing:border-box; display:flex;
-                            flex-direction:column; align-items:center; justify-content:center; container-type:size; }
-  .mg-stage.full canvas, .mg-stage.full .mg-bar { width:min(100cqw, (100cqh - 40px) * 1.6); }
-  .mg-stage.full canvas { border-radius:6px; }
+  .mg-stage.full .mg-turn { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+  .mg-stage.full canvas { border-radius:0; }
+  /* The buttons sit on the game, small, in the bottom corners. */
+  .mg-stage.full .mg-bar { position:absolute; left:8px; right:8px; bottom:6px; margin:0; pointer-events:none; }
+  .mg-stage.full .mg-bar > * { pointer-events:auto; }
+  .mg-stage.full .mg-bar .mg-back { font-size:.72rem; padding:2px 10px; background:rgba(0,0,0,.35); color:#fff;
+                                    border-color:rgba(255,255,255,.35); }
+  .mg-stage.full #mg-playing { display:none; }
   @media (orientation: portrait) {
     .mg-stage.full .mg-turn { inset:auto; top:0; left:100vw; width:100vh; width:100dvh; height:100vw;
                               transform-origin:top left; transform:rotate(90deg); }
@@ -389,8 +398,9 @@ function mgBuild() {
     e.preventDefault();
     if (e.repeat) return;
     // A second key while one is held is a tap of its own (two flowers at once).
-    if (mg.down && mg.run.mode === "play" && MG_MORE[mg.game.key]) { mg.taps.push(KEY_AT[e.key]); [mg.px, mg.py] = KEY_AT[e.key]; return; }
-    press(true, dirOf(e), KEY_AT[e.key]);
+    const at = [KEY_AT[e.key][0] * MG_W / MG_W0, KEY_AT[e.key][1]];
+    if (mg.down && mg.run.mode === "play" && MG_MORE[mg.game.key]) { mg.taps.push(at); [mg.px, mg.py] = at; return; }
+    press(true, dirOf(e), at);
   });
   addEventListener("keyup", (e) => { if (mg.run && keys(e)) press(false); });
   // Stop when the tab is switched away or the page is hidden; the round waits.
@@ -412,6 +422,7 @@ const mgTurned = () => document.getElementById("mg-stage")?.classList.contains("
 function mgFull(on) {
   const stage = document.getElementById("mg-stage");
   stage.classList.toggle("full", on);
+  mgFill();
   document.documentElement.style.overflow = on ? "hidden" : "";
   try { window.AndroidMinigames?.playing(on); } catch {}
   try {
@@ -422,6 +433,23 @@ function mgFull(on) {
     }
   } catch {}
 }
+
+// Sizes the game to the screen: as wide as the screen's shape allows, the whole height.
+function mgFill() {
+  const stage = document.getElementById("mg-stage"), cv = document.getElementById("mg-canvas");
+  if (!stage || !cv) return;
+  const full = stage.classList.contains("full");
+  let w = MG_W0;
+  if (full) {
+    const turned = matchMedia("(orientation: portrait)").matches;
+    const sw = turned ? innerHeight : innerWidth, sh = turned ? innerWidth : innerHeight;
+    w = Math.round(mgClamp(MG_H * sw / sh, MG_W0, 480));
+    const k = Math.min(sw / w, sh / MG_H);
+    cv.style.width = `${Math.floor(w * k)}px`; cv.style.height = `${Math.floor(MG_H * k)}px`;
+  } else { cv.style.width = ""; cv.style.height = ""; }
+  if (w !== MG_W) { MG_W = w; MG_POOL.cx = MG_W / 2; mgFit(cv); if (mg.run && !mg.raf) mgDraw(); }
+}
+addEventListener("resize", () => mgFill());
 
 // The Games tab: a grid of games, four to a row. Tapping one opens it to pick an
 // animal and a level (mgGame); mg.open remembers which, so a game you quit goes back there.
@@ -675,7 +703,7 @@ function mgClawLevel(k, list) {
 // Where a leaping thing is now (null when it's below the screen).
 function mgClawAt(o, r) {
   const tau = (o.wx - r.dist) / MG_SPEED.claw, y = o.top + MG_CLAW_G * tau * tau / 2;
-  return y > MG_H + 12 ? null : [o.x0 - o.vx * tau, y, tau];
+  return y > MG_H + 12 ? null : [o.x0 - o.vx * tau + mgOx(), y, tau];
 }
 
 // Levels are written in beats of their song, so every hazard lands on the music:
@@ -1176,7 +1204,7 @@ function mgClawStep(r) {
     if (!at) {
       if (o.good && !o.missed && o.wx < r.dist) {
         o.missed = true; r.missed++;
-        r.fx.push({ kind: "text", x: o.x0, y: MG_H - 14, text: "Got away!", life: .9 });
+        r.fx.push({ kind: "text", x: o.x0 + mgOx(), y: MG_H - 14, text: "Got away!", life: .9 });
         if (r.missed >= 3) { r.why = "missed"; return true; }
       }
       continue;
@@ -1504,11 +1532,12 @@ function mgClawDraw(c, r) {
   sky.addColorStop(0, "#f2b880"); sky.addColorStop(.55, "#9ad3ee"); sky.addColorStop(1, "#5aa0c8");
   c.fillStyle = sky; c.fillRect(0, 0, MG_W, MG_H);
   mgHills(c, r, 0, 130, 30, 70, "#6aae6e");
-  c.fillStyle = "#8a8f9e"; c.fillRect(196, 96, 70, 64); c.fillStyle = "#9fa4b2"; c.fillRect(196, 96, 70, 6);
-  c.fillStyle = "#7cc4e8"; c.fillRect(212, 96, 38, 64);
+  const ox = Math.round(mgOx());
+  c.fillStyle = "#8a8f9e"; c.fillRect(196 + ox, 96, 70, 64); c.fillStyle = "#9fa4b2"; c.fillRect(196 + ox, 96, 70, 6);
+  c.fillStyle = "#7cc4e8"; c.fillRect(212 + ox, 96, 38, 64);
   c.fillStyle = "#e8f8ff";
-  for (let i = 0; i < 5; i++) c.fillRect(215 + i * 7, 96 + ((r.phase * 70 + i * 17) % 56), 2, 8);
-  c.fillStyle = "rgba(255,255,255,.7)"; c.fillRect(206, 156, 50, 4);
+  for (let i = 0; i < 5; i++) c.fillRect(215 + ox + i * 7, 96 + ((r.phase * 70 + i * 17) % 56), 2, 8);
+  c.fillStyle = "rgba(255,255,255,.7)"; c.fillRect(206 + ox, 156, 50, 4);
   c.fillStyle = "#3a8fb8"; c.fillRect(0, 160, MG_W, MG_H - 160);
   c.fillStyle = "#7cc4e8";
   for (let x = -mgScroll(r, 0, 20) + Math.floor(r.phase * 30) % 20; x < MG_W; x += 20) c.fillRect(x, 166 + (x % 3) * 8, 8, 2);
@@ -1553,15 +1582,25 @@ function mgClawDraw(c, r) {
   }
 }
 
+// The rock's lumpy outline: how far each of its 16 points sticks out.
+const MG_ROCK = [1, .93, 1.06, 1.1, .96, .9, 1.02, 1.08, .97, 1.04, .92, .98, 1.09, 1.01, .94, 1.05];
+
 function mgPoolDraw(c, r) {
   const { cx, cy, thick } = MG_POOL, far = 240;
   const at = (a, d) => [cx + Math.cos(a) * d, cy + Math.sin(a) * d];
-  const quad = (a0, a1, d0, d1, col) => {
+  // A ring of water from angle a0 to a1, between radius d0 and d1; each edge may wobble.
+  const band = (a0, a1, d0, d1, w0, w1, col) => {
+    const n = Math.max(2, Math.ceil((a1 - a0) / .06));
     c.fillStyle = col; c.beginPath();
-    c.moveTo(...at(a0, d0)); c.lineTo(...at(a1, d0)); c.lineTo(...at(a1, d1)); c.lineTo(...at(a0, d1)); c.closePath(); c.fill();
+    for (let k = 0; k <= n; k++) { const a = a0 + (a1 - a0) * k / n; c.lineTo(...at(a, Math.max(0, d1 + w1(a)))); }
+    for (let k = n; k >= 0; k--) { const a = a0 + (a1 - a0) * k / n; c.lineTo(...at(a, Math.max(0, d0 + w0(a)))); }
+    c.closePath(); c.fill();
   };
-  // Six wedges of water in two blues, then the rings of foam washing in.
-  for (let i = 0; i < 6; i++) quad(i * MG_SIDE, (i + 1) * MG_SIDE, 0, far, i % 2 ? "#2f7fa8" : "#3a8fb8");
+  const flat = () => 0;
+  // Deep water, with soft ripples spreading out from the rock.
+  c.fillStyle = "#2f7fa8"; c.fillRect(-far, -far, MG_W + far * 2, 200 + far * 2);
+  c.strokeStyle = "#3a8fb8"; c.lineWidth = 3;
+  for (let d = (r.t * 14) % 22 + 26; d < far; d += 22) { c.beginPath(); c.arc(cx, cy, d, 0, Math.PI * 2); c.stroke(); }
   for (const o of r.things) {
     const d = mgPoolR(o, r);
     if (d > far || d + thick < 0) continue;
@@ -1573,20 +1612,41 @@ function mgPoolDraw(c, r) {
       c.fillStyle = "rgba(255,255,255,.6)"; c.fillRect(Math.round(x) - 2, Math.round(y) - 2, 2, 2);
       continue;
     }
+    // A wave rolling in: a teal swell behind a white, frothy crest that curls and wobbles.
+    const curl = a => Math.sin(a * 14 + r.t * 7 + o.wx * .05) * 1.5;
+    const back = a => Math.sin(a * 9 - r.t * 4) * 2;
     for (let i = 0; i < 6; i++) {
       if (!o.sides[i]) continue;
-      quad(i * MG_SIDE, (i + 1) * MG_SIDE, Math.max(0, d), d + thick, "#e9f6ff");
-      quad(i * MG_SIDE, (i + 1) * MG_SIDE, Math.max(0, d), Math.max(0, d) + 2, "#9fd4ec");
+      const a0 = i * MG_SIDE, a1 = (i + 1) * MG_SIDE;
+      band(a0, a1, d, d + thick + 3, curl, back, "#7cc3e0");
+      band(a0, a1, d, d + 4, curl, curl, "#f4fbff");
+      // Flecks of foam left behind the crest.
+      c.fillStyle = "#e9f6ff";
+      for (let k = 0; k < 6; k++) {
+        const a = a0 + (k + .5) * MG_SIDE / 6, [x, y] = at(a, d + 6 + ((k * 5 + i * 3) % 4));
+        if (d + 6 > 0) c.fillRect(Math.round(x) - 1, Math.round(y) - 1, 2, 2);
+      }
     }
   }
-  // The rock in the middle, a little bigger on every beat.
+  // The rock in the middle, a little bigger on every beat: a lumpy grey stone with a
+  // wet dark rim, a lighter top, barnacles and a tuft of seaweed.
   const beat = r.lvl.spb ? (r.t / r.lvl.spb) % 1 : 0, rock = 20 + (beat < .15 ? 2 : 0);
-  c.fillStyle = "#6e7380"; c.beginPath();
-  for (let i = 0; i < 6; i++) c.lineTo(...at(i * MG_SIDE, rock));
-  c.closePath(); c.fill();
-  c.fillStyle = "#8a8f9e"; c.beginPath();
-  for (let i = 0; i < 6; i++) c.lineTo(...at(i * MG_SIDE, rock - 6));
-  c.closePath(); c.fill();
+  const lump = (rad, dx, dy, col) => {
+    c.fillStyle = col; c.beginPath();
+    MG_ROCK.forEach((j, i) => { const a = i / MG_ROCK.length * Math.PI * 2; c.lineTo(cx + dx + Math.cos(a) * rad * j, cy + dy + Math.sin(a) * rad * j); });
+    c.closePath(); c.fill();
+  };
+  c.fillStyle = "rgba(233,246,255,.5)"; c.beginPath(); c.arc(cx, cy, rock + 3, 0, Math.PI * 2); c.fill();
+  lump(rock, 0, 0, "#4f545e");
+  lump(rock - 3, -1, -1, "#6e7380");
+  lump(rock - 9, -3, -3, "#8a8f9e");
+  lump(rock - 15, -5, -5, "#a3a8b5");
+  c.fillStyle = "#3f7a4a";
+  for (const [a, d] of [[2.2, rock - 4], [2.5, rock - 3], [2.8, rock - 5]]) { const [x, y] = at(a, d); c.fillRect(Math.round(x) - 1, Math.round(y) - 2, 3, 4); }
+  c.fillStyle = "#d9d4c4";
+  for (const [a, d] of [[5.3, rock - 5], [5.6, rock - 7], [.4, rock - 5], [3.9, rock - 6]]) { const [x, y] = at(a, d); c.fillRect(Math.round(x) - 1, Math.round(y) - 1, 3, 3); }
+  c.fillStyle = "#8f8a7c";
+  for (const [a, d] of [[5.3, rock - 5], [5.6, rock - 7], [.4, rock - 5], [3.9, rock - 6]]) { const [x, y] = at(a, d); c.fillRect(Math.round(x), Math.round(y), 1, 1); }
   // You, clinging to the rock with your back to the waves.
   const s = mg.species, raw = habSkin(mg.imgs[`/sprites/${encodeURIComponent(s.slug)}.png`], habLook.skins[s.slug]);
   if (!raw || !raw.complete || !raw.naturalWidth || (r.mode === "over" && Math.floor(r.phase * 12) % 3 === 0)) return;
@@ -1854,7 +1914,9 @@ MG_MORE.slide = {
 };
 
 // ---- Nectar Rush: four flowers that open on the beat --------------------------------
-const MG_FLOWERS = [52, 124, 196, 268];
+const MG_FLOWER_X = [52, 124, 196, 268];
+const MG_FLOWERS = { forEach: (fn) => MG_FLOWER_X.forEach((x, f) => fn(x + mgOx(), f)) };
+const mgFlower = (f) => MG_FLOWER_X[f] + mgOx();
 const MG_PETALS = ["#e86a8a", "#f2c14e", "#b58ae0", "#f08a4a"];
 // notes: [beat, flower, "w" for a wasp]. Notes come from a fixed pattern of beats, with
 // wasps put where no nectar is due on that flower for a while.
@@ -1885,10 +1947,11 @@ const mgNectarWin = (r) => (0.11 + (r.st.agility - 1) * .015) * MG_SPEED.nectar;
 MG_MORE.nectar = {
   misses: true,
   why: { wasp: "Ouch, a wasp!", missed: "Three flowers missed!" },
-  init(r) { r.ax = MG_FLOWERS[1]; r.to = MG_FLOWERS[1]; r.x = r.ax; r.y = 96; r.open = [0, 0, 0, 0]; },
+  init(r) { r.ax = mgFlower(1); r.to = mgFlower(1); r.x = r.ax; r.y = 96; r.open = [0, 0, 0, 0]; },
   press(r, x) {
-    const f = mgClamp(Math.floor(x / 80), 0, 3), win = mgNectarWin(r);
-    r.to = MG_FLOWERS[f]; r.open[f] = .15;
+    // The flower in that quarter of the screen.
+    const f = mgClamp(Math.floor(x / (MG_W / 4)), 0, 3), win = mgNectarWin(r);
+    r.to = mgFlower(f); r.open[f] = .15;
     let best = null;
     for (const o of r.things) {
       if (o.f !== f || o.gone || o.missed) continue;
@@ -1897,7 +1960,7 @@ MG_MORE.nectar = {
     }
     if (!best) return;
     if (!best.good) { r.stung = true; return; }
-    mgGot(r, best, MG_FLOWERS[f], 112);
+    mgGot(r, best, mgFlower(f), 112);
   },
   step(r, dt) {
     if (r.stung) return "wasp";
@@ -1908,7 +1971,7 @@ MG_MORE.nectar = {
       if (o.wx - r.dist > win) break;
       if (!o.good || o.gone || o.missed || r.dist - o.wx <= win) continue;
       o.missed = true; r.missed++;
-      r.fx.push({ kind: "text", x: MG_FLOWERS[o.f], y: 104, text: "Missed!", life: .9 });
+      r.fx.push({ kind: "text", x: mgFlower(o.f), y: 104, text: "Missed!", life: .9 });
       if (r.missed >= 3) return "missed";
     }
   },
@@ -2008,11 +2071,11 @@ MG_MORE.call = {
     }
     mgCallSfx(mgCallKind(mg.species.slug));
     r.flap = .15;
-    if (best) { mgGot(r, best, 230, 120); return; }
+    if (best) { mgGot(r, best, 230 + mgOx(), 120); return; }
     // A tap in your bar that isn't in the rhythm is a mistake. Taps between calls are fine.
     const k = MG_SPEED.call * r.lvl.spb;
     const mine = r.things.some((o) => o.good && r.dist >= o.bar * k - win && r.dist <= (o.bar + 4) * k);
-    if (mine) { r.missed++; r.wrong.push(r.dist); r.fx.push({ kind: "text", x: 230, y: 112, text: "Oops!", life: .8 }); }
+    if (mine) { r.missed++; r.wrong.push(r.dist); r.fx.push({ kind: "text", x: 230 + mgOx(), y: 112, text: "Oops!", life: .8 }); }
   },
   step(r) {
     if (r.missed >= 3) return "missed";
@@ -2022,7 +2085,7 @@ MG_MORE.call = {
       if (o.type === "m_call" && !o.heard && r.dist >= o.wx) { o.heard = true; r.heard = r.t; mgCallSfx(mgCallKind(mg.species.slug), true); }
       if (!o.good || o.gone || o.missed || r.dist - o.wx <= win) continue;
       o.missed = true; r.missed++;
-      r.fx.push({ kind: "text", x: 230, y: 112, text: "Missed!", life: .8 });
+      r.fx.push({ kind: "text", x: 230 + mgOx(), y: 112, text: "Missed!", life: .8 });
       if (r.missed >= 3) return "missed";
     }
   },
@@ -2031,14 +2094,15 @@ MG_MORE.call = {
     mgHills(c, r, 0, 150, 26, 80, "#9fb87a");
     c.fillStyle = "#6a8a4a"; c.fillRect(0, 160, MG_W, MG_H - 160);
     // Two stumps: your friend on the left, you on the right.
-    for (const x of [90, 230]) {
+    const ox = Math.round(mgOx());
+    for (const x of [90 + ox, 230 + ox]) {
       c.fillStyle = "#7a5232"; c.fillRect(x - 14, 150, 28, 18); c.fillStyle = "#d8b07a"; c.fillRect(x - 14, 148, 28, 4);
     }
     const k = MG_SPEED.call * r.lvl.spb, beat = r.dist / k;
     // The bar being played now: a row of beats with the rhythm's dots on it.
     const now = r.things.find((o) => o.good && beat < o.bar + 4 + .5) || r.things[r.things.length - 1];
     const call = now ? now.call : 0, bar = now ? now.bar - 4 : 0, yours = beat >= bar + 4 - .25;
-    const x0 = 40, w = 240, at = (t) => x0 + t / 4 * w;
+    const x0 = 40 + ox, w = 240, at = (t) => x0 + t / 4 * w;
     c.fillStyle = "rgba(20,30,24,.55)"; c.fillRect(x0 - 10, 30, w + 20, 46);
     c.font = "bold 9px system-ui, sans-serif"; c.textAlign = "left"; c.fillStyle = "#fff";
     c.fillText(yours ? "Your turn!" : "Listen…", x0 - 4, 42);
@@ -2060,10 +2124,10 @@ MG_MORE.call = {
     // Notes rising from whoever is calling.
     const sing = r.t - r.heard < .25, tapped = r.flap > 0;
     c.fillStyle = "#fff"; c.font = "bold 12px system-ui, sans-serif"; c.textAlign = "center";
-    if (sing) c.fillText("♪", 100, 112 - (r.t - r.heard) * 40);
-    if (tapped) c.fillText("♪", 240, 112 - (.15 - r.flap) * 60);
-    mgAnimal(c, r, 90, 150, ["idle", "walk"], { frame: sing ? r.phase * 12 : 0, flip: true, still: true });
-    mgAnimal(c, r, 230, 150 - (tapped ? 2 : 0), ["idle", "walk"], { frame: tapped ? r.phase * 12 : 0, flip: false, still: true });
+    if (sing) c.fillText("♪", 100 + ox, 112 - (r.t - r.heard) * 40);
+    if (tapped) c.fillText("♪", 240 + ox, 112 - (.15 - r.flap) * 60);
+    mgAnimal(c, r, 90 + ox, 150, ["idle", "walk"], { frame: sing ? r.phase * 12 : 0, flip: true, still: true });
+    mgAnimal(c, r, 230 + ox, 150 - (tapped ? 2 : 0), ["idle", "walk"], { frame: tapped ? r.phase * 12 : 0, flip: false, still: true });
   },
 };
 
