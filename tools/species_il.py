@@ -1,7 +1,8 @@
 """Sprites for the Illinois species that aren't on an earlier state's list."""
 from __future__ import annotations
 
-from archetypes import BLACK, WHITE, bird, butterfly, duck, fish, frog, mammal, snake, sprite, turtle, wader
+from archetypes import (BLACK, WHITE, back_stripes, bird, butterfly, critter, duck, fish, flecks, frog, snake,
+                        sprite, turtle, wader)
 from pixel import mix
 from species_va import _woodlouse
 
@@ -10,16 +11,11 @@ from species_va import _woodlouse
 @sprite("thirteen_lined_ground_squirrel")
 def _(s):
     # Rows of pale stripes and dots down its back.
-    def stripes(s):
-        h = s.last
-        s.paint(s.m_line(9, 12, 13, 12) | s.m_line(18, 12, 22, 12), "#f0e2c4", within=h)
-    mammal(s, "#9a6e42", "#f0e2c4", ears="small", ear_in="#d0a080", tail="long", tail_col="#8a5e36",
-           head_r=(8, 7), markings=stripes)
-    for x in (9, 13, 18, 22):
-        s.paint(s.m_line(x, 20, x, 27), "#f0e2c4")
-        s.paint(s.m_line(x + 1, 20, x + 1, 27), "#5a3a1e")
-    s.paint(s.m_px([(11, 21), (11, 24), (20, 21), (20, 24), (16, 22), (16, 25)]), "#f0e2c4")
-    s.eye(11, 12, mirror=True)
+    def stripes(s, g):
+        back_stripes(s, g, ["#f0e2c4", "#5a3a1e", "#f0e2c4", "#5a3a1e", "#f0e2c4"], top=0.1)
+        flecks(s, g["body"] & s.m_ellipse(g["bx"], g["by"] - 1, g["brx"], 2.2), "#f0e2c4", every=4)
+    critter(s, "#9a6e42", "#f0e2c4", build="ground", ear_in="#d0a080", tail="long", tail_col="#8a5e36",
+            markings=stripes)
 
 
 @sprite("silver_haired_bat")
@@ -100,16 +96,12 @@ def _(s):
 # --------------------------------------------------------------------------- amphibians
 @sprite("northern_leopard_frog")
 def _(s):
-    frog(s, "#5aa04a", "#f4f0e0", tympanum="#c8b88a")
-    s.paint(s.m_px([(x + dx, y + dy) for x, y in ((13, 11), (18, 11), (8, 19), (22, 19), (8, 23), (22, 23),
-                                                  (3, 26), (27, 26)) for dx in (0, 1) for dy in (0, 1)]),
-            "#1a3a1e")
+    frog(s, "#5aa04a", "#f4f0e0", tympanum="#c8b88a", spots=7, spot_big=True, spot_col="#1a3a1e", ridges="#b8d890")
 
 
 @sprite("boreal_chorus_frog")
 def _(s):
-    frog(s, "#8a8a6a", "#f0ecd8", stripe="#3a3a2a", pads=True)
-    s.paint(s.m_line(13, 12, 13, 18) | s.m_line(19, 12, 19, 18), "#4a4a34")
+    frog(s, "#8a8a6a", "#f0ecd8", build="tree", mask="#3a3a2a", pads=True, lines="#4a4a34")
 
 
 # --------------------------------------------------------------------------- fish

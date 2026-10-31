@@ -3,8 +3,9 @@ earlier state's list: desert lizards and toads, Sky Island birds, chipmunks and
 antelope squirrels, and the bugs of the creosote flats."""
 from __future__ import annotations
 
-from archetypes import (BLACK, EYE, WHITE, bird, butterfly, dragonfly, duck, fish, frog, grasshopper,
-                        lizard, mammal, mantis, quad, snail_shell, spider_top, sprite, wader)
+from archetypes import (BLACK, EYE, WHITE, back_stripes, bird, butterfly, critter, dragonfly, duck, face_stripes,
+                        fish, flecks, frog, grasshopper, lizard, mantis, quad, snail_shell, spider_top, sprite,
+                        wader)
 from pixel import mix
 from species_household import cockroach
 from species_tx import _segmented
@@ -13,30 +14,19 @@ from species_va import _woodlouse
 
 # --------------------------------------------------------------------------- mammals
 def _ground_squirrel(s, fur, light, *, tail_col, tail_tip=None, tail="squirrel", side=None, ears="small"):
-    """Front-view squirrel with an optional pale stripe down each side and a pale eye ring."""
-    mammal(s, fur, light, ears=ears, ear_in=mix(fur, "#f0b0a0", 0.5), tail=tail, tail_col=tail_col,
-           tail_tip=tail_tip, head_r=(8, 7))
-    if side:
-        s.paint(s.m_line(10, 20, 10, 27) | s.m_line(22, 20, 22, 27), side)
-        s.paint(s.m_line(11, 20, 11, 26) | s.m_line(21, 20, 21, 26) | s.m_line(9, 21, 9, 26)
-                | s.m_line(23, 21, 23, 26), mix(fur, "#000000", 0.35))
-    s.paint(s.m_ellipse(11.5, 12.5, 2.4, 2.4) | s.m_ellipse(20.5, 12.5, 2.4, 2.4), mix(light, WHITE, 0.4))
-    s.eye(11, 12, mirror=True)
+    """Ground squirrel with an optional pale stripe along each side and a pale eye ring."""
+    critter(s, fur, light, build="ground", ears=ears, ear_in=mix(fur, "#f0b0a0", 0.5),
+            tail="bushy" if tail == "squirrel" else tail, tail_col=tail_col, tail_tip=tail_tip,
+            eye_ring=mix(light, WHITE, 0.4),
+            markings=(lambda s, g: back_stripes(s, g, [side], top=g["bry"] * 0.9)) if side else None)
 
 
 def _chipmunk(s, fur, light, dark, pale, *, head=None, tail_col=None):
-    """Chipmunk: dark and pale stripes on the face and down the body."""
-    def stripes(s):
-        h = s.last
-        s.paint(s.m_line(8, 12, 13, 12) | s.m_line(18, 12, 23, 12), dark, within=h)
-        s.paint(s.m_line(8, 14, 13, 14) | s.m_line(18, 14, 23, 14), pale, within=h)
-        s.paint(s.m_line(16, 6, 16, 10) | s.m_line(15, 6, 15, 10), dark, within=h)
-    mammal(s, fur, light, ears="small", ear_in=mix(fur, "#f0c0a0", 0.5), tail="long",
-           tail_col=tail_col or mix(fur, "#000000", 0.15), head=head, head_r=(8, 7), markings=stripes)
-    s.paint(s.m_line(9, 20, 9, 26) | s.m_line(10, 20, 10, 27) | s.m_line(22, 20, 22, 26)
-            | s.m_line(21, 20, 21, 27), dark)
-    s.paint(s.m_line(11, 20, 11, 26) | s.m_line(20, 20, 20, 26), pale)
-    s.eye(11, 12, mirror=True)
+    """Chipmunk: dark and pale stripes on the face and down the back."""
+    critter(s, fur, light, build="ground", ear_in=mix(fur, "#f0c0a0", 0.5), tail="long",
+            tail_col=tail_col or mix(fur, "#000000", 0.15), head=head,
+            markings=lambda s, g: back_stripes(s, g, [dark, fur, dark, pale, dark], top=0.2),
+            face=lambda s, g: face_stripes(s, g, dark, pale))
 
 
 @sprite("round_tailed_ground_squirrel")
@@ -49,7 +39,6 @@ def _(s):
 def _(s):
     # Grizzled gray with one white stripe each side and a gray tail edged in white.
     _ground_squirrel(s, "#9a9088", "#f0ece6", tail_col="#6e6862", tail_tip="#f4f2ee", side=WHITE)
-    s.px([(13, 22), (19, 24), (15, 26)], "#7a7068")
 
 
 @sprite("white_tailed_antelope_squirrel")
@@ -82,29 +71,25 @@ def _(s):
 
 @sprite("arizona_gray_squirrel")
 def _(s):
-    mammal(s, "#8e9098", "#f4f2ee", ears="small", ear_in="#d6b0a8", tail="squirrel", tail_col="#7a7c84",
-           tail_tip=WHITE, head_r=(8, 7))
-    s.px([(9, 11), (22, 11)], "#c8a080")
+    critter(s, "#8e9098", "#f4f2ee", build="squirrel", ear_in="#d6b0a8", tail="squirrel", tail_col="#7a7c84",
+            tail_tip=WHITE, markings=lambda s, g: back_stripes(s, g, ["#b0957a"], top=0.2))
 
 
 @sprite("aberts_squirrel")
 def _(s):
     # Tall tufted ears, a rusty stripe down the back and a dark line along the side.
-    mammal(s, "#6e7078", "#f4f2ee", ears="tuft", ear_in="#d6b0a8", tail="squirrel", tail_col="#5e6068",
-           tail_tip=WHITE, head_r=(8, 7))
-    s.paint(s.m_line(9, 22, 10, 27) | s.m_line(23, 22, 22, 27), "#2b2630")
+    critter(s, "#6e7078", "#f4f2ee", build="squirrel", ears="tuft", ear_in="#d6b0a8", tail="squirrel",
+            tail_col="#5e6068", tail_tip=WHITE,
+            markings=lambda s, g: (back_stripes(s, g, ["#9a5a3a"], top=0.1),
+                                   back_stripes(s, g, ["#2b2630"], top=g["bry"] * 1.1)))
 
 
 @sprite("gunnisons_prairie_dog")
 def _(s):
     # Like the black-tailed, but its short tail is tipped white and its face darker.
-    mammal(s, "#c4a072", "#f0e2c8", ears="small", ear_in="#a87a50", tail="short", tail_col="#c4a072",
-           tail_tip="#f4ece0", head_r=(8, 7), nose="#5a3a2a", feet="#8a6a4a")
-    s.paint(s.m_px([(10, 11), (11, 10), (20, 10), (21, 11)]), "#5a4430")
-    s.px([(13, 20), (19, 21), (16, 19), (11, 24)], "#8a6a48")
-    s.ellipse(14.5, 22, 1.5, 1.2, "#b08a5c")
-    s.ellipse(17.5, 22, 1.5, 1.2, "#b08a5c")
-    s.eye(11, 12, mirror=True)
+    critter(s, "#c4a072", "#f0e2c8", build="marmot", ear_in="#a87a50", tail="short", tail_col="#c4a072",
+            tail_tip="#f4ece0", nose="#5a3a2a", feet="#8a6a4a", eye_ring="#5a4430",
+            markings=lambda s, g: flecks(s, g["body"], "#8a6a48", every=7))
 
 
 @sprite("white_nosed_coati")
@@ -630,101 +615,73 @@ def _(s):
 @sprite("sonoran_desert_toad")
 def _(s):
     # Huge, smooth and olive, with long glands behind the eyes and a white wart at each jaw.
-    frog(s, "#6a6e3e", "#ece4cc", spots=[(13, 21), (19, 21), (16, 24)])
-    s.paint(s.m_ellipse(5, 15, 3, 1.5, rot=-20) | s.m_ellipse(27, 15, 3, 1.5, rot=20), "#8a8a52")
-    s.px([(3, 18), (28, 18)], "#f8f4ea")
+    frog(s, "#6a6e3e", "#ece4cc", build="toad", spots=3, parotoid="#8a8a52", under_eye="#f8f4ea")
 
 
 @sprite("red_spotted_toad")
 def _(s):
     # A small flat gray toad sprinkled with red-orange warts.
-    frog(s, "#9a948a", "#ece8e0")
-    s.paint(s.m_px([(10, 20), (13, 18), (19, 18), (22, 20), (16, 22), (12, 24), (20, 24), (8, 24), (24, 23),
-                    (14, 13), (18, 13)]), "#e05a3a")
+    frog(s, "#9a948a", "#ece8e0", build="toad", spots=11, spot_col="#e05a3a")
 
 
 @sprite("couchs_spadefoot")
 def _(s):
     # Bright yellow-green with dark blotches and gold cat-like eyes.
-    frog(s, "#b8c050", "#f4f0dc")
-    s.paint(s.m_ellipse(12, 20, 2, 1.5) | s.m_ellipse(20, 21, 2.2, 1.5) | s.m_ellipse(16, 24, 1.8, 1.3)
-            | s.m_ellipse(9, 24, 1.5, 1.2) | s.m_ellipse(23, 24, 1.5, 1.2) | s.m_ellipse(16, 13, 2, 1.2), "#4a4a24")
-    s.px([(9, 11), (10, 11), (11, 11), (21, 11), (22, 11), (23, 11)], "#d8b030")
+    frog(s, "#b8c050", "#f4f0dc", build="toad", spots=6, spot_big=True, spot_col="#4a4a24", iris="#d8b030", cat=True)
 
 
 @sprite("canyon_tree_frog")
 def _(s):
     # Rock-colored and blotchy, with toe pads for climbing canyon walls.
-    frog(s, "#a49a88", "#f0ece0", pads=True,
-         spots=[(11, 20), (14, 22), (18, 19), (21, 22), (16, 25), (9, 24), (23, 25), (13, 18)])
-    s.paint(s.m_ellipse(14, 21, 1.6, 1.2) | s.m_ellipse(20, 23, 1.6, 1.2), "#6a7a5a")
+    frog(s, "#a49a88", "#f0ece0", build="tree", pads=True, spots=6, spot_big=True, spot_col="#6a7a5a")
 
 
 @sprite("woodhouses_toad")
 def _(s):
     # Brown and warty with a pale stripe down the middle of the back.
-    frog(s, "#9a7e5a", "#f0e8d4", spots=[(10, 20), (13, 22), (19, 21), (22, 23), (12, 25), (20, 25), (8, 24)])
-    s.paint(s.m_line(16, 12, 16, 27), "#ecdcb4")
-    s.paint(s.m_ellipse(5, 14, 2, 1.4) | s.m_ellipse(27, 14, 2, 1.4), "#7a6040")
+    frog(s, "#9a7e5a", "#f0e8d4", build="toad", spots=7, dorsal="#ecdcb4", parotoid="#7a6040")
 
 
 @sprite("great_plains_toad")
 def _(s):
     # Big dark green-gray blotches, each outlined in pale cream.
-    frog(s, "#c8c0a4", "#f4f0e4")
-    for x, y in ((11, 20), (20, 20), (12, 25), (19, 25), (16, 14)):
-        s.paint(s.m_ellipse(x, y, 2.4, 1.8), "#f4f0e0")
-        s.paint(s.m_ellipse(x, y, 1.7, 1.2), "#5a6a4a")
+    frog(s, "#c8c0a4", "#f4f0e4", build="toad", spots=5, spot_big=True, spot_col="#5a6a4a", warts="#f4f0e0")
 
 
 @sprite("chiricahua_leopard_frog")
 def _(s):
     # Green-brown with many small dark spots and tiny raised bumps.
-    frog(s, "#7a8a4a", "#f0ecd8", tympanum="#8a7a4a",
-         spots=[(10, 20), (12, 22), (14, 19), (17, 21), (20, 19), (22, 22), (11, 25), (15, 25), (19, 24),
-                (23, 25), (8, 23), (16, 17)])
-    s.px([(13, 21), (18, 23), (21, 20)], "#a8b06a")
+    frog(s, "#7a8a4a", "#f0ecd8", tympanum="#8a7a4a", spots=12, warts="#a8b06a")
 
 
 @sprite("relict_leopard_frog")
 def _(s):
     # A plain olive-brown leopard frog with faint, fuzzy spots.
-    frog(s, "#8a7a52", "#f0ecd8", tympanum="#7a6a42", spots=[(12, 20), (19, 21), (15, 24), (22, 24)])
-    s.paint(s.m_line(9, 17, 12, 27) | s.m_line(23, 17, 20, 27), "#a08e60")
+    frog(s, "#8a7a52", "#f0ecd8", tympanum="#7a6a42", spots=4, spot_col="#6a5c3c", ridges="#a08e60")
 
 
 @sprite("chihuahuan_green_toad")
 def _(s):
     # Small, bright green, laced with a black network.
-    frog(s, "#7ab83a", "#f0f0dc")
-    net = (s.m_line(9, 19, 14, 22) | s.m_line(14, 22, 20, 19) | s.m_line(20, 19, 24, 23)
-           | s.m_line(14, 22, 13, 27) | s.m_line(20, 19, 19, 26) | s.m_line(12, 14, 20, 14)
-           | s.m_line(9, 19, 7, 24))
-    s.paint(net, "#1e2a14", within=s.m_ellipse(16, 22, 9.5, 7) | s.m_ellipse(16, 15, 11, 6.5))
+    frog(s, "#7ab83a", "#f0f0dc", build="toad", spots=14, spot_col="#1e2a14", lines="#1e2a14")
 
 
 @sprite("arizona_toad")
 def _(s):
     # Pale and plain, pinkish tan with a light band between the eyes and few warts.
-    frog(s, "#c8ae8a", "#f6f0e4", spots=[(12, 21), (20, 21), (16, 24)])
-    s.paint(s.m_line(12, 12, 20, 12) | s.m_line(12, 13, 20, 13), "#ecdcc0")
+    frog(s, "#c8ae8a", "#f6f0e4", build="toad", spots=3, crown="#ecdcc0")
 
 
 @sprite("great_basin_spadefoot")
 def _(s):
     # Gray-olive with pale stripes making an hourglass, and cat-like eyes.
-    frog(s, "#8a8a6a", "#f0ece0")
-    s.paint(s.m_line(10, 17, 14, 22) | s.m_line(14, 22, 10, 27) | s.m_line(22, 17, 18, 22)
-            | s.m_line(18, 22, 22, 27), "#c8c4a0")
-    s.px([(9, 11), (10, 11), (11, 11), (21, 11), (22, 11), (23, 11)], "#d8b030")
+    frog(s, "#8a8a6a", "#f0ece0", build="toad", lines="#c8c4a0", iris="#d8b030", cat=True)
 
 
 @sprite("amargosa_toad")
 def _(s):
     # Olive with dark spots and a pale stripe down the back, found in one desert river.
-    frog(s, "#8a8a5a", "#f0ecd8", spots=[(10, 20), (13, 23), (19, 20), (22, 23), (12, 26), (20, 26)])
-    s.paint(s.m_line(16, 14, 16, 26), "#e0dcb0")
-    s.paint(s.m_ellipse(11, 21, 1.2, 1.2) | s.m_ellipse(21, 21, 1.2, 1.2), "#3a3a24")
+    frog(s, "#8a8a5a", "#f0ecd8", build="toad", spots=6, spot_col="#3a3a24", dorsal="#e0dcb0")
 
 
 # --------------------------------------------------------------------------- insects and other small animals

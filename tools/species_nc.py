@@ -1,10 +1,10 @@
 """Sprites for the North Carolina species that aren't also on the California list."""
 from __future__ import annotations
 
-from archetypes import (BLACK, EYE, PINK, WHITE, alligator, beetle_top, bird, butterfly, crab, dolphin,
-                        duck, fish, frog, goose, grasshopper, horseshoe_crab, hummingbird, jelly, lizard,
-                        mammal, mantis, owl, quad, sea_turtle, snail_shell, snake, spider_top, sprite, turkey,
-                        turtle, vulture, wader)
+from archetypes import (BLACK, EYE, PINK, WHITE, alligator, back_stripes, beetle_top, bird, butterfly, crab,
+                        critter, dolphin, duck, face_stripes, fish, frog, goose, grasshopper, horseshoe_crab,
+                        hummingbird, jelly, lizard, mantis, owl, quad, sea_turtle, snail_shell, snake, spider_top,
+                        sprite, teeth, turkey, turtle, vulture, wader)
 from pixel import mix
 
 
@@ -42,65 +42,41 @@ def _(s):
 
 @sprite("eastern_gray_squirrel")
 def _(s):
-    mammal(s, "#94908e", "#f4f1ea", ears="small", ear_in="#c8a080", tail="squirrel", tail_col="#8a8480",
-           tail_tip="#e8e4dc", head_r=(8, 7),
-           markings=lambda s: s.paint(s.m_ellipse(16, 8, 4, 2), "#a88a6a", within=s.last))
+    critter(s, "#94908e", "#f4f1ea", build="squirrel", ear_in="#c8a080", tail="squirrel", tail_col="#8a8480",
+            tail_tip="#e8e4dc", markings=lambda s, g: back_stripes(s, g, ["#a8988a"], top=0.3))
 
 
 @sprite("eastern_chipmunk")
 def _(s):
-    def stripes(s):
-        h = s.last
-        s.paint(s.m_line(8, 12, 13, 12) | s.m_line(18, 12, 23, 12), "#4a3424", within=h)
-        s.paint(s.m_line(8, 14, 13, 14) | s.m_line(18, 14, 23, 14), "#f4e8d4", within=h)
-        s.paint(s.m_line(16, 6, 16, 10) | s.m_line(15, 6, 15, 10), "#4a3424", within=h)
-    mammal(s, "#c08048", "#f4e8d4", ears="small", ear_in="#e0b090", tail="long", tail_col="#a06a3a",
-           head_r=(8, 7), markings=stripes)
-    s.paint(s.m_line(10, 21, 10, 26) | s.m_line(21, 21, 21, 26), "#4a3424")
-    s.paint(s.m_line(11, 21, 11, 26) | s.m_line(20, 21, 20, 26), "#f4e8d4")
-    s.eye(11, 12, mirror=True)
+    critter(s, "#c08048", "#f4e8d4", build="ground", ear_in="#e0b090", tail="long", tail_col="#a06a3a",
+            markings=lambda s, g: back_stripes(s, g, ["#4a3424", "#9a7a62", "#4a3424", "#f4e8d4", "#4a3424"], top=0.2),
+            face=lambda s, g: face_stripes(s, g, "#4a3424", "#f4e8d4"))
 
 
 @sprite("groundhog")
 def _(s):
-    mammal(s, "#7a5c40", "#b89a78", ears="small", ear_in="#4a3626", tail="short", tail_col="#5a4230",
-           muzzle="#c8b298", nose="#2b2226", head_r=(9, 7.5), feet="#3a2a22")
-    s.ellipse(16, 24, 7.5, 5.8, "#7a5c40")
-    s.ellipse(16, 25.5, 4.5, 3.6, "#9a7c5c")
-    s.ellipse(16, 13, 9, 7.5, "#7a5c40", edge=True)
-    s.ellipse(16, 17, 4.2, 2.8, "#c8b298")
-    s.px([(15, 15), (16, 15)], "#2b2226")
-    s.px([(15, 18), (16, 18)], WHITE)
-    s.eye(11, 12, mirror=True)
-    s.blush(9, 15, mirror=True)
+    critter(s, "#7a5c40", "#9a7c5c", build="marmot", ear_in="#4a3626", tail="short", tail_col="#5a4230",
+            muzzle="#c8b298", nose="#2b2226", feet="#3a2a22", face=lambda s, g: teeth(s, g, WHITE))
 
 
 @sprite("eastern_cottontail")
 def _(s):
-    mammal(s, "#9e8466", "#f5efe4", ears="long", ear_in="#efb6b0", tail="cotton", tail_col=WHITE,
-           nose="#e08a96", head_r=(8, 7),
-           markings=lambda s: s.paint(s.m_ellipse(16, 7.5, 1.6, 1), "#c8763a", within=s.last))
+    def nape(s, g):  # the rusty patch behind the head
+        s.paint(s.m_ellipse(g["hx"] + 3, g["hy"] + 1, 2, 1.6), "#c8763a", within=g["body"])
+    critter(s, "#9e8466", "#f5efe4", build="rabbit", ears="long", ear_in="#efb6b0", tail="cotton", tail_col=WHITE,
+            nose="#e08a96", markings=nape)
 
 
 @sprite("marsh_rabbit")
 def _(s):
-    def ears(s):
-        s.ellipse(11.5, 5.5, 2.3, 4.2, "#5e4a3c", rot=-10, mirror=True)
-        s.ellipse(11.5, 5.8, 0.9, 2.9, "#c89490", rot=-10, mirror=True, shade=False)
-    mammal(s, "#5e4a3c", "#a8957e", ears="none", tail="short", tail_col="#5e4a3c", tail_tip="#a8957e",
-           nose="#d88a90", head_r=(8.5, 7.5), behind=ears, feet="#4a3a30")
+    critter(s, "#5e4a3c", "#a8957e", build="rabbit", ears="long", ear_in="#c89490", tail="short", tail_col="#5e4a3c",
+            tail_tip="#a8957e", nose="#d88a90", feet="#4a3a30")
 
 
 @sprite("american_beaver")
 def _(s):
-    def paddle(s):
-        m = s.ellipse(25.5, 22, 4, 7, "#4a3a40", rot=15)
-        for y in (17, 20, 23, 26):
-            s.paint(s.m_line(21, y, 30, y + 2), "#3a2c32", within=m)
-    mammal(s, "#7a4e30", "#a87a54", ears="small", ear_in="#4a3020", tail="none", muzzle="#a87a54",
-           nose="#2b2226", head_r=(9, 7.5), behind=paddle, belly=False)
-    s.px([(15, 18), (16, 18), (15, 19), (16, 19), (15, 20), (16, 20)], "#f0a030")
-    s.px([(15, 18)], "#f8d070")
+    critter(s, "#7a4e30", "#a87a54", build="beaver", ear_in="#4a3020", tail="paddle", tail_col="#4a3a40",
+            muzzle="#a87a54", nose="#2b2226", belly=False, face=teeth)
 
 
 @sprite("common_bottlenose_dolphin")
@@ -443,42 +419,39 @@ def _(s):
 # --------------------------------------------------------------------------- amphibians
 @sprite("green_frog")
 def _(s):
-    frog(s, "#7a8a4a", "#f0ecd0", tympanum="#5a6a34", spots=[(12, 23), (20, 22), (9, 20)])
-    s.paint(s.m_ellipse(16, 18, 9, 1.6), "#6ab04a")
+    frog(s, "#7a8a4a", "#f0ecd0", tympanum="#5a6a34", spots=3, lip="#6ab04a", ridges="#8aa058")
 
 
 @sprite("green_treefrog")
 def _(s):
-    frog(s, "#5ac04a", "#f4f4e0", pads=True)
-    s.paint(s.m_line(2, 17, 8, 22) | s.m_line(29, 17, 23, 22), "#f4f4e0")
+    frog(s, "#5ac04a", "#f4f4e0", build="tree", pads=True, side="#f4f4e0")
 
 
 @sprite("copes_gray_treefrog")
 def _(s):
-    frog(s, "#8a8c88", "#e8e8e0", pads=True, spots=[(11, 21), (15, 19), (19, 22), (22, 19), (13, 24)])
-    s.paint(s.m_ellipse(6, 26, 2, 1.5) | s.m_ellipse(26, 26, 2, 1.5), "#f0b030")
-    s.px([(8, 15), (23, 15)], WHITE)
+    frog(s, "#8a8c88", "#e8e8e0", build="tree", pads=True, spots=5, thigh="#a8a49a", under_eye=WHITE,
+         markings=lambda s, g: s.paint(s.m_ellipse(g["bx"] + 3, g["by"] + 3, 2, 1), "#f0b030", within=g["body"]))
 
 
 @sprite("spring_peeper")
 def _(s):
-    frog(s, "#c89a6a", "#f2e6d0", pads=True)
-    s.paint(s.m_line(12, 19, 20, 25) | s.m_line(20, 19, 12, 25), "#7a5034")
+    # The dark X on its back.
+    def x_mark(s, g):
+        x, y = g["bx"] + 1, g["by"] - g["bry"] * 0.45
+        s.paint(s.m_line(x - 2, y - 1, x + 2, y + 1) | s.m_line(x - 2, y + 1, x + 2, y - 1), "#7a5034",
+                within=g["body"])
+    frog(s, "#c89a6a", "#f2e6d0", build="tree", pads=True, markings=x_mark)
 
 
 @sprite("american_toad")
 def _(s):
-    frog(s, "#8a6a4a", "#e8dcc4", spots=[(10, 20), (13, 22), (19, 21), (22, 23), (16, 24), (8, 24), (24, 21)])
-    s.paint(s.m_px([(11, 19), (14, 21), (18, 20), (21, 22), (12, 15), (20, 15)]), "#c8a070")
-    s.paint(s.m_ellipse(5, 14, 2, 1.4) | s.m_ellipse(27, 14, 2, 1.4), "#a07a50")
+    frog(s, "#8a6a4a", "#e8dcc4", build="toad", spots=7, warts="#c8a070", parotoid="#a07a50")
 
 
 @sprite("pine_barrens_treefrog")
 def _(s):
-    frog(s, "#5aa84a", "#f2eee0", pads=True)
-    s.paint(s.m_line(2, 16, 7, 22) | s.m_line(29, 16, 24, 22), "#7a4a6a")
-    s.paint(s.m_line(3, 15, 8, 21) | s.m_line(28, 15, 23, 21), WHITE)
-    s.px([(6, 27), (25, 27)], "#f0a030")
+    frog(s, "#5aa84a", "#f2eee0", build="tree", pads=True, side="#7a4a6a",
+         markings=lambda s, g: s.paint(s.m_ellipse(g["bx"] + 4, g["by"] + 2.5, 1.6, 1), "#f0a030", within=g["body"]))
 
 
 @sprite("eastern_newt")

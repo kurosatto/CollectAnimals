@@ -1,8 +1,8 @@
 """Sprites for the Florida species that aren't on an earlier state's list."""
 from __future__ import annotations
 
-from archetypes import (BLACK, WHITE, bird, butterfly, dolphin, dragonfly, duck, fish, frog, lizard,
-                        mammal, snake, spider_top, sprite, turtle, wader)
+from archetypes import (BLACK, WHITE, bird, butterfly, critter, dolphin, dragonfly, duck, fish, flecks, frog,
+                        lizard, snake, spider_top, sprite, turtle, wader)
 from pixel import mix
 from species_tx import _segmented
 
@@ -33,9 +33,9 @@ def _(s):
 
 @sprite("hispid_cotton_rat")
 def _(s):
-    mammal(s, "#7a6448", "#c8bca8", ears="round", ear_in="#d8a8a0", tail="rat", tail_col="#6a5a4a",
-           muzzle="#a89478", nose="#e88a90", head_r=(8, 7), feet="#9a8a7a",
-           markings=lambda s: s.paint(s.m_px([(12, 9), (19, 9), (15, 7), (17, 11)]), "#5a4a34", within=s.last))
+    critter(s, "#7a6448", "#c8bca8", build="vole", ears="round", ear_in="#d8a8a0", tail="rat", tail_col="#6a5a4a",
+            muzzle="#a89478", nose="#e88a90", feet="#9a8a7a",
+            markings=lambda s, g: flecks(s, g["body"], "#5a4a34", every=4))
 
 
 @sprite("mexican_free_tailed_bat")
@@ -280,32 +280,27 @@ def _(s):
 # --------------------------------------------------------------------------- amphibians
 @sprite("cuban_tree_frog")
 def _(s):
-    frog(s, "#c8c4a8", "#f4f0e4", pads=True, spots=[(12, 21), (19, 20), (16, 24), (21, 24)])
+    frog(s, "#c8c4a8", "#f4f0e4", build="tree", pads=True, spots=4, spot_big=True)
 
 
 @sprite("southern_toad")
 def _(s):
-    frog(s, "#8a5a3a", "#e8d8c0", spots=[(11, 21), (14, 19), (19, 21), (16, 24), (21, 24), (9, 24)])
-    s.px([(8, 7), (9, 6), (22, 6), (23, 7)], "#5a3a24")
+    frog(s, "#8a5a3a", "#e8d8c0", build="toad", spots=6, crown="#5a3a24", parotoid="#7a4e32")
 
 
 @sprite("cane_toad")
 def _(s):
-    frog(s, "#8a6a40", "#e8dcb8", tympanum="#6a4a2a",
-         spots=[(11, 21), (14, 19), (19, 21), (16, 24), (21, 24), (9, 24), (23, 19), (13, 25)])
-    s.ellipse(4, 15, 2, 2.6, "#a8844e")
-    s.ellipse(27, 15, 2, 2.6, "#a8844e")
+    frog(s, "#8a6a40", "#e8dcb8", build="toad", tympanum="#6a4a2a", spots=8, parotoid="#a8844e")
 
 
 @sprite("greenhouse_frog")
 def _(s):
-    frog(s, "#9a5a3a", "#e8d4c0", stripe="#c8945a", spots=[(13, 21), (19, 21)])
+    frog(s, "#9a5a3a", "#e8d4c0", mask="#c8945a", spots=2)
 
 
 @sprite("southern_cricket_frog")
 def _(s):
-    frog(s, "#7a8a5a", "#f0ecd8", stripe="#3a4a2a", spots=[(13, 21), (19, 22)])
-    s.paint(s.m_poly([(14, 11), (16, 13), (18, 11), (16, 9)]), "#a8402a")
+    frog(s, "#7a8a5a", "#f0ecd8", mask="#3a4a2a", spots=2, crown="#a8402a")
 
 
 # --------------------------------------------------------------------------- fish

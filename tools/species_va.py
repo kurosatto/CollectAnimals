@@ -84,16 +84,12 @@ def _(s):
 # --------------------------------------------------------------------------- amphibians
 @sprite("fowlers_toad")
 def _(s):
-    frog(s, "#9a8a6a", "#f0ece0", spots=[(10, 20), (13, 22), (19, 21), (22, 23), (16, 24), (8, 24), (24, 21)])
-    s.paint(s.m_line(16, 14, 16, 26), "#e8e0c8")  # pale stripe down the back
-    s.paint(s.m_ellipse(5, 14, 2, 1.4) | s.m_ellipse(27, 14, 2, 1.4), "#7a6a4a")
+    frog(s, "#9a8a6a", "#f0ece0", build="toad", spots=7, dorsal="#e8e0c8", parotoid="#7a6a4a")
 
 
 @sprite("northern_cricket_frog")
 def _(s):
-    frog(s, "#7a8a4a", "#efe8d4", spots=[(12, 22), (20, 22)])
-    s.paint(s.m_poly([(13, 13), (19, 13), (16, 17)]), "#3a4a2a")  # the dark triangle between the eyes
-    s.paint(s.m_line(12, 19, 20, 19), "#9ab05a")
+    frog(s, "#7a8a4a", "#efe8d4", spots=2, crown="#3a4a2a", dorsal="#9ab05a")
 
 
 # --------------------------------------------------------------------------- fish

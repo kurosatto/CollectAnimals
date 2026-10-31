@@ -6,9 +6,9 @@ import math
 
 import numpy as np
 
-from archetypes import (BLACK, EYE, S, WHITE, _far_wing, _ripples, _wing_beat, beetle_top, bird, butterfly,
-                        dolphin, duck, fish, frog, jelly, lizard, mammal, pinniped, quad, sea_turtle, sprite,
-                        star, wader)
+from archetypes import (BLACK, EYE, S, WHITE, _far_wing, _ripples, _wing_beat, back_stripes, beetle_top, bird,
+                        butterfly, critter, dolphin, duck, fish, flecks, frog, jelly, lizard, pinniped, quad,
+                        sea_turtle, sprite, star, wader)
 from pixel import _XS, _YS, mix
 from species_tx import _segmented
 
@@ -28,7 +28,6 @@ def _(s):
 def _(s):
     # The biggest sea lion: golden-tan with a thick neck and tiny ears.
     pinniped(s, "#c8985a", "#e0bc84", ears=True, belly=False, flipper="#6a4a30")
-    s.paint(s.m_ellipse(16, 18.5, 7, 2.2), "#b8884e")
 
 
 @sprite("caribou")
@@ -55,20 +54,16 @@ def _(s):
 @sprite("arctic_ground_squirrel")
 def _(s):
     # Tawny-orange face, gray-brown back sprinkled with white spots.
-    def face(s):
-        s.paint(s.m_ellipse(16, 15, 7, 4), "#d0884a", within=s.last)
-    mammal(s, "#9a7a5a", "#e8c8a0", ears="small", ear_in="#c8906a", tail="short", tail_col="#8a6a4a",
-           head="#c08050", head_r=(8, 7), markings=face)
-    s.px([(11, 21), (14, 20), (18, 20), (21, 22), (13, 23), (19, 23), (16, 21)], "#f0e6d6")
+    critter(s, "#9a7a5a", "#e8c8a0", build="ground", ear_in="#c8906a", tail="long", tail_col="#8a6a4a",
+            head="#c08050", markings=lambda s, g: flecks(s, g["body"] & s.m_ellipse(g["bx"], g["by"] - 1.5, g["brx"], 2.5),
+                                                        "#f0e6d6", every=4))
 
 
 @sprite("snowshoe_hare")
 def _(s):
     # Winter white, with black-tipped ears and big snowshoe feet.
-    mammal(s, "#f4f2ee", "#ffffff", ears="long", ear_in="#efb6b0", tail="cotton", tail_col=WHITE,
-           nose="#e08a96", head_r=(8, 7), feet="#e2e0dc")
-    s.paint(s.m_ellipse(10.8, -0.2, 3, 2.4) | s.m_ellipse(21.2, -0.2, 3, 2.4), BLACK)
-    s.ellipse(11, 29.3, 3.6, 1.5, "#e6e4e0", mirror=True)
+    critter(s, "#f4f2ee", "#ffffff", build="hare", ears="long", ear_in="#efb6b0", ear_tip=BLACK, tail="cotton",
+            tail_col=WHITE, nose="#e08a96", feet="#e2e0dc")
 
 
 @sprite("orca")
@@ -102,14 +97,11 @@ def _(s):
 @sprite("hoary_marmot")
 def _(s):
     # Silver-gray with a black and white face and dark feet.
-    def face(s):
-        s.paint(s.m_poly([(8, 9), (24, 9), (22, 13), (10, 13)]), "#2b2630", within=s.last)
-        s.paint(s.m_ellipse(16, 8, 3, 1.2), WHITE, within=s.last)
-    mammal(s, "#b8b4ae", "#efece6", ears="small", ear_in="#6a6460", tail="short", tail_col="#7a5a3e",
-           muzzle=WHITE, head="#d0ccc4", feet="#2b2630", head_r=(9, 7.5), markings=face)
-    s.paint(s.m_ellipse(16, 21, 6, 1.5), "#8a8680")
-    s.eye(11, 12, color="#120c10", mirror=True)
-    s.px([(11, 12), (20, 12)], WHITE)
+    def mask(s, g):
+        s.paint(s.m_ellipse(g["hx"], g["hy"] - 0.6, g["hrx"] + 3, 1.4), "#2b2630", within=g["head_m"])
+    critter(s, "#b8b4ae", "#efece6", build="marmot", ear_in="#6a6460", tail="short", tail_col="#7a5a3e",
+            muzzle=WHITE, head="#d0ccc4", feet="#2b2630", eye_col="#120c10", face=mask,
+            markings=lambda s, g: back_stripes(s, g, ["#8a8680"], top=0.4, width=1.6))
 
 
 @sprite("thinhorn_sheep")
@@ -536,39 +528,25 @@ def _(s):
 @sprite("western_toad")
 def _(s):
     # Warty gray-green toad with a pale stripe down its back.
-    frog(s, "#7a8060", "#ecead8", spots=[(10, 20), (13, 22), (19, 21), (22, 23), (16, 24), (8, 24), (24, 21),
-                                          (12, 15), (20, 15)])
-    s.paint(s.m_line(16, 13, 16, 26), "#ece6c8")
-    s.paint(s.m_ellipse(4.5, 14, 2.2, 1.4) | s.m_ellipse(27.5, 14, 2.2, 1.4), "#9a8a5a")
-    s.px([(11, 21), (20, 22), (14, 23)], "#c88a4a")
+    frog(s, "#7a8060", "#ecead8", build="toad", spots=9, dorsal="#ece6c8", parotoid="#9a8a5a", warts="#c88a4a")
 
 
 @sprite("columbia_spotted_frog")
 def _(s):
     # Brown with black spots, a pale jaw stripe and a salmon-orange belly.
-    frog(s, "#8a6a40", "#f0905a", tympanum="#7a5a34",
-         spots=[(10, 20), (13, 22), (19, 21), (22, 23), (16, 24), (12, 14), (19, 15), (8, 24), (24, 22)])
-    s.paint(s.m_px([(10, 20), (13, 22), (19, 21), (22, 23), (16, 24), (12, 14), (19, 15), (8, 24), (24, 22),
-                    (11, 20), (14, 22), (20, 21), (23, 23), (13, 14), (20, 15)]), "#2e2218")
-    s.paint(s.m_line(4, 17, 9, 18) | s.m_line(27, 17, 22, 18), "#e8d0a0")
+    frog(s, "#8a6a40", "#f0905a", tympanum="#7a5a34", spots=9, spot_big=True, spot_col="#2e2218", lip="#e8d0a0")
 
 
 @sprite("pacific_chorus_frog")
 def _(s):
     # A small bright green treefrog with a black mask stripe through each eye.
-    frog(s, "#6ab84a", "#f2f0dc", pads=True)
-    s.paint(s.m_poly([(1, 13), (6, 11), (6, 13), (3, 16)]) | s.m_poly([(31, 13), (26, 11), (26, 13), (29, 16)]),
-            "#2b2a26")
-    s.paint(s.m_poly([(14, 12), (18, 12), (16, 15)]), "#3a7a2a")
+    frog(s, "#6ab84a", "#f2f0dc", build="tree", pads=True, mask="#2b2a26", crown="#3a7a2a")
 
 
 @sprite("northern_red_legged_frog")
 def _(s):
     # Brown back with a few dark flecks and red-washed legs and belly.
-    frog(s, "#9a7048", "#f0b090", tympanum="#7a5434", spots=[(12, 21), (20, 22), (16, 24)])
-    s.paint(s.m_ellipse(6, 27, 5, 3, rot=-15) | s.m_ellipse(26, 27, 5, 3, rot=15)
-            | s.m_ellipse(11, 29.5, 2.3, 1.4) | s.m_ellipse(21, 29.5, 2.3, 1.4), "#d8503a")
-    s.paint(s.m_line(4, 17, 9, 18) | s.m_line(27, 17, 22, 18), "#e8c8a0")
+    frog(s, "#9a7048", "#f0b090", tympanum="#7a5434", spots=3, thigh="#d8503a", lip="#e8c8a0")
 
 
 @sprite("long_toed_salamander")

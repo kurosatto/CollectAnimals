@@ -3,8 +3,8 @@
 states reuse them."""
 from __future__ import annotations
 
-from archetypes import (BLACK, EYE, WHITE, beetle_top, bird, butterfly, crab, dragonfly, duck, fish, frog,
-                        lizard, mammal, quad, snake, sprite, wader)
+from archetypes import (BLACK, EYE, WHITE, beetle_top, bird, butterfly, crab, critter, dragonfly, duck, fish,
+                        flecks, frog, lizard, quad, snake, sprite, teeth, wader)
 from pixel import mix
 
 
@@ -62,39 +62,26 @@ def _(s):
 
 @sprite("coypu")
 def _(s):
-    def teeth(s):
-        s.px([(15, 18), (16, 18), (15, 19), (16, 19), (14, 18), (17, 18)], "#f08a2a")
-    mammal(s, "#7a5a3c", "#b89a7c", ears="small", ear_in="#5a3e2a", tail="rat", tail_col="#5a4232",
-           muzzle="#d8ccc0", nose="#3a2a2a", head_r=(8.5, 7), feet="#3a2a22")
-    teeth(s)
+    critter(s, "#7a5a3c", "#b89a7c", build="beaver", ear_in="#5a3e2a", tail="rat", tail_col="#5a4232",
+            muzzle="#d8ccc0", nose="#3a2a2a", feet="#3a2a22", face=lambda s, g: teeth(s, g, "#f08a2a"))
 
 
 @sprite("rock_squirrel")
 def _(s):
-    def mottle(s):
-        s.paint(s.m_px([(12, 9), (19, 10), (14, 7), (20, 8)]), "#8a8078", within=s.last)
-    mammal(s, "#9a8a7a", "#ece4d8", ears="small", ear_in="#c8a080", tail="squirrel", tail_col="#8a7a6c",
-           tail_tip="#d8d0c4", head_r=(8, 7), markings=mottle)
-    s.paint(s.m_px([(13, 22), (19, 23), (15, 26), (18, 21)]), "#7a6a5c")
+    critter(s, "#9a8a7a", "#ece4d8", build="squirrel", ear_in="#c8a080", tail="squirrel", tail_col="#8a7a6c",
+            tail_tip="#d8d0c4", markings=lambda s, g: flecks(s, g["body"], "#7a6a5c", every=6))
 
 
 @sprite("black_tailed_prairie_dog")
 def _(s):
-    mammal(s, "#c8a070", "#f0e0c4", ears="small", ear_in="#a87a50", tail="short", tail_col="#c8a070",
-           tail_tip=BLACK, head_r=(8, 7), nose="#5a3a2a", feet="#8a6a4a")
-    # sits up on its haunches, paws together
-    s.ellipse(14.5, 22, 1.5, 1.2, "#b08a5c")
-    s.ellipse(17.5, 22, 1.5, 1.2, "#b08a5c")
+    critter(s, "#c8a070", "#f0e0c4", build="marmot", ear_in="#a87a50", tail="short", tail_col="#c8a070",
+            tail_tip=BLACK, nose="#5a3a2a", feet="#8a6a4a")
 
 
 @sprite("swamp_rabbit")
 def _(s):
-    def ears(s):
-        s.ellipse(11.5, 5, 2.4, 4.8, "#7a6450", rot=-10, mirror=True)
-        s.ellipse(11.5, 5.3, 0.9, 3.4, "#d8a8a0", rot=-10, mirror=True, shade=False)
-    mammal(s, "#7a6450", "#e8dccc", ears="none", tail="cotton", tail_col=WHITE, nose="#d88a90",
-           head_r=(8.5, 7.5), behind=ears, feet="#5a4838")
-    s.ellipse(16, 8.5, 1.6, 1.0, "#a8886a")
+    critter(s, "#7a6450", "#e8dccc", build="rabbit", ears="long", ear_in="#d8a8a0", tail="cotton", tail_col=WHITE,
+            nose="#d88a90", feet="#5a4838")
 
 
 # --------------------------------------------------------------------------- birds
@@ -356,35 +343,32 @@ def _(s):
 # --------------------------------------------------------------------------- amphibians
 @sprite("gulf_coast_toad")
 def _(s):
-    frog(s, "#8a6a4a", "#e8dcc4", stripe="#f0e4c4",
-         spots=[(12, 21), (19, 20), (15, 24), (21, 25), (10, 25), (17, 18)])
+    frog(s, "#8a6a4a", "#e8dcc4", build="toad", side="#f0e4c4", spots=6, parotoid="#7a5a3a")
 
 
 @sprite("texas_toad")
 def _(s):
-    frog(s, "#a89a7a", "#f0e8d8", spots=[(11, 21), (14, 19), (19, 21), (16, 24), (21, 24), (9, 24), (23, 20)])
+    frog(s, "#a89a7a", "#f0e8d8", build="toad", spots=7)
 
 
 @sprite("blanchards_cricket_frog")
 def _(s):
-    frog(s, "#8a7a5a", "#f0ecd8", stripe="#5a8a4a", spots=[(13, 21), (19, 21), (16, 24)])
-    s.paint(s.m_poly([(14, 11), (16, 13), (18, 11), (16, 9)]), "#4a3a2a")
+    frog(s, "#8a7a5a", "#f0ecd8", mask="#5a8a4a", spots=3, crown="#4a3a2a")
 
 
 @sprite("southern_leopard_frog")
 def _(s):
-    frog(s, "#6aa05a", "#f4f0e0", tympanum="#d8c8a0",
-         spots=[(11, 20), (14, 22), (18, 19), (21, 23), (16, 25), (9, 24), (23, 20), (13, 18)])
+    frog(s, "#6aa05a", "#f4f0e0", tympanum="#d8c8a0", spots=8, spot_big=True, ridges="#d8e0a0", lip="#f4f0e0")
 
 
 @sprite("rio_grande_leopard_frog")
 def _(s):
-    frog(s, "#8a9a6a", "#f0ecd8", spots=[(11, 20), (15, 22), (19, 20), (21, 24), (13, 25), (17, 18)])
+    frog(s, "#8a9a6a", "#f0ecd8", spots=6, spot_big=True, ridges="#c8c8a0")
 
 
 @sprite("squirrel_tree_frog")
 def _(s):
-    frog(s, "#7ab85a", "#eef0d8", pads=True, spots=[(14, 20), (19, 22)])
+    frog(s, "#7ab85a", "#eef0d8", build="tree", pads=True, spots=2)
 
 
 # --------------------------------------------------------------------------- fish

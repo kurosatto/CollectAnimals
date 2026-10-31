@@ -2,9 +2,9 @@
 that aren't on an earlier state's list."""
 from __future__ import annotations
 
-from archetypes import (BLACK, EYE, WHITE, _fluke, beetle_top, bird, butterfly, crab, duck, fish, frog,
-                        grasshopper, lizard, mammal, owl, quad, snail_shell, snake, spider_top, sprite, turtle,
-                        wader)
+from archetypes import (BLACK, EYE, WHITE, _fluke, back_stripes, beetle_top, bird, butterfly, crab, critter, duck,
+                        face_stripes, fish, flecks, frog, grasshopper, lizard, owl, quad, snail_shell, snake,
+                        spider_top, sprite, turtle, wader)
 from pixel import mix
 from species_tx import _segmented
 from species_va import _woodlouse
@@ -12,19 +12,10 @@ from species_va import _woodlouse
 
 # --------------------------------------------------------------------------- mammals
 def _chipmunk(s, fur, dark, light, tail_col, *, head=None):
-    """Front-facing chipmunk with stripes on the face and down the sides."""
-    def stripes(s):
-        h = s.last
-        s.paint(s.m_line(8, 12, 13, 12) | s.m_line(18, 12, 23, 12), dark, within=h)
-        s.paint(s.m_line(8, 14, 13, 14) | s.m_line(18, 14, 23, 14), light, within=h)
-        s.paint(s.m_line(8, 10, 13, 10) | s.m_line(18, 10, 23, 10), light, within=h)
-        s.paint(s.m_line(16, 6, 16, 10) | s.m_line(15, 6, 15, 10), dark, within=h)
-    mammal(s, fur, light, ears="small", ear_in="#e0b090", tail="long", tail_col=tail_col, head=head,
-           head_r=(8, 7), markings=stripes)
-    s.paint(s.m_line(10, 21, 10, 26) | s.m_line(21, 21, 21, 26) | s.m_line(12, 20, 12, 22) | s.m_line(19, 20, 19, 22),
-            dark)
-    s.paint(s.m_line(11, 21, 11, 26) | s.m_line(20, 21, 20, 26), light)
-    s.eye(11, 12, mirror=True)
+    """Chipmunk with stripes on the face and down the back."""
+    critter(s, fur, light, build="ground", ear_in="#e0b090", tail="long", tail_col=tail_col, head=head,
+            markings=lambda s, g: back_stripes(s, g, [dark, light, dark, light, dark], top=0.2),
+            face=lambda s, g: face_stripes(s, g, dark, light))
 
 
 @sprite("townsends_chipmunk")
@@ -48,76 +39,69 @@ def _(s):
 @sprite("douglass_squirrel")
 def _(s):
     # Dark olive-brown back, rusty-orange belly, white eye rings and tufted ears.
-    mammal(s, "#5e4a34", "#e0904a", ears="tuft", ear_in="#a87050", tail="squirrel", tail_col="#4e3c2a",
-           tail_tip="#c88a4a", head_r=(8, 7), muzzle="#e8a868")
-    s.paint(s.m_ellipse(16, 25.5, 4.7, 4.2) & ~s.m_ellipse(16, 25.5, 4, 3.5), "#2b2226")  # black side line
-    s.paint(s.m_ellipse(11.5, 12.5, 2, 2), WHITE, mirror=True)
-    s.eye(11, 12, mirror=True)
+    critter(s, "#5e4a34", "#e0904a", build="squirrel", ears="tuft", ear_in="#a87050", tail="squirrel",
+            tail_col="#4e3c2a", tail_tip="#c88a4a", muzzle="#e8a868", eye_ring=WHITE,
+            markings=lambda s, g: back_stripes(s, g, ["#2b2226"], top=g["bry"] * 1.0))  # black side line
 
 
 @sprite("douglass_ground_squirrel")
 def _(s):
     # Speckled gray-brown with a dark wedge between the shoulders.
-    mammal(s, "#8a7a68", "#e8e0d2", ears="small", ear_in="#c8a080", tail="squirrel", tail_col="#7a6c5c",
-           tail_tip="#d8d0c4", head_r=(8, 7),
-           markings=lambda s: s.paint(s.m_ellipse(16, 8, 4, 2), "#5a4a3c", within=s.last))
-    s.paint(s.m_poly([(10, 19), (22, 19), (16, 24)]), "#3a2e26", within=s.m_ellipse(16, 24, 7, 5.5))
-    s.paint(s.m_px([(11, 22), (21, 22), (13, 26), (19, 26), (10, 25), (22, 25)]), "#e8e0d2")
+    def wedge(s, g):
+        s.paint(s.m_ellipse(g["bx"] - g["brx"] * 0.45, g["by"] - g["bry"] * 0.6, 2.6, 1.6), "#3a2e26", within=g["body"])
+        flecks(s, g["body"], "#e8e0d2", every=6)
+    critter(s, "#8a7a68", "#e8e0d2", build="ground", ear_in="#c8a080", tail="bushy", tail_col="#7a6c5c",
+            tail_tip="#d8d0c4", markings=wedge)
 
 
 @sprite("cascade_golden_mantled_ground_squirrel")
 def _(s):
     # A coppery head (the "mantle") and a white side stripe edged in black; no face stripes.
-    mammal(s, "#9a8a74", "#ece4d4", ears="small", ear_in="#d8a070", tail="long", tail_col="#8a7a64",
-           head="#c8783a", head_r=(8, 7))
-    for x, d in ((10, -1), (21, 1)):
-        s.paint(s.m_line(x, 20, x, 27), WHITE)
-        s.paint(s.m_line(x - d, 20, x - d, 27) | s.m_line(x + d, 20, x + d, 27), "#2b2226")
-    s.paint(s.m_ellipse(11.5, 12.5, 2, 2), "#f4e8d0", mirror=True)
-    s.eye(11, 12, mirror=True)
+    critter(s, "#9a8a74", "#ece4d4", build="ground", ear_in="#d8a070", tail="long", tail_col="#8a7a64",
+            head="#c8783a", eye_ring="#f4e8d0",
+            markings=lambda s, g: back_stripes(s, g, ["#2b2226", WHITE, "#2b2226"], top=1.0))
 
 
 @sprite("beldings_ground_squirrel")
 def _(s):
     # Plain gray-buff with a reddish-brown band down its back; a short tail.
-    mammal(s, "#b0a088", "#ece2d0", ears="small", ear_in="#c89a80", tail="short", tail_col="#a07050",
-           tail_tip="#c88a5a", head_r=(8, 7),
-           markings=lambda s: s.paint(s.m_ellipse(16, 7, 3, 2), "#a0704a", within=s.last))
-    s.paint(s.m_ellipse(16, 20.5, 3, 2.4), "#a0704a", within=s.m_ellipse(16, 24, 7, 5.5))
+    critter(s, "#b0a088", "#ece2d0", build="ground", ear_in="#c89a80", tail="short", tail_col="#a07050",
+            tail_tip="#c88a5a", markings=lambda s, g: back_stripes(s, g, ["#a0704a", "#a0704a"], top=0.1))
 
 
 @sprite("franklins_ground_squirrel")
 def _(s):
     # Gray head and a bushy gray tail on a brown, speckled body.
-    mammal(s, "#8a7458", "#e0d6c4", ears="small", ear_in="#c0a088", tail="bushy", tail_col="#8a8884",
-           tail_tip="#b0aeaa", head="#8e8c88", head_r=(8, 7))
-    s.paint(s.m_px([(11, 21), (14, 20), (18, 20), (21, 21), (10, 24), (22, 24), (12, 27), (20, 27)]), "#3a2e24")
-    s.paint(s.m_px([(12, 22), (19, 21), (20, 25), (11, 26)]), "#e0d6c4")
+    def specks(s, g):
+        flecks(s, g["body"], "#3a2e24", every=5)
+        flecks(s, g["body"], "#e0d6c4", every=7, seed=3)
+    critter(s, "#8a7458", "#e0d6c4", build="ground", ear_in="#c0a088", tail="bushy", tail_col="#8a8884",
+            tail_tip="#b0aeaa", head="#8e8c88", markings=specks)
 
 
 @sprite("bushy_tailed_woodrat")
 def _(s):
     # The packrat: big round ears, big eyes and a fluffy squirrel-like tail.
-    mammal(s, "#9a8670", WHITE, ears="round", ear_in="#e8b0b0", tail="bushy", tail_col="#8a7660",
-           head_r=(8.5, 7), nose="#d88a96")
-    s.eye(10, 11, size=3, mirror=True)
+    critter(s, "#9a8670", WHITE, build="mouse", ears="big", ear_in="#e8b0b0", tail="bushy", tail_col="#8a7660",
+            nose="#d88a96", eye_size=3)
 
 
 @sprite("american_badger")
 def _(s):
     # Grizzled gray, low and wide, with a white stripe up its nose and black cheek badges.
-    def face(s):
-        h = s.last
-        s.paint(s.m_ellipse(8, 14.5, 2.8, 3) | s.m_ellipse(24, 14.5, 2.8, 3), "#f4ece0", within=h)
-        s.paint(s.m_ellipse(12.5, 10.5, 1.8, 5, rot=-25) | s.m_ellipse(19.5, 10.5, 1.8, 5, rot=25), "#2b2226",
-                within=h)
-        s.paint(s.m_ellipse(6.5, 11, 1.4, 2) | s.m_ellipse(25.5, 11, 1.4, 2), "#2b2226", within=h)
-        s.paint(s.m_line(15, 4, 15, 15) | s.m_line(16, 4, 16, 15), WHITE, within=h)
-    mammal(s, "#8a8278", "#e8e0d0", ears="small", ear_in="#4a3e36", tail="short", tail_col="#a89a80",
-           head_r=(11, 7), markings=face, feet="#2b2226", blush=False)
-    s.paint(s.m_px([(11, 20), (14, 19), (18, 19), (21, 20), (12, 23), (20, 23)]), "#c8c0b0")
-    s.eye(11, 11, mirror=True)
-    s.px([(9, 30), (11, 30), (19, 30), (21, 30)], "#e8e0d0")  # big digging claws
+    def face(s, g):
+        h = g["head_m"]
+        if g["view"] == "front":
+            s.paint(s.m_ellipse(g["hx"] + 0.6, g["hy"] - 0.5, 1.0, g["hry"] + 1), WHITE, within=h)
+            return
+        d = 1 if g["view"] == "back" else -1
+        s.paint(s.m_ellipse(g["hx"] - d * 1.5, g["hy"] + 1.2, 1.6, 1.4), "#2b2226", within=h)
+        s.paint(s.m_path([(g["hx"] - d * 1, g["hy"] - g["hry"] + 0.3), (g["hx"] + d * 4, g["hy"] - 0.8)], 0.7), WHITE, within=h)
+    def back(s, g):
+        flecks(s, g["body"], "#c8c0b0", every=5)
+        back_stripes(s, g, [WHITE], top=0.1, width=0.8)
+    critter(s, "#8a8278", "#e8e0d0", build="badger", ear_in="#4a3e36", tail="short", tail_col="#a89a80",
+            feet="#2b2226", blush=False, face=face, markings=back)
 
 
 @sprite("american_bison")
@@ -424,11 +408,7 @@ def _(s):
 @sprite("plains_leopard_frog")
 def _(s):
     # Tan-green with dark spots, a white upper lip and pale back ridges that break near the hips.
-    frog(s, "#9a9a5a", "#f4f0e0", tympanum="#7a7a40",
-         spots=[(11, 20), (14, 22), (18, 19), (21, 23), (16, 25), (9, 24), (23, 20), (13, 18)])
-    s.paint(s.m_line(9, 18, 9, 22) | s.m_line(23, 18, 23, 22) | s.m_line(10, 23, 11, 25) | s.m_line(22, 23, 21, 25),
-            "#e8e0a8")
-    s.paint(s.m_line(3, 17, 9, 18) | s.m_line(23, 18, 29, 17), WHITE)
+    frog(s, "#9a9a5a", "#f4f0e0", tympanum="#7a7a40", spots=8, spot_big=True, ridges="#e8e0a8", lip=WHITE)
 
 
 @sprite("western_narrow_mouthed_toad")
