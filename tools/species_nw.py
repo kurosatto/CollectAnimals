@@ -408,11 +408,7 @@ def _(s):
 @sprite("plains_leopard_frog")
 def _(s):
     # Tan-green with dark spots, a white upper lip and pale back ridges that break near the hips.
-    frog(s, "#9a9a5a", "#f4f0e0", tympanum="#7a7a40",
-         spots=[(11, 20), (14, 22), (18, 19), (21, 23), (16, 25), (9, 24), (23, 20), (13, 18)])
-    s.paint(s.m_line(9, 18, 9, 22) | s.m_line(23, 18, 23, 22) | s.m_line(10, 23, 11, 25) | s.m_line(22, 23, 21, 25),
-            "#e8e0a8")
-    s.paint(s.m_line(3, 17, 9, 18) | s.m_line(23, 18, 29, 17), WHITE)
+    frog(s, "#9a9a5a", "#f4f0e0", tympanum="#7a7a40", spots=8, spot_big=True, ridges="#e8e0a8", lip=WHITE)
 
 
 @sprite("western_narrow_mouthed_toad")

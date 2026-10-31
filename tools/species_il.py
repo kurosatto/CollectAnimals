@@ -96,16 +96,12 @@ def _(s):
 # --------------------------------------------------------------------------- amphibians
 @sprite("northern_leopard_frog")
 def _(s):
-    frog(s, "#5aa04a", "#f4f0e0", tympanum="#c8b88a")
-    s.paint(s.m_px([(x + dx, y + dy) for x, y in ((13, 11), (18, 11), (8, 19), (22, 19), (8, 23), (22, 23),
-                                                  (3, 26), (27, 26)) for dx in (0, 1) for dy in (0, 1)]),
-            "#1a3a1e")
+    frog(s, "#5aa04a", "#f4f0e0", tympanum="#c8b88a", spots=7, spot_big=True, spot_col="#1a3a1e", ridges="#b8d890")
 
 
 @sprite("boreal_chorus_frog")
 def _(s):
-    frog(s, "#8a8a6a", "#f0ecd8", stripe="#3a3a2a", pads=True)
-    s.paint(s.m_line(13, 12, 13, 18) | s.m_line(19, 12, 19, 18), "#4a4a34")
+    frog(s, "#8a8a6a", "#f0ecd8", build="tree", mask="#3a3a2a", pads=True, lines="#4a4a34")
 
 
 # --------------------------------------------------------------------------- fish

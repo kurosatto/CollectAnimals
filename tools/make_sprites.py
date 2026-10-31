@@ -655,7 +655,7 @@ def _(s):
 # --------------------------------------------------------------------------- amphibians
 @sprite("sierran_treefrog")
 def _(s):
-    frog(s, "#5aaa4a", "#eef0d8", stripe="#2b3a2a", pads=True)
+    frog(s, "#5aaa4a", "#eef0d8", build="tree", mask="#2b3a2a", pads=True)
 
 
 @sprite("california_newt")
@@ -679,8 +679,7 @@ def _(s):
 
 @sprite("american_bullfrog")
 def _(s):
-    frog(s, "#6a8a3a", "#f0ecc8", tympanum="#4a5a2a", spots=[(13, 22), (20, 23), (9, 20), (23, 20)])
-    s.paint(s.m_ellipse(16, 13, 6, 3), "#7aa04a")
+    frog(s, "#6a8a3a", "#f0ecc8", head="#7aa04a", tympanum="#4a5a2a", spots=4)
 
 
 @sprite("arboreal_salamander")

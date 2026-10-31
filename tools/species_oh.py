@@ -42,9 +42,10 @@ def _(s):
 # --------------------------------------------------------------------------- amphibians
 @sprite("gray_treefrog")
 def _(s):
-    frog(s, "#9aa090", "#f4f0e4", pads=True)
-    s.paint(s.m_poly([(12, 17), (16, 14), (20, 17), (18, 20), (14, 20)]), "#5a6050")  # the dark star on its back
-    s.paint(s.m_px([(5, 13), (27, 13)]), WHITE)  # white spot under each eye
+    # The dark star on its back and a white spot under each eye.
+    frog(s, "#9aa090", "#f4f0e4", build="tree", pads=True, under_eye=WHITE,
+         markings=lambda s, g: s.paint(s.m_ellipse(g["bx"], g["by"] - g["bry"] * 0.4, 2.6, 1.4, g["brot"]), "#5a6050",
+                                       within=g["body"]))
 
 
 # --------------------------------------------------------------------------- fish

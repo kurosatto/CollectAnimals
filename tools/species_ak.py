@@ -528,39 +528,25 @@ def _(s):
 @sprite("western_toad")
 def _(s):
     # Warty gray-green toad with a pale stripe down its back.
-    frog(s, "#7a8060", "#ecead8", spots=[(10, 20), (13, 22), (19, 21), (22, 23), (16, 24), (8, 24), (24, 21),
-                                          (12, 15), (20, 15)])
-    s.paint(s.m_line(16, 13, 16, 26), "#ece6c8")
-    s.paint(s.m_ellipse(4.5, 14, 2.2, 1.4) | s.m_ellipse(27.5, 14, 2.2, 1.4), "#9a8a5a")
-    s.px([(11, 21), (20, 22), (14, 23)], "#c88a4a")
+    frog(s, "#7a8060", "#ecead8", build="toad", spots=9, dorsal="#ece6c8", parotoid="#9a8a5a", warts="#c88a4a")
 
 
 @sprite("columbia_spotted_frog")
 def _(s):
     # Brown with black spots, a pale jaw stripe and a salmon-orange belly.
-    frog(s, "#8a6a40", "#f0905a", tympanum="#7a5a34",
-         spots=[(10, 20), (13, 22), (19, 21), (22, 23), (16, 24), (12, 14), (19, 15), (8, 24), (24, 22)])
-    s.paint(s.m_px([(10, 20), (13, 22), (19, 21), (22, 23), (16, 24), (12, 14), (19, 15), (8, 24), (24, 22),
-                    (11, 20), (14, 22), (20, 21), (23, 23), (13, 14), (20, 15)]), "#2e2218")
-    s.paint(s.m_line(4, 17, 9, 18) | s.m_line(27, 17, 22, 18), "#e8d0a0")
+    frog(s, "#8a6a40", "#f0905a", tympanum="#7a5a34", spots=9, spot_big=True, spot_col="#2e2218", lip="#e8d0a0")
 
 
 @sprite("pacific_chorus_frog")
 def _(s):
     # A small bright green treefrog with a black mask stripe through each eye.
-    frog(s, "#6ab84a", "#f2f0dc", pads=True)
-    s.paint(s.m_poly([(1, 13), (6, 11), (6, 13), (3, 16)]) | s.m_poly([(31, 13), (26, 11), (26, 13), (29, 16)]),
-            "#2b2a26")
-    s.paint(s.m_poly([(14, 12), (18, 12), (16, 15)]), "#3a7a2a")
+    frog(s, "#6ab84a", "#f2f0dc", build="tree", pads=True, mask="#2b2a26", crown="#3a7a2a")
 
 
 @sprite("northern_red_legged_frog")
 def _(s):
     # Brown back with a few dark flecks and red-washed legs and belly.
-    frog(s, "#9a7048", "#f0b090", tympanum="#7a5434", spots=[(12, 21), (20, 22), (16, 24)])
-    s.paint(s.m_ellipse(6, 27, 5, 3, rot=-15) | s.m_ellipse(26, 27, 5, 3, rot=15)
-            | s.m_ellipse(11, 29.5, 2.3, 1.4) | s.m_ellipse(21, 29.5, 2.3, 1.4), "#d8503a")
-    s.paint(s.m_line(4, 17, 9, 18) | s.m_line(27, 17, 22, 18), "#e8c8a0")
+    frog(s, "#9a7048", "#f0b090", tympanum="#7a5434", spots=3, thigh="#d8503a", lip="#e8c8a0")
 
 
 @sprite("long_toed_salamander")

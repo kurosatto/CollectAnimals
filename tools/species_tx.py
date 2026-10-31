@@ -343,35 +343,32 @@ def _(s):
 # --------------------------------------------------------------------------- amphibians
 @sprite("gulf_coast_toad")
 def _(s):
-    frog(s, "#8a6a4a", "#e8dcc4", stripe="#f0e4c4",
-         spots=[(12, 21), (19, 20), (15, 24), (21, 25), (10, 25), (17, 18)])
+    frog(s, "#8a6a4a", "#e8dcc4", build="toad", side="#f0e4c4", spots=6, parotoid="#7a5a3a")
 
 
 @sprite("texas_toad")
 def _(s):
-    frog(s, "#a89a7a", "#f0e8d8", spots=[(11, 21), (14, 19), (19, 21), (16, 24), (21, 24), (9, 24), (23, 20)])
+    frog(s, "#a89a7a", "#f0e8d8", build="toad", spots=7)
 
 
 @sprite("blanchards_cricket_frog")
 def _(s):
-    frog(s, "#8a7a5a", "#f0ecd8", stripe="#5a8a4a", spots=[(13, 21), (19, 21), (16, 24)])
-    s.paint(s.m_poly([(14, 11), (16, 13), (18, 11), (16, 9)]), "#4a3a2a")
+    frog(s, "#8a7a5a", "#f0ecd8", mask="#5a8a4a", spots=3, crown="#4a3a2a")
 
 
 @sprite("southern_leopard_frog")
 def _(s):
-    frog(s, "#6aa05a", "#f4f0e0", tympanum="#d8c8a0",
-         spots=[(11, 20), (14, 22), (18, 19), (21, 23), (16, 25), (9, 24), (23, 20), (13, 18)])
+    frog(s, "#6aa05a", "#f4f0e0", tympanum="#d8c8a0", spots=8, spot_big=True, ridges="#d8e0a0", lip="#f4f0e0")
 
 
 @sprite("rio_grande_leopard_frog")
 def _(s):
-    frog(s, "#8a9a6a", "#f0ecd8", spots=[(11, 20), (15, 22), (19, 20), (21, 24), (13, 25), (17, 18)])
+    frog(s, "#8a9a6a", "#f0ecd8", spots=6, spot_big=True, ridges="#c8c8a0")
 
 
 @sprite("squirrel_tree_frog")
 def _(s):
-    frog(s, "#7ab85a", "#eef0d8", pads=True, spots=[(14, 20), (19, 22)])
+    frog(s, "#7ab85a", "#eef0d8", build="tree", pads=True, spots=2)
 
 
 # --------------------------------------------------------------------------- fish

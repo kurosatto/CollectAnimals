@@ -578,12 +578,8 @@ def _(s):
 
 @sprite("eastern_spadefoot")
 def _(s):
-    # Smooth brown toad with two yellow lines curving down its back and cat-like golden eyes.
-    frog(s, "#6a5a3a", "#ece4d4", spots=[(12, 23), (20, 24)])
-    s.paint(s.m_path([(11, 14), (12, 18), (11, 22), (12, 26)], 0.6), "#e8d060", mirror=True)
-    s.paint(s.m_ellipse(10, 10.5, 2.6, 2.6), "#e8c040", mirror=True)
-    s.paint(s.m_line(10, 9, 10, 12), EYE, mirror=True)
-    s.ellipse(5, 30, 1.6, 0.9, "#2b2226", mirror=True)  # the black "spade" on each hind foot
+    # Smooth brown toad with yellow lines curving down its back and cat-like golden eyes.
+    frog(s, "#6a5a3a", "#ece4d4", build="toad", spots=2, lines="#e8d060", iris="#e8c040", cat=True)
 
 
 @sprite("eastern_narrow_mouthed_toad")

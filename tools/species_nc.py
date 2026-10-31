@@ -419,42 +419,39 @@ def _(s):
 # --------------------------------------------------------------------------- amphibians
 @sprite("green_frog")
 def _(s):
-    frog(s, "#7a8a4a", "#f0ecd0", tympanum="#5a6a34", spots=[(12, 23), (20, 22), (9, 20)])
-    s.paint(s.m_ellipse(16, 18, 9, 1.6), "#6ab04a")
+    frog(s, "#7a8a4a", "#f0ecd0", tympanum="#5a6a34", spots=3, lip="#6ab04a", ridges="#8aa058")
 
 
 @sprite("green_treefrog")
 def _(s):
-    frog(s, "#5ac04a", "#f4f4e0", pads=True)
-    s.paint(s.m_line(2, 17, 8, 22) | s.m_line(29, 17, 23, 22), "#f4f4e0")
+    frog(s, "#5ac04a", "#f4f4e0", build="tree", pads=True, side="#f4f4e0")
 
 
 @sprite("copes_gray_treefrog")
 def _(s):
-    frog(s, "#8a8c88", "#e8e8e0", pads=True, spots=[(11, 21), (15, 19), (19, 22), (22, 19), (13, 24)])
-    s.paint(s.m_ellipse(6, 26, 2, 1.5) | s.m_ellipse(26, 26, 2, 1.5), "#f0b030")
-    s.px([(8, 15), (23, 15)], WHITE)
+    frog(s, "#8a8c88", "#e8e8e0", build="tree", pads=True, spots=5, thigh="#a8a49a", under_eye=WHITE,
+         markings=lambda s, g: s.paint(s.m_ellipse(g["bx"] + 3, g["by"] + 3, 2, 1), "#f0b030", within=g["body"]))
 
 
 @sprite("spring_peeper")
 def _(s):
-    frog(s, "#c89a6a", "#f2e6d0", pads=True)
-    s.paint(s.m_line(12, 19, 20, 25) | s.m_line(20, 19, 12, 25), "#7a5034")
+    # The dark X on its back.
+    def x_mark(s, g):
+        x, y = g["bx"] + 1, g["by"] - g["bry"] * 0.45
+        s.paint(s.m_line(x - 2, y - 1, x + 2, y + 1) | s.m_line(x - 2, y + 1, x + 2, y - 1), "#7a5034",
+                within=g["body"])
+    frog(s, "#c89a6a", "#f2e6d0", build="tree", pads=True, markings=x_mark)
 
 
 @sprite("american_toad")
 def _(s):
-    frog(s, "#8a6a4a", "#e8dcc4", spots=[(10, 20), (13, 22), (19, 21), (22, 23), (16, 24), (8, 24), (24, 21)])
-    s.paint(s.m_px([(11, 19), (14, 21), (18, 20), (21, 22), (12, 15), (20, 15)]), "#c8a070")
-    s.paint(s.m_ellipse(5, 14, 2, 1.4) | s.m_ellipse(27, 14, 2, 1.4), "#a07a50")
+    frog(s, "#8a6a4a", "#e8dcc4", build="toad", spots=7, warts="#c8a070", parotoid="#a07a50")
 
 
 @sprite("pine_barrens_treefrog")
 def _(s):
-    frog(s, "#5aa84a", "#f2eee0", pads=True)
-    s.paint(s.m_line(2, 16, 7, 22) | s.m_line(29, 16, 24, 22), "#7a4a6a")
-    s.paint(s.m_line(3, 15, 8, 21) | s.m_line(28, 15, 23, 21), WHITE)
-    s.px([(6, 27), (25, 27)], "#f0a030")
+    frog(s, "#5aa84a", "#f2eee0", build="tree", pads=True, side="#7a4a6a",
+         markings=lambda s, g: s.paint(s.m_ellipse(g["bx"] + 4, g["by"] + 2.5, 1.6, 1), "#f0a030", within=g["body"]))
 
 
 @sprite("eastern_newt")

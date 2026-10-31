@@ -621,23 +621,19 @@ def _(s):
 # --------------------------------------------------------------------------- amphibians
 @sprite("common_coqui")
 def _(s):
-    frog(s, "#a88a64", "#f0e4cc", pads=True, stripe="#d8c09a", spots=[(12, 21), (20, 21), (16, 24)])
-    s.paint(s.m_path([(10, 13), (16, 15), (22, 13)], 0.5), "#d8c09a")
+    frog(s, "#a88a64", "#f0e4cc", build="tree", pads=True, mask="#d8c09a", spots=3, crown="#d8c09a")
 
 
 @sprite("green_and_black_poison_dart_frog")
 def _(s):
-    frog(s, "#3ad87a", "#2ac06a", pads=True)
-    for x, y, rx, ry in ((9, 14, 2, 1.5), (16, 12.5, 2.4, 1.2), (23, 14, 2, 1.5), (12, 21, 2, 1.6),
-                         (20, 21, 2, 1.6), (5, 26, 2, 1.2), (27, 26, 2, 1.2), (16, 26, 2.4, 1.3)):
-        s.paint(s.m_ellipse(x, y, rx, ry), "#1a1a22")
+    frog(s, "#3ad87a", "#2ac06a", build="tree", pads=True, spots=8, spot_big=True, spot_col="#1a1a22",
+         head="#3ad87a", markings=lambda s, g: s.paint(s.m_ellipse(g["bx"] - 1, g["by"] + 1, 2, 1.2), "#1a1a22",
+                                                       within=g["body"]))
 
 
 @sprite("wrinkled_frog")
 def _(s):
-    frog(s, "#7a6040", "#d8ccb0", tympanum="#5a4630", spots=[(11, 21), (15, 19), (20, 21), (17, 24), (13, 25)])
-    for y in (19, 22):
-        s.paint(s.m_line(9, y, 23, y), "#5a4630", within=s.m_ellipse(16, 22, 9.5, 7))
+    frog(s, "#7a6040", "#d8ccb0", tympanum="#5a4630", spots=5, lines="#5a4630")
 
 
 # --------------------------------------------------------------------------- invertebrates

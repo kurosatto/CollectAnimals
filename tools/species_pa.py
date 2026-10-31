@@ -85,10 +85,7 @@ def _(s):
 @sprite("pickerel_frog")
 def _(s):
     # Square brown spots in two neat rows on a tan back.
-    frog(s, "#b8a070", "#f4ecd8", tympanum="#a08a5a")
-    s.paint(s.m_px([(x + dx, y + dy) for x, y in ((13, 11), (17, 11), (8, 19), (22, 19), (8, 23), (22, 23),
-                                                  (3, 26), (27, 26))
-                    for dx in (0, 1) for dy in (0, 1)]), "#5a3818")
+    frog(s, "#b8a070", "#f4ecd8", tympanum="#a08a5a", spots=7, spot_big=True, spot_col="#5a3818", ridges="#d8c890")
 
 
 # --------------------------------------------------------------------------- fish

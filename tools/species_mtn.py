@@ -598,39 +598,25 @@ def _(s):
 @sprite("mexican_spadefoot")
 def _(s):
     # A plump gray-green toad with little orange-tipped bumps and cat-like eyes.
-    frog(s, "#8a9070", "#efece0", spots=[(11, 21), (14, 23), (19, 21), (22, 23), (8, 24), (24, 24)])
-    s.paint(s.m_px([(12, 20), (20, 20), (16, 23), (9, 22), (23, 22)]), "#e09a4a")
-    s.px([(10, 9), (10, 10), (10, 11), (21, 9), (21, 10), (21, 11)], EYE)  # vertical pupils
-    s.px([(9, 10), (11, 10), (20, 10), (22, 10), (9, 11), (11, 11), (20, 11), (22, 11)], "#d8b84a")
+    frog(s, "#8a9070", "#efece0", build="toad", spots=6, warts="#e09a4a", iris="#d8b84a", cat=True)
 
 
 @sprite("plains_spadefoot")
 def _(s):
     # Gray-brown with pale stripes down its back and a bump between the eyes.
-    frog(s, "#9a8a6a", "#f2ecdc", spots=[(10, 20), (22, 20), (13, 24), (19, 24)])
-    s.paint(s.m_line(12, 17, 10, 26) | s.m_line(20, 17, 22, 26), "#d8ccb0")
-    s.paint(s.m_ellipse(16, 11.5, 1.6, 1.2), "#7a6a4a")
-    s.px([(10, 9), (10, 10), (10, 11), (21, 9), (21, 10), (21, 11)], EYE)
-    s.px([(9, 10), (11, 10), (20, 10), (22, 10), (9, 11), (11, 11), (20, 11), (22, 11)], "#c8b06a")
+    frog(s, "#9a8a6a", "#f2ecdc", build="toad", spots=4, lines="#d8ccb0", crown="#7a6a4a", iris="#c8b06a", cat=True)
 
 
 @sprite("rocky_mountain_tailed_frog")
 def _(s):
     # A flat brown stream frog with a pale bar between the eyes and a dark eye stripe.
-    frog(s, "#8a6e52", "#ece0cc", spots=[(11, 21), (20, 22), (15, 24), (23, 20)])
-    s.paint(s.m_line(10, 13, 22, 13), "#d8c8a8")
-    s.paint(s.m_poly([(1, 14), (6, 12), (7, 14), (2, 17)]) | s.m_poly([(31, 14), (26, 12), (25, 14), (30, 17)]),
-            "#3a2a20")
-    s.px([(16, 29), (16, 30), (15, 30), (17, 30)], "#8a6e52")  # the little "tail"
+    frog(s, "#8a6e52", "#ece0cc", spots=4, crown="#d8c8a8", mask="#3a2a20")
 
 
 @sprite("canadian_toad")
 def _(s):
     # A warty brown-and-green toad with a big bump (boss) between the eyes.
-    frog(s, "#7a7a4e", "#ece4d0", spots=[(10, 20), (13, 22), (19, 21), (22, 23), (16, 24), (8, 24), (24, 21)])
-    s.paint(s.m_px([(11, 19), (14, 21), (18, 20), (21, 22), (12, 15), (20, 15)]), "#c8784a")
-    s.paint(s.m_ellipse(16, 12, 2.4, 1.6), "#9a9a64")
-    s.paint(s.m_line(16, 15, 16, 26), "#c8c08a")
+    frog(s, "#7a7a4e", "#ece4d0", build="toad", spots=7, warts="#c8784a", crown="#9a9a64", dorsal="#c8c08a")
 
 
 # --------------------------------------------------------------------------- fish

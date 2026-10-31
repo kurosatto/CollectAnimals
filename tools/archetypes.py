@@ -597,10 +597,13 @@ def pinniped(s: Sprite, fur, light, *, spots=None, ears=False, proboscis=None, w
     """Seal or sea lion from the side, facing left. Seals lie along the ground with
     the head raised; sea lions (ears=True) prop themselves up on their front flippers.
     Walking humps the body along, swimming stretches it out and beats the hind
-    flippers. look and back turn the head to you or over the shoulder."""
+    flippers. look and back turn the head to you or over the shoulder. Seals also
+    rest in the "banana" pose (the sit row): head and hind flippers both held up."""
     s.can("walk", "swim", "look", "back")
     act, f = s.act, s.f
     upright = ears if upright is None else upright
+    if not upright:
+        s.can("sit")
     flipper = flipper or mix(fur, "#000000", 0.25)
     view = {"look": "front", "back": "back"}.get(act, "side")
     ground = 30.5
@@ -612,6 +615,12 @@ def pinniped(s: Sprite, fur, light, *, spots=None, ears=False, proboscis=None, w
         spine = [(28.5, 19 + w), (22, 18.6), (14, 18.2), (8.5, 18.5)]
         rad = (1.6, 4.0)
         head = (5.5, 18, 3.3, 2.8)
+    elif act == "sit":
+        # banana: belly on the ground, both ends curled up (the tail end bobs a little)
+        lift = (0, 0.5, 1, 0.5)[f]
+        spine = [(28, 23 - lift), (23.5, 27.6), (16, 28.6), (9.5, 26.6)]
+        rad = (1.8, 4.0)
+        head = (6, 20.5, 3.4, 2.9)
     elif act == "sleep":
         spine = [(28.5, 28.6), (21, 27.2), (13, 26.8), (8, 27.4)]
         rad = (1.8, 4.0)
@@ -630,7 +639,7 @@ def pinniped(s: Sprite, fur, light, *, spots=None, ears=False, proboscis=None, w
 
     # hind flippers: a fan behind the tail, beating when it swims
     tx, ty = spine[0]
-    beat = 2.4 * w if swim else 0
+    beat = 2.4 * w if swim else 3.0 if act == "sit" else 0
     s.poly([(tx - 1, ty - 0.8), (tx + 4.2, ty - 2.6 - beat), (tx + 3.4, ty - 0.2 - beat * 0.6)], flipper)
     s.poly([(tx - 1, ty + 0.4), (tx + 4.2, ty + 1.8 - beat), (tx + 3.0, ty - 0.2 - beat * 0.6)],
            mix(flipper, "#1a1420", 0.2))
@@ -1131,38 +1140,181 @@ def turtle(s: Sprite, shell, skin, *, dome=False, scutes=None, speckle=None, rim
         s.blush(4, 20)
 
 
-def frog(s: Sprite, skin, belly, *, stripe=None, pads=False, tympanum=None, spots=None):
-    s.can("walk", "swim")
-    # Hop: sit, crouch, leap with the back legs kicked out, land.
-    leap = s.act in ("walk", "swim") and s.f == 2
-    crouch = s.act in ("walk", "swim") and s.f == 1
-    if leap:
-        s.ellipse(5, 29, 6, 1.8, skin, rot=-35, mirror=True)
+# Side-view frog builds: body (cx, cy, rx, ry, rot), head (cx, cy, rx, ry), eye bump
+# (cx, cy, r), thigh (cx, cy, rx, ry, rot), and how far the hind foot reaches forward.
+FROGS = {
+    "frog": dict(body=(16.5, 22.8, 9.8, 5.8, -16), head=(7.5, 23, 5.6, 4.3), eye=(7.8, 18.4, 2.8),
+                 thigh=(21.5, 26, 5.8, 3.4, -28), foot=12.5, leg=1.3),
+    "toad": dict(body=(16.5, 23, 10.0, 6.6, -8), head=(7.5, 23.6, 5.4, 4.5), eye=(8.0, 19.2, 2.5),
+                 thigh=(21, 26.6, 5.0, 3.2, -22), foot=13.5, leg=1.5),
+    "tree": dict(body=(17, 22.6, 9.2, 5.4, -20), head=(8, 23, 5.2, 4.1), eye=(8.2, 18.6, 2.9),
+                 thigh=(22, 25.8, 6.0, 3.2, -30), foot=12, leg=1.1),
+}
+
+
+def frog(s: Sprite, skin, belly, *, build="frog", head=None, mask=None, side=None, lip=None, dorsal=None,
+         ridges=None, lines=None, thigh=None, crown=None, parotoid=None, under_eye=None, spots=0, spot_col=None,
+         spot_big=False, warts=None, iris="#f3d26a", cat=False, pads=False, tympanum=None, markings=None):
+    """A frog or toad from the side, sitting and facing left.
+
+    Walking hops (crouch, leap with the hind legs kicked out, land); swimming
+    stretches out and kicks. look turns the head to you, back over the shoulder.
+    The keywords add the usual field marks: mask (dark stripe through the eye), side
+    (stripe along the flank), lip, dorsal (pale line down the middle of the back),
+    ridges (pale folds along the back), lines (dark lines along the back), thigh
+    (colour of the hind legs), crown (patch between the eyes), parotoid (the toad's
+    swollen gland behind the eye), spots (how many, on the back), warts (pale dots)."""
+    s.can("walk", "swim", "look", "back")
+    b = FROGS[build]
+    act, f = s.act, s.f
+    view = {"look": "front", "back": "back"}.get(act, "side")
+    hopping = act == "walk"
+    swimming = act == "swim"
+    leap = (hopping and f == 2) or (swimming and f in (1, 2))
+    crouch = hopping and f == 1
+    head = head or skin
+    legs = thigh or skin
+    far = lambda c: mix(c, "#1a1420", 0.3)  # noqa: E731
+    ground = 30.5
+    bx, by, brx, bry, brot = b["body"]
+    hx, hy, hrx, hry = b["head"]
+    ex, ey, er = b["eye"]
+    if swimming:
+        brot, by, hy, ey = -4, 20, 20.5, 16.8
+    elif leap:
+        brot = -30
+    if crouch:
+        bry *= 0.9
+    g = dict(view=view, act=act, bx=bx, by=by, brx=brx, bry=bry, brot=brot, hx=hx, hy=hy, hrx=hrx, hry=hry)
+
+    # hind legs: folded alongside the body, or kicked out behind in a leap or stroke
+    tx, ty, trx, tryy, trot = b["thigh"]
+    if swimming:
+        ty = by + 2
+    kick = leap or (swimming and f == 1)
+    if kick:
+        hip = (bx + brx * 0.6, by + 1)
+        knee = (hip[0] + 5, hip[1] + (4 if not swimming else 1.5))
+        heel = (knee[0] + 4, knee[1] + (2 if not swimming else -0.5))
+        for dy, col in ((-1.2, far(legs)), (0, legs)):
+            s.path([(hip[0], hip[1] + dy), (knee[0], knee[1] + dy)], (b["leg"] * 1.9, b["leg"] * 1.3), col)
+            s.path([(knee[0], knee[1] + dy), (heel[0], heel[1] + dy)], b["leg"], col)
+            s.ellipse(heel[0] + 1.5, heel[1] + dy + 0.3, 2.4, 0.9, col, rot=20)
     else:
-        s.ellipse(6, 27, 5 + (1 if crouch else 0), 3, skin, rot=-15, mirror=True)
-    s.ellipse(16, 22, 9.5, 7, skin)
-    s.ellipse(16, 25, 6, 4.5, belly)
-    s.ellipse(16, 15, 11, 6.5, skin, edge=True)
-    s.ellipse(10, 10.5, 4, 4, skin, mirror=True)
-    s.ellipse(10, 10.5, 2.6, 2.6, "#f3d26a" if not stripe else "#d8b84a", mirror=True, shade=False)
-    s.px([(9, 10), (10, 10), (11, 10), (9, 11), (10, 11), (11, 11)], EYE, mirror=True)
-    s.px([(9, 10)], WHITE, mirror=True)
-    if stripe:
-        s.paint(s.m_poly([(1, 14), (6, 12), (7, 14), (2, 17)]), stripe, mirror=True)
-    if tympanum:
-        s.paint(s.m_ellipse(5, 15, 1.8, 1.8), tympanum, mirror=True)
+        s.ellipse(b["foot"] + 2.5, ground - 0.6, 3.0, 0.9, far(legs))
+    # far front leg
+    if not swimming:
+        s.path([(hx + 3, hy + 1.5), (hx + 2.4 - (1.5 if leap else 0), ground - 0.6 - (1 if leap else 0))],
+               b["leg"], far(skin))
+
+    body = s.ellipse(bx, by, brx, bry, skin, rot=brot)
+    s.fill(s.m_ellipse(bx - 1, by + bry * 0.75, brx * 0.85, bry * 0.5, brot) & body, belly, shade=False)
+    g["body"] = body
+    if dorsal:
+        back_stripes(s, g, [dorsal], top=0.1, width=0.9)
+    if ridges:
+        back_stripes(s, g, [ridges], top=1.6, width=0.8)
+    if lines:
+        back_stripes(s, g, [lines, skin, lines], top=0.8, width=1.0)
+    if side:
+        s.paint(s.m_ellipse(bx, by + bry * 0.35, brx * 0.95, 0.9, brot), side, within=body)
     if spots:
-        s.paint(s.m_px(spots), mix(skin, "#000000", 0.35))
-    s.paint(s.m_poly([(10, 17.5), (16, 19), (22, 17.5), (22, 18.5), (16, 20), (10, 18.5)]), mix(skin, "#000000", 0.5))
-    s.blush(6, 16, mirror=True)
-    s.eye_box(8, 9, 12, 12, mirror=True)
-    s.ellipse(11, 29.5, 2.3, 1.4, skin, mirror=True)
-    if pads:
-        s.px([(9, 30), (11, 30), (13, 30)], mix(skin, "#ffffff", 0.35), mirror=True)
-    if leap:
-        _lift(s, 3)
-    elif crouch:
-        s.shift(0, 1)
+        _frog_spots(s, body & ~s.m_ellipse(bx - 1, by + bry * 0.75, brx * 0.85, bry * 0.55, brot), spots,
+                    spot_col or mix(skin, "#000000", 0.42), spot_big)
+    if warts:
+        flecks(s, body, warts, every=9, seed=4)
+    if markings:
+        markings(s, g)
+
+    # near hind leg, folded: thigh along the flank, shin and long foot forward
+    if not kick:
+        th = s.ellipse(tx, ty + (0.5 if crouch else 0), trx, tryy, legs, rot=trot)
+        s.path([(tx + trx * 0.7, ty + 2.2), (b["foot"] + 3.5, ground - 1)], b["leg"] * 1.1, legs)
+        s.ellipse(b["foot"], ground - 0.6, 3.2, 0.9, legs)
+        if pads:
+            s.px([(round(b["foot"] - 3), round(ground - 0.5))], mix(legs, WHITE, 0.4))
+        if spots:
+            _frog_spots(s, th, max(1, spots // 3), spot_col or mix(skin, "#000000", 0.42), spot_big)
+
+    # head
+    if view == "front":
+        cx = hx + 0.8
+        hm = s.ellipse(cx, hy, hrx * 1.1, hry, head, edge=True)
+        s.fill(s.m_ellipse(cx, hy + hry * 0.6, hrx * 0.8, hry * 0.45) & hm, belly, shade=False)
+        g["head_m"] = hm
+        if crown:
+            s.paint(s.m_ellipse(cx, hy - hry * 0.5, 1.6, 1.0), crown, within=hm)
+        s.px([(round(cx - hrx * 0.6) + i, round(hy + 0.8 + (0 if i in (0, 5) else 0.6))) for i in range(6)],
+             mix(head, "#000000", 0.5))
+        for d in (-1, 1):
+            _frog_eye(s, cx + d * (hrx * 0.62), hy - hry * 0.75, er * 0.95, head, iris, cat, mask)
+        s.px([(round(cx - 2.5), round(hy + 1.6)), (round(cx + 2), round(hy + 1.6))], "#f59aa8")
+    else:
+        d = 1 if view == "back" else -1
+        if d > 0:
+            hx, ex = hx + 1.5, 2 * hx - ex + 3.0
+        hm = s.ellipse(hx, hy, hrx, hry, head, edge=True)
+        s.fill(s.m_ellipse(hx + d * 0.5, hy + hry * 0.65, hrx * 0.85, hry * 0.45) & hm, belly, shade=False)
+        g["head_m"] = hm
+        if lip:
+            s.paint(s.m_line(hx + d * hrx, hy + 0.8, hx - d * 1, hy + 1.6), lip, within=hm)
+        if mask:
+            s.paint(s.m_path([(hx + d * (hrx - 0.5), hy - 1.2), (hx - d * 2.5, hy + 0.2)], 0.9), mask, within=hm | body)
+        s.paint(s.m_line(hx + d * (hrx - 0.4), hy + 1.2, hx - d * 1.5, hy + 2), mix(head, "#000000", 0.5), within=hm)
+        if tympanum:
+            s.paint(s.m_ellipse(hx - d * 2.2, hy - 0.6, 1.3, 1.3), tympanum, within=hm)
+        if parotoid:
+            s.ellipse(hx - d * 3.2, hy - 1.6, 2.4, 1.2, parotoid, rot=d * 20)
+        if under_eye:
+            s.px([(round(ex), round(hy + 0.6))], under_eye)
+        if crown:
+            s.paint(s.m_ellipse(ex - d * 1.5, hy - hry + 0.4, 1.6, 0.9), crown, within=hm)
+        _frog_eye(s, ex, ey, er, head, iris, cat, None)
+        s.px([(round(ex + d * 1.2), round(hy + 0.8))], "#f59aa8")
+
+    # near front leg
+    if swimming:
+        s.ellipse(hx + 2, hy + 3.2, 2.2, 0.8, skin, rot=-15)
+    else:
+        lean = 1.5 if leap else 0
+        s.path([(hx + 1.6, hy + 1.5), (hx + 0.6 - lean, ground - 0.6 - (1 if leap else 0))], b["leg"], skin)
+        s.ellipse(hx - 0.6 - lean, ground - 0.5 - (1 if leap else 0), 1.8, 0.8, skin)
+        if pads:
+            s.px([(round(hx - 2.2 - lean), round(ground - 0.5 - (1 if leap else 0)))], mix(skin, WHITE, 0.4))
+    if leap and hopping:
+        s.shift(0, -3)
+    elif hopping and f == 3:
+        s.shift(0, -1)
+
+
+def _frog_eye(s: Sprite, x, y, r, skin, iris, cat, mask):
+    """A bulging eye on top of the head: skin lid, coloured iris, dark pupil."""
+    s.ellipse(x, y, r, r * 0.95, skin)
+    s.ellipse(x, y - 0.1, r * 0.72, r * 0.7, iris, shade=False)
+    if mask:
+        s.paint(s.m_ellipse(x, y + r * 0.5, r, 0.6), mask)
+    px, py = round(x - 0.5), round(y - 0.5)
+    s.px([(px, py), (px, py + 1)] if cat else [(px, py), (px - 1, py)], EYE)
+    s.eye_box(px - 1, py - 1, px + 1, py + 1)
+
+
+def _frog_spots(s: Sprite, mask, n, col, big):
+    """n spots spread over mask, always in the same places."""
+    ys, xs = np.where(mask)
+    if not len(xs):
+        return
+    order = sorted(range(len(xs)), key=lambda i: (xs[i] * 37 + ys[i] * 61) % 97)
+    picked = []
+    for i in order:
+        x, y = xs[i], ys[i]
+        if all(abs(x - a) + abs(y - b) > (3 if big else 2) for a, b in picked):
+            picked.append((x, y))
+        if len(picked) == n:
+            break
+    for x, y in picked:
+        x, y = x - PAD_X, y - PAD_TOP
+        m = s.m_px([(x, y), (x + 1, y), (x, y + 1), (x + 1, y + 1)] if big else [(x, y)])
+        s.paint(m, col, within=mask)
 
 
 # --------------------------------------------------------------------------- invertebrates

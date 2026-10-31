@@ -269,10 +269,8 @@ def _(s):
 
 @sprite("wood_frog")
 def _(s):
-    frog(s, "#b0805a", "#f4ece0", tympanum="#5a3a2a", spots=[(14, 21), (19, 23)])
-    # the dark robber's mask through the eye
-    s.paint(s.m_poly([(3, 13), (10, 12), (11, 15), (4, 16)]), "#4a2e22",
-            within=s.m_poly([(0, 0), (16, 0), (16, 17), (0, 17)]) & ~s.m_ellipse(8, 11, 1.5, 1.5))
+    # The dark robber's mask through the eye.
+    frog(s, "#b0805a", "#f4ece0", tympanum="#5a3a2a", mask="#4a2e22", spots=2, ridges="#c8a07a")
 
 
 # --------------------------------------------------------------------------- insects and other small animals
