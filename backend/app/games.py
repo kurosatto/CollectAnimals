@@ -23,6 +23,7 @@ from .db import get_db
 from datetime import date
 
 from .models import AnimalSkin, Badge, GameItem, GameScore, Species, User
+from .safety import is_admin
 from .social import blocked_ids, friend_ids, revealed_species_ids
 
 router = APIRouter()
@@ -38,16 +39,30 @@ submits = limits.Limit(60, 30)
 COINS_PER_DAY = 300
 
 # What coins buy. Skins recolour an animal (drawn in habitat.js); decorations stand in
-# your habitat.
-SHOP = {
+# your habitat (species/decor.json from tools/make_decor.py, drawn by decor.js), where the
+# animals you've caught come to visit them.
+SKINS = {
     "skin.frosty": {"kind": "skin", "name": "Frosty", "price": 150},
     "skin.rose": {"kind": "skin", "name": "Rose", "price": 150},
     "skin.midnight": {"kind": "skin", "name": "Midnight", "price": 200},
     "skin.golden": {"kind": "skin", "name": "Golden", "price": 400},
-    "decor.flowers": {"kind": "decor", "name": "Flower bed", "price": 100},
-    "decor.birdbath": {"kind": "decor", "name": "Bird bath", "price": 150},
-    "decor.lantern": {"kind": "decor", "name": "Lantern", "price": 200},
 }
+# How many decorations can be out at once in each part of the scene (HAB_DECOR_ROOM in decor.js).
+ROOM = {"ground": 12, "pond": 3, "sand": 3, "sea": 2, "sky": 2}
+ROOM_WORDS = {"ground": "your meadow", "pond": "the pond", "sand": "the beach", "sea": "the water", "sky": "the sky"}
+
+
+def _decor() -> dict:
+    try:
+        items = json.loads(settings.decor_json.read_text())
+    except (OSError, ValueError):
+        return {}
+    return {f"decor.{d['key']}": {"kind": "decor", "name": d["name"], "price": d["price"], "group": d["group"],
+                                  "area": d["area"], "frames": d.get("frames", 1), "note": d.get("note", "")}
+            for d in items}
+
+
+SHOP = {**SKINS, **_decor()}
 
 
 @lru_cache(maxsize=1)
@@ -114,11 +129,24 @@ def _pay(user: User, coins: int) -> int:
 
 
 def _shop(db: Session, user: User) -> dict:
-    owned = {i.item: i for i in db.scalars(select(GameItem).where(GameItem.user_id == user.id))}
+    if is_admin(user):
+        _own_everything(db, user)
+    owned = {i.item: i for i in db.scalars(select(GameItem).where(GameItem.user_id == user.id).order_by(GameItem.id))}
     skins = {s.species.slug: s.skin for s in db.scalars(select(AnimalSkin).where(AnimalSkin.user_id == user.id))}
     items = [{"key": k, **v, "owned": k in owned, "on": k in owned and owned[k].on} for k, v in SHOP.items()]
     return {"coins": user.coins or 0, "items": items, "skins": skins,
             "decor": [k.split(".", 1)[1] for k, i in owned.items() if k.startswith("decor.") and i.on]}
+
+
+def _own_everything(db: Session, user: User):
+    """Admin accounts (ADMIN_USERNAMES) own every skin and decoration, for trying them out.
+    New decorations start hidden so they don't crowd the habitat."""
+    have = set(db.scalars(select(GameItem.item).where(GameItem.user_id == user.id)))
+    missing = [k for k in SHOP if k not in have]
+    for k in missing:
+        db.add(GameItem(user_id=user.id, item=k, on=False))
+    if missing:
+        db.commit()
 
 
 @router.get("/games/shop")
@@ -141,7 +169,8 @@ def buy(body: BuyIn, user: User = Depends(current_user), db: Session = Depends(g
     if (user.coins or 0) < it["price"]:
         raise HTTPException(400, "Not enough coins yet")
     user.coins = (user.coins or 0) - it["price"]
-    db.add(GameItem(user_id=user.id, item=body.item))
+    # A new decoration goes straight into your habitat if there's room for it there.
+    db.add(GameItem(user_id=user.id, item=body.item, on=it["kind"] != "decor" or _room(db, user, it["area"])))
     db.commit()
     return _shop(db, user)
 
@@ -172,6 +201,12 @@ def wear_skin(body: SkinIn, user: User = Depends(current_user), db: Session = De
     return _shop(db, user)
 
 
+def _room(db: Session, user: User, area: str) -> bool:
+    """Whether another decoration fits in that part of your habitat."""
+    out = db.scalars(select(GameItem.item).where(GameItem.user_id == user.id, GameItem.on.is_(True)))
+    return sum(1 for k in out if SHOP.get(k, {}).get("area") == area) < ROOM.get(area, 0)
+
+
 class DecorIn(BaseModel):
     item: str = Field(max_length=32)
     on: bool
@@ -181,8 +216,11 @@ class DecorIn(BaseModel):
 def show_decor(body: DecorIn, user: User = Depends(current_user), db: Session = Depends(get_db)):
     """Shows or hides a decoration you own in your habitat."""
     row = db.scalar(select(GameItem).where(GameItem.user_id == user.id, GameItem.item == body.item))
-    if row is None or not body.item.startswith("decor."):
+    if row is None or not body.item.startswith("decor.") or body.item not in SHOP:
         raise HTTPException(404, "You don't have that")
+    area = SHOP[body.item]["area"]
+    if body.on and not row.on and not _room(db, user, area):
+        raise HTTPException(409, f"There's no room left in {ROOM_WORDS[area]}. Hide another decoration there first.")
     row.on = body.on
     db.commit()
     return _shop(db, user)

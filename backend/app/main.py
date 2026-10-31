@@ -262,6 +262,27 @@ def minigames_js():
     return FileResponse(STATIC_DIR / "minigames.js", media_type="text/javascript")
 
 
+@app.get("/decor.js", include_in_schema=False)
+def decor_js():
+    """Shop decorations in your habitat and the animals that visit them (with habitat.js)."""
+    return FileResponse(STATIC_DIR / "decor.js", media_type="text/javascript")
+
+
+@app.get("/decor.json", include_in_schema=False)
+def decor_json():
+    """The decorations' catalog: where each stands, its frames, effects and visitors."""
+    return FileResponse(settings.decor_json, media_type="application/json", headers={"Cache-Control": "public, max-age=3600"})
+
+
+@app.get("/sprites/decor/{key}.png", include_in_schema=False)
+def sprite_decor(key: str):
+    """A decoration's sprite: a row of 40x40 frames."""
+    path = settings.sprites_dir / "decor" / f"{key}.png"
+    if not key.replace("_", "").isalnum() or not path.is_file():
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No such decoration")
+    return FileResponse(path, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
+
+
 @app.get("/sprites/silhouette/{number}.png", include_in_schema=False)
 def silhouette_by_number(number: int, db: Session = Depends(get_db)):
     """The silhouette for a species that's still hidden, by Dex number, so the

@@ -154,10 +154,29 @@ function mgShopBar(list) {
   list.append(bar);
   if (!open) return;
   const shop = mgEl("div", "mg-shop");
-  shop.append(mgEl("div", "mg-how", "Finish levels to earn coins. Skins recolor your animal in the games; decorations go in your habitat."));
-  for (const it of d.items) {
+  shop.append(mgEl("div", "mg-how", "Finish levels to earn coins. Decorations go in your habitat, and the animals you've caught come to visit them. Skins recolor your animal in the games."));
+  // One shelf at a time: the decorations by group, then the skins.
+  const groups = [...new Set(d.items.map((i) => (i.kind === "skin" ? "Skins" : i.group || "Habitat")))];
+  let tab = mgStore.get("shopTab");
+  if (!groups.includes(tab)) tab = groups[0];
+  const tabs = mgEl("div", "mg-shelves");
+  for (const g of groups) {
+    const owned = d.items.filter((i) => (i.kind === "skin" ? "Skins" : i.group || "Habitat") === g && i.owned).length;
+    const b = mgEl("button", "mg-tab" + (g === tab ? " on" : ""), owned ? `${g} · ${owned}` : g);
+    b.onclick = () => { mgStore.set("shopTab", g); mgList(); };
+    tabs.append(b);
+  }
+  shop.append(tabs);
+  for (const it of d.items.filter((i) => (i.kind === "skin" ? "Skins" : i.group || "Habitat") === tab)) {
     const row = mgEl("div", "mg-item");
-    row.append(mgEl("span", null, `${it.kind === "skin" ? "🎨" : "🌼"} ${it.name}`), mgEl("span", "muted", it.kind === "skin" ? "Skin" : "Habitat"));
+    const pic = mgEl("i", "mg-icon");
+    if (it.kind === "decor") {
+      pic.style.backgroundImage = `url(/sprites/decor/${it.key.split(".")[1]}.png)`;
+      pic.style.backgroundSize = `${(it.frames || 1) * 100}% 100%`;
+    } else pic.textContent = "🎨";
+    const name = mgEl("span", "mg-name");
+    name.append(mgEl("b", null, it.name), mgEl("span", "muted", it.kind === "skin" ? "Recolors your animal in the games" : it.note));
+    row.append(pic, name);
     let b;
     if (!it.owned) {
       b = mgEl("button", "mg-play", `🪙 ${it.price}`);
@@ -302,7 +321,12 @@ function mgBuild() {
   .mg-shopbar { display:flex; justify-content:space-between; align-items:center; }
   .mg-coins { font-size:.95rem; }
   .mg-shop { border:1px solid var(--line); border-radius:12px; padding:8px 12px; display:grid; gap:6px; }
-  .mg-item { display:grid; grid-template-columns:1fr auto auto; gap:8px; align-items:center; font-size:.85rem; }
+  .mg-item { display:grid; grid-template-columns:auto 1fr auto; gap:8px; align-items:center; font-size:.85rem; }
+  .mg-icon { width:40px; height:40px; background-repeat:no-repeat; image-rendering:pixelated; font-style:normal;
+             font-size:1.4rem; display:grid; place-items:center; }
+  .mg-name { display:flex; flex-direction:column; gap:1px; line-height:1.25; }
+  .mg-name .muted { font-size:.75rem; }
+  .mg-shelves { display:flex; gap:4px; flex-wrap:wrap; }
   .mg-item .mg-play { padding:3px 12px; }
   .mg-item .mg-play:disabled { opacity:.45; cursor:default; }
   .mg-looks { display:flex; gap:4px; flex-wrap:wrap; align-items:baseline; margin-top:4px; font-size:.75rem; }
