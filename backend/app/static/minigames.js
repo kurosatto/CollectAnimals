@@ -1562,15 +1562,25 @@ function mgClawDraw(c, r) {
   }
 }
 
+// The rock's lumpy outline: how far each of its 16 points sticks out.
+const MG_ROCK = [1, .93, 1.06, 1.1, .96, .9, 1.02, 1.08, .97, 1.04, .92, .98, 1.09, 1.01, .94, 1.05];
+
 function mgPoolDraw(c, r) {
   const { cx, cy, thick } = MG_POOL, far = 240;
   const at = (a, d) => [cx + Math.cos(a) * d, cy + Math.sin(a) * d];
-  const quad = (a0, a1, d0, d1, col) => {
+  // A ring of water from angle a0 to a1, between radius d0 and d1; each edge may wobble.
+  const band = (a0, a1, d0, d1, w0, w1, col) => {
+    const n = Math.max(2, Math.ceil((a1 - a0) / .06));
     c.fillStyle = col; c.beginPath();
-    c.moveTo(...at(a0, d0)); c.lineTo(...at(a1, d0)); c.lineTo(...at(a1, d1)); c.lineTo(...at(a0, d1)); c.closePath(); c.fill();
+    for (let k = 0; k <= n; k++) { const a = a0 + (a1 - a0) * k / n; c.lineTo(...at(a, Math.max(0, d1 + w1(a)))); }
+    for (let k = n; k >= 0; k--) { const a = a0 + (a1 - a0) * k / n; c.lineTo(...at(a, Math.max(0, d0 + w0(a)))); }
+    c.closePath(); c.fill();
   };
-  // Six wedges of water in two blues, then the rings of foam washing in.
-  for (let i = 0; i < 6; i++) quad(i * MG_SIDE, (i + 1) * MG_SIDE, 0, far, i % 2 ? "#2f7fa8" : "#3a8fb8");
+  const flat = () => 0;
+  // Deep water, with soft ripples spreading out from the rock.
+  c.fillStyle = "#2f7fa8"; c.fillRect(-far, -far, MG_W + far * 2, 200 + far * 2);
+  c.strokeStyle = "#3a8fb8"; c.lineWidth = 3;
+  for (let d = (r.t * 14) % 22 + 26; d < far; d += 22) { c.beginPath(); c.arc(cx, cy, d, 0, Math.PI * 2); c.stroke(); }
   for (const o of r.things) {
     const d = mgPoolR(o, r);
     if (d > far || d + thick < 0) continue;
@@ -1582,20 +1592,41 @@ function mgPoolDraw(c, r) {
       c.fillStyle = "rgba(255,255,255,.6)"; c.fillRect(Math.round(x) - 2, Math.round(y) - 2, 2, 2);
       continue;
     }
+    // A wave rolling in: a teal swell behind a white, frothy crest that curls and wobbles.
+    const curl = a => Math.sin(a * 14 + r.t * 7 + o.wx * .05) * 1.5;
+    const back = a => Math.sin(a * 9 - r.t * 4) * 2;
     for (let i = 0; i < 6; i++) {
       if (!o.sides[i]) continue;
-      quad(i * MG_SIDE, (i + 1) * MG_SIDE, Math.max(0, d), d + thick, "#e9f6ff");
-      quad(i * MG_SIDE, (i + 1) * MG_SIDE, Math.max(0, d), Math.max(0, d) + 2, "#9fd4ec");
+      const a0 = i * MG_SIDE, a1 = (i + 1) * MG_SIDE;
+      band(a0, a1, d, d + thick + 3, curl, back, "#7cc3e0");
+      band(a0, a1, d, d + 4, curl, curl, "#f4fbff");
+      // Flecks of foam left behind the crest.
+      c.fillStyle = "#e9f6ff";
+      for (let k = 0; k < 6; k++) {
+        const a = a0 + (k + .5) * MG_SIDE / 6, [x, y] = at(a, d + 6 + ((k * 5 + i * 3) % 4));
+        if (d + 6 > 0) c.fillRect(Math.round(x) - 1, Math.round(y) - 1, 2, 2);
+      }
     }
   }
-  // The rock in the middle, a little bigger on every beat.
+  // The rock in the middle, a little bigger on every beat: a lumpy grey stone with a
+  // wet dark rim, a lighter top, barnacles and a tuft of seaweed.
   const beat = r.lvl.spb ? (r.t / r.lvl.spb) % 1 : 0, rock = 20 + (beat < .15 ? 2 : 0);
-  c.fillStyle = "#6e7380"; c.beginPath();
-  for (let i = 0; i < 6; i++) c.lineTo(...at(i * MG_SIDE, rock));
-  c.closePath(); c.fill();
-  c.fillStyle = "#8a8f9e"; c.beginPath();
-  for (let i = 0; i < 6; i++) c.lineTo(...at(i * MG_SIDE, rock - 6));
-  c.closePath(); c.fill();
+  const lump = (rad, dx, dy, col) => {
+    c.fillStyle = col; c.beginPath();
+    MG_ROCK.forEach((j, i) => { const a = i / MG_ROCK.length * Math.PI * 2; c.lineTo(cx + dx + Math.cos(a) * rad * j, cy + dy + Math.sin(a) * rad * j); });
+    c.closePath(); c.fill();
+  };
+  c.fillStyle = "rgba(233,246,255,.5)"; c.beginPath(); c.arc(cx, cy, rock + 3, 0, Math.PI * 2); c.fill();
+  lump(rock, 0, 0, "#4f545e");
+  lump(rock - 3, -1, -1, "#6e7380");
+  lump(rock - 9, -3, -3, "#8a8f9e");
+  lump(rock - 15, -5, -5, "#a3a8b5");
+  c.fillStyle = "#3f7a4a";
+  for (const [a, d] of [[2.2, rock - 4], [2.5, rock - 3], [2.8, rock - 5]]) { const [x, y] = at(a, d); c.fillRect(Math.round(x) - 1, Math.round(y) - 2, 3, 4); }
+  c.fillStyle = "#d9d4c4";
+  for (const [a, d] of [[5.3, rock - 5], [5.6, rock - 7], [.4, rock - 5], [3.9, rock - 6]]) { const [x, y] = at(a, d); c.fillRect(Math.round(x) - 1, Math.round(y) - 1, 3, 3); }
+  c.fillStyle = "#8f8a7c";
+  for (const [a, d] of [[5.3, rock - 5], [5.6, rock - 7], [.4, rock - 5], [3.9, rock - 6]]) { const [x, y] = at(a, d); c.fillRect(Math.round(x), Math.round(y), 1, 1); }
   // You, clinging to the rock with your back to the waves.
   const s = mg.species, raw = habSkin(mg.imgs[`/sprites/${encodeURIComponent(s.slug)}.png`], habLook.skins[s.slug]);
   if (!raw || !raw.complete || !raw.naturalWidth || (r.mode === "over" && Math.floor(r.phase * 12) % 3 === 0)) return;
