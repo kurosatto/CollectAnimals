@@ -659,6 +659,15 @@ def test_sprite_animations(client):
     assert client.get("/sprites/..%2Fcalifornia_100.png").status_code == 404
 
 
+def test_game_art(client):
+    pieces = client.get("/sprites/game/atlas.json").json()
+    assert {"rock", "storm_m", "fish", "feeder", "fox_look", "food_algae"} <= set(pieces)
+    assert all(len(v) == 6 for v in pieces.values())
+    r = client.get("/sprites/game/atlas.png")
+    assert r.status_code == 200 and r.headers["content-type"] == "image/png"
+    assert client.get("/sprites/game/nope.png").status_code == 404
+
+
 def test_player_picks_the_animal_when_model_is_unsure(client, fake):
     h = signup(client)
     fake.next = [Prediction("bobcat", 0.41), Prediction("gray_fox", 0.3), Prediction("other", 0.1),

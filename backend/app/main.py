@@ -283,6 +283,18 @@ def sprite_decor(key: str):
     return FileResponse(path, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
 
 
+@app.get("/sprites/game/{name}", include_in_schema=False)
+def sprite_game_art(name: str):
+    """The minigames' pixel art: one atlas image and where each piece is in it."""
+    if name not in ("atlas.png", "atlas.json"):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No such picture")
+    path = settings.sprites_dir / "game" / name
+    if not path.is_file():
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No game art")
+    media = "image/png" if name.endswith(".png") else "application/json"
+    return FileResponse(path, media_type=media, headers={"Cache-Control": "public, max-age=3600"})
+
+
 @app.get("/sprites/silhouette/{number}.png", include_in_schema=False)
 def silhouette_by_number(number: int, db: Session = Depends(get_db)):
     """The silhouette for a species that's still hidden, by Dex number, so the

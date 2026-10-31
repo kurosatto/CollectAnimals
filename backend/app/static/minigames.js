@@ -1633,7 +1633,10 @@ function mgSkyBg(c, r) {
   sky.addColorStop(0, "#7cc4e8"); sky.addColorStop(1, "#d6f0f7");
   c.fillStyle = sky; c.fillRect(0, 0, MG_W, MG_H);
   c.fillStyle = "#fff6c8"; c.fillRect(262, 18, 16, 16); c.fillStyle = "#f2c14e"; c.fillRect(264, 20, 12, 12);
-  for (let i = 0; i < 4; i++) mgCloud(c, (i * 97 - mgScroll(r, .15, 400) + 400) % 400 - 40, 20 + (i * 37) % 70, 1, "rgba(255,255,255,.85)");
+  for (let i = 0; i < 4; i++) {
+    const x = (i * 97 - mgScroll(r, .15, 400) + 400) % 400 - 40, y = 20 + (i * 37) % 70;
+    if (!mgArt(c, "puff", x + 13, y + 6)) mgCloud(c, x, y, 1, "rgba(255,255,255,.85)");
+  }
   mgHills(c, r, .25, 150, 26, 60, "#9fcf9a");
   mgHills(c, r, .5, 166, 14, 34, "#6aae6e");
   c.fillStyle = "#58a662"; c.fillRect(0, MG_GROUND, MG_W, MG_H - MG_GROUND);
@@ -1645,12 +1648,21 @@ function mgTrailBg(c, r) {
   const sky = c.createLinearGradient(0, 0, 0, MG_H);
   sky.addColorStop(0, "#9ad3ee"); sky.addColorStop(1, "#e4f4e0");
   c.fillStyle = sky; c.fillRect(0, 0, MG_W, MG_H);
-  for (let i = 0; i < 3; i++) mgCloud(c, (i * 131 - mgScroll(r, .08, 420) + 420) % 420 - 40, 14 + i * 16, 1, "rgba(255,255,255,.9)");
+  for (let i = 0; i < 3; i++) {
+    const x = (i * 131 - mgScroll(r, .08, 420) + 420) % 420 - 40, y = 14 + i * 16;
+    if (!mgArt(c, "puff", x + 13, y + 6)) mgCloud(c, x, y, 1, "rgba(255,255,255,.9)");
+  }
   mgHills(c, r, .12, 120, 34, 80, "#8fb9a8");
   // A row of pines, then the trail.
   c.fillStyle = "#2f7d4f";
   const off = mgScroll(r, .45, 30);
-  for (let x = -off; x < MG_W + 30; x += 30) {
+  if (mgArtReady()) {
+    for (let x = -off; x < MG_W + 30; x += 30) {
+      const n = Math.floor((x + r.dist * .45) / 30);
+      mgArt(c, ((n * 7) % 3) ? "pine0" : "pine1", x + 12, MG_GROUND - 9);
+      if ((n * 5) % 4 === 1) mgArt(c, "bush", x + 27, MG_GROUND - 9);
+    }
+  } else for (let x = -off; x < MG_W + 30; x += 30) {
     const h = 26 + ((Math.floor((x + r.dist * .45) / 30) * 7) % 3) * 6;
     for (let k = 0; k < h; k += 2) { const w = Math.round(k * .45) + 1; c.fillRect(x + 12 - w, MG_GROUND - 14 - h + k, w * 2, 2); }
     c.fillStyle = "#62402a"; c.fillRect(x + 11, MG_GROUND - 14, 3, 4); c.fillStyle = "#2f7d4f";
@@ -1688,8 +1700,101 @@ function mgRiverBg(c, r) {
   }
 }
 
+// The games' pixel art (tools/make_game_art.py): one atlas, and for each piece where it
+// is and its anchor, the point that goes at the thing's position. Until it loads the
+// games fall back to plain shapes.
+const mgAtlas = { img: new Image(), map: null };
+mgAtlas.img.src = "/sprites/game/atlas.png";
+fetch("/sprites/game/atlas.json").then((r) => (r.ok ? r.json() : null)).then((j) => { mgAtlas.map = j; }).catch(() => {});
+const mgArtReady = () => mgAtlas.map && mgAtlas.img.complete && mgAtlas.img.naturalWidth;
+// One piece with its anchor at (x, y); flip mirrors it. False if the art isn't there.
+function mgArt(c, name, x, y, flip) {
+  const m = mgArtReady() && mgAtlas.map[name];
+  if (!m) return false;
+  const [sx, sy, w, h, ax, ay] = m;
+  if (flip) { c.save(); c.translate(Math.round(x), 0); c.scale(-1, 1); c.drawImage(mgAtlas.img, sx, sy, w, h, -ax, Math.round(y - ay), w, h); c.restore(); }
+  else c.drawImage(mgAtlas.img, sx, sy, w, h, Math.round(x - ax), Math.round(y - ay), w, h);
+  return true;
+}
+// A tile piece repeated down from y0 to y1, centred on x (cut off at the end).
+function mgArtDown(c, name, x, y0, y1) {
+  const m = mgArtReady() && mgAtlas.map[name];
+  if (!m) return false;
+  const [sx, sy, w, h] = m, l = Math.round(x - w / 2);
+  for (let y = Math.round(y0); y < y1; y += h) c.drawImage(mgAtlas.img, sx, sy, w, Math.min(h, y1 - y), l, y, w, Math.min(h, y1 - y));
+  return true;
+}
+// A tile piece repeated across from x0 to x1 with its top at y.
+function mgArtAcross(c, name, x0, x1, y) {
+  const m = mgArtReady() && mgAtlas.map[name];
+  if (!m) return false;
+  const [sx, sy, w, h] = m;
+  for (let x = Math.round(x0); x < x1; x += w) c.drawImage(mgAtlas.img, sx, sy, Math.min(w, x1 - x), h, x, Math.round(y), Math.min(w, x1 - x), h);
+  return true;
+}
+
+// A tile piece repeated across and down to fill a box.
+function mgArtFill(c, name, x0, y0, x1, y1) {
+  const m = mgArtReady() && mgAtlas.map[name];
+  if (!m) return false;
+  const [sx, sy, w, h] = m;
+  for (let y = Math.round(y0); y < y1; y += h) {
+    for (let x = Math.round(x0); x < x1; x += w) {
+      const cw = Math.min(w, x1 - x), ch = Math.min(h, y1 - y);
+      c.drawImage(mgAtlas.img, sx, sy, cw, ch, x, y, cw, ch);
+    }
+  }
+  return true;
+}
+// The size of a piece drawn in sizes (dstone7, dstone9...) closest to rad.
+const mgNearest = (sizes, rad) => sizes.reduce((a, b) => (Math.abs(b - rad) < Math.abs(a - rad) ? b : a));
+
+// A thing on a course in its pixel art: true when drawn.
+function mgThingArt(c, o, x, y, r) {
+  const bot = y + (o.h || 0) / 2, top = y - (o.h || 0) / 2;
+  switch (o.type) {
+    case "rock": case "log": case "stump": return mgArt(c, o.type, x, bot + 1);
+    case "acorn": case "berry": case "snack": return mgArt(c, o.type, x, y + 1);
+    case "can": case "bottle": case "bag": return mgArt(c, o.type, x, y + 4);
+    case "snag": return mgArt(c, "snag", x, y);
+    case "cloud": return mgArt(c, "cloud", x, y);
+    case "stone": return mgArt(c, "stone", x, y);
+    case "storm": {
+      if (top <= 2) { mgArtDown(c, "storm_m", x, top - 4, bot - 13); return mgArt(c, "storm_down", x, bot - 6); }
+      mgArtDown(c, "storm_m", x, top + 14, bot + 4); return mgArt(c, "storm_up", x, top + 6);
+    }
+    case "roots": mgArtDown(c, "roots_m", x, MG_SURFACE, bot - 7); return mgArt(c, "roots_end", x, bot - 2);
+    case "boulder": mgArtDown(c, "boulder_m", x, top + 8, MG_BED + 14); return mgArt(c, "boulder_top", x, top + 2);
+    case "branch": {
+      // Hanging from the leafy canopy on two vines.
+      c.fillStyle = "#3f8d58"; c.fillRect(x - 12, 0, 1, y - 2); c.fillRect(x + 11, 0, 1, y - 2);
+      c.fillStyle = "#79bd5e"; for (let v = 6; v < y - 4; v += 7) { c.fillRect(x - 13, v, 1, 2); c.fillRect(x + 12, v + 3, 1, 2); }
+      mgArtAcross(c, "canopy", x - 24, x + 24, -2);
+      return mgArt(c, "branch", x, y);
+    }
+    case "ledge": {
+      const l = x - Math.round(o.w / 2), r0 = l + Math.round(o.w), t = y - 3;
+      if (!mgArtAcross(c, "ledge_l", l, l + 6, t)) return false;
+      mgArtAcross(c, "ledge_m", l + 6, r0 - 6, t);
+      return mgArtAcross(c, "ledge_r", r0 - 6, r0, t);
+    }
+    case "thorns": { const l = x - Math.round(o.w / 2); return mgArtAcross(c, "thorn_m", l, l + Math.round(o.w), bot - 11); }
+    case "pit": {
+      const l = x - Math.round(o.w / 2), r0 = l + Math.round(o.w), t = MG_GROUND - 10;
+      if (!mgArtAcross(c, "creek_l", l, l + 8, t)) return false;
+      mgArtAcross(c, "creek_m", l + 8, r0 - 8, t);
+      mgArtAcross(c, "creek_r", r0 - 8, r0, t);
+      c.fillStyle = "rgba(255,255,255,.6)";
+      for (let dx = 12; dx < o.w - 14; dx += 12) c.fillRect(l + dx + Math.round(Math.sin(r.phase * 2 + dx) * 2), MG_GROUND + 2, 5, 1);
+      return true;
+    }
+  }
+  return false;
+}
+
 function mgThing(c, o, r) {
   const x = Math.round(o.x), y = Math.round(o.y);
+  if (mgThingArt(c, o, x, y, r)) return;
   const box = (dx, dy, w, h, col) => { c.fillStyle = col; c.fillRect(x + dx, y + dy, w, h); };
   switch (o.type) {
     case "berry":
@@ -1821,6 +1926,7 @@ const MG_PREY = [
   [/crab|lobster|crayfish/, "snails"], [/frog|toad|mantis/, "flies"], [/./, "mice"],
 ];
 const mgPrey = (slug) => MG_PREY.find(([re]) => re.test(slug))[1];
+const MG_PREY_ART = { salmon: "salmon", fish: "fish", crayfish: "crayfish", snails: "snail", flies: "fly", mice: "mouse" };
 
 function mgClawDraw(c, r) {
   // A stream at the foot of a little waterfall, in the evening.
@@ -1829,7 +1935,9 @@ function mgClawDraw(c, r) {
   c.fillStyle = sky; c.fillRect(0, 0, MG_W, MG_H);
   mgHills(c, r, 0, 130, 30, 70, "#6aae6e");
   const ox = Math.round(mgOx());
-  c.fillStyle = "#8a8f9e"; c.fillRect(196 + ox, 96, 70, 64); c.fillStyle = "#9fa4b2"; c.fillRect(196 + ox, 96, 70, 6);
+  if (mgArtFill(c, "cliff_m", 196 + ox, 96, 266 + ox, 160)) {
+    c.fillStyle = "#5c9e4a"; c.fillRect(194 + ox, 93, 74, 4); c.fillStyle = "#86c46a"; c.fillRect(195 + ox, 93, 72, 1);
+  } else { c.fillStyle = "#8a8f9e"; c.fillRect(196 + ox, 96, 70, 64); c.fillStyle = "#9fa4b2"; c.fillRect(196 + ox, 96, 70, 6); }
   c.fillStyle = "#7cc4e8"; c.fillRect(212 + ox, 96, 38, 64);
   c.fillStyle = "#e8f8ff";
   for (let i = 0; i < 5; i++) c.fillRect(215 + ox + i * 7, 96 + ((r.phase * 70 + i * 17) % 56), 2, 8);
@@ -1843,6 +1951,8 @@ function mgClawDraw(c, r) {
     const at = mgClawAt(o, r);
     if (!at) continue;
     const x = Math.round(at[0]), y = Math.round(at[1]), box = (dx, dy, w, h, col) => { c.fillStyle = col; c.fillRect(x + dx, y + dy, w, h); };
+    const art = o.good ? MG_PREY_ART[prey] : Math.floor(r.phase * 20) % 2 ? "bee1" : "bee0";
+    if (mgArt(c, art, x, y)) continue;
     if (!o.good) {  // a bee
       const flap = Math.floor(r.phase * 20) % 2;
       box(-2, -6 - flap, 3, 3, "rgba(255,255,255,.85)"); box(1, -6 + flap, 3, 3, "rgba(255,255,255,.85)");
@@ -1873,7 +1983,8 @@ function mgClawDraw(c, r) {
   // You, on the bank, watching the stream.
   const s = mg.species, raw = habSkin(mg.imgs[`/sprites/${encodeURIComponent(s.slug)}.png`], habLook.skins[s.slug]);
   if (raw && raw.complete && raw.naturalWidth && !(r.mode === "over" && Math.floor(r.phase * 12) % 3 === 0)) {
-    c.fillStyle = "#7a9a50"; c.fillRect(0, 168, 60, 32);
+    if (mgArt(c, "bank", 16, 193)) { mgArt(c, "bank", 48, 193); c.fillStyle = "#7a5232"; c.fillRect(0, 192, 68, 8); }
+    else { c.fillStyle = "#7a9a50"; c.fillRect(0, 168, 60, 32); }
     c.save(); c.translate(30, 182); c.scale(-1, 1); c.drawImage(raw, -raw.naturalWidth / 2, -raw.naturalWidth); c.restore();
   }
 }
@@ -1902,7 +2013,8 @@ function mgPoolDraw(c, r) {
     if (d > far || d + thick < 0) continue;
     if (o.good) {
       if (o.gone) continue;
-      const [x, y] = at(o.ang, d), col = mgFood(mg.species.slug)[2];
+      const [x, y] = at(o.ang, d), [, food, col] = mgFood(mg.species.slug);
+      if (mgArt(c, "food_" + food.replace(/ /g, ""), x, y)) continue;
       c.fillStyle = "rgba(0,0,0,.25)"; c.fillRect(Math.round(x) - 2, Math.round(y) - 1, 5, 4);
       c.fillStyle = col; c.fillRect(Math.round(x) - 3, Math.round(y) - 3, 5, 5);
       c.fillStyle = "rgba(255,255,255,.6)"; c.fillRect(Math.round(x) - 2, Math.round(y) - 2, 2, 2);
@@ -2190,6 +2302,13 @@ MG_MORE.slide = {
       const x = Math.round(o.wx - r.dist + r.x), y = MG_LANES[o.lane];
       if (x < -30 || x > MG_W + 30) continue;
       const box = (dx, dy, w, h, col) => { c.fillStyle = col; c.fillRect(x + dx, y + dy, w, h); };
+      if (mgArtReady()) {
+        if (o.type !== "m_fish") box(-14, 3, 28, 2, "rgba(0,0,0,.25)");
+        if (o.type === "m_log") mgArt(c, "log", x, y + 4);
+        else if (o.type === "m_rock") mgArt(c, "rock", x, y + 4);
+        else mgArt(c, "fish", x, y - 6 - Math.round(Math.abs(Math.sin(r.phase * 6 + o.wx)) * 3));
+        continue;
+      }
       if (o.type === "m_log") {
         box(-12, -9, 24, 12, "#7a5232"); box(-12, -9, 24, 3, "#a8744a"); box(-12, 1, 24, 2, "#5b3c22");
         box(9, -9, 4, 12, "#d8b07a"); box(10, -6, 2, 5, "#a8744a"); box(-14, 3, 28, 2, "rgba(0,0,0,.25)");
@@ -2277,8 +2396,8 @@ MG_MORE.nectar = {
     c.fillStyle = "#6aae6e"; c.fillRect(0, 172, MG_W, MG_H - 172);
     const k = MG_SPEED.nectar * r.lvl.spb;
     MG_FLOWERS.forEach((x, f) => {
-      c.fillStyle = "#3f8d58"; c.fillRect(x - 1, 126, 3, 50);
-      c.fillRect(x - 8, 150, 7, 3); c.fillRect(x + 2, 140, 7, 3);
+      const art = mgArt(c, "stem", x, 126);
+      if (!art) { c.fillStyle = "#3f8d58"; c.fillRect(x - 1, 126, 3, 50); c.fillRect(x - 8, 150, 7, 3); c.fillRect(x + 2, 140, 7, 3); }
       // The next thing due on this flower: a bud that opens as it comes, a ring that shrinks
       // onto it right on the beat.
       let next = null;
@@ -2286,19 +2405,24 @@ MG_MORE.nectar = {
       const u = next ? (next.wx - r.dist) / k : 9;  // beats until it's due
       const open = r.open[f] > 0 ? 1 : u < 2 ? mgClamp(1 - u / 2, 0, 1) : 0;
       const pet = 3 + Math.round(open * 5), col = MG_PETALS[f];
-      c.fillStyle = col;
-      for (const [dx, dy] of [[-1, -1], [1, -1], [-1, 1], [1, 1], [0, -1.4], [0, 1.4], [-1.4, 0], [1.4, 0]])
-        c.fillRect(x + Math.round(dx * pet) - 2, 120 + Math.round(dy * pet) - 2, 5, 5);
-      c.fillStyle = "#f8e08a"; c.fillRect(x - 2, 118, 5, 5);
+      if (art) mgArt(c, `flower${f}_${open <= 0 ? 0 : open < .4 ? 1 : open < .8 ? 2 : 3}`, x, 120);
+      else {
+        c.fillStyle = col;
+        for (const [dx, dy] of [[-1, -1], [1, -1], [-1, 1], [1, 1], [0, -1.4], [0, 1.4], [-1.4, 0], [1.4, 0]])
+          c.fillRect(x + Math.round(dx * pet) - 2, 120 + Math.round(dy * pet) - 2, 5, 5);
+        c.fillStyle = "#f8e08a"; c.fillRect(x - 2, 118, 5, 5);
+      }
       if (next && u < 2) {
         const rad = 8 + u * 14;
         c.strokeStyle = next.good ? "rgba(255,255,255,.9)" : "rgba(230,60,60,.9)"; c.lineWidth = 1.5;
         c.beginPath(); c.arc(x + .5, 120.5, rad, 0, Math.PI * 2); c.stroke();
         if (!next.good) {  // a wasp buzzing in to sit on the flower
           const wy = 120 - 14 - u * 20, wx = x + Math.sin(r.phase * 9 + f) * 4, flap = Math.floor(r.phase * 24) % 2;
-          c.fillStyle = "rgba(255,255,255,.85)"; c.fillRect(wx - 3, wy - 5 - flap, 3, 3); c.fillRect(wx + 1, wy - 5 + flap, 3, 3);
-          c.fillStyle = "#f2c14e"; c.fillRect(wx - 5, wy - 2, 10, 5);
-          c.fillStyle = "#2a2a2a"; c.fillRect(wx - 3, wy - 2, 2, 5); c.fillRect(wx + 1, wy - 2, 2, 5); c.fillRect(wx + 5, wy, 2, 1);
+          if (!mgArt(c, flap ? "wasp1" : "wasp0", wx, wy)) {
+            c.fillStyle = "rgba(255,255,255,.85)"; c.fillRect(wx - 3, wy - 5 - flap, 3, 3); c.fillRect(wx + 1, wy - 5 + flap, 3, 3);
+            c.fillStyle = "#f2c14e"; c.fillRect(wx - 5, wy - 2, 10, 5);
+            c.fillStyle = "#2a2a2a"; c.fillRect(wx - 3, wy - 2, 2, 5); c.fillRect(wx + 1, wy - 2, 2, 5); c.fillRect(wx + 5, wy, 2, 1);
+          }
         }
       }
       c.fillStyle = "rgba(0,0,0,.25)"; c.font = "bold 8px system-ui, sans-serif"; c.textAlign = "center";
@@ -2394,6 +2518,7 @@ MG_MORE.call = {
     // Two stumps: your friend on the left, you on the right.
     const ox = Math.round(mgOx());
     for (const x of [90 + ox, 230 + ox]) {
+      if (mgArt(c, "big_stump", x, 167)) continue;
       c.fillStyle = "#7a5232"; c.fillRect(x - 14, 150, 28, 18); c.fillStyle = "#d8b07a"; c.fillRect(x - 14, 148, 28, 4);
     }
     const k = MG_SPEED.call * r.lvl.spb, beat = r.dist / k;
@@ -2506,6 +2631,12 @@ MG_MORE.dig = {
       if (o.gone) continue;
       const x = Math.round(o.wx - r.dist + r.x);
       if (x < -30 || x > MG_W + 30) continue;
+      if (mgArtReady()) {
+        if (o.type === "m_root") { mgArtDown(c, "taproot_m", x, o.top, o.bot - 12); mgArt(c, "taproot_end", x, o.bot - 5); }
+        else if (o.type === "m_grub") mgArt(c, "grub", x, Math.round(o.y) + 1 + Math.round(Math.sin(r.phase * 8 + o.wx)));
+        else mgArt(c, (o.type === "m_water" ? "dwater" : "dstone") + mgNearest([7, 9, 11, 13], o.rad), x, Math.round(o.y));
+        continue;
+      }
       if (o.type === "m_root") {
         c.fillStyle = "#c8a070"; c.fillRect(x - 3, o.top, 6, o.bot - o.top);
         c.fillStyle = "#a07a50"; c.fillRect(x - 3, o.top, 2, o.bot - o.top);
@@ -2524,7 +2655,7 @@ MG_MORE.dig = {
     }
     // The nest at the end of the course.
     const nx = Math.round(r.len - r.dist + r.x + 30);
-    if (nx < MG_W + 40) {
+    if (nx < MG_W + 40 && !mgArt(c, "nest", nx, 134)) {
       c.fillStyle = "#3e2a18"; c.beginPath(); c.ellipse(nx, 130, 26, 18, 0, 0, Math.PI * 2); c.fill();
       c.fillStyle = "#c8a860"; c.fillRect(nx - 16, 140, 32, 6);
     }
@@ -2573,18 +2704,27 @@ MG_MORE.echo = {
     c.fillStyle = "#4a4270"; c.fillRect(0, 0, MG_W, MG_H);
     c.fillStyle = "#5a5288";
     for (let i = 0; i < 10; i++) c.fillRect((i * 71 - mgScroll(r, .4, 700) + 700) % 700 - 20, 20 + (i * 53) % 160, 14, 3);
-    c.fillStyle = "#8a80a8"; c.fillRect(0, 0, MG_W, 14); c.fillRect(0, MG_H - 14, MG_W, 14);
+    const sc = mgScroll(r, 1, 16);
+    if (!mgArtAcross(c, "cave_top", -sc, MG_W, -2) || !mgArtAcross(c, "cave_bot", -sc, MG_W, MG_H - 15)) {
+      c.fillStyle = "#8a80a8"; c.fillRect(0, 0, MG_W, 14); c.fillRect(0, MG_H - 14, MG_W, 14);
+    }
     for (const o of r.things) {
       if (o.gone) continue;
       const x = Math.round(o.wx - r.dist + r.x);
       if (x < -20 || x > MG_W + 20) continue;
       if (o.good) {
         const y = Math.round(o.y + Math.sin(r.phase * 6 + o.wx) * 2), f = Math.floor(r.phase * 16) % 2;
+        if (mgArt(c, f ? "moth1" : "moth0", x, y)) continue;
         c.fillStyle = "#e8dcc0"; c.fillRect(x - 3, y - 2 - f, 3, 3); c.fillRect(x + 1, y - 2 + f, 3, 3); c.fillStyle = "#8a7a60"; c.fillRect(x - 1, y - 1, 2, 4);
         continue;
       }
       // A spike of rock, pointing at the gap.
       const down = o.type === "m_tite", tip = down ? o.y1 : o.y0, base = down ? o.y0 : o.y1;
+      if (mgArtReady()) {
+        if (down) { mgArtDown(c, "tite_m", x, 0, o.y1 - 22); mgArt(c, "tite_tip", x, o.y1 - 22); }
+        else { mgArtDown(c, "tite_m", x, o.y0 + 23, MG_H); mgArt(c, "mite_tip", x, o.y0 + 23); }
+        continue;
+      }
       c.fillStyle = "#b0a4d0";
       for (let y = Math.min(tip, base); y < Math.max(tip, base); y += 2) {
         const u = Math.abs(y - base) / Math.max(1, Math.abs(tip - base)), w = Math.max(2, Math.round(o.w * (1 - u * .7)));
@@ -2748,7 +2888,10 @@ function mgSeaStep(r, game) {
 
 function mgSeaDraw(c, r, W) {
   mgSky(c, "#8ccbea", "#d8f0f8");
-  for (let i = 0; i < 3; i++) mgCloud(c, (i * 131 - mgScroll(r, .1, 420) + 420) % 420 - 40, 14 + i * 14, 1, "rgba(255,255,255,.9)");
+  for (let i = 0; i < 3; i++) {
+    const x = (i * 131 - mgScroll(r, .1, 420) + 420) % 420 - 40, y = 14 + i * 14;
+    if (!mgArt(c, "puff", x + 13, y + 6)) mgCloud(c, x, y, 1, "rgba(255,255,255,.9)");
+  }
   mgHills(c, r, .08, W - 2, 10, 70, "#7aa8a0");
   const sea = c.createLinearGradient(0, W, 0, MG_H);
   sea.addColorStop(0, "#3d9cc9"); sea.addColorStop(1, "#16507a");
@@ -2761,6 +2904,14 @@ function mgSeaDraw(c, r, W) {
     const x = Math.round(o.wx - r.dist + r.x);
     if (x < -30 || x > MG_W + 30) continue;
     const box = (dx, dy, w, h, col) => { c.fillStyle = col; c.fillRect(x + dx, Math.round(o.y) + dy, w, h); };
+    if (mgArtReady()) {
+      if (o.type === "m_fishy" || o.type === "m_snack") mgArt(c, o.type === "m_snack" ? "fish_gold" : "fish", x, o.y);
+      else if (o.type === "m_ring") mgArt(c, "ring", x, o.y);
+      else if (o.type === "m_jelly") mgArt(c, Math.floor(r.phase * 4) % 2 ? "jelly1" : "jelly0", x, Math.round(o.y + Math.sin(r.t * 2 + o.wx) * 3) + 1);
+      else if (o.type === "m_float") mgArt(c, "float", x, (o.y0 + o.y1) / 2 + 1);
+      else if (o.type === "m_seastack") { mgArtDown(c, "boulder_m", x, o.y0 + 8, o.y1); mgArt(c, "boulder_top", x, o.y0 + 2); }
+      continue;
+    }
     if (o.type === "m_fishy" || o.type === "m_snack") {
       box(-5, -2, 9, 5, o.type === "m_snack" ? "#f2a541" : "#c8d8e8"); box(-8, -3, 3, 7, o.type === "m_snack" ? "#f2a541" : "#c8d8e8");
       box(2, -1, 1, 1, "#222"); box(-4, 1, 7, 1, "rgba(255,255,255,.5)");
@@ -2928,6 +3079,13 @@ MG_MORE.leap = {
       const [px, py] = mgPerchAt(o, r.t, r.lvl.spb), x = Math.round(px - r.cam), y = Math.round(py);
       if (x < -60 || x > MG_W + 60) continue;
       const left = Math.round(x - o.w / 2), moving = o.amp || o.ax;
+      if (mgArtReady()) {
+        // Moving branches hang on a vine; still ones grow from a trunk.
+        if (moving) mgArtDown(c, "vine_m", x, 0, y); else mgArtDown(c, "trunk_m", left - 2, 0, MG_H);
+        mgArtAcross(c, "limb_m", left, left + o.w - 8, y);
+        mgArt(c, "limb_end", left + o.w - 1, y + 1);
+        continue;
+      }
       if (moving) { c.fillStyle = "#3f8d58"; c.fillRect(x - 1, 0, 2, y); }
       else { c.fillStyle = "#6a4a2e"; c.fillRect(left - 6, 0, 7, MG_H); }
       c.fillStyle = "#7a5232"; c.fillRect(left, y, o.w, 5); c.fillStyle = "#a8744a"; c.fillRect(left, y, o.w, 2);
@@ -2936,6 +3094,7 @@ MG_MORE.leap = {
     for (const o of r.things) {
       if (!o.good || o.gone) continue;
       const x = Math.round(o.wx - r.cam), y = Math.round(o.y);
+      if (mgArt(c, "acorn", x, y)) continue;
       c.fillStyle = "#62402a"; c.fillRect(x - 3, y - 4, 7, 3); c.fillRect(x, y - 6, 1, 2);
       c.fillStyle = "#c78a3e"; c.fillRect(x - 2, y - 1, 5, 4); c.fillRect(x - 1, y + 3, 3, 1);
     }
@@ -3042,14 +3201,21 @@ MG_MORE.feeder = {
     c.fillStyle = "#6aae6e"; c.fillRect(0, 176, MG_W, MG_H - 176);
     const mid = MG_W / 2, k = MG_SPEED.feeder * r.lvl.spb;
     // The feeder: a post, a little roof, a tray of seed and a long perch.
-    c.fillStyle = "#7a5232"; c.fillRect(mid - 3, 60, 6, 120);
-    c.fillStyle = "#b5523b"; c.beginPath(); c.moveTo(mid - 34, 66); c.lineTo(mid, 46); c.lineTo(mid + 34, 66); c.closePath(); c.fill();
-    c.fillStyle = "#d8b07a"; c.fillRect(mid - 26, 66, 52, 22); c.fillStyle = "#a8744a"; c.fillRect(mid - 26, 84, 52, 4);
-    c.fillStyle = "#c78a3e"; for (let i = 0; i < 9; i++) c.fillRect(mid - 22 + i * 5, 80 - (i % 2), 2, 2);
-    c.fillStyle = "#8a5a35"; c.fillRect(mid - 110, MG_PERCH_Y, 220, 4); c.fillStyle = "#a8744a"; c.fillRect(mid - 110, MG_PERCH_Y, 220, 1);
+    const art = mgArtReady();
+    if (art) {
+      mgArtDown(c, "trunk_m", mid, 110, 180);
+      mgArt(c, "feeder", mid, 46);
+      mgArtAcross(c, "perch_m", mid - 110, mid + 110, MG_PERCH_Y);
+    } else {
+      c.fillStyle = "#7a5232"; c.fillRect(mid - 3, 60, 6, 120);
+      c.fillStyle = "#b5523b"; c.beginPath(); c.moveTo(mid - 34, 66); c.lineTo(mid, 46); c.lineTo(mid + 34, 66); c.closePath(); c.fill();
+      c.fillStyle = "#d8b07a"; c.fillRect(mid - 26, 66, 52, 22); c.fillStyle = "#a8744a"; c.fillRect(mid - 26, 84, 52, 4);
+      c.fillStyle = "#c78a3e"; for (let i = 0; i < 9; i++) c.fillRect(mid - 22 + i * 5, 80 - (i % 2), 2, 2);
+      c.fillStyle = "#8a5a35"; c.fillRect(mid - 110, MG_PERCH_Y, 220, 4); c.fillStyle = "#a8744a"; c.fillRect(mid - 110, MG_PERCH_Y, 220, 1);
+    }
     for (let f = 0; f < 3; f++) {
       const x = mgPerchX(f);
-      c.fillStyle = "#6e4e30"; c.fillRect(x - 6, MG_PERCH_Y + 4, 12, 2);
+      if (!art || !mgArt(c, "peg", x, MG_PERCH_Y + 4)) { c.fillStyle = "#6e4e30"; c.fillRect(x - 6, MG_PERCH_Y + 4, 12, 2); }
       c.fillStyle = "rgba(0,0,0,.25)"; c.font = "bold 8px system-ui, sans-serif"; c.textAlign = "center"; c.fillText(String(f + 1), x, 192);
     }
     for (const o of r.things) {
@@ -3060,6 +3226,7 @@ MG_MORE.feeder = {
       if (o.good) {
         // A seed tumbling down onto its perch.
         const y = Math.round(MG_PERCH_Y - 4 - u * 46);
+        if (mgArt(c, "seed", x, y)) continue;
         c.fillStyle = "#6e4e30"; c.fillRect(x - 2, y - 3, 4, 5); c.fillStyle = "#e6c48a"; c.fillRect(x - 1, y - 2, 2, 2);
       } else {
         // The hawk's shadow sweeps in and darkens the perch, then it swoops.
@@ -3067,9 +3234,11 @@ MG_MORE.feeder = {
         c.fillStyle = `rgba(30,30,50,${(.15 + .35 * a).toFixed(2)})`;
         c.beginPath(); c.ellipse(x, MG_PERCH_Y + 6, 10 + a * 18, 3 + a * 3, 0, 0, Math.PI * 2); c.fill();
         const hy = Math.round(20 + a * (MG_PERCH_Y - 40)), wing = Math.round(12 + Math.sin(r.phase * 10) * 3);
-        c.fillStyle = "#5b4636"; c.fillRect(x - 3, hy - 3, 6, 8);
-        c.fillRect(x - wing, hy - 2, wing - 3, 3); c.fillRect(x + 3, hy - 2, wing - 3, 3);
-        c.fillStyle = "#f2c14e"; c.fillRect(x - 1, hy + 5, 2, 2);
+        if (!mgArt(c, Math.sin(r.phase * 10) > 0 ? "hawk1" : "hawk0", x, hy)) {
+          c.fillStyle = "#5b4636"; c.fillRect(x - 3, hy - 3, 6, 8);
+          c.fillRect(x - wing, hy - 2, wing - 3, 3); c.fillRect(x + 3, hy - 2, wing - 3, 3);
+          c.fillStyle = "#f2c14e"; c.fillRect(x - 1, hy + 5, 2, 2);
+        }
         c.fillStyle = "rgba(230,60,60,.9)"; c.font = "bold 10px system-ui, sans-serif"; c.textAlign = "center"; c.fillText("!", x, MG_PERCH_Y - 26);
       }
     }
@@ -3137,7 +3306,10 @@ MG_MORE.school = {
       if (o.gone) continue;
       const x = Math.round(o.wx - r.dist + r.x);
       if (x < -40 || x > MG_W + 40) continue;
-      if (o.type === "m_rocks") {
+      if (o.type === "m_rocks" && mgArtReady()) {
+        mgArtDown(c, "boulder_m", x, 0, cy - 22); mgArt(c, "boulder_bot", x, cy - 16);
+        mgArtDown(c, "boulder_m", x, cy + 18, MG_H); mgArt(c, "boulder_top", x, cy + 16);
+      } else if (o.type === "m_rocks") {
         // Rocks from the top and the bottom, with a narrow gap in the middle.
         c.fillStyle = "#6e7380"; c.fillRect(x - 11, 0, 22, cy - 14); c.fillRect(x - 11, cy + 14, 22, MG_H - cy - 14);
         c.fillStyle = "#8a8f9e"; c.fillRect(x - 11, 0, 5, cy - 14); c.fillRect(x - 11, cy + 14, 5, MG_H - cy - 14);
@@ -3145,12 +3317,14 @@ MG_MORE.school = {
       } else if (o.type === "m_pike") {
         // A long hungry pike swimming at you through the middle.
         const y = cy + Math.round(Math.sin(r.phase * 3 + o.wx) * 1.5);
+        if (mgArt(c, "pike", x, y)) continue;
         c.fillStyle = "#6b8a4a"; c.fillRect(x - 13, y - 4, 26, 8); c.fillRect(x + 11, y - 6, 5, 12);
         c.fillStyle = "#a8c47a"; c.fillRect(x - 11, y + 1, 20, 2);
         c.fillStyle = "#fff"; c.fillRect(x - 9, y - 3, 3, 3); c.fillStyle = "#222"; c.fillRect(x - 9, y - 2, 2, 2);
         c.fillStyle = "#e6e6e6"; c.fillRect(x - 14, y + 1, 4, 1);
       } else {
         // A little cloud of plankton.
+        if (mgArt(c, "plankton", x, o.y)) continue;
         c.fillStyle = "rgba(200,240,170,.85)";
         for (let i = 0; i < 6; i++) c.fillRect(x - 4 + ((i * 5) % 9), o.y - 4 + ((i * 7) % 9), 2, 2);
       }
@@ -3217,6 +3391,8 @@ MG_MORE.freeze = {
     for (const o of r.things) {
       const x = Math.round(o.wx - r.dist + r.x);
       if (o.wx === 0 || x < -30 || x > MG_W + 30 || o.gone) continue;
+      if (o.type === "m_clover" && mgArt(c, "clover", x, 158)) continue;
+      if (o.type === "m_den" && mgArt(c, "den", x, 170)) continue;
       if (o.type === "m_clover") {
         c.fillStyle = "#3f9d48"; c.fillRect(x - 3, 152, 3, 3); c.fillRect(x, 152, 3, 3); c.fillRect(x - 1, 149, 3, 3); c.fillRect(x, 155, 1, 4);
       } else if (o.type === "m_den") {
@@ -3230,6 +3406,9 @@ MG_MORE.freeze = {
     const look = r.looks.find((o) => beat >= o.b0 && beat < o.b1), warn = r.looks.find((o) => beat >= o.b0 - 1 && beat < o.b0);
     const twitch = r.things.some((o) => o.type === "m_twitch" && beat >= o.beat && beat < o.beat + .5);
     const fx = MG_W - 50, fy = 110;
+    const art = mgArt(c, "fox_rock", fx, fy + 12) && mgArt(c, look ? "fox_look" : warn || twitch ? "fox_alert" : "fox_back", fx, fy + 8);
+    const [ex, ey] = art ? [fx - 7, fy - 1] : [fx - 12, fy - 9];
+    if (!art) {
     c.fillStyle = "#8a8f9e"; c.fillRect(fx - 20, fy + 14, 40, 26); c.fillStyle = "#9fa4b2"; c.fillRect(fx - 16, fy + 10, 32, 6);
     c.fillStyle = "#d9733a"; c.fillRect(fx - 9, fy - 6, 18, 18); c.fillRect(fx + (look ? -14 : 6), fy - 14, 10, 10);
     c.fillStyle = "#f4e6d4"; c.fillRect(fx + (look ? -14 : 10), fy - 7, 4, 3); c.fillRect(fx - 12, fy + 8, 8, 5);
@@ -3237,8 +3416,9 @@ MG_MORE.freeze = {
     c.fillStyle = "#b85a28"; c.fillRect(fx + (look ? -13 : 7), fy - 14 - up, 3, up); c.fillRect(fx + (look ? -8 : 12), fy - 14 - up, 3, up);
     if (look) { c.fillStyle = "#222"; c.fillRect(fx - 12, fy - 11, 2, 2); }
     c.fillStyle = "#d9733a"; c.fillRect(fx + 8, fy + 4, 12, 5); c.fillStyle = "#f4e6d4"; c.fillRect(fx + 17, fy + 4, 3, 5);
+    }
     c.font = "bold 12px system-ui, sans-serif"; c.textAlign = "center";
-    if (look) { c.fillStyle = "rgba(255,240,200,.25)"; c.beginPath(); c.moveTo(fx - 12, fy - 9); c.lineTo(0, 120); c.lineTo(0, 190); c.closePath(); c.fill(); }
+    if (look) { c.fillStyle = "rgba(255,240,200,.25)"; c.beginPath(); c.moveTo(ex, ey); c.lineTo(0, 120); c.lineTo(0, 190); c.closePath(); c.fill(); }
     else if (warn) { c.fillStyle = "#e84a4a"; c.fillText("!", fx, fy - 26); }
     else if (twitch) { c.fillStyle = "#fff"; c.fillText("?", fx, fy - 26); }
     c.font = "bold 9px system-ui, sans-serif"; c.fillStyle = "#fff";
