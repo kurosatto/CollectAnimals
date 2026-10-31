@@ -361,7 +361,7 @@ def _(s):
 @sprite("barn_owl")
 def _(s):
     owl(s, "#d8a868", WHITE, eye_col=None, belly="#fbf3e4", beak="#e8c8b0", spots="#f4ead8", disk_edge="#c89060",
-        front=lambda s: s.px([(9, 21), (13, 24), (20, 22), (17, 26), (22, 26)], "#a87850"))
+        front=lambda s: s.paint(s.m_px([(11, 21), (13, 24), (19, 22), (17, 26), (20, 26)]), "#a87850"))
 
 
 @sprite("annas_hummingbird")

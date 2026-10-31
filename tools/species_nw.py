@@ -251,11 +251,10 @@ def _(s):
 def _(s):
     # A long-legged little ground owl: brown with white spots, white brows and a white chin.
     def front(s):
-        s.paint(s.m_line(8, 6, 14, 6) | s.m_line(9, 5, 13, 5), "#f4ecdc", mirror=True,
-                within=s.m_ellipse(16, 10, 10, 8))
-        s.paint(s.m_ellipse(16, 16.5, 4.5, 1.2), "#f4ecdc")
-        s.paint(s.m_px([(9, 4), (16, 3), (23, 4), (7, 17), (25, 17), (6, 22), (26, 22), (8, 26), (24, 26), (5, 19),
-                        (27, 19)]), "#f4ecdc")
+        s.paint(s.m_line(11, 7, 15, 7), "#f4ecdc", mirror=True)
+        s.paint(s.m_ellipse(16, 15.5, 3, 1), "#f4ecdc")
+        s.paint(s.m_px([(12, 5), (16, 4), (20, 5), (10, 18), (22, 18), (10, 22), (22, 22), (11, 26), (21, 26),
+                        (10, 20), (22, 20)]), "#f4ecdc")
         s.shift(0, -3)
         for x in (13, 19):
             s.line(x, 26, x, 30, "#c8b890")

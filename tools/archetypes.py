@@ -936,27 +936,26 @@ def owl(s: Sprite, body, face, *, tufts=False, eye_col="#f6c33c", belly=None, be
 
 
 def _owl_front(s: Sprite, body, face, tufts, eye_col, belly, beak, disk_edge, bars):
-    """The owl turned to face you."""
+    """The owl turned to face you: as slim as it is side-on, wings folded at its sides."""
     if tufts:
-        s.poly([(6, 9), (5, 0.5), (12, 5)], body, mirror=True)
-    s.px([(12, 30), (14, 30)], "#b88a4a", mirror=True)
-    s.ellipse(16, 20, 10.5, 10.5, body)
-    s.ellipse(16, 23, 6.5, 6.5, belly)
+        s.poly([(10, 7), (10, 1), (13.5, 5)], body, mirror=True)
+    s.px([(13, 30), (14, 30)], "#b88a4a", mirror=True)
+    s.ellipse(16, 21, 6.5, 9, body)
+    s.ellipse(16, 23, 4, 6.2, belly)
     if bars:
-        for y in range(19, 30, 2):
-            s.paint(s.m_line(11, y, 21, y), bars, within=s.last)
-    s.ellipse(5.5, 20, 3, 6.5, mix(body, "#000000", 0.18), rot=-10, mirror=True)
-    s.ellipse(16, 10, 10, 8, body, edge=True)
-    s.ellipse(11.5, 10.5, 4.5, 4.8, face, mirror=True, edge=disk_edge is not None)
+        for y in range(18, 30, 2):
+            s.paint(s.m_line(12, y, 20, y), bars, within=s.last)
+    s.ellipse(10.5, 21.5, 2.2, 7, mix(body, "#000000", 0.18), rot=-6, mirror=True)
+    s.ellipse(16, 10, 7, 6.3, body, edge=True)
+    s.ellipse(13.2, 10.5, 3, 3.6, face, mirror=True, edge=disk_edge is not None)
     if eye_col:
-        s.ellipse(11.5, 10.5, 2.4, 2.4, eye_col, mirror=True, shade=False)
-        s.px([(11, 10), (12, 10), (11, 11), (12, 11)], EYE, mirror=True)
-        s.px([(11, 10)], WHITE, mirror=True)
+        s.ellipse(13.2, 10.5, 1.7, 1.7, eye_col, mirror=True, shade=False)
+        s.px([(13, 10), (13, 11)], EYE, mirror=True)
     else:
-        s.ellipse(11.5, 10.5, 1.9, 2.2, EYE, mirror=True, shade=False)
-        s.px([(11, 9)], WHITE, mirror=True)
-    s.poly([(14.5, 13), (17.5, 13), (16, 16.5)], beak, shade=False)
-    s.eye_box(9, 8, 14, 13, mirror=True)
+        s.px([(12, 10), (13, 10), (12, 11), (13, 11)], EYE, mirror=True)
+        s.px([(12, 10)], WHITE, mirror=True)
+    s.poly([(15, 12.5), (17, 12.5), (16, 15)], beak, shade=False)
+    s.eye_box(12, 9, 14, 12, mirror=True)
 
 
 def _owl_flying(s: Sprite, body, face, belly, tufts, eye_col, beak, bars):
@@ -1528,8 +1527,8 @@ def lying_flat(s: Sprite, shape, color):
     shape(x, y) -> mask, in the plan's top-view coordinates around (16, 16.5), is squashed
     to a low oval with a darker rim of thickness under it. The species details that follow
     are squashed the same way."""
-    for top, col in ((26.5, mix(color, "#000000", 0.35)), (25, color)):
-        s.set_warp(lambda x, y, top=top: (x, top + (y - 16.5) * 0.42))
+    for top, col in ((24.5, mix(color, "#000000", 0.35)), (23, color)):
+        s.set_warp(lambda x, y, top=top: (x, top + (y - 16.5) * 0.6))
         m = s.fill(shape(s.xs - 16, s.ys - 16.5), col, edge=True)
     return m
 
