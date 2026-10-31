@@ -62,6 +62,15 @@ const MG_GAMES = [
   { key: "echo", title: "Echo Flight", pose: "fly", kind: "night flier, like a bat, owl or moth,", thing: ["bug", "bugs"],
     how: "A dark cave at night. Hold to fly up, let go to drop. Every tap sends out an echo that lights up the cave for a moment, so tap often and remember the way.",
     tip: "Hold to rise, tap to echo" },
+  { key: "feeder", title: "Feeder Rush", pose: "idle", kind: "songbird, like a sparrow, robin or dove,", thing: ["seed", "seeds"],
+    how: "Seeds drop onto the feeder's three perches on the beat. Tap a perch to hop there and catch them. When a hawk's shadow darkens a perch, get off it! Three dropped seeds end the try.",
+    tip: "Tap a perch to hop to it" },
+  { key: "school", title: "School Swim", pose: "swim", kind: "fish", thing: ["bite", "bites"],
+    how: "Lead your school of fish. Hold to squeeze together and slip through the gaps in the rocks. Let go to spread out so a hungry pike swims right between you. Grab the plankton.",
+    tip: "Hold to squeeze, let go to spread" },
+  { key: "freeze", title: "Freeze!", pose: "walk", kind: "land animal", thing: ["clover", "clovers"],
+    how: "Hold to sneak along the path to your den, and let go to freeze. When the fox perks its ears it's about to turn round. If it sees you moving, you're caught. Get home before dark!",
+    tip: "Hold to sneak, let go to freeze" },
 ];
 const MG_LAND_ROLES = new Set(["walk", "hop", "shore", "beach", "dangle"]);
 const MG_SHELL = /(?:^|_)(?:mussel|clam|oyster|scallop|cockle|barnacle|limpet|snail|whelk|periwinkle|nerite|conch|bonnet|turban|abalone|chiton|urchin|star|crab|lobster|crayfish|tortoise|turtle|cooter|slider|terrapin|armadillo|softshell|dogwinkle|slippersnail)(?:_|$)/;
@@ -76,6 +85,8 @@ const MG_MORE_KINDS = [
   ["plunge", /(?:^|_)(?:pelican|osprey|kingfisher|tern|gannet|booby|loon|grebe|cormorant|anhinga|merganser|puffin|murre|guillemot|auklet|bald_eagle|tropicbird)(?:_|$)/],
   ["splash", /(?:^|_)(?:whale|dolphin|porpoise|orca|seal|sea_lion|walrus|otter|salmon|trout|steelhead|sea_turtle|ridley|loggerhead|leatherback|flying_fish|mullet|tarpon|marlin|sailfish|tuna|mahi|manta|spinner)(?:_|$)/, /river_otter|elephant_seal/],
   ["call", /(?:^|_)(?:woodpecker|flicker|sapsucker|frog|bullfrog|toad|peeper|cricket|katydid|cicada|rattlesnake|massasauga|prairie_dog|beaver|grouse|quail|bobwhite|turkey|loon|elk|coyote|wolf|owl|mockingbird|wren|cardinal|whip_poor_will|chickadee|cuckoo|jay|crow|raven|towhee|sea_lion)(?:_|$)/, /vulture|limpet/],
+  ["feeder", /(?:^|_)(?:sparrow|finch|goldfinch|siskin|redpoll|junco|towhee|bunting|cardinal|grosbeak|robin|thrush|bluebird|dove|pigeon|warbler|kinglet|wren|chickadee|titmouse|bushtit|verdin|nuthatch|creeper|jay|magpie|crow|raven|blackbird|grackle|starling|cowbird|oriole|tanager|phoebe|flycatcher|kingbird|pewee|mockingbird|thrasher|catbird|waxwing|vireo|woodpecker|flicker|sapsucker|lark|meadowlark|myna|bulbul|leiothrix|white_eye|canary|longspur|dickcissel|phainopepla|bobolink)(?:_|$)/, /sea_robin|cardinalfish|swallowtail|blue_jay_butterfly/],
+  ["school", /(?:^|_)(?:darter|stoneroller|dace|shiner|minnow|chub|sunfish|bluegill|bass|crappie|perch|mosquitofish|guppy|killifish|topminnow|sculpin|garibaldi|surgeonfish|tang|damselfish|sergeant|wrasse|butterflyfish|angelfish|idol|triggerfish|goby|blenny|cichlid|tilapia|trout|salmon|herring|anchovy|sardine|smelt|grunion|silverside|mullet|snapper|grouper|rockfish|halibut|flounder|catfish|bullhead|sucker|carp|goldfish|koi|pupfish|gar|bowfin|shad|goldeye|walleye|pike|pickerel|drum|croaker|opaleye|sheephead|parrotfish|chromis|tetra|cod|mackerel|bonito|pufferfish|puffer|filefish|cardinalfish|hawkfish|sea_chub|halfmoon|blacksmith|kelpfish|mudsucker|stickleback|madtom|logperch|mojarra|pinfish|porgy|sheepshead|tarpon|snook|ladyfish|needlefish|squirrelfish|soldierfish|goatfish|boxfish|cowfish|trunkfish|scorpionfish|lionfish|sandperch|surfperch|lingcod|greenling|cabezon|tautog|cunner|bluefish|pompano|jack|molly|unicornfish|toby)(?:_|$)/, /herring_gull|pickerel_frog|jack_rabbit|jackrabbit/],
   ["echo", /(?:^|_)(?:bat|owl|nighthawk|nightjar|poorwill|whip_poor_will|chuck_will_s_widow|chuck_wills_widow|moth|firefly)(?:_|$)/, /bat_star|bat_ray|batfish|limpet/],
 ];
 const mg = { taps: [], px: MG_W / 2, py: MG_H / 2, entries: [], game: null, slug: null, run: null, raf: 0, last: 0, visible: true, down: false, built: false,
@@ -100,6 +111,8 @@ function mgKinds(s) {
   // Claws, talons, pincers, spear beaks and sticky tongues: the swipe game.
   if (MG_CLAW.test(s.slug) && !/fox_squirrel|limpet|butterflyfish/.test(s.slug)) kinds.push("claw");
   for (const [key, re, not] of MG_MORE_KINDS) if (re.test(s.slug) && !(not && not.test(s.slug))) kinds.push(key);
+  // Anything that walks or hops on the ground can sneak up on the fox.
+  if (["walk", "hop", "dangle", "shore"].includes(role) && s.category !== "bird" && !MG_SHELL.test(s.slug)) kinds.push("freeze");
   if (["hover", "flutter"].includes(role) && !/_bat$|skimmer|dasher|whitetail|pennant|lanternfly|firefly/.test(s.slug) && !kinds.includes("nectar")) kinds.push("nectar");
   return kinds;
 }
@@ -449,7 +462,7 @@ addEventListener("resize", () => mgFill());
 const MG_TILES = { sky: ["☁️", "#cfe8f7"], trail: ["🌲", "#d6ecc6"], river: ["🌊", "#bfdcef"], pool: ["🐚", "#c7ece6"],
                    claw: ["🐾", "#f6dcc0"], slide: ["🪵", "#e2cfb2"], leap: ["🌳", "#cde6b8"], dig: ["🕳️", "#d8c3a5"],
                    nectar: ["🌸", "#f6d6e6"], plunge: ["🐟", "#c4e2f2"], splash: ["🐬", "#b8d8f0"], call: ["🎵", "#efe2b8"],
-                   echo: ["🦇", "#c9c6e0"] };
+                   echo: ["🦇", "#c9c6e0"], feeder: ["🌻", "#f4e4b0"], school: ["🐠", "#b8dcec"], freeze: ["🦊", "#f2d2b8"] };
 function mgList() {
   mgBuild();
   const list = document.getElementById("mg-list");
@@ -1049,6 +1062,9 @@ const MG_STAT_INFO = {
   hover: ["Hover", "more time to hit each flower"],
   dive: ["Dive", "dives and swims faster"],
   echo: ["Echo", "echoes light the cave longer"],
+  hop: ["Hop", "hops between perches faster"],
+  school: ["Swim", "squeezes and spreads faster"],
+  freeze: ["Freeze", "more time to stop when the fox turns"],
 };
 const MG_GAME_STATS = {
   sky: [["speed", "speed"], ["flap", "agility"], ["size", "size"]],
@@ -1064,11 +1080,15 @@ const MG_GAME_STATS = {
   splash: [["speed", "speed"], ["swim", "agility"], ["size", "size"]],
   call: [["speed", "speed"]],
   echo: [["speed", "speed"], ["echo", "agility"], ["size", "size"]],
+  feeder: [["speed", "speed"], ["hop", "agility"]],
+  school: [["speed", "speed"], ["school", "agility"], ["size", "size"]],
+  freeze: [["speed", "speed"], ["freeze", "agility"]],
 };
 
 // Speed depends on the game: a seal is slow on land (Trail Run) and fast in the water.
 // The newer games use the speed of the place they're set in (games.py has the same table).
-const MG_PLACE = { slide: "trail", leap: "trail", dig: "trail", nectar: "sky", plunge: "sky", splash: "river", echo: "sky" };
+const MG_PLACE = { slide: "trail", leap: "trail", dig: "trail", nectar: "sky", plunge: "sky", splash: "river", echo: "sky",
+                   feeder: "sky", school: "river", freeze: "trail" };
 function mgStats(slug, game) {
   const v = (mgStatsIdx && mgStatsIdx.stats[slug]) || [3, 3, 3, 3];
   const place = (mgStatsIdx && mgStatsIdx.speed && mgStatsIdx.speed[slug]) || {};
@@ -2774,5 +2794,280 @@ Object.assign(MG_LEVELS, {
   echo: [
     { name: "Bat Cave", bpm: 112, song: 1, items: (k) => mgEchoLevel(k, 51, 55, 6, 64, 50, 2.5, 1.75) },
     { name: "Deep Cavern", bpm: 126, song: 9, items: (k) => mgEchoLevel(k, 52, 75, 6, 56, 46, 2.25, 1.5) },
+  ],
+});
+
+// ---- Feeder Rush: hop between the perches of a bird feeder --------------------------
+// Seeds drop onto the three perches on the beat: be on the right perch when one lands.
+// A hawk's shadow sweeps over one perch now and then; don't be on it when it dives.
+const mgPerchX = (f) => MG_W / 2 + (f - 1) * 80;
+const MG_PERCH_Y = 132;
+// [beat, perch]. Seeds half a beat apart are on the same or the next perch, so even
+// the slowest hopper can get there; hawks come where no seed is due for a beat.
+function mgFeederLevel(k, seed, len, start, busy0, busy1, hawk0, hawk1) {
+  const rnd = mgRand(seed), out = [], last = [-9, -9, -9];
+  let prev = null;
+  for (let b = start; b < len; b += .5) {
+    const u = (b - start) / (len - start), onBeat = b % 1 === 0;
+    if (rnd() >= (onBeat ? .6 + .3 * u : busy0 + (busy1 - busy0) * u)) continue;
+    let f = Math.floor(rnd() * 3);
+    if (prev && b - prev.beat < 1 && Math.abs(f - prev.f) > 1) f = 1;
+    out.push({ type: "m_seed", good: true, pts: 1, wx: b * k, f, beat: b });
+    last[f] = b; prev = { f, beat: b };
+    if (b > start + 6 && rnd() < hawk0 + (hawk1 - hawk0) * u) {
+      const free = [0, 1, 2].filter((g) => b + .5 - last[g] >= 1 && g !== f);
+      if (free.length) { const g = free[Math.floor(rnd() * free.length)]; out.push({ type: "m_hawk", wx: (b + .5) * k, f: g, beat: b + .5 }); }
+    }
+  }
+  return out.filter((o) => !o.good || !out.some((h) => !h.good && h.f === o.f && Math.abs(h.beat - o.beat) < 1));
+}
+
+MG_MORE.feeder = {
+  misses: true,
+  why: { hawk: "Eek, a hawk!", missed: "Three seeds dropped!" },
+  init(r) { r.f = 1; r.ax = 0; r.y = MG_PERCH_Y; r.x = mgPerchX(1); },
+  press(r, x) { r.f = x < MG_W / 2 - 40 ? 0 : x > MG_W / 2 + 40 ? 2 : 1; },
+  step(r, dt) {
+    // r.ax is how far you are from the middle perch; hopping gets quicker with Hop.
+    const hop = 520 * (1 + (r.st.agility - 1) * .12), want = (r.f - 1) * 80;
+    r.ax += mgClamp(want - r.ax, -hop * dt, hop * dt);
+    r.x = MG_W / 2 + r.ax;
+    for (const o of r.things) {
+      if (o.wx > r.dist) break;
+      if (o.gone || o.missed) continue;
+      const near = Math.abs(r.ax - (o.f - 1) * 80);
+      if (!o.good) { o.gone = true; if (near < 22) return "hawk"; continue; }
+      if (near < 18) mgGot(r, o, mgPerchX(o.f), MG_PERCH_Y - 10);
+      else {
+        o.missed = true; r.missed++;
+        r.fx.push({ kind: "text", x: mgPerchX(o.f), y: MG_PERCH_Y + 18, text: "Missed!", life: .8 });
+        if (r.missed >= 3) return "missed";
+      }
+    }
+  },
+  draw(c, r) {
+    mgSky(c, "#a8daf0", "#eef6e0");
+    mgHills(c, r, 0, 168, 18, 90, "#9fcf9a");
+    c.fillStyle = "#6aae6e"; c.fillRect(0, 176, MG_W, MG_H - 176);
+    const mid = MG_W / 2, k = MG_SPEED.feeder * r.lvl.spb;
+    // The feeder: a post, a little roof, a tray of seed and a long perch.
+    c.fillStyle = "#7a5232"; c.fillRect(mid - 3, 60, 6, 120);
+    c.fillStyle = "#b5523b"; c.beginPath(); c.moveTo(mid - 34, 66); c.lineTo(mid, 46); c.lineTo(mid + 34, 66); c.closePath(); c.fill();
+    c.fillStyle = "#d8b07a"; c.fillRect(mid - 26, 66, 52, 22); c.fillStyle = "#a8744a"; c.fillRect(mid - 26, 84, 52, 4);
+    c.fillStyle = "#c78a3e"; for (let i = 0; i < 9; i++) c.fillRect(mid - 22 + i * 5, 80 - (i % 2), 2, 2);
+    c.fillStyle = "#8a5a35"; c.fillRect(mid - 110, MG_PERCH_Y, 220, 4); c.fillStyle = "#a8744a"; c.fillRect(mid - 110, MG_PERCH_Y, 220, 1);
+    for (let f = 0; f < 3; f++) {
+      const x = mgPerchX(f);
+      c.fillStyle = "#6e4e30"; c.fillRect(x - 6, MG_PERCH_Y + 4, 12, 2);
+      c.fillStyle = "rgba(0,0,0,.25)"; c.font = "bold 8px system-ui, sans-serif"; c.textAlign = "center"; c.fillText(String(f + 1), x, 192);
+    }
+    for (const o of r.things) {
+      if (o.gone || o.missed) continue;
+      const u = (o.wx - r.dist) / k;  // beats until it lands
+      if (u > 2) break;
+      const x = mgPerchX(o.f);
+      if (o.good) {
+        // A seed tumbling down onto its perch.
+        const y = Math.round(MG_PERCH_Y - 4 - u * 46);
+        c.fillStyle = "#6e4e30"; c.fillRect(x - 2, y - 3, 4, 5); c.fillStyle = "#e6c48a"; c.fillRect(x - 1, y - 2, 2, 2);
+      } else {
+        // The hawk's shadow sweeps in and darkens the perch, then it swoops.
+        const a = mgClamp(1 - u / 2, 0, 1);
+        c.fillStyle = `rgba(30,30,50,${(.15 + .35 * a).toFixed(2)})`;
+        c.beginPath(); c.ellipse(x, MG_PERCH_Y + 6, 10 + a * 18, 3 + a * 3, 0, 0, Math.PI * 2); c.fill();
+        const hy = Math.round(20 + a * (MG_PERCH_Y - 40)), wing = Math.round(12 + Math.sin(r.phase * 10) * 3);
+        c.fillStyle = "#5b4636"; c.fillRect(x - 3, hy - 3, 6, 8);
+        c.fillRect(x - wing, hy - 2, wing - 3, 3); c.fillRect(x + 3, hy - 2, wing - 3, 3);
+        c.fillStyle = "#f2c14e"; c.fillRect(x - 1, hy + 5, 2, 2);
+        c.fillStyle = "rgba(230,60,60,.9)"; c.font = "bold 10px system-ui, sans-serif"; c.textAlign = "center"; c.fillText("!", x, MG_PERCH_Y - 26);
+      }
+    }
+    mgAnimal(c, r, r.x, MG_PERCH_Y + 1, ["idle", "fly"], { frame: Math.abs(r.ax - (r.f - 1) * 80) > 2 ? r.phase * 14 : 0, still: true, flip: r.f >= 1 });
+  },
+};
+
+// ---- School Swim: lead a little school of fish -----------------------------------
+// Hold to squeeze the school tight and slip through gaps in the rocks; let go and it
+// spreads into two bunches that let a hungry pike swim right through the middle.
+const MG_SCHOOL_Y = 110;
+// The two bunches: how far each is from the middle, and how tall each is.
+const mgSchoolOff = (r) => 3 + 29 * r.s;
+const mgSchoolHalf = (r) => 5 + r.st.size * .5;
+function mgSchoolLevel(k, seed, n, start, gap0, gap1) {
+  const rnd = mgRand(seed), out = [], c = MG_SCHOOL_Y;
+  let b = start, was = null;
+  for (let i = 0; i < n; i++) {
+    const u = i / (n - 1), kind = rnd() < .5 ? "rocks" : "pike";
+    b += kind === was ? Math.max(1, gap1 - .5) : gap0 + (gap1 - gap0) * u;
+    const wx = b * k;
+    if (kind === "rocks") {
+      out.push({ type: "m_rocks", wx, w: 22 });
+      out.push({ type: "m_plankton", good: true, pts: 1, wx: wx - 26, y: c, w: 8 });
+    } else {
+      out.push({ type: "m_pike", wx, w: 26 });
+      const y = rnd() < .5 ? c - 32 : c + 32;
+      out.push({ type: "m_plankton", good: true, pts: 1, wx: wx - 24, y, w: 8 }, { type: "m_plankton", good: true, pts: 1, wx: wx + 24, y: 2 * c - y, w: 8 });
+    }
+    was = kind;
+  }
+  return out;
+}
+
+MG_MORE.school = {
+  why: { rock: "Bonk! Squeeze tighter", pike: "The pike got close! Spread out" },
+  init(r) { r.s = 1; r.x = 92; r.y = MG_SCHOOL_Y; },
+  press() {},
+  step(r, dt) {
+    const rate = 1 / (.28 - (r.st.agility - 1) * .03);
+    r.s = mgClamp(r.s + (r.held ? -rate : rate) * dt, 0, 1);
+    const off = mgSchoolOff(r), half = mgSchoolHalf(r), c = MG_SCHOOL_Y;
+    const bands = [[c - off - half, c - off + half], [c + off - half, c + off + half]];
+    for (const o of r.things) {
+      if (o.gone) continue;
+      const dx = o.wx - r.dist;
+      if (dx > 40) break;
+      if (Math.abs(dx) > o.w / 2 + 8) continue;
+      if (o.type === "m_rocks" && bands.some(([a, b]) => a < c - 14 || b > c + 14)) return "rock";
+      if (o.type === "m_pike" && bands.some(([a, b]) => b > c - 12 && a < c + 12)) return "pike";
+      if (o.good && bands.some(([a, b]) => o.y > a - 4 && o.y < b + 4)) mgGot(r, o, r.x + dx, o.y);
+    }
+  },
+  draw(c, r) {
+    const w = c.createLinearGradient(0, 0, 0, MG_H);
+    w.addColorStop(0, "#5fb4d6"); w.addColorStop(1, "#1d5d86");
+    c.fillStyle = w; c.fillRect(0, 0, MG_W, MG_H);
+    c.fillStyle = "rgba(255,255,255,.07)";
+    for (let i = 0; i < 4; i++) { const x = (i * 90 - mgScroll(r, .2, 360) + 360) % 360 - 20; c.beginPath(); c.moveTo(x, 0); c.lineTo(x + 18, 0); c.lineTo(x + 50, MG_H); c.lineTo(x + 26, MG_H); c.fill(); }
+    c.fillStyle = "#d9c18a"; c.fillRect(0, 186, MG_W, 14);
+    c.fillStyle = "#3f8d58";
+    for (let x = -mgScroll(r, 1, 34); x < MG_W + 34; x += 34) for (let k = 0; k < 18; k += 2) c.fillRect(x + Math.round(Math.sin(r.phase * 2 + k * .4 + x) * 2), 186 - k, 2, 2);
+    const cy = MG_SCHOOL_Y;
+    for (const o of r.things) {
+      if (o.gone) continue;
+      const x = Math.round(o.wx - r.dist + r.x);
+      if (x < -40 || x > MG_W + 40) continue;
+      if (o.type === "m_rocks") {
+        // Rocks from the top and the bottom, with a narrow gap in the middle.
+        c.fillStyle = "#6e7380"; c.fillRect(x - 11, 0, 22, cy - 14); c.fillRect(x - 11, cy + 14, 22, MG_H - cy - 14);
+        c.fillStyle = "#8a8f9e"; c.fillRect(x - 11, 0, 5, cy - 14); c.fillRect(x - 11, cy + 14, 5, MG_H - cy - 14);
+        c.fillStyle = "#3f8d58"; c.fillRect(x - 8, cy - 16, 6, 2); c.fillRect(x + 1, cy + 14, 7, 2);
+      } else if (o.type === "m_pike") {
+        // A long hungry pike swimming at you through the middle.
+        const y = cy + Math.round(Math.sin(r.phase * 3 + o.wx) * 1.5);
+        c.fillStyle = "#6b8a4a"; c.fillRect(x - 13, y - 4, 26, 8); c.fillRect(x + 11, y - 6, 5, 12);
+        c.fillStyle = "#a8c47a"; c.fillRect(x - 11, y + 1, 20, 2);
+        c.fillStyle = "#fff"; c.fillRect(x - 9, y - 3, 3, 3); c.fillStyle = "#222"; c.fillRect(x - 9, y - 2, 2, 2);
+        c.fillStyle = "#e6e6e6"; c.fillRect(x - 14, y + 1, 4, 1);
+      } else {
+        // A little cloud of plankton.
+        c.fillStyle = "rgba(200,240,170,.85)";
+        for (let i = 0; i < 6; i++) c.fillRect(x - 4 + ((i * 5) % 9), o.y - 4 + ((i * 7) % 9), 2, 2);
+      }
+    }
+    // Your school: three of you in each bunch, wiggling.
+    const off = mgSchoolOff(r);
+    for (const [dy, dx, k] of [[-off - 4, 6, 0], [-off + 3, -4, 1], [-off - 1, -14, 2], [off - 3, 2, 3], [off + 4, -9, 4], [off, 12, 5]])
+      mgAnimal(c, r, r.x + dx + Math.round(Math.sin(r.phase * 6 + k) * 1.5), cy + dy + 5, ["swim", "idle"], { scale: .45, frame: r.phase * 8 + k, still: true });
+  },
+};
+
+// ---- Freeze!: sneak up while the fox looks away ------------------------------------
+// Hold to sneak along the path, and let go to freeze. The fox perks its ears a beat
+// before it turns round; if it sees you moving, it's over. Reach your den before dark.
+// [the beats it looks from and to]: a walk, the warning beat, then a look.
+function mgFreezeLevel(k, seed, looks, start, walk0, walk1, look0, look1, fakes) {
+  const rnd = mgRand(seed), out = [];
+  let b = start, walked = start;
+  for (let i = 0; i < looks; i++) {
+    const u = i / (looks - 1), walk = Math.round((walk0 + (walk1 - walk0) * u + rnd() * 1.5) * 2) / 2;
+    const look = Math.round((look0 + (look1 - look0) * u + rnd()) * 2) / 2;
+    if (fakes && i > 2 && rnd() < fakes) out.push({ type: "m_twitch", wx: 0, beat: b + Math.max(1, walk - 2) });
+    b += walk; walked += walk;
+    out.push({ type: "m_look", wx: 0, b0: b, b1: b + look });
+    b += look;
+  }
+  // The den is a little short of where you'd get walking every free beat, and clover
+  // grows along the way.
+  const spb = k / MG_SPEED.freeze, den = (walked - 1.5) * k;
+  for (let x = k * 2; x < den - k; x += k * .75) out.push({ type: "m_clover", good: true, pts: 1, wx: x, w: 8 });
+  out.push({ type: "m_den", wx: den, w: 20, dark: b + 3, spb });
+  return out;
+}
+const mgFreezeGrace = (r) => .1 + (r.st.agility - 1) * .03;  // seconds to stop when it turns
+
+MG_MORE.freeze = {
+  ownDist: true,
+  why: { seen: "Spotted! Freeze sooner", dark: "It got dark. Keep moving!" },
+  init(r) {
+    r.x = 70; r.y = 160; r.moving = false;
+    r.looks = r.things.filter((o) => o.type === "m_look");
+    r.den = r.things.find((o) => o.type === "m_den"); r.len = r.den.wx;
+  },
+  press() {},
+  step(r, dt) {
+    r.moving = r.held && r.fresh;
+    if (r.moving) r.dist = Math.min(r.len, r.dist + MG_SPEED.freeze * dt);
+    const beat = r.t / r.lvl.spb, grace = mgFreezeGrace(r) / r.lvl.spb;
+    if (r.moving && r.looks.some((o) => beat >= o.b0 + grace && beat < o.b1)) return "seen";
+    for (const o of r.things) {
+      if (o.wx > r.dist) break;
+      if (o.good && !o.gone) mgGot(r, o, r.x, r.y - 20);
+    }
+    if (r.dist < r.len && beat > r.den.dark) return "dark";
+  },
+  draw(c, r) {
+    const beat = r.t / r.lvl.spb, dusk = mgClamp(beat / r.den.dark, 0, 1);
+    mgSky(c, dusk < .7 ? "#9ad3ee" : "#e8a070", dusk < .7 ? "#e4f4e0" : "#f6d6a8");
+    mgHills(c, r, .1, 130, 22, 80, "#8fb9a8");
+    c.fillStyle = "#6aae6e"; c.fillRect(0, 150, MG_W, MG_H - 150);
+    c.fillStyle = "#c79a64"; c.fillRect(0, 160, MG_W, 16);
+    c.fillStyle = "#a87c4c"; for (let x = -mgScroll(r, 1, 18); x < MG_W; x += 18) c.fillRect(x, 166, 3, 1);
+    c.fillStyle = "#3f8d58"; for (let x = -mgScroll(r, 1, 12); x < MG_W; x += 12) { c.fillRect(x, 156, 1, 3); c.fillRect(x + 5, 178, 1, 3); }
+    for (const o of r.things) {
+      const x = Math.round(o.wx - r.dist + r.x);
+      if (o.wx === 0 || x < -30 || x > MG_W + 30 || o.gone) continue;
+      if (o.type === "m_clover") {
+        c.fillStyle = "#3f9d48"; c.fillRect(x - 3, 152, 3, 3); c.fillRect(x, 152, 3, 3); c.fillRect(x - 1, 149, 3, 3); c.fillRect(x, 155, 1, 4);
+      } else if (o.type === "m_den") {
+        c.fillStyle = "#7a5a40"; c.beginPath(); c.arc(x, 170, 18, Math.PI, 0); c.fill();
+        c.fillStyle = "#2a1c12"; c.beginPath(); c.arc(x, 172, 10, Math.PI, 0); c.fill();
+      }
+    }
+    // Darkness creeping in.
+    if (dusk > .6) { c.fillStyle = `rgba(20,20,60,${((dusk - .6) * .9).toFixed(2)})`; c.fillRect(0, 0, MG_W, MG_H); }
+    // The fox on its rock at the right: back turned, ears up as a warning, or looking.
+    const look = r.looks.find((o) => beat >= o.b0 && beat < o.b1), warn = r.looks.find((o) => beat >= o.b0 - 1 && beat < o.b0);
+    const twitch = r.things.some((o) => o.type === "m_twitch" && beat >= o.beat && beat < o.beat + .5);
+    const fx = MG_W - 50, fy = 110;
+    c.fillStyle = "#8a8f9e"; c.fillRect(fx - 20, fy + 14, 40, 26); c.fillStyle = "#9fa4b2"; c.fillRect(fx - 16, fy + 10, 32, 6);
+    c.fillStyle = "#d9733a"; c.fillRect(fx - 9, fy - 6, 18, 18); c.fillRect(fx + (look ? -14 : 6), fy - 14, 10, 10);
+    c.fillStyle = "#f4e6d4"; c.fillRect(fx + (look ? -14 : 10), fy - 7, 4, 3); c.fillRect(fx - 12, fy + 8, 8, 5);
+    const up = look || warn || twitch ? 4 : 1;
+    c.fillStyle = "#b85a28"; c.fillRect(fx + (look ? -13 : 7), fy - 14 - up, 3, up); c.fillRect(fx + (look ? -8 : 12), fy - 14 - up, 3, up);
+    if (look) { c.fillStyle = "#222"; c.fillRect(fx - 12, fy - 11, 2, 2); }
+    c.fillStyle = "#d9733a"; c.fillRect(fx + 8, fy + 4, 12, 5); c.fillStyle = "#f4e6d4"; c.fillRect(fx + 17, fy + 4, 3, 5);
+    c.font = "bold 12px system-ui, sans-serif"; c.textAlign = "center";
+    if (look) { c.fillStyle = "rgba(255,240,200,.25)"; c.beginPath(); c.moveTo(fx - 12, fy - 9); c.lineTo(0, 120); c.lineTo(0, 190); c.closePath(); c.fill(); }
+    else if (warn) { c.fillStyle = "#e84a4a"; c.fillText("!", fx, fy - 26); }
+    else if (twitch) { c.fillStyle = "#fff"; c.fillText("?", fx, fy - 26); }
+    c.font = "bold 9px system-ui, sans-serif"; c.fillStyle = "#fff";
+    c.fillText(look ? "Freeze!" : warn ? "Get ready to stop…" : r.moving ? "" : "Hold to sneak", MG_W / 2, 64);
+    mgAnimal(c, r, r.x, 170, r.moving ? ["walk", "idle"] : ["idle", "walk"], { frame: r.moving ? r.dist / 6 : 0, still: !r.moving });
+  },
+};
+
+MG_SPEED.feeder = 60; MG_SPEED.school = 70; MG_SPEED.freeze = 55;
+Object.assign(MG_LEVELS, {
+  feeder: [
+    { name: "Backyard Feeder", bpm: 100, song: 0, items: (k) => mgFeederLevel(k, 91, 60, 4, .1, .35, .08, .22) },
+    { name: "Busy Morning", bpm: 112, song: 5, items: (k) => mgFeederLevel(k, 92, 76, 4, .2, .5, .12, .3) },
+  ],
+  school: [
+    { name: "Reed Bed", bpm: 100, song: 4, items: (k) => mgSchoolLevel(k, 93, 34, 4, 3, 1.75) },
+    { name: "Rocky Reef", bpm: 112, song: 6, items: (k) => mgSchoolLevel(k, 94, 48, 4, 2.5, 1.75) },
+  ],
+  freeze: [
+    { name: "Meadow Sneak", bpm: 96, song: 2, items: (k) => mgFreezeLevel(k, 95, 12, 3, 4, 2.5, 1.5, 2, 0) },
+    { name: "Foxy Woods", bpm: 108, song: 3, items: (k) => mgFreezeLevel(k, 96, 16, 3, 3.5, 1.5, 1.5, 2.5, .4) },
   ],
 });
