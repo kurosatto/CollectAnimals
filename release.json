@@ -1,4 +1,4 @@
 {
-  "version": "0.28.0",
+  "version": "0.29.0",
   "about": "The release version of Capture Animals, on the web and Android. Bump it only for a major update: the web app then shows 'A new version is available' and the Android app picks it up as its versionName on the next APK build. Smaller changes reach the web app silently."
 }
