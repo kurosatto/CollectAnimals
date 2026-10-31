@@ -2,7 +2,8 @@
 
 They come from the real animal: its weight (species/details.csv), its kind (the
 state lists, species/household.csv) and what it's known for (fast runners, great
-jumpers, slow crawlers), with a few hand-tuned stars. Writes
+jumpers, slow crawlers), with a few hand-tuned stars. Also how big each animal
+is drawn on the field screen ("scale"). Writes
 species/sprites/game_stats.json, which the website and the Android app both read.
 
     python tools/make_game_stats.py
@@ -182,6 +183,29 @@ def bulk(kg: float | None, cm: float | None, category: str) -> float:
     return max(1, min(5, sum(marks) / len(marks) + 1))
 
 
+# Rough weight (kg) and length (cm) of the pets and pests that have no details row.
+HOUSEHOLD_SIZE = {
+    "american_cockroach": (.001, 4), "german_cockroach": (.0001, 1.3), "house_fly": (.00002, .7), "brown_rat": (.35, 40),
+    "house_mouse": (.02, 16), "golden_hamster": (.13, 15), "domestic_rabbit": (2.5, 45), "domestic_cat": (4.5, 70),
+    "domestic_dog": (20, 90), "horse": (500, 240), "domestic_chicken": (2.5, 45), "rock_pigeon": (.35, 32),
+    "budgerigar": (.035, 18), "goldfish": (.1, 15),
+}
+
+
+def scale(kg: float | None, cm: float | None) -> float:
+    """How big to draw the animal on the field screen, next to a 1.0 crow: from 0.4 for a
+    bee to 1.5 for a bison or whale. Logarithmic, so a seal is clearly bigger than a
+    banana slug without a bear being a hundred times the slug."""
+    marks = []
+    if kg is not None:
+        marks.append((math.log10(max(kg, 1e-6)) + 3) / 6)        # 1 g is 0, 1 tonne is 1
+    if cm is not None:
+        marks.append(math.log10(max(cm, .5) / 2) / math.log10(150))  # 2 cm is 0, 3 m is 1
+    if not marks:
+        return 1.0
+    return round(.4 + 1.1 * max(0, min(1, sum(marks) / len(marks))), 2)
+
+
 def family(slug: str):
     for pattern, speed, jump, agility in FAMILY:
         if re.search(rf"(?:^|_)(?:{pattern})(?:_|$)", slug):
@@ -203,13 +227,15 @@ def main() -> None:
     with (SPECIES / "details.csv").open(encoding="utf-8") as f:
         for row in csv.DictReader(f):
             details[row["slug"]] = row
-    stats, places = {}, {}
+    stats, places, scales = {}, {}, {}
     for slug, cat in sorted(category.items()):
+        d = details.get(slug, {})
+        kg, cm = weight_kg(d.get("weight", "")), length_cm(d.get("size", ""))
+        scales[slug] = scale(*HOUSEHOLD_SIZE[slug]) if kg is None and cm is None and slug in HOUSEHOLD_SIZE else scale(kg, cm)
         if slug in STARS:
             stats[slug] = list(STARS[slug])
             continue
-        d = details.get(slug, {})
-        big = bulk(weight_kg(d.get("weight", "")), length_cm(d.get("size", "")), cat)
+        big = bulk(kg, cm, cat)
         size = max(1, min(5, int(big)))
         speed = rule(SPEED, slug, CATEGORY_SPEED.get(cat, 3))
         jump = rule(JUMP, slug, CATEGORY_JUMP.get(cat, 3))
@@ -235,7 +261,8 @@ def main() -> None:
         if p:
             places[slug] = p
     out = SPECIES / "sprites" / "game_stats.json"
-    out.write_text(json.dumps({"order": ["speed", "jump", "agility", "size"], "stats": stats, "speed": places},
+    out.write_text(json.dumps({"order": ["speed", "jump", "agility", "size"], "stats": stats, "speed": places,
+                              "scale": scales},
                               separators=(",", ":")) + "\n", encoding="utf-8")
     from collections import Counter
     for i, name in enumerate(("speed", "jump", "agility", "size")):

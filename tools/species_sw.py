@@ -758,7 +758,6 @@ def _(s):
         s.paint(s.m_line(x, 19, x, 26), mix(body, "#000000", 0.2), within=m)
     s.ellipse(9.5, 22.5, 3.6, 3.2, mix(body, "#000000", 0.1), edge=True)
     s.eye(8, 21)
-    s.blush(9, 24)
     if s.act == "walk" and s.f % 2:
         s.shift(-1, 0)
 
@@ -835,7 +834,6 @@ def _(s):
     s.poly([(4, 20), (1, 22), (4, 22)], d)
     s.px([(5, 22), (6, 23), (7, 22), (8, 23)], "#d8b890")  # a beard of hairs for carrying sand
     s.eye(5, 16)
-    s.blush(7, 19)
 
 
 @sprite("eastern_boxelder_bug")
@@ -968,7 +966,6 @@ def _(s):
     s.line(9, 17, 4, 13, dark)
     s.line(8, 18, 2, 16, dark)
     s.eye(9, 18)
-    s.blush(10, 21)
 
 
 @sprite("longfin_dace")
@@ -994,4 +991,3 @@ def _(s):
     s.path([(4, 19), (1, 14), (-2, 12)], 0.45, "#3a3028", shade=False)
     s.path([(5, 18), (5, 13), (3, 10)], 0.45, "#3a3028", shade=False)
     s.eye(5, 20)
-    s.blush(6, 23)

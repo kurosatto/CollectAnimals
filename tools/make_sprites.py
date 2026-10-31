@@ -805,7 +805,6 @@ def _(s):
     s.ellipse(10, 14, 4.5, 4, "#2a2430", edge=True)
     s.eye(7, 13)
     s.eye(10, 13)
-    s.blush(7, 16)
 
 
 @sprite("pacific_banana_slug")
@@ -820,7 +819,6 @@ def _(s):
     s.px([(3, 5), (9, 5)], "#3a3020")
     s.px([(4, 15), (5, 15), (4, 16), (5, 16)], EYE_DOT)
     s.px([(4, 15)], WHITE)
-    s.blush(6, 17)
 
 
 @sprite("ten_lined_june_beetle")
@@ -850,8 +848,6 @@ def _(s):
     s.px([(11, 13), (13, 11), (19, 12), (21, 15), (12, 20), (20, 21)], "#9a5ad0")
     s.eye(12, 15)
     s.eye(18, 15)
-    s.blush(10, 18)
-    s.blush(20, 18)
 
 
 @sprite("giant_green_anemone")
@@ -867,8 +863,6 @@ def _(s):
     s.ellipse(16, 15, 2.5, 1.2, "#e89ab0", shade=False)
     s.eye(12, 20)
     s.eye(18, 20)
-    s.blush(10, 23)
-    s.blush(20, 23)
 
 
 @sprite("lined_shore_crab")
@@ -885,7 +879,6 @@ def _(s):
         s.paint(s.m_line(9, y, 23, y), "#5a6a4a", within=s.last)
     s.px([(11, 8), (12, 8), (19, 8), (20, 8)], EYE_DOT)
     s.px([(11, 8), (19, 8)], WHITE)
-    s.blush(10, 21, mirror=True)
     s.px([(15, 22), (16, 22)], "#1d1a20")
 
 
@@ -900,8 +893,6 @@ def _(s):
         s.paint(s.m_line(16, 4, x, 13), "#b05a2a", within=m)
     s.eye(12, 8)
     s.eye(18, 8)
-    s.blush(10, 11)
-    s.blush(20, 11)
 
 
 @sprite("garibaldi")
@@ -915,7 +906,6 @@ def _(s):
     s.eye(8, 13, size=3)
     s.px([(8, 13)], WHITE)
     s.px([(5, 19), (6, 19)], "#c0501a")
-    s.blush(9, 18)
 
 
 @sprite("leopard_shark")
@@ -930,7 +920,6 @@ def _(s):
             | s.m_poly([(23, 13), (25, 13), (25, 16), (23, 16)]), "#3a3a44", within=m)
     s.paint(s.m_px([(9, 15), (16, 16), (21, 16), (26, 14), (11, 13)]), "#3a3a44", within=m)
     s.eye(5, 14)
-    s.blush(5, 17)
     s.px([(3, 18), (4, 18)], "#3a3a44")
 
 

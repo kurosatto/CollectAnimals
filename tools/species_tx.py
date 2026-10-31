@@ -31,7 +31,6 @@ def _(s):
     s.path([(6, 18), (0.5, 21)], (1.4, 0.8), skin)  # the long nose
     s.px([(0, 21)], "#7a5a5a")
     s.eye(7, 16)
-    s.px([(8, 18), (9, 18)], "#f59aa8")
     if s.act == "walk" and s.f % 2:
         s.shift(0, -1)
 
@@ -494,7 +493,6 @@ def _(s):
     s.line(6, 12, 4, 6, "#2b2226")
     s.line(9, 12, 10, 6, "#2b2226")
     s.eye(5, 16, color="#11080f", shine="#ffffff")
-    s.blush(5, 19, color="#ff8fa8")
 
 
 @sprite("red_swamp_crayfish")
@@ -521,7 +519,6 @@ def _(s):
     s.line(9, 17, 4, 13, dark)
     s.line(8, 18, 2, 16, dark)
     s.eye(9, 18)
-    s.blush(10, 21)
 
 
 @sprite("common_pill_woodlouse")
@@ -539,7 +536,6 @@ def _(s):
     s.ellipse(6.5, 22, 3.5, 4, "#5a5a64", edge=True)
     s.line(4, 19, 1, 15, "#3a3a44")
     s.eye(5, 21)
-    s.blush(6, 24)
 
 
 def _segmented(s, n, body, head, legs, *, leg_len=3, spacing=3.2, r=2.6, antenna=4, tail=None):
