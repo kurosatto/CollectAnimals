@@ -989,6 +989,35 @@ def p_fox(s, ears=False, look=False):
     s.ellipse(12 if look else 16, 23, 2.4, 2, CREAM, shade=False)
 
 
+# == Call Back: hearts ======================================================================
+HEART_SMALL = (".XX.XX.", "XXXXXXX", "XXXXXXX", ".XXXXX.", "..XXX..", "...X...")
+HEART_BIG = ("..XXX...XXX..", ".XXXXX.XXXXX.", "XXXXXXXXXXXXX", "XXXXXXXXXXXXX", "XXXXXXXXXXXXX",
+             ".XXXXXXXXXXX.", "..XXXXXXXXX..", "...XXXXXXX...", "....XXXXX....", ".....XXX.....", "......X......")
+
+
+def heart(s, cx, cy, rows, col, shine=True):
+    """A heart from its pixel rows, centred on (cx, cy)."""
+    x0, y0 = cx - len(rows[0]) // 2, cy - len(rows) // 2
+    s.px([(x0 + i, y0 + j) for j, row in enumerate(rows) for i, ch in enumerate(row) if ch == "X"], col, shade=True)
+    if shine:
+        s.px([(x0 + 1, y0 + 2), (x0 + 2, y0 + 1)] if len(rows) > 6 else [(x0 + 1, y0 + 1)], "#ffd0dc")
+
+
+@piece("heart", (16, 26))
+def p_heart(s):
+    heart(s, 16, 26, HEART_SMALL, "#e8506a")
+
+
+@piece("heart_empty", (16, 26))
+def p_heart_empty(s):
+    heart(s, 16, 26, HEART_SMALL, "#b89aa4", shine=False)
+
+
+@piece("heart_big", (16, 22))
+def p_heart_big(s):
+    heart(s, 16, 22, HEART_BIG, "#e8506a")
+
+
 def render(p) -> tuple[Image.Image, tuple[int, int]]:
     with canvas(p["size"] or pixel.N):
         s = Sprite()

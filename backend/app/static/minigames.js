@@ -56,9 +56,9 @@ const MG_GAMES = [
   { key: "splash", title: "Big Splash", pose: "swim", kind: "leaping swimmer, like a dolphin, seal or salmon,", thing: ["point", "points"],
     how: "Hold to dive deep, then let go to race up and leap out through the rings. The deeper you dive, the higher you leap. Watch out for floating logs and rocks.",
     tip: "Hold to dive, let go to leap" },
-  { key: "call", title: "Call Back", pose: "idle", kind: "animal with a call, like a woodpecker, frog or cricket,", thing: ["note", "notes"],
-    how: "A friend calls out a rhythm, then it's your turn: tap the same rhythm back. The dots show it too. Three mistakes end the try.",
-    tip: "Listen, then tap it back" },
+  { key: "call", title: "Call Back", pose: "idle", kind: "animal with a call, like a woodpecker, frog or cricket,", thing: ["heart", "hearts"],
+    how: "Win a partner with your song, like animals do in spring. Your partner sings a rhythm, then it's your turn: tap the same rhythm back. Every note you match wins a heart, and a whole song matched makes your partner dance. Three mistakes end the try.",
+    tip: "Listen, then sing it back" },
   { key: "echo", title: "Echo Flight", pose: "fly", kind: "night flier, like a bat, owl or moth,", thing: ["bug", "bugs"],
     how: "A dark cave at night. Hold to fly up, let go to drop. Every tap sends out an echo that lights up the cave for a moment, so tap often and remember the way.",
     tip: "Hold to rise, tap to echo" },
@@ -1563,6 +1563,7 @@ function mgFxStep(r, dt) {
   for (const f of r.fx) {
     f.life -= dt;
     if (f.kind === "text") f.y -= 18 * dt;
+    else if (f.kind === "heart") f.y -= (f.big ? 10 : 22) * dt;
     else { f.x += f.vx * dt; f.y += f.vy * dt; f.vy += 120 * dt; }
   }
   r.fx = r.fx.filter((f) => f.life > 0);
@@ -2113,6 +2114,11 @@ function mgPlayer(c, r) {
 }
 
 function mgFxDraw(c, f) {
+  if (f.kind === "heart") {
+    const x = f.x + Math.sin(f.life * 9) * 2;
+    if (!mgArt(c, f.big ? "heart_big" : "heart", x, f.y)) { c.fillStyle = "#e8506a"; c.fillRect(Math.round(x) - 3, Math.round(f.y) - 3, 6, 5); }
+    return;
+  }
   if (f.kind === "text") {
     c.font = "bold 9px system-ui, sans-serif"; c.textAlign = "center";
     c.fillStyle = "rgba(0,0,0,.4)"; c.fillText(f.text, f.x + 1, f.y + 1);
@@ -2433,6 +2439,9 @@ MG_MORE.nectar = {
 };
 
 // ---- Call Back: hear a rhythm, tap it back ------------------------------------------
+// A courtship duet: your partner sings, you sing the same rhythm back. Every bar starts
+// with a silent beat, so there's always a beat to get ready before the first note.
+const MG_CALL_BAR = 5;  // the silent beat, then the four beats of the song
 // A call is one bar (4 beats) from your friend, then a bar for you to tap the same
 // rhythm. Patterns are in beats from the start of the bar.
 const MG_CALLS = [
@@ -2445,11 +2454,11 @@ function mgCallLevel(k, seed, calls, from0, from1, to0, to1) {
   for (let i = 0; i < calls; i++) {
     const u = i / (calls - 1), lo = Math.round(from0 + (from1 - from0) * u), hi = Math.round(to0 + (to1 - to0) * u);
     // A quiet lead-in, then each round: listen for a bar, two quiet beats to get ready,
-    // your bar, and two more quiet beats before the next call.
-    const pat = MG_CALLS[lo + Math.floor(rnd() * (hi - lo + 1))], b = 6 + i * 12, a = b + 6;
+    // your bar, and two more quiet beats before the next call. Every bar starts silent.
+    const pat = MG_CALLS[lo + Math.floor(rnd() * (hi - lo + 1))], b = 6 + i * 14, a = b + 7;
     for (const t of pat) {
-      out.push({ type: "m_call", wx: (b + t) * k, beat: b + t, bar: b, call: i });
-      out.push({ type: "m_answer", good: true, pts: 1, wx: (a + t) * k, beat: a + t, bar: a, lis: b, call: i });
+      out.push({ type: "m_call", wx: (b + 1 + t) * k, beat: b + 1 + t, bar: b, call: i });
+      out.push({ type: "m_answer", good: true, pts: 1, wx: (a + 1 + t) * k, beat: a + 1 + t, bar: a, lis: b, call: i, last: t === pat[pat.length - 1] });
     }
   }
   return out;
@@ -2482,7 +2491,7 @@ function mgCallSfx(kind, low) {
 MG_MORE.call = {
   misses: true,
   why: { missed: "Three mistakes!" },
-  init(r) { r.x = 230; r.y = 150; r.heard = 0; r.wrong = []; },
+  init(r) { r.x = 230; r.y = 150; r.heard = 0; r.wrong = []; r.dance = -9; r.sulk = -9; },
   press(r) {
     const win = mgCallWin();
     let best = null;
@@ -2493,11 +2502,16 @@ MG_MORE.call = {
     }
     mgCallSfx(mgCallKind(mg.species.slug));
     r.flap = .15;
-    if (best) { mgGot(r, best, 230 + mgOx(), 120); return; }
+    if (best) {
+      mgGot(r, best, 230 + mgOx(), 120);
+      // Your partner likes it: a heart floats up over their head.
+      r.fx.push({ kind: "heart", x: 90 + mgOx() + (Math.random() * 8 - 4), y: 112, life: 1 });
+      return;
+    }
     // A tap in your bar that isn't in the rhythm is a mistake. Taps between calls are fine.
     const k = MG_SPEED.call * r.lvl.spb;
-    const mine = r.things.some((o) => o.good && r.dist >= o.bar * k - win && r.dist <= (o.bar + 4) * k);
-    if (mine) { r.missed++; r.wrong.push(r.dist); r.fx.push({ kind: "text", x: 230 + mgOx(), y: 112, text: "Oops!", life: .8 }); }
+    const mine = r.things.some((o) => o.good && r.dist >= o.bar * k - win && r.dist <= (o.bar + MG_CALL_BAR) * k);
+    if (mine) { r.missed++; r.wrong.push(r.dist); r.sulk = r.t; r.fx.push({ kind: "text", x: 230 + mgOx(), y: 112, text: "Oops!", life: .8 }); }
   },
   step(r) {
     if (r.missed >= 3) return "missed";
@@ -2506,30 +2520,47 @@ MG_MORE.call = {
       if (o.wx - r.dist > win) break;
       if (o.type === "m_call" && !o.heard && r.dist >= o.wx) { o.heard = true; r.heard = r.t; mgCallSfx(mgCallKind(mg.species.slug), true); }
       if (!o.good || o.gone || o.missed || r.dist - o.wx <= win) continue;
-      o.missed = true; r.missed++;
+      o.missed = true; r.missed++; r.sulk = r.t;
       r.fx.push({ kind: "text", x: 230 + mgOx(), y: 112, text: "Missed!", life: .8 });
       if (r.missed >= 3) return "missed";
     }
+    // A whole song sung back without a slip: your partner dances and a big heart pops up.
+    for (const o of r.things) {
+      if (!o.last || o.done || !(o.gone || o.missed)) continue;
+      o.done = true;
+      if (r.things.every((q) => q.call !== o.call || !q.good || q.gone)) {
+        r.dance = r.t;
+        r.fx.push({ kind: "heart", big: true, x: 160 + mgOx(), y: 104, life: 1.4 });
+      }
+    }
   },
   draw(c, r) {
-    mgSky(c, "#f2b880", "#f6e2b8");
+    // A spring evening in a meadow full of flowers.
+    mgSky(c, "#f0a8a0", "#f8e2c0");
     mgHills(c, r, 0, 150, 26, 80, "#9fb87a");
     c.fillStyle = "#6a8a4a"; c.fillRect(0, 160, MG_W, MG_H - 160);
-    // Two stumps: your friend on the left, you on the right.
     const ox = Math.round(mgOx());
+    for (let i = 0; i < 18; i++) {
+      const fx = (i * 53 + 17) % (MG_W + 20) - 10, fy = 164 + (i * 29) % 32;
+      if (!mgArt(c, `flower${i % 4}_${1 + (i % 2)}`, fx, fy)) { c.fillStyle = MG_PETALS[i % 4]; c.fillRect(fx - 1, fy - 1, 3, 3); }
+    }
+    // Two stumps: your partner on the left, you on the right.
     for (const x of [90 + ox, 230 + ox]) {
       if (mgArt(c, "big_stump", x, 167)) continue;
       c.fillStyle = "#7a5232"; c.fillRect(x - 14, 150, 28, 18); c.fillStyle = "#d8b07a"; c.fillRect(x - 14, 148, 28, 4);
     }
     const k = MG_SPEED.call * r.lvl.spb, beat = r.dist / k;
     // The bar being played now: a row of beats with the rhythm's dots on it.
-    const now = r.things.find((o) => o.good && beat < o.bar + 4 + .5) || r.things[r.things.length - 1];
-    const call = now ? now.call : 0, lis = now ? now.lis : 0, mine = now ? now.bar : 4, yours = beat >= mine - .25;
-    const x0 = 40 + ox, w = 240, at = (t) => x0 + t / 4 * w;
-    c.fillStyle = "rgba(20,30,24,.55)"; c.fillRect(x0 - 10, 30, w + 20, 46);
+    const B = MG_CALL_BAR, now = r.things.find((o) => o.good && beat < o.bar + B + .5) || r.things[r.things.length - 1];
+    const call = now ? now.call : 0, lis = now ? now.lis : 0, mine = now ? now.bar : B, yours = beat >= mine - .25;
+    const x0 = 40 + ox, w = 240, at = (t) => x0 + t / B * w;
+    c.fillStyle = "rgba(60,20,40,.5)"; c.fillRect(x0 - 10, 30, w + 20, 46);
+    // The first beat of every bar is a silent one to get ready on.
+    c.fillStyle = "rgba(255,255,255,.12)"; c.fillRect(Math.round(at(0)), 48, Math.round(w / B), 22);
     c.font = "bold 9px system-ui, sans-serif"; c.textAlign = "left"; c.fillStyle = "#fff";
-    c.fillText(yours ? "Your turn!" : beat >= lis + 4 ? "Get ready…" : "Listen…", x0 - 4, 42);
-    for (let t = 0; t <= 4; t++) { c.fillStyle = "rgba(255,255,255,.35)"; c.fillRect(Math.round(at(t)), 48, 1, 22); }
+    const t0 = yours ? beat - mine : beat - lis;
+    c.fillText(yours ? (t0 < 1 ? "Your turn… ready" : "Sing it back!") : beat >= lis + B ? "Get ready…" : t0 < 1 ? "Your partner sings… ready" : "Listen…", x0 - 4, 42);
+    for (let t = 0; t <= B; t++) { c.fillStyle = "rgba(255,255,255,.35)"; c.fillRect(Math.round(at(t)), 48, 1, 22); }
     for (const o of r.things) {
       if (o.call !== call) continue;
       const t = o.beat - o.bar, x = Math.round(at(t));
@@ -2542,14 +2573,24 @@ MG_MORE.call = {
       }
     }
     // Where in the bar we are.
-    const t = yours ? beat - mine : beat - lis;
-    if (t >= 0 && t <= 4) { c.fillStyle = "#fff"; c.fillRect(Math.round(at(t)), 46, 2, 26); }
+    const t = t0;
+    if (t >= 0 && t <= B) { c.fillStyle = "#fff"; c.fillRect(Math.round(at(t)), 46, 2, 26); }
+    // How much your partner likes you: a row of hearts that fills as you match notes.
+    const total = r.things.filter((o) => o.good).length, got = r.things.filter((o) => o.good && o.gone).length;
+    const full = Math.round(got / Math.max(1, total) * 10);
+    for (let i = 0; i < 10; i++) {
+      const hx = x0 + w - 6 - (9 - i) * 9;
+      if (!mgArt(c, i < full ? "heart" : "heart_empty", hx, 41)) { c.fillStyle = i < full ? "#e8506a" : "rgba(255,255,255,.3)"; c.fillRect(hx - 3, 37, 6, 5); }
+    }
     // Notes rising from whoever is calling.
     const sing = r.t - r.heard < .25, tapped = r.flap > 0;
     c.fillStyle = "#fff"; c.font = "bold 12px system-ui, sans-serif"; c.textAlign = "center";
     if (sing) c.fillText("♪", 100 + ox, 112 - (r.t - r.heard) * 40);
     if (tapped) c.fillText("♪", 240 + ox, 112 - (.15 - r.flap) * 60);
-    mgAnimal(c, r, 90 + ox, 150, ["idle", "walk"], { frame: sing ? r.phase * 12 : 0, flip: true, still: true });
+    // After a whole song matched, your partner hops for joy; after a slip, they look away for a moment.
+    const dance = r.t - r.dance < 1.2, sulk = r.t - r.sulk < .8;
+    const hop = dance ? Math.round(Math.abs(Math.sin((r.t - r.dance) * 10)) * 5) : 0;
+    mgAnimal(c, r, 90 + ox, 150 - hop, ["idle", "walk"], { frame: sing || dance ? r.phase * 12 : 0, flip: !sulk, still: true });
     mgAnimal(c, r, 230 + ox, 150 - (tapped ? 2 : 0), ["idle", "walk"], { frame: tapped ? r.phase * 12 : 0, flip: false, still: true });
   },
 };
