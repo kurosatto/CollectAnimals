@@ -869,24 +869,83 @@ def _beak(s: Sprite, kind, c):
 
 
 def owl(s: Sprite, body, face, *, tufts=False, eye_col="#f6c33c", belly=None, beak="#e8c070",
-        disk_edge=None, bars=None):
-    """Perched, an owl faces you; it flies in profile (see _owl_flying)."""
-    s.can("fly")
-    flying = s.act == "fly"
+        disk_edge=None, bars=None, streaks=None, spots=None, throat=None, brows=None, long_legs=False, front=None):
+    """An owl perched upright in profile; it flies in profile too (see _owl_flying), turns
+    its head right round to look behind, and faces you when it looks at you, which
+    front(s) can mark. bars/streaks cross or run down the breast, spots dot the wings,
+    throat is a pale throat patch, brows pale eyebrows; long_legs for a burrowing owl."""
+    s.can("fly", "look", "back")
     belly = belly or mix(body, WHITE, 0.4)
-    if flying:
+    if s.act == "fly":
         return _owl_flying(s, body, face, belly, tufts, eye_col, beak, bars)
+    if s.act == "look":
+        _owl_front(s, body, face, tufts, eye_col, belly, beak, disk_edge, bars)
+        if front:
+            front(s)
+        return
+    wc = mix(body, "#000000", 0.15)
+    lift = 4 if long_legs else 0
+    if long_legs:
+        for x in (14, 17):
+            s.line(x, 26, x, 30, "#c8b890")
+            s.px([(x - 1, 30), (x - 2, 30)], "#c8b890")
+    else:
+        s.px([(13, 30), (14, 30), (16, 30), (17, 30)], "#b88a4a")  # talons on the branch
+    s.poly([(18, 25 - lift), (25, 31 - lift), (21, 31 - lift), (17, 27 - lift)], wc)  # tail
+    m = s.ellipse(16, 21 - lift, 6.5, 8.5, body, rot=-8)
+    br = s.paint(s.m_ellipse(12.8, 22.5 - lift, 3.6, 6.8, rot=-8), belly, within=m)
+    if bars:
+        for y in range(18 - lift, 29 - lift, 2):
+            s.paint(s.m_line(9, y, 16, y), bars, within=br)
+    if streaks:
+        for x, y in ((11, 20), (13, 22), (11, 25), (14, 26), (12, 28)):
+            s.paint(s.m_line(x, y - lift, x, y + 1 - lift), streaks, within=br)
+    wm = s.ellipse(18.5, 21 - lift, 4.8, 7.8, wc, rot=-12, edge=True)  # the folded wing
+    for i, y in enumerate(range(17 - lift, 28 - lift, 3)):
+        s.paint(s.m_line(16 + i % 2, y, 21, y + 1), mix(wc, "#000000", 0.18), within=wm)
+    if spots:
+        s.paint(s.m_px([(17, 17 - lift), (20, 19 - lift), (18, 22 - lift), (21, 24 - lift), (17, 26 - lift),
+                        (14, 7 - lift), (17, 9 - lift), (16, 5 - lift)]), spots)
+    back = s.act == "back"
+    hx = 15 if back else 14
+    if tufts:
+        s.poly([(hx - 2.5, 6 - lift), (hx - 2, 0.5 - lift), (hx + 0.5, 5 - lift)] if not back else
+               [(hx + 2.5, 6 - lift), (hx + 2, 0.5 - lift), (hx - 0.5, 5 - lift)], body)
+    s.ellipse(hx, 10 - lift, 6.6, 6, body, edge=True)
+    # the facial disk, the eye and the hooked beak, at the front (or over the back)
+    fx = hx + 4 if back else hx - 4
+    s.ellipse(fx, 10.5 - lift, 3.4, 4.6, face, shade=False)
+    if disk_edge:
+        s.paint(s.m_ellipse(fx, 10.5 - lift, 3.6, 4.8) & ~s.m_ellipse(fx, 10.5 - lift, 2.7, 3.9), disk_edge)
+    ex = fx + 1 if back else fx - 2
+    if throat:
+        s.ellipse(fx + (1 if back else -1), 16 - lift, 2.6, 1.3, throat, shade=False)
+    if brows:
+        s.paint(s.m_line(ex - 1, 8 - lift, ex + 2, 8 - lift), brows)
+    if eye_col:
+        s.px([(ex, 9 - lift), (ex + 1, 9 - lift), (ex, 10 - lift), (ex + 1, 10 - lift)], eye_col)
+        s.px([(ex + back, 10 - lift)], EYE)  # the pupil looks the way the face points
+    else:
+        s.px([(ex, 9 - lift), (ex + 1, 9 - lift), (ex, 10 - lift), (ex + 1, 10 - lift)], EYE)
+        s.px([(ex, 9 - lift)], WHITE)
+    s.eye_box(ex, 9 - lift, ex + 1, 10 - lift)
+    if back:
+        s.poly([(fx + 3, 11.5 - lift), (fx + 4.6, 13 - lift), (fx + 2.8, 14 - lift)], beak, shade=False)
+    else:
+        s.poly([(fx - 3, 11.5 - lift), (fx - 4.6, 13 - lift), (fx - 2.8, 14 - lift)], beak, shade=False)
+
+
+def _owl_front(s: Sprite, body, face, tufts, eye_col, belly, beak, disk_edge, bars):
+    """The owl turned to face you."""
     if tufts:
         s.poly([(6, 9), (5, 0.5), (12, 5)], body, mirror=True)
-    if not flying:
-        s.px([(12, 30), (14, 30)], "#b88a4a", mirror=True)
+    s.px([(12, 30), (14, 30)], "#b88a4a", mirror=True)
     s.ellipse(16, 20, 10.5, 10.5, body)
     s.ellipse(16, 23, 6.5, 6.5, belly)
     if bars:
         for y in range(19, 30, 2):
             s.paint(s.m_line(11, y, 21, y), bars, within=s.last)
-    if not flying:
-        s.ellipse(5.5, 20, 3, 6.5, mix(body, "#000000", 0.18), rot=-10, mirror=True)
+    s.ellipse(5.5, 20, 3, 6.5, mix(body, "#000000", 0.18), rot=-10, mirror=True)
     s.ellipse(16, 10, 10, 8, body, edge=True)
     s.ellipse(11.5, 10.5, 4.5, 4.8, face, mirror=True, edge=disk_edge is not None)
     if eye_col:
@@ -1464,12 +1523,22 @@ def dragonfly(s: Sprite, thorax, abdomen, *, wing="#e6f4fc", wing_tint=None):
 
 
 # --------------------------------------------------------------------------- marine
+def lying_flat(s: Sprite, shape, color):
+    """A flat animal lying on the rock, seen from a little above, not straight down:
+    shape(x, y) -> mask, in the plan's top-view coordinates around (16, 16.5), is squashed
+    to a low oval with a darker rim of thickness under it. The species details that follow
+    are squashed the same way."""
+    for top, col in ((26.5, mix(color, "#000000", 0.35)), (25, color)):
+        s.set_warp(lambda x, y, top=top: (x, top + (y - 16.5) * 0.42))
+        m = s.fill(shape(s.xs - 16, s.ys - 16.5), col, edge=True)
+    return m
+
+
 def star(s: Sprite, color, *, arms=0.45, dots=WHITE, rot=-90):
-    x, y = _XS - 16, _YS - 16.5
-    ang = np.arctan2(y, x) - math.radians(rot)
-    r = np.hypot(x, y)
-    rr = 14.5 * ((1 - arms) + arms * (0.5 + 0.5 * np.cos(5 * ang)) ** 1.6)
-    m = s.fill(r <= rr, color, edge=True)
+    def shape(x, y):
+        ang = np.arctan2(y, x) - math.radians(rot)
+        return np.hypot(x, y) <= 14.5 * ((1 - arms) + arms * (0.5 + 0.5 * np.cos(5 * ang)) ** 1.6)
+    m = lying_flat(s, shape, color)
     if dots:
         pts = []
         for k in range(5):

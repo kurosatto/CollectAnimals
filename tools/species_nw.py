@@ -250,17 +250,18 @@ def _(s):
 @sprite("burrowing_owl")
 def _(s):
     # A long-legged little ground owl: brown with white spots, white brows and a white chin.
-    owl(s, "#8a6a48", "#b8966c", eye_col="#f6d030", belly="#ecdcc0", bars="#a08058")
-    s.paint(s.m_line(8, 6, 14, 6) | s.m_line(9, 5, 13, 5), "#f4ecdc", mirror=True,
-            within=s.m_ellipse(16, 10, 10, 8))
-    s.paint(s.m_ellipse(16, 16.5, 4.5, 1.2), "#f4ecdc")
-    s.paint(s.m_px([(9, 4), (16, 3), (23, 4), (7, 17), (25, 17), (6, 22), (26, 22), (8, 26), (24, 26), (5, 19),
-                    (27, 19)]), "#f4ecdc")
-    if s.act != "fly":
+    def front(s):
+        s.paint(s.m_line(8, 6, 14, 6) | s.m_line(9, 5, 13, 5), "#f4ecdc", mirror=True,
+                within=s.m_ellipse(16, 10, 10, 8))
+        s.paint(s.m_ellipse(16, 16.5, 4.5, 1.2), "#f4ecdc")
+        s.paint(s.m_px([(9, 4), (16, 3), (23, 4), (7, 17), (25, 17), (6, 22), (26, 22), (8, 26), (24, 26), (5, 19),
+                        (27, 19)]), "#f4ecdc")
         s.shift(0, -3)
         for x in (13, 19):
             s.line(x, 26, x, 30, "#c8b890")
             s.px([(x - 1, 30), (x + 1, 30)], "#c8b890")
+    owl(s, "#8a6a48", "#b8966c", eye_col="#f6d030", belly="#ecdcc0", bars="#a08058", spots="#f4ecdc",
+        throat="#f4ecdc", brows="#f4ecdc", long_legs=True, front=front)
 
 
 @sprite("upland_sandpiper")

@@ -234,9 +234,12 @@ def _(s):
 
 @sprite("barred_owl")
 def _(s):
-    owl(s, "#8a7a6a", "#d8cec0", eye_col=None, belly="#ece4d8", beak="#e8c060", bars="#8a6a50")
-    for x in (11, 15, 19):
-        s.paint(s.m_line(x, 23, x, 28), "#7a5a40")
+    # Barred across the chest, streaked down the belly.
+    def front(s):
+        for x in (11, 15, 19):
+            s.paint(s.m_line(x, 23, x, 28), "#7a5a40")
+    owl(s, "#8a7a6a", "#d8cec0", eye_col=None, belly="#ece4d8", beak="#e8c060", bars="#8a6a50", streaks="#7a5a40",
+        spots="#e4dcd0", front=front)
 
 
 @sprite("belted_kingfisher")

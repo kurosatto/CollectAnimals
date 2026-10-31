@@ -7,9 +7,9 @@ import math
 import numpy as np
 
 from archetypes import (BLACK, EYE, S, WHITE, _far_wing, _ripples, _wing_beat, back_stripes, beetle_top, bird,
-                        butterfly, critter, dolphin, duck, fish, flecks, frog, jelly, lizard, pinniped, quad,
-                        sea_turtle, sprite, star, wader)
-from pixel import _XS, _YS, mix
+                        butterfly, critter, dolphin, duck, fish, flecks, frog, jelly, lizard, lying_flat, pinniped,
+                        quad, sea_turtle, sprite, star, wader)
+from pixel import mix
 from species_tx import _segmented
 
 
@@ -853,11 +853,10 @@ def _(s):
 
 
 def _many_arms(s, color, n, arms, rot=-90):
-    x, y = _XS - 16, _YS - 16.5
-    ang = np.arctan2(y, x) - math.radians(rot)
-    r = np.hypot(x, y)
-    rr = 14.5 * ((1 - arms) + arms * (0.5 + 0.5 * np.cos(n * ang)) ** 1.6)
-    return s.fill(r <= rr, color, edge=True)
+    def shape(x, y):
+        ang = np.arctan2(y, x) - math.radians(rot)
+        return np.hypot(x, y) <= 14.5 * ((1 - arms) + arms * (0.5 + 0.5 * np.cos(n * ang)) ** 1.6)
+    return lying_flat(s, shape, color)
 
 
 @sprite("sunflower_sea_star")

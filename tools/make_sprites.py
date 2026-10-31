@@ -354,14 +354,14 @@ def _(s):
 
 @sprite("great_horned_owl")
 def _(s):
-    owl(s, "#8a6a4e", "#c89a6a", tufts=True, belly="#d8c4a4", bars="#8a6a4e")
-    s.px([(14, 17), (15, 17), (16, 17), (17, 17)], WHITE)
+    owl(s, "#8a6a4e", "#c89a6a", tufts=True, belly="#d8c4a4", bars="#8a6a4e", throat=WHITE,
+        front=lambda s: s.px([(14, 17), (15, 17), (16, 17), (17, 17)], WHITE))
 
 
 @sprite("barn_owl")
 def _(s):
-    owl(s, "#d8a868", WHITE, eye_col=None, belly="#fbf3e4", beak="#e8c8b0")
-    s.px([(9, 21), (13, 24), (20, 22), (17, 26), (22, 26)], "#a87850")
+    owl(s, "#d8a868", WHITE, eye_col=None, belly="#fbf3e4", beak="#e8c8b0", spots="#f4ead8", disk_edge="#c89060",
+        front=lambda s: s.px([(9, 21), (13, 24), (20, 22), (17, 26), (22, 26)], "#a87850"))
 
 
 @sprite("annas_hummingbird")
