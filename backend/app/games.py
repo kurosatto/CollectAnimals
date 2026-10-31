@@ -27,9 +27,10 @@ from .social import blocked_ids, friend_ids, revealed_species_ids
 
 router = APIRouter()
 
-LEVEL = re.compile(r"^(sky|trail|river|pool|claw|slide|leap|dig|nectar|plunge|splash|call|echo)\.[0-9]{1,2}$")
+LEVEL = re.compile(r"^(sky|trail|river|pool|claw|slide|leap|dig|nectar|plunge|splash|call|echo|feeder|school|freeze)\.[0-9]{1,2}$")
 # The newer games use the speed of the place they're set in (MG_PLACE in minigames.js).
-PLACE = {"slide": "trail", "leap": "trail", "dig": "trail", "nectar": "sky", "plunge": "sky", "splash": "river", "echo": "sky"}
+PLACE = {"slide": "trail", "leap": "trail", "dig": "trail", "nectar": "sky", "plunge": "sky", "splash": "river", "echo": "sky",
+         "feeder": "sky", "school": "river", "freeze": "trail"}
 MAX_TREATS = 400  # more than any level has
 # Same as mgPhysOf in minigames.js: the game runs faster for a faster animal.
 TEMPO = [.75, .88, 1, 1.15, 1.3]
