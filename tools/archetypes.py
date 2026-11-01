@@ -745,7 +745,8 @@ def _slim(s: Sprite, head_c, head_to, head_k, body_c, body_to, body_kx, body_ky,
         bxp = ux + body_kx * (x - bx)
         byp = np.where(y <= body_bottom, uy + body_ky * (y - by),
                        low + (y - body_bottom) * (31 - low) / (31 - body_bottom))
-        k = _smooth((ny - y) / 2.5) * _smooth((nx - x) / 2.5)
+        # the beak, out in front of the head, always goes with the head
+        k = np.maximum(_smooth((ny - y) / 2.5) * _smooth((nx - x) / 2.5), _smooth((hx - 4 - x) / 1.5))
         return k * hxp + (1 - k) * bxp, k * hyp + (1 - k) * byp
     s.set_warp(fwd)
 
@@ -755,8 +756,8 @@ def bird(s: Sprite, body, belly, *, head=None, wing=None, tail_col=None, beak="c
          face=None, wing_mark=None, belly_mark=None, big=False):
     """Side view, facing left. Walks on alternating legs and flies with its wing
     beating up and down (legs tucked). Drawn in round, roomy coordinates (which the
-    species' own markings use too) and then slimmed to field-guide proportions: a
-    small head, a long body and tail, and longer legs."""
+    species' own markings use too) and then re-proportioned: a smaller head held up on
+    a short neck, a longer body, and longer legs."""
     s.can("walk", "fly")
     flying = s.act == "fly"
     w = s.wave()
@@ -764,7 +765,7 @@ def bird(s: Sprite, body, belly, *, head=None, wing=None, tail_col=None, beak="c
     wing = wing or mix(body, "#000000", 0.15)
     tail_col = tail_col or wing
     cy = 19 if not big else 18
-    _slim(s, (11, 11), (10, cy - 4), 0.56, (16.5, cy + 1), (17.5, cy + 3), 1.12, 0.62, cy + 8, (17.5, cy - 3))
+    _slim(s, (11, 11), (10, cy - 7), 0.72, (16.5, cy + 1), (17.5, cy + 3.5), 1.08, 0.74, cy + 8, (17.5, cy - 3))
     if flying and w > -0.5:
         with s.unwarped():
             _flight_wing(s, cy, w, mix(wing, "#1a1420", 0.3), dx=2.5)
@@ -1044,7 +1045,7 @@ def duck(s: Sprite, body, chest, head, *, bill="#f0c22a", ring=WHITE, speculum="
     s.can("swim", "fly")
     flying = s.act == "fly"
     w = s.wave()
-    _slim(s, (10, 11), (9.5, 15), 0.62, (17, 23), (17.5, 24.5), 1.05, 0.72, 29.5, (15, 17.5))
+    _slim(s, (10, 11), (9.5, 13.5), 0.74, (17, 23), (17.5, 24), 1.04, 0.82, 29.5, (15, 17))
     if flying:
         _far_wing(s, 21, 20, w, mix(body, "#1a1420", 0.35))
     else:
@@ -1068,7 +1069,7 @@ def goose(s: Sprite):
     s.can("swim", "fly")
     flying = s.act == "fly"
     w = s.wave()
-    _slim(s, (9.5, 7), (9.5, 9.5), 0.72, (19, 23), (19, 24.5), 1.05, 0.75, 29.5, (13, 15))
+    _slim(s, (9.5, 7), (9.5, 8.5), 0.8, (19, 23), (19, 24), 1.04, 0.84, 29.5, (13, 15))
     if flying:
         _far_wing(s, 23, 20, w, "#4e4036")
     else:
@@ -1092,7 +1093,7 @@ def goose(s: Sprite):
 def hummingbird(s: Sprite, *, head="#d93a8a", crown="#6aa56e", throat=None):
     s.can("fly")
     down = s.act == "fly" and s.f % 2 == 1
-    _slim(s, (12, 11), (11.5, 13), 0.68, (16, 18), (16.5, 19), 1.0, 0.85, 29, (15, 15))
+    _slim(s, (12, 11), (11.5, 12), 0.78, (16, 18), (16.5, 18.5), 1.0, 0.9, 29, (15, 15))
     if down:
         s.ellipse(23, 17, 7, 3, "#cfe8f7", rot=20, shade=False)
     else:

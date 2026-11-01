@@ -274,13 +274,18 @@ def decor_json():
     return FileResponse(settings.decor_json, media_type="application/json", headers={"Cache-Control": "public, max-age=3600"})
 
 
+# Sprites are kept only briefly, so redrawn art reaches every screen together soon after
+# a deploy (a day-long cache once left old drawings next to new animations).
+SPRITE_CACHE = {"Cache-Control": "public, max-age=600"}
+
+
 @app.get("/sprites/decor/{key}.png", include_in_schema=False)
 def sprite_decor(key: str):
     """A decoration's sprite: a row of 40x40 frames."""
     path = settings.sprites_dir / "decor" / f"{key}.png"
     if not key.replace("_", "").isalnum() or not path.is_file():
         raise HTTPException(status.HTTP_404_NOT_FOUND, "No such decoration")
-    return FileResponse(path, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
+    return FileResponse(path, media_type="image/png", headers=SPRITE_CACHE)
 
 
 @app.get("/sprites/game/{name}", include_in_schema=False)
@@ -292,7 +297,7 @@ def sprite_game_art(name: str):
     if not path.is_file():
         raise HTTPException(status.HTTP_404_NOT_FOUND, "No game art")
     media = "image/png" if name.endswith(".png") else "application/json"
-    return FileResponse(path, media_type=media, headers={"Cache-Control": "public, max-age=3600"})
+    return FileResponse(path, media_type=media, headers=SPRITE_CACHE)
 
 
 @app.get("/sprites/silhouette/{number}.png", include_in_schema=False)
@@ -303,8 +308,7 @@ def silhouette_by_number(number: int, db: Session = Depends(get_db)):
     if s is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "No such sprite")
     path = _sprite_or_placeholder(f"{s.slug}_silhouette")
-    age = 86400 if path.stem == f"{s.slug}_silhouette" else 3600
-    return FileResponse(path, media_type="image/png", headers={"Cache-Control": f"public, max-age={age}"})
+    return FileResponse(path, media_type="image/png", headers=SPRITE_CACHE)
 
 
 @app.get("/sprites/anim/index.json", include_in_schema=False)
@@ -313,7 +317,7 @@ def sprite_anim_index():
     path = settings.sprites_dir / "anim" / "index.json"
     if not path.is_file():
         raise HTTPException(status.HTTP_404_NOT_FOUND, "No animations")
-    return FileResponse(path, media_type="application/json", headers={"Cache-Control": "public, max-age=3600"})
+    return FileResponse(path, media_type="application/json", headers=SPRITE_CACHE)
 
 
 @app.get("/sprites/game_stats.json", include_in_schema=False)
@@ -322,7 +326,7 @@ def sprite_game_stats():
     path = settings.sprites_dir / "game_stats.json"
     if not path.is_file():
         raise HTTPException(status.HTTP_404_NOT_FOUND, "No stats")
-    return FileResponse(path, media_type="application/json", headers={"Cache-Control": "public, max-age=3600"})
+    return FileResponse(path, media_type="application/json", headers=SPRITE_CACHE)
 
 
 @app.get("/sprites/anim/{slug}.png", include_in_schema=False)
@@ -331,7 +335,7 @@ def sprite_anim(slug: str):
     path = settings.sprites_dir / "anim" / f"{slug}.png"
     if not slug.replace("_", "").isalnum() or not path.is_file():
         raise HTTPException(status.HTTP_404_NOT_FOUND, "No such sprite")
-    return FileResponse(path, media_type="image/png", headers={"Cache-Control": "public, max-age=3600"})
+    return FileResponse(path, media_type="image/png", headers=SPRITE_CACHE)
 
 
 @app.get("/sprites/{name}.png", include_in_schema=False)
@@ -344,9 +348,7 @@ def sprite(name: str, db: Session = Depends(get_db)):
     if not path.is_file() and db.scalar(select(Species.id).where(Species.slug == slug)) is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "No such sprite")
     path = _sprite_or_placeholder(name)
-    # A placeholder is cached briefly, so the real art shows up soon after it's drawn.
-    age = 86400 if path.stem == name else 3600
-    return FileResponse(path, media_type="image/png", headers={"Cache-Control": f"public, max-age={age}"})
+    return FileResponse(path, media_type="image/png", headers=SPRITE_CACHE)
 
 
 def _sprite_or_placeholder(name: str) -> Path:

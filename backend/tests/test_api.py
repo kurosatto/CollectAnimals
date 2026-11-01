@@ -405,7 +405,7 @@ def test_new_state_without_map_data_or_art(tmp_path, fake):
             placeholder = (settings.sprites_dir / "placeholder.png").read_bytes()
             r = client.get("/sprites/testland_mystery_vole.png")
             assert r.status_code == 200 and r.content == placeholder
-            assert r.headers["cache-control"].endswith("3600")
+            assert r.headers["cache-control"] == "public, max-age=600"  # kept briefly, like every sprite
             assert client.get("/sprites/testland_mystery_vole_silhouette.png").content == \
                 (settings.sprites_dir / "placeholder_silhouette.png").read_bytes()
             with SessionLocal() as db:
