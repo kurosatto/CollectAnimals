@@ -3,6 +3,7 @@ with colours and features passed in so one plan covers many species."""
 from __future__ import annotations
 
 import math
+import re
 
 import numpy as np
 
@@ -16,7 +17,10 @@ S: dict = {}
 
 def sprite(slug):
     def deco(fn):
-        S[slug] = fn
+        def draw(s):
+            s.slug = slug  # body plans that vary by kind of animal read it
+            return fn(s)
+        S[slug] = draw
         return fn
     return deco
 
@@ -729,26 +733,65 @@ def _smooth(t):
     return t * t * (3 - 2 * t)
 
 
-def _slim(s: Sprite, head_c, head_to, head_k, body_c, body_to, body_kx, body_ky, body_bottom, neck):
+def _slim(s: Sprite, head_c, head_to, head_k, body_c, body_to, body_kx, body_ky, body_bottom, neck,
+          tilt=0.0, beak_k=1.0):
     """Re-proportion a bird drawn in a plan's chubby coordinates: the head (around
     head_c) shrinks by head_k and moves to head_to; the body (around body_c) stretches
     by body_kx and flattens by body_ky to body_to; the legs below body_bottom lengthen
-    to keep the feet on the ground. neck = (x, y) where head and body blend."""
+    to keep the feet on the ground. neck = (x, y) where head and body blend. tilt drops
+    the tail end (an upright hawk) or raises it; beak_k makes the beak, out in front of
+    the head, bigger or smaller than the head around it."""
     hx, hy = head_c
     tx, ty = head_to
     bx, by = body_c
     ux, uy = body_to
     nx, ny = neck
     low = uy + body_ky * (body_bottom - by)  # where the body's bottom ends up
+    front, root = hx - 4, hy + 1  # where the beak leaves the face
     def fwd(x, y):  # noqa: E306
-        hxp, hyp = tx + head_k * (x - hx), ty + head_k * (y - hy)
+        kb = _smooth((front - 1 - x) / 1.5)
+        hxp = tx + head_k * (np.maximum(x, front) - hx) + head_k * (1 + kb * (beak_k - 1)) * np.minimum(x - front, 0)
+        hyp = ty + head_k * (root - hy) + head_k * (1 + kb * (beak_k - 1)) * (y - root)
         bxp = ux + body_kx * (x - bx)
-        byp = np.where(y <= body_bottom, uy + body_ky * (y - by),
-                       low + (y - body_bottom) * (31 - low) / (31 - body_bottom))
+        lean = tilt * (x - bx)
+        byp = np.where(y <= body_bottom, uy + body_ky * (y - by) + lean,
+                       low + (y - body_bottom) * (31 - low) / (31 - body_bottom)
+                       + lean * (31 - y) / (31 - body_bottom))
         # the beak, out in front of the head, always goes with the head
         k = np.maximum(_smooth((ny - y) / 2.5) * _smooth((nx - x) / 2.5), _smooth((hx - 4 - x) / 1.5))
         return k * hxp + (1 - k) * bxp, k * hyp + (1 - k) * byp
     s.set_warp(fwd)
+
+
+# How each kind of bird is built, so a gull, a crow and a hawk read as themselves and not
+# all as one pigeon: head size, where the head sits (x, and y above the body's middle),
+# body length and depth, tilt (tail end down for upright perchers), beak size against the
+# head, and how thick the neck is. First match on the slug wins; songbirds are the default.
+BIRD_FORMS = [
+    # pattern, head_k, head_x, head_dy, body_kx, body_ky, tilt, beak_k, neck
+    (r"eagle", 0.76, 10.5, -8, 1.02, 0.86, 0.3, 1.3, 2.4),
+    (r"hawk|kite|harrier|osprey", 0.74, 10.5, -8, 1.0, 0.82, 0.25, 1.35, 2.2),
+    (r"gull|kittiwake|albatross|shearwater|booby|frigatebird", 0.72, 9.5, -6.5, 1.22, 0.7, 0.0, 1.6, 2.3),
+    (r"tern|skimmer|tropicbird", 0.64, 9.5, -6, 1.22, 0.6, 0.0, 1.45, 2.0),
+    (r"crow|raven|grackle|magpie|nutcracker|blackbird|cowbird|myna|starling", 0.78, 9.5, -6.5, 1.12, 0.74, 0.12, 1.5, 2.4),
+    (r"jay", 0.74, 9.5, -7, 1.1, 0.74, 0.1, 1.2, 2.3),
+    (r"dove|pigeon", 0.6, 10.5, -5.5, 1.06, 0.82, 0.0, 0.75, 2.2),
+    (r"woodpecker|flicker|sapsucker|nuthatch", 0.76, 11.5, -8, 0.92, 0.84, 0.55, 1.55, 2.2),
+    (r"puffin|murre|guillemot|murrelet", 0.84, 10.5, -8, 0.95, 0.88, 0.5, 1.35, 2.6),
+    (r"killdeer|plover|dunlin|sanderling|willet|tattler|turnstone|oystercatcher|phalarope", 0.64, 10, -6, 1.1, 0.64,
+     -0.05, 1.7, 1.9),
+    (r"swallow|martin|swift", 0.7, 10, -6, 1.25, 0.6, 0.0, 0.7, 2.2),
+    (r"kingfisher", 0.9, 10, -7, 0.98, 0.76, 0.2, 1.5, 2.6),
+    (r"anhinga", 0.55, 8, -9, 1.2, 0.62, 0.0, 1.5, 1.4),
+]
+SONGBIRD = (0.72, 10, -7, 1.08, 0.74, 0.0, 1.0, 2.2)
+
+
+def _bird_form(slug):
+    for pattern, *form in BIRD_FORMS:
+        if re.search(rf"(?:^|_)(?:{pattern})(?:_|$)", slug):
+            return form
+    return SONGBIRD
 
 
 def bird(s: Sprite, body, belly, *, head=None, wing=None, tail_col=None, beak="cone",
@@ -765,7 +808,9 @@ def bird(s: Sprite, body, belly, *, head=None, wing=None, tail_col=None, beak="c
     wing = wing or mix(body, "#000000", 0.15)
     tail_col = tail_col or wing
     cy = 19 if not big else 18
-    _slim(s, (11, 11), (10, cy - 7), 0.72, (16.5, cy + 1), (17.5, cy + 3.5), 1.08, 0.74, cy + 8, (17.5, cy - 3))
+    head_k, head_x, head_dy, body_kx, body_ky, tilt, beak_k, neck_r = _bird_form(getattr(s, "slug", ""))
+    _slim(s, (11, 11), (head_x, cy + head_dy), head_k, (16.5, cy + 1), (17.5, cy + 3.5), body_kx, body_ky, cy + 8,
+          (17.5, cy - 3), tilt=0.0 if flying else tilt, beak_k=beak_k)
     if flying and w > -0.5:
         with s.unwarped():
             _flight_wing(s, cy, w, mix(wing, "#1a1420", 0.3), dx=2.5)
@@ -791,6 +836,11 @@ def bird(s: Sprite, body, belly, *, head=None, wing=None, tail_col=None, beak="c
         s.ellipse(20, cy, 5.8, 4.2, wing, rot=-15, edge=True)
     if wing_mark:
         wing_mark(s, s.last)
+    # a smooth neck from the shoulders up to the head, so the two don't just meet
+    with s.unwarped():
+        sx, sy = s._to(12.5, cy - 1)
+        hx, hy = s._to(11, 12.5)
+        s.path([(sx, sy), (hx, hy)], neck_r, head)
     if crest == "jay":
         s.poly([(12, 6), (17, -1), (17, 7)], head)
     elif crest == "quail":
@@ -1145,12 +1195,46 @@ def pelican(s: Sprite):
 
 
 def vulture(s: Sprite, *, head_col, body="#2f2a2e", ruff=None, wing_patch=None, beak="#e8dccb"):
-    bird(s, body, mix(body, "#ffffff", 0.08), head=head_col, wing=mix(body, "#ffffff", 0.06),
-         beak="hook", beak_col=beak, legs="#b8a8a0", tail="mid",
-         wing_mark=(lambda s2, m: s2.paint(s2.m_ellipse(21, 21.5, 5, 1.4, rot=-15), wing_patch, within=m))
-         if wing_patch else None)
+    """A perched vulture, hunched: a big dark body under long folded wings that reach
+    past the tail, and a small bare head pushed forward on a bare neck, with a pale
+    hooked bill. Soars on long, broad wings."""
+    s.can("walk", "fly")
+    w = s.wave()
+    wing = mix(body, "#ffffff", 0.06)
+    if s.act == "fly":
+        _flight_wing(s, 16, w, mix(wing, "#1a1420", 0.3), dx=2.5)
+        s.poly([(23, 17), (30, 16.5), (30, 20), (23, 20)], body)
+        s.ellipse(17.5, 18.5, 8.5, 3.6, body)
+        m = _flight_wing(s, 16, w, wing)
+        if wing_patch:
+            s.paint(m & ~s.m_ellipse(17, 14, 9, 7), wing_patch, within=m)
+        hx, hy = 7.5, 17
+        s.path([(11, 18), (hx + 1, hy)], 1.4, head_col)
+    else:
+        legs = "#c8b8b0"
+        step = w if s.act == "walk" else 0
+        for i, x in enumerate((15, 18)):
+            lift = max(0.0, step if i == 0 else -step)
+            s.line(x, 25, x - round(lift), 30 - round(lift), legs)
+            s.px([(x - 1 - round(lift), 30 - round(lift))], legs)
+        s.poly([(23, 21.5), (30.5, 25.5), (29.5, 27.5), (22.5, 24.5)], mix(body, "#000000", 0.1))  # tail
+        s.ellipse(18, 20, 8.5, 6, body, rot=-12)
+        m = s.ellipse(21, 19, 8.6, 4.4, wing, rot=-14, edge=True)  # folded wing, tips past the tail
+        for x in range(17, 29, 3):
+            s.paint(s.m_line(x, 17 + (x - 17) * 0.25, x + 2, 19.5 + (x - 17) * 0.25), mix(wing, "#000000", 0.2), within=m)
+        if wing_patch:
+            s.paint(s.m_ellipse(22, 22, 7.5, 1.5, rot=-14), wing_patch, within=m)
+        hx, hy = 7.5, 14.5
+        s.path([(12, 17), (hx + 1.5, hy + 0.5)], 1.5, head_col)  # bare neck
     if ruff:
-        s.path([(12, 17), (16, 17.5), (19, 15.5)], 1.6, ruff)
+        s.ellipse(12.5, 17.5 if s.act != "fly" else 18.5, 2.8, 2.2, ruff)
+    else:
+        s.ellipse(12.5, 17.5 if s.act != "fly" else 18.5, 2.2, 1.8, mix(body, "#000000", 0.15))
+    s.ellipse(hx, hy, 2.9, 2.3, head_col, edge=True)
+    s.poly([(5.6, hy - 1), (2.6, hy - 0.4), (2.2, hy + 1.2), (3.2, hy + 1.6), (5.6, hy + 1.4)], beak, shade=False)
+    s.px([(2, hy + 1)], mix(beak, "#000000", 0.45))  # the hook
+    s.eye(7, round(hy) - 1, size=1)
+    s.eye_box(7, round(hy) - 1, 7, round(hy) - 1)
 
 
 # --------------------------------------------------------------------------- reptiles & amphibians
