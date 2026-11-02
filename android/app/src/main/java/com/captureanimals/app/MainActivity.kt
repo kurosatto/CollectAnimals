@@ -1,5 +1,6 @@
 package com.captureanimals.app
 
+import androidx.activity.compose.BackHandler
 import android.Manifest
 import android.graphics.BitmapFactory
 import android.content.Intent
@@ -30,6 +31,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -155,8 +157,10 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
     var dexSlug by rememberSaveable { mutableStateOf<String?>(null) }
     val info = state.info
     val dex = state.fieldGuide
-    // A state without park data yet has no Parks tab, so fall back to Capture.
-    val tab = if (TABS[tabChoice].key == "hotspots" && dex?.parks.isNullOrEmpty()) 0 else tabChoice
+    val tab = tabChoice
+    // Parks lives inside the Field Guide, behind a button (only for states with park data).
+    var parksOpen by rememberSaveable { mutableStateOf(false) }
+    val showParks = parksOpen && TABS[tab].key == "collection" && !dex?.parks.isNullOrEmpty()
     // The state's own entry, or another state's species from the Photos tab.
     val entry = dexSlug?.let { slug ->
         info?.species?.firstOrNull { it.slug == slug } ?: state.allSpecies.firstOrNull { it.slug == slug }
@@ -182,7 +186,7 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
 
     Scaffold(topBar = {
         if (!gameOn) Column {
-            TopAppBar(title = { Text(if (tab == 0) "Capture Animals" else TABS[tab].title) }, actions = {
+            TopAppBar(title = { Text(if (tab == 0) "Capture Animals" else if (showParks) "Parks" else TABS[tab].title) }, actions = {
                 if (state.states.size > 1) StateMenu(state.states, state.stateCode, state.mainState(), state.stateTiles,
                     onOpen = vm::loadStateTiles, onClose = vm::closeStateTiles, onView = vm::viewState, onMakeMain = vm::chooseState)
                 TextButton(onClick = { showAccount = true }) {
@@ -203,12 +207,11 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
             }
         }
     }, bottomBar = {
-        // One screen per job instead of one long page; Hotspots only once its data is there.
+        // One screen per job instead of one long page.
         if (!gameOn) NavigationBar {
             TABS.forEachIndexed { i, t ->
-                if (t.key == "hotspots" && dex?.parks.isNullOrEmpty()) return@forEachIndexed
-                // Seven tabs: one line of small text each, so "Field Guide" doesn't wrap.
-                NavigationBarItem(selected = tab == i, onClick = { tabChoice = i },
+                // Six tabs: one line of small text each, so "Field Guide" doesn't wrap.
+                NavigationBarItem(selected = tab == i, onClick = { tabChoice = i; parksOpen = false },
                     icon = {
                         BadgedBox(badge = { if (t.key == "social" && requests > 0) Badge { Text("$requests") } }) {
                             TabIcon(t.icon, Modifier.size(28.dp))
@@ -233,11 +236,23 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
                 TABS[tab].key == "gallery" && state.account != null ->
                     OnlinePhotosScreen(social, onOpenDex = { dexSlug = it }, onDeleted = vm::reloadCollection,
                         parks = state.fieldGuide?.parks.orEmpty())
+                showParks && dex != null -> {
+                    BackHandler { parksOpen = false }
+                    Column(Modifier.fillMaxSize()) {
+                        TextButton(onClick = { parksOpen = false }, modifier = Modifier.padding(horizontal = 8.dp)) {
+                            Text("‹ Back to Field Guide")
+                        }
+                        Box(Modifier.weight(1f)) {
+                            HotspotsScreen(info, dex, state.collection, onOpenDex = { dexSlug = it })
+                        }
+                    }
+                }
                 TABS[tab].key == "collection" -> {
                     val sets = remember(state.sets, info, dex, state.stateCode) {
                         state.sets.forState(state.stateCode, info.species.map { it.slug }.toSet()) { dex?.details?.get(it)?.safety }
                     }
-                    CollectionScreen(info, dex, state.collection, sets) { dexSlug = it }
+                    CollectionScreen(info, dex, state.collection, sets,
+                        onOpenParks = if (dex?.parks.isNullOrEmpty()) null else ({ parksOpen = true })) { dexSlug = it }
                 }
                 TABS[tab].key == "games" -> {
                     val animals = remember(info, dex, state.collection) { habitatAnimals(info, dex, state.collection) }
@@ -245,7 +260,6 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
                 }
                 TABS[tab].key == "gallery" -> GalleryScreen(state.allSpecies, state.collection, onOpenDex = { dexSlug = it },
                     onDelete = vm::deleteCatch)
-                dex != null -> HotspotsScreen(info, dex, state.collection, onOpenDex = { dexSlug = it })
             }
         }
     }
@@ -255,12 +269,11 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
 private class AppTab(val key: String, val title: String, val icon: String)
 
 private val TABS = listOf(
-    AppTab("catch", "Capture", "ui_tab_capture"),
+    AppTab("catch", "Habitat", "ui_tab_capture"),
     AppTab("collection", "Field Guide", "ui_tab_guide"),
     AppTab("games", "Games", "ui_tab_games"),
     AppTab("gallery", "Photos", "ui_tab_photos"),
     AppTab("feed", "Feed", "ui_tab_feed"),
-    AppTab("hotspots", "Parks", "ui_tab_parks"),
     AppTab("social", "Friends", "ui_tab_friends"),
 )
 
@@ -483,7 +496,8 @@ fun RarityTag(rarity: String) {
 private val SECTIONS = listOf("Captured", "Not captured yet")
 
 @Composable
-fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, collection: Map<String, Badge>, sets: List<SetDef>, onOpen: (String) -> Unit) {
+fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, collection: Map<String, Badge>, sets: List<SetDef>,
+                     onOpenParks: (() -> Unit)? = null, onOpen: (String) -> Unit) {
     val categories = remember(info) { listOf("all") + info.species.map { it.category }.distinct() }
     var category by rememberSaveable { mutableStateOf("all") }
     val month = remember { java.util.Calendar.getInstance().get(java.util.Calendar.MONTH) + 1 }
@@ -495,6 +509,14 @@ fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, collection: Map<String, 
     LazyVerticalGrid(columns = GridCells.Adaptive(72.dp), modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(8.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        // Parks used to be its own tab; now it opens from here.
+        if (onOpenParks != null) item(span = { GridItemSpan(maxLineSpan) }, key = "parks") {
+            OutlinedButton(onClick = onOpenParks, modifier = Modifier.fillMaxWidth()) {
+                TabIcon("ui_tab_parks", Modifier.size(24.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Parks to find animals")
+            }
+        }
         item(span = { GridItemSpan(maxLineSpan) }) {
             Row(Modifier.horizontalScrollCompat(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 categories.forEach { c ->

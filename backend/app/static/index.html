@@ -192,6 +192,8 @@
   ul.people .who { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   ul.people li > span:last-child { flex-shrink:0; white-space:nowrap; }
   ul.people button { padding:4px 10px; font-size:.85rem; }
+  .parks-open { display:flex; align-items:center; gap:8px; margin:0 0 12px; }
+  .parks-open .ic { width:24px; height:24px; image-rendering:pixelated; }
   button.ghost { background:none; color:var(--muted); border:1px solid var(--line); }
   .feed { display:grid; gap:10px; margin-top:10px; }
   .feed-item { display:flex; gap:12px; align-items:center; cursor:pointer; padding:6px; border-radius:10px; }
@@ -361,12 +363,11 @@
   </header>
 
 <nav id="tabs" class="hidden">
-  <button data-tab="catch"><img class="ic" src="/sprites/ui_tab_capture.png" alt="">Capture</button>
+  <button data-tab="catch"><img class="ic" src="/sprites/ui_tab_capture.png" alt="">Habitat</button>
   <button data-tab="dex"><img class="ic" src="/sprites/ui_tab_guide.png" alt="">Field Guide</button>
   <button data-tab="games"><img class="ic" src="/sprites/ui_tab_games.png" alt="">Games</button>
   <button data-tab="photos"><img class="ic" src="/sprites/ui_tab_photos.png" alt="">Photos</button>
   <button data-tab="feed"><img class="ic" src="/sprites/ui_tab_feed.png" alt="">Feed</button>
-  <button data-tab="parks"><img class="ic" src="/sprites/ui_tab_parks.png" alt="">Parks</button>
   <button data-tab="friends"><img class="ic" src="/sprites/ui_tab_friends.png" alt="">Friends</button>
 </nav>
 
@@ -444,7 +445,8 @@
       <p><button class="ghost hidden" id="feed-more">Show more</button></p>
     </div>
     <div class="card off" id="hotspots-card" data-tab="parks">
-      <h2>Hotspots</h2>
+      <p style="margin:0 0 8px"><button class="ghost" id="parks-back" type="button">‹ Back to Field Guide</button></p>
+      <h2>Parks</h2>
       <p class="muted" style="margin-top:0">Parks worth a trip for animals you haven't captured yet. Tap a park to see what lives there.</p>
       <div class="hot-wrap">
         <div class="dex-map" id="hot-map"></div>
@@ -454,6 +456,7 @@
     </div>
     <div class="card off" data-tab="dex">
       <h2>Field Guide <span id="progress" class="muted"></span></h2>
+      <button class="parks-open hidden" id="parks-open" type="button"><img class="ic" src="/sprites/ui_tab_parks.png" alt=""> Parks to find animals</button>
       <div id="grid" class="grid guide"></div>
     </div>
     <div class="card off" data-tab="dex">
@@ -1754,11 +1757,12 @@ async function loadMyPhotos() {
 }
 
 // One section at a time, picked from the tab bar (bottom on phones, top on wide screens).
+// Parks has no tab of its own: a button in the Field Guide opens it.
 const TABS = ["catch", "dex", "games", "photos", "feed", "parks", "friends"];
 function showTab(name) {
   if (!TABS.includes(name)) name = "catch";
   document.querySelectorAll("#game > [data-tab]").forEach((c) => c.classList.toggle("off", c.dataset.tab !== name));
-  document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b.dataset.tab === name));
+  document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b.dataset.tab === (name === "parks" ? "dex" : name)));
   if (location.hash !== "#" + name) history.replaceState(null, "", "#" + name);
   if (name === "photos") loadMyPhotos();
   // Leaflet can't measure a map while its tab is hidden.
@@ -1767,6 +1771,8 @@ function showTab(name) {
 }
 document.querySelectorAll("#tabs button").forEach((b) => (b.onclick = () => showTab(b.dataset.tab)));
 window.addEventListener("hashchange", () => showTab(location.hash.slice(1)));
+$("parks-open").onclick = () => showTab("parks");
+$("parks-back").onclick = () => showTab("dex");
 
 async function loadGallery() {
   const box = $("dex-photos");
@@ -2386,8 +2392,8 @@ let hotSelected = null;
 async function loadHotspots() {
   try { hotspots = await api(`/hotspots?state=${myState.code}`); } catch { hotspots = []; }
   $("hotspots-card").classList.toggle("hidden", !hotspots.length);
-  // A state whose park data isn't built yet has no Parks tab, as in the app.
-  document.querySelector('#tabs [data-tab="parks"]').classList.toggle("hidden", !hotspots.length);
+  // A state whose park data isn't built yet has no Parks button, as in the app.
+  $("parks-open").classList.toggle("hidden", !hotspots.length);
   if (!hotspots.length && location.hash === "#parks") showTab("dex");
   if (hotspots.length) drawHotspots();
 }
