@@ -828,26 +828,47 @@ function mgTrail(type, wx0, y0, wx1, y1, n, pts) {
 const MG_SIZES = { berry: [8, 8], acorn: [8, 9], snack: [7, 7], can: [10, 10], bottle: [10, 10], bag: [10, 10],
                    rock: [12, 10], log: [20, 8], stump: [10, 20], branch: [34, 10], snag: [24, 8], cloud: [30, 12] };
 
-function mgSkyLevel(k, gates, extra) {
-  const out = [];
-  for (const [b, c, gap] of gates) {
-    const wx = b * k;
-    out.push(...mgGate("sky", wx, c, gap));
-    out.push(...mgTrail("berry", wx - 30, c, wx + 30, c, 3));
+// A winding course of gates from a seed, for Sky Glide and River Swim. It's built in
+// stretches: zigzags from high to low, tunnels of gates that weave like a snake, and
+// long climbs and dives. Each gap is only as far from the last as the slowest animal
+// can get in the open time between two walls (up: climb px/s, down: dive px/s), and
+// the gaps get tighter as the level goes on. extra: more things to add (clouds, snags).
+function mgWindLevel(key, k, seed, n, start, gap0, gap1, climb, dive, extra) {
+  const rnd = mgRand(seed), spb = k / MG_SPEED[key], wall = ((key === "sky" ? 26 : 22) + 16) / MG_SPEED[key];
+  const lo = key === "sky" ? MG_TOP + 4 : MG_SURFACE + 14, hi = key === "sky" ? MG_GROUND - 4 : MG_BED - 14;
+  const gates = [];
+  let b = start, c = (lo + hi) / 2, i = 0;
+  const gate = (db, want, gap) => {
+    const t = Math.max(0, db * spb - wall);
+    c = mgClamp(mgClamp(want, c - t * climb, c + t * dive), lo + gap / 2, hi - gap / 2);
+    b += db; gates.push([b, Math.round(c), gap]); i++;
+  };
+  while (i < n) {
+    const u = i / n, gap = Math.round(gap0 + (gap1 - gap0) * u), kind = rnd();
+    if (kind < .35) {  // a zigzag: high, low, high...
+      for (let j = 0, up = rnd() < .5; j < 4 && i < n; j++, up = !up) gate(2.5 - u * .5, up ? lo : hi, gap);
+    } else if (kind < .7) {  // a tunnel weaving like a snake, a gate every beat
+      const ph = rnd() * 6, amp = 18 + rnd() * 22 + u * 14, mid = mgClamp(c, lo + gap / 2 + amp, hi - gap / 2 - amp);
+      // Fliers bob with every flap, so their tunnels are a little roomier and less packed.
+      const sky = key === "sky";
+      for (let j = 0; j < 6 && i < n; j++) gate(sky ? 1.75 : 1.25 - u * .25, mid + Math.sin(ph + j * 1.1) * amp, gap + (sky ? 8 : 4));
+    } else {  // a long climb or dive in steps
+      const up = c > (lo + hi) / 2;
+      for (let j = 0; j < 4 && i < n; j++) gate((key === "sky" ? 2.25 : 1.75) - u * .25, c + (up ? -1 : 1) * 40, gap);
+    }
+    b += .5;
   }
-  for (const [b, y] of extra || []) out.push({ type: "cloud", wx: b * k, y });
-  return out;
-}
-
-function mgRiverLevel(k, gates, snags, litter) {
+  // A treat in every gap, and litter to scoop up in the open water between river gates.
   const out = [];
-  for (const [b, c, gap] of gates) {
-    const wx = b * k;
-    out.push(...mgGate("river", wx, c, gap, 22));
-    out.push(...mgTrail("snack", wx - 22, c, wx + 22, c, 2));
+  for (const [gb, gc, gap] of gates) {
+    out.push(...mgGate(key, gb * k, gc, gap, key === "river" ? 22 : 0));
+    out.push({ type: key === "sky" ? "berry" : "snack", good: true, pts: 1, wx: gb * k, y: gc });
   }
-  for (const [b, y] of snags) out.push({ type: "snag", wx: b * k, y });
-  litter.forEach(([b, y], i) => out.push({ type: ["can", "bottle", "bag"][i % 3], good: true, litter: true, pts: 3, wx: b * k, y }));
+  for (let j = 1; key === "river" && j < gates.length; j += 3) {
+    const [b0, c0] = gates[j - 1], [b1, c1] = gates[j];
+    if (b1 - b0 >= 2) out.push({ type: ["can", "bottle", "bag"][j % 3], good: true, litter: true, pts: 3, wx: (b0 + b1) / 2 * k, y: (c0 + c1) / 2 });
+  }
+  for (const [eb, ey] of extra || []) out.push({ type: key === "sky" ? "cloud" : "snag", wx: eb * k, y: ey });
   return out;
 }
 
@@ -906,6 +927,30 @@ function mgPoolLevel(k, rings) {
   return out;
 }
 
+// A Tide Pool course from a seed, in stretches: spirals of closed rings each turned one
+// side on, quick alternating rings, and a mix of the other kinds. Rings come every gap0
+// beats at first and every gap1 by the end.
+function mgSpinLevel(k, seed, n, start, gap0, gap1) {
+  const rnd = mgRand(seed), rings = [];
+  let b = start, g = 0;
+  while (rings.length < n) {
+    const u = rings.length / n, s = gap0 + (gap1 - gap0) * u, kind = rnd();
+    if (kind < .3) {  // a spiral
+      const d = rnd() < .5 ? 1 : -1;
+      for (let j = 0; j < 5; j++) { g = (g + d + 6) % 6; rings.push([b, "c", g]); b += s; }
+    } else if (kind < .55) {  // quick alternating rings
+      for (let j = 0; j < 4; j++) { g = (g + 1) % 6; rings.push([b, "alt", g]); b += s * .75; }
+    } else {  // a mix
+      for (let j = 0; j < 4; j++) {
+        const kd = ["v", "half", "two", "c", "v"][Math.floor(rnd() * 5)];
+        g = (g + 1 + Math.floor(rnd() * 3)) % 6; rings.push([b, kd, g]); b += s * (kd === "c" ? 1.25 : 1);
+      }
+    }
+    b += s * .5;
+  }
+  return mgPoolLevel(k, rings.slice(0, n));
+}
+
 // Claw Catch, like Fruit Ninja but learnable: food leaps up from the bottom and hangs
 // at the top of its leap right on a beat; swipe across it. Bees leap too: swiping one
 // ends the try, and so does letting three bites get away. wx is when a thing is at
@@ -925,35 +970,12 @@ function mgClawAt(o, r) {
 // the tempo is the difficulty. [beat, gap middle, gap size] for gates.
 const MG_LEVELS = {
   sky: [
-    { name: "Meadow Breeze", bpm: 122, song: 0, items: (k) => mgSkyLevel(k, [
-      [8, 100, 60], [12, 85, 60], [16, 110, 60], [20, 95, 60],
-      [24, 70, 60], [28, 60, 58], [32, 75, 58],
-      [38, 120, 58], [42, 130, 58], [46, 115, 58],
-      [52, 90, 56], [55, 80, 56], [58, 70, 56], [61, 60, 56],
-      [66, 100, 56], [70, 130, 56], [74, 95, 56], [78, 60, 56], [82, 100, 56], [86, 110, 56], [90, 80, 56],
-      // The second half: closer and tighter.
-      [94, 106, 50], [97, 121, 50], [99.5, 92, 50], [102.5, 125, 50], [105.5, 136, 50], [108, 108, 50],
-      [110.5, 100, 50], [113.5, 76, 50], [116.5, 94, 50], [119.5, 89, 50], [122.5, 124, 50], [125.5, 96, 50],
-      [128, 76, 50], [131, 50, 50], [133.5, 65, 50], [136.5, 58, 50], [139.5, 50, 50], [142.5, 68, 50],
-      [145.5, 102, 50], [148.5, 106, 50], [151, 94, 50], [154, 83, 50],
-    ], [[14, 145], [26, 140], [40, 52], [64, 140], [76, 140]]) },
-    { name: "Storm Front", bpm: 138, song: 1, items: (k) => mgSkyLevel(k, [
-      [8, 100, 50], [12, 70, 50], [16, 110, 50], [20, 70, 50], [24, 110, 50],
-      [28, 130, 48], [30, 114, 48], [32, 98, 48], [34, 82, 48], [36, 66, 48],
-      [40, 60, 48], [43, 100, 48], [46, 60, 48], [49, 100, 48], [52, 60, 48],
-      [56, 140, 50], [58, 130, 50], [60, 120, 48], [62, 110, 48],
-      [66, 50, 46], [69, 90, 46], [72, 130, 46], [75, 90, 46], [78, 50, 46],
-      [82, 100, 46], [84, 100, 46], [86, 100, 46], [90, 70, 46], [94, 120, 46], [98, 95, 46], [102, 95, 46],
-      // The second half: closer and tighter.
-      [106, 67, 48], [109, 50, 48], [112, 50, 48], [115, 50, 48], [117, 92, 48], [120, 101, 48],
-      [122, 115, 48], [125, 128, 48], [127, 121, 48], [129.5, 99, 48], [132.5, 85, 48], [135, 113, 48],
-      [137, 135, 48], [139, 133, 48], [142, 145, 48], [144, 145, 48], [146.5, 115, 48], [149.5, 123, 48],
-      [152, 121, 48], [154.5, 138, 48], [156.5, 98, 48], [159.5, 62, 48], [162.5, 90, 48], [164.5, 88, 48],
-      [167.5, 87, 48], [170.5, 105, 48],
-    ], [[38, 100], [54, 100], [64, 75], [80, 120], [88, 50]]) },
+    // Winding storm courses: zigzags, snaking tunnels and long dives, tighter as they go.
+    { name: "Meadow Breeze", bpm: 126, song: 0, items: (k) => mgWindLevel("sky", k, 11, 56, 6, 54, 44, 75, 110) },
+    { name: "Storm Front", bpm: 138, song: 1, items: (k) => mgWindLevel("sky", k, 29, 72, 6, 46, 38, 75, 110) },
   ],
   trail: [
-    { name: "Forest Path", bpm: 136, song: 2, items: (k) => mgTrailLevel(k, [
+    { name: "Forest Path", bpm: 176, song: 2, items: (k) => mgTrailLevel(k, [
       ["acorns", 4], ["rock", 8], ["rock", 12], ["log", 16], ["acorns", 19],
       // Your first ledge: hop up for the acorns, or run underneath.
       ["ledge", 23, 26, 70, 3], ["rock", 28], ["branch", 31], ["acorns", 34],
@@ -967,7 +989,7 @@ const MG_LEVELS = {
       ["ledge", 149.5, 26, 56, 2], ["ledge", 152, 50, 56, 3], ["ledge", 154.5, 26, 56, 2], ["rock", 158],
       ["stones", 160, 3], ["stump", 167], ["rock", 169.5], ["branch", 172.5], ["log", 175.5],
     ]) },
-    { name: "Rocky Ridge", bpm: 150, song: 3, items: (k) => mgTrailLevel(k, [
+    { name: "Rocky Ridge", bpm: 196, song: 3, items: (k) => mgTrailLevel(k, [
       ["rock", 8], ["rock", 11], ["rock", 14], ["log", 18], ["branch", 22],
       ["stump", 26], ["rock", 30], ["branch", 33], ["log", 37], ["pit", 41, 48],
       ["stump", 44], ["stump", 48], ["branch", 52], ["ledge", 56, 28, 60, 3], ["pit", 59, 52], ["rock", 62],
@@ -980,11 +1002,11 @@ const MG_LEVELS = {
       ["stones", 163, 4], ["stump", 172], ["rock", 174.5], ["branch", 177.5], ["pit", 180.5, 54],
       ["stump", 183.5], ["bridge", 187, 76, 28], ["rock", 192.5], ["stump", 195.5], ["branch", 198], ["rock", 201],
     ]) },
-    { name: "Creek Canyon", bpm: 144, song: 7, items: (k) => mgTrailLevel(k, [
+    { name: "Creek Canyon", bpm: 176, song: 7, items: (k) => mgTrailLevel(k, [
       ["acorns", 4], ["pit", 8, 44], ["pit", 12, 48], ["stones", 15, 2], ["rock", 21], ["log", 24],
       ["ledge", 28, 26, 56, 2], ["ledge", 30.5, 50, 56, 3], ["ledge", 33, 74, 56, 3], ["ledge", 35.5, 50, 56, 2],
       ["pit", 39.5, 52], ["branch", 43], ["bridge", 47, 88, 28], ["stump", 53], ["pit", 56, 52],
-      ["stones", 59, 3], ["branch", 65.5], ["stump", 68.5], ["ledge", 71, 44, 50, 3], ["pit", 74.5, 56],
+      ["stones", 59, 3], ["branch", 66.5], ["stump", 69.5], ["ledge", 71, 44, 50, 3], ["pit", 74.5, 56],
       ["rock", 78], ["bridge", 81.5, 100, 30], ["pit", 88, 52], ["log", 91], ["branch", 94],
       // The second half: the canyon gets steep.
       ["stones", 97, 4], ["stump", 106], ["pit", 109, 54], ["ledge", 112.5, 26, 48, 2], ["ledge", 115, 50, 48, 2],
@@ -995,25 +1017,13 @@ const MG_LEVELS = {
     ]) },
   ],
   river: [
-    { name: "Lazy Creek", bpm: 112, song: 4, items: (k) => mgRiverLevel(k,
-      [[8, 110, 62], [13, 90, 62], [18, 130, 62], [24, 110, 62], [30, 80, 62],
-       [36, 120, 62], [42, 140, 62], [48, 100, 60], [53, 70, 60], [59, 110, 60],
-       [65, 140, 60], [71, 100, 60], [76, 120, 60],
-       [81, 81, 54], [85, 79, 54], [89, 90, 54], [93, 100, 54], [97, 133, 54], [101, 150, 54], [104.5, 143, 54], [108.5, 132, 54], [112.5, 148, 54], [116.5, 142, 54], [120.5, 150, 54], [124, 150, 54], [128, 118, 54], [132, 118, 54], [135.5, 116, 54], [139.5, 125, 54], [143, 134, 54], [146.5, 109, 54]],
-      [[10.5, 70], [15.5, 150], [21, 80], [33, 150], [39, 70], [50.5, 150], [62, 70], [68, 80], [83.5, 150], [87.5, 150], [91.5, 150], [95.5, 60], [99.5, 60], [103, 60], [107, 60], [111, 60], [115, 60], [119, 60], [122.5, 60], [126.5, 60], [130.5, 60], [134, 60], [138, 60], [141.5, 60], [145, 60]],
-      [[15.5, 100], [27, 90], [45, 120], [56, 90], [73.5, 110], ]) },
-    { name: "Rapids", bpm: 128, song: 5, items: (k) => mgRiverLevel(k,
-      [[8, 110, 54], [12, 80, 54], [16, 120, 54], [20, 150, 54], [24, 120, 54], [28, 80, 54],
-       [33, 60, 52], [36, 90, 52], [39, 120, 52], [42, 150, 52],
-       [47, 110, 52], [50, 110, 52], [53, 70, 52], [56, 110, 52], [59, 150, 52],
-       [64, 100, 50], [67, 70, 50], [70, 100, 50], [73, 130, 50], [76, 100, 50],
-       [81, 73, 46], [84, 88, 46], [87, 86, 46], [90, 102, 46], [93.5, 135, 46], [96.5, 150, 46], [100, 149, 46], [103.5, 114, 46], [107, 84, 46], [110, 64, 46], [113, 60, 46], [116, 96, 46], [119, 62, 46], [122.5, 67, 46], [125.5, 73, 46], [129, 60, 46], [132.5, 60, 46], [135.5, 60, 46], [138.5, 60, 46], [142, 74, 46], [145.5, 60, 46], [149, 91, 46]],
-      [[10, 150], [14, 60], [22, 60], [30.5, 150], [44.5, 70], [61.5, 70], [74.5, 60], [82.5, 150], [85.5, 150], [88.5, 150], [92, 60], [95, 60], [98.5, 60], [102, 60], [105.5, 150], [108.5, 150], [111.5, 150], [114.5, 150], [117.5, 150], [121, 150], [124, 150], [127.5, 150], [131, 150], [134, 150], [137, 150], [140.5, 150], [144, 150], [147.5, 150]],
-      [[18, 140], [34.5, 150], [48.5, 150], [68.5, 130], [79, 90], ]) },
+    // Winding channels between roots and boulders, with litter to scoop in the open stretches.
+    { name: "Lazy Creek", bpm: 116, song: 4, items: (k) => mgWindLevel("river", k, 31, 66, 6, 46, 38, 75, 75) },
+    { name: "Rapids", bpm: 128, song: 5, items: (k) => mgWindLevel("river", k, 47, 90, 6, 40, 32, 75, 75) },
   ],
   // [beat, x, "f" food or "b" bee, height of the leap, sideways drift]
   claw: [
-    { name: "Salmon Run", bpm: 112, song: 8, items: (k) => mgClawLevel(k, [
+    { name: "Salmon Run", bpm: 134, song: 8, items: (k) => mgClawLevel(k, [
       [6, 160, "f"], [8, 100, "f"], [10, 220, "f"], [12, 160, "f", 50],
       [14, 90, "f"], [14, 230, "f"], [16, 160, "b", 70], [18, 110, "f"], [18, 210, "f"],
       [20, 80, "f", 60, 20], [21, 160, "f", 50], [22, 240, "f", 60, -20],
@@ -1034,7 +1044,7 @@ const MG_LEVELS = {
       [69.5, 180, "f", 60, 15], [70.5, 80, "f", 60, 0], [71, 120, "f", 40, 15], [71, 250, "b", 75],
       [72, 220, "f", 60, 0], [73, 230, "f", 40, 0],
     ]) },
-    { name: "Waterfall", bpm: 130, song: 9, items: (k) => mgClawLevel(k, [
+    { name: "Waterfall", bpm: 154, song: 9, items: (k) => mgClawLevel(k, [
       [6, 120, "f"], [7, 200, "f"], [8, 120, "f"], [9, 200, "f"], [10, 160, "b", 60],
       [12, 80, "f", 50, 20], [12, 240, "f", 50, -20], [13, 160, "f", 40],
       [14, 100, "b", 70], [14, 220, "b", 70], [15, 160, "f", 50],
@@ -1062,36 +1072,10 @@ const MG_LEVELS = {
       [58.75, 80, "f", 60, 0],
     ]) },
   ],
-  // [beat, ring kind, turned by g sides]
+  // Spirals, quick alternating rings and mixed rings, coming faster as they go.
   pool: [
-    { name: "Low Tide", bpm: 108, song: 6, items: (k) => mgPoolLevel(k, [
-      [8, "c", 0], [12, "c", 1], [16, "c", 2], [20, "c", 3], [24, "v", 1], [28, "v", 2],
-      [32, "c", 3], [36, "c", 0], [40, "half", 4], [44, "half", 1], [48, "alt", 0], [50, "alt", 1], [52, "alt", 0],
-      [56, "c", 3], [58, "c", 4], [60, "c", 5], [62, "c", 0], [64, "v", 0], [66, "v", 1], [68, "c", 2], [70, "c", 5],
-      [72, "half", 3], [74, "half", 0], [76, "c", 0], [78, "c", 1], [80, "c", 3], [82, "alt", 0], [83.5, "alt", 1], [85, "alt", 0],
-      // The second half: the waves come faster.
-      [89, "two", 2], [91, "alt", 4], [93, "c", 0], [94.5, "two", 0], [96, "two", 1],
-      [98, "c", 1], [100, "v", 1], [102, "alt", 1], [103.5, "v", 2], [105, "half", 1],
-      [107, "two", 2], [109, "two", 4], [110.5, "half", 4], [112.5, "alt", 1], [114, "alt", 0],
-      [116, "c", 4], [118, "c", 1], [120, "half", 4], [121.5, "c", 4], [123.5, "v", 5],
-      [125, "alt", 4], [127, "c", 4], [129, "c", 1], [131, "c", 0],
-    ]) },
-    { name: "Rising Tide", bpm: 126, song: 7, items: (k) => mgPoolLevel(k, [
-      [8, "c", 0], [10, "c", 1], [12, "c", 2], [14, "c", 3], [16, "c", 4], [18, "c", 5],
-      [22, "alt", 0], [23.5, "alt", 1], [25, "alt", 0], [26.5, "alt", 1], [28, "alt", 0],
-      [32, "two", 3], [34, "two", 5], [36, "two", 1], [38, "two", 3],
-      [42, "c", 0], [44, "c", 5], [46, "c", 4], [48, "c", 3], [50, "c", 2], [52, "c", 1],
-      [56, "v", 0], [58, "v", 1], [60, "v", 2], [62, "half", 0], [65, "half", 3], [68, "c", 4],
-      [71, "alt", 1], [72.5, "alt", 0], [74, "alt", 1], [76, "c", 3], [78, "two", 0], [80, "c", 0], [82, "c", 3],
-      [84, "c", 2], [85.5, "c", 1], [87, "c", 0], [88.5, "c", 5], [90, "v", 2], [92, "half", 5], [94, "two", 2], [96, "c", 5],
-      // The second half: the waves come faster.
-      [100, "half", 4], [101.5, "c", 3], [103, "alt", 4], [105, "alt", 1], [107, "v", 3],
-      [109, "alt", 3], [111, "c", 5], [113, "v", 4], [114.5, "half", 1], [116, "c", 3],
-      [117.5, "v", 0], [119.5, "c", 3], [121, "c", 5], [122.5, "c", 1], [124.5, "two", 5],
-      [126, "c", 2], [127.5, "half", 1], [129.5, "c", 3], [131, "c", 5], [132.5, "c", 5],
-      [134, "alt", 3], [135.5, "half", 1], [137, "v", 0], [139, "v", 0], [140.5, "alt", 3],
-      [142, "two", 0], [143.5, "v", 4], [145.5, "v", 4], [147, "c", 1], [148.5, "c", 2],
-    ]) },
+    { name: "Low Tide", bpm: 120, song: 6, items: (k) => mgSpinLevel(k, 1, 64, 6, 2, 1.25) },
+    { name: "Rising Tide", bpm: 136, song: 7, items: (k) => mgSpinLevel(k, 5, 80, 6, 1.75, 1.25) },
   ],
 };
 
@@ -3155,36 +3139,36 @@ MG_MORE.leap = {
 // is checked to be finishable at the lowest stats.
 Object.assign(MG_LEVELS, {
   slide: [
-    { name: "Muddy Creek", bpm: 118, song: 2, items: (k) => mgSlideLevel(k, 11, 60, 6, 2.5, 1.5, .2, .6) },
-    { name: "Mudslide Mountain", bpm: 132, song: 3, items: (k) => mgSlideLevel(k, 12, 84, 6, 2, 1.25, .4, .8) },
+    { name: "Muddy Creek", bpm: 140, song: 2, items: (k) => mgSlideLevel(k, 11, 64, 6, 2.25, 1.25, .3, .7) },
+    { name: "Mudslide Mountain", bpm: 156, song: 3, items: (k) => mgSlideLevel(k, 12, 90, 6, 1.75, 1, .5, .9) },
   ],
   leap: [
-    { name: "Oak Woods", bpm: 100, song: 0, items: (k) => mgLeapLevel(k, 81, 40, 60, 95, .1, .45, 38, 28) },
-    { name: "Redwood Heights", bpm: 116, song: 2, items: (k) => mgLeapLevel(k, 82, 50, 70, 110, .3, .7, 32, 22) },
+    { name: "Oak Woods", bpm: 118, song: 0, items: (k) => mgLeapLevel(k, 81, 44, 70, 105, .25, .6, 34, 24) },
+    { name: "Redwood Heights", bpm: 136, song: 2, items: (k) => mgLeapLevel(k, 82, 56, 80, 120, .4, .75, 28, 20) },
   ],
   dig: [
-    { name: "Garden Soil", bpm: 110, song: 5, items: (k) => mgDigLevel(k, 41, 140, 24, 17) },
-    { name: "Rocky Ground", bpm: 124, song: 1, items: (k) => mgDigLevel(k, 42, 160, 20, 14) },
+    { name: "Garden Soil", bpm: 130, song: 5, items: (k) => mgDigLevel(k, 41, 140, 21, 15) },
+    { name: "Rocky Ground", bpm: 146, song: 1, items: (k) => mgDigLevel(k, 42, 170, 17, 12) },
   ],
   nectar: [
-    { name: "Spring Meadow", bpm: 104, song: 4, items: (k) => mgNectarLevel(k, 21, 150, 4, .1, .35, .05, .2, 0) },
-    { name: "Wildflower Storm", bpm: 120, song: 6, items: (k) => mgNectarLevel(k, 22, 170, 4, .2, .5, .1, .3, .25) },
+    { name: "Spring Meadow", bpm: 124, song: 4, items: (k) => mgNectarLevel(k, 21, 156, 4, .2, .45, .1, .28, .1) },
+    { name: "Wildflower Storm", bpm: 142, song: 6, items: (k) => mgNectarLevel(k, 22, 176, 4, .3, .6, .15, .4, .35) },
   ],
   plunge: [
-    { name: "Pelican Bay", bpm: 108, song: 4, items: (k) => mgPlungeLevel(k, 61, 34, 6, 4, 3, .4, .7) },
-    { name: "Kelp Coast", bpm: 120, song: 8, items: (k) => mgPlungeLevel(k, 62, 44, 6, 3.5, 2.5, .45, .85) },
+    { name: "Pelican Bay", bpm: 126, song: 4, items: (k) => mgPlungeLevel(k, 61, 38, 6, 3.5, 2.5, .5, .8) },
+    { name: "Kelp Coast", bpm: 140, song: 8, items: (k) => mgPlungeLevel(k, 62, 48, 6, 3, 2, .55, .95) },
   ],
   splash: [
-    { name: "Dolphin Cove", bpm: 104, song: 6, items: (k) => mgSplashLevel(k, 71, 30, 6, 5, 4, .5, 1) },
-    { name: "Whale Waters", bpm: 116, song: 8, items: (k) => mgSplashLevel(k, 72, 38, 6, 4.5, 3.5, .6, 1.2) },
+    { name: "Dolphin Cove", bpm: 122, song: 6, items: (k) => mgSplashLevel(k, 71, 34, 6, 4.5, 3.5, .6, 1.1) },
+    { name: "Whale Waters", bpm: 136, song: 8, items: (k) => mgSplashLevel(k, 72, 42, 6, 4, 3, .7, 1.3) },
   ],
   call: [
-    { name: "Woodland Chat", bpm: 96, song: 0, items: (k) => mgCallLevel(k, 31, 15, 0, 4, 4, 10) },
-    { name: "Night Chorus", bpm: 108, song: 7, items: (k) => mgCallLevel(k, 32, 17, 4, 9, 10, 17) },
+    { name: "Woodland Chat", bpm: 108, song: 0, items: (k) => mgCallLevel(k, 31, 15, 0, 4, 4, 10) },
+    { name: "Night Chorus", bpm: 120, song: 7, items: (k) => mgCallLevel(k, 32, 17, 4, 9, 10, 17) },
   ],
   echo: [
-    { name: "Bat Cave", bpm: 112, song: 1, items: (k) => mgEchoLevel(k, 51, 55, 6, 64, 50, 2.5, 1.75) },
-    { name: "Deep Cavern", bpm: 126, song: 9, items: (k) => mgEchoLevel(k, 52, 75, 6, 56, 46, 2.25, 1.5) },
+    { name: "Bat Cave", bpm: 132, song: 1, items: (k) => mgEchoLevel(k, 51, 60, 6, 58, 46, 2.25, 1.5) },
+    { name: "Deep Cavern", bpm: 148, song: 9, items: (k) => mgEchoLevel(k, 52, 80, 6, 52, 40, 2, 1.25) },
   ],
 });
 
@@ -3471,15 +3455,15 @@ MG_MORE.freeze = {
 MG_SPEED.feeder = 60; MG_SPEED.school = 70; MG_SPEED.freeze = 55;
 Object.assign(MG_LEVELS, {
   feeder: [
-    { name: "Backyard Feeder", bpm: 100, song: 0, items: (k) => mgFeederLevel(k, 91, 60, 4, .1, .35, .08, .22) },
-    { name: "Busy Morning", bpm: 112, song: 5, items: (k) => mgFeederLevel(k, 92, 76, 4, .2, .5, .12, .3) },
+    { name: "Backyard Feeder", bpm: 118, song: 0, items: (k) => mgFeederLevel(k, 91, 64, 4, .15, .45, .1, .3) },
+    { name: "Busy Morning", bpm: 132, song: 5, items: (k) => mgFeederLevel(k, 92, 84, 4, .25, .6, .15, .4) },
   ],
   school: [
-    { name: "Reed Bed", bpm: 100, song: 4, items: (k) => mgSchoolLevel(k, 93, 34, 4, 3, 1.75) },
-    { name: "Rocky Reef", bpm: 112, song: 6, items: (k) => mgSchoolLevel(k, 94, 48, 4, 2.5, 1.75) },
+    { name: "Reed Bed", bpm: 118, song: 4, items: (k) => mgSchoolLevel(k, 93, 34, 4, 3, 1.75) },
+    { name: "Rocky Reef", bpm: 126, song: 6, items: (k) => mgSchoolLevel(k, 94, 48, 4, 2.5, 2) },
   ],
   freeze: [
-    { name: "Meadow Sneak", bpm: 96, song: 2, items: (k) => mgFreezeLevel(k, 95, 12, 3, 4, 2.5, 1.5, 2, 0) },
-    { name: "Foxy Woods", bpm: 108, song: 3, items: (k) => mgFreezeLevel(k, 96, 16, 3, 3.5, 1.5, 1.5, 2.5, .4) },
+    { name: "Meadow Sneak", bpm: 112, song: 2, items: (k) => mgFreezeLevel(k, 95, 14, 3, 3.5, 2, 1.5, 2, .2) },
+    { name: "Foxy Woods", bpm: 126, song: 3, items: (k) => mgFreezeLevel(k, 96, 18, 3, 3, 1.25, 1.5, 2.5, .55) },
   ],
 });
