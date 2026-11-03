@@ -86,6 +86,7 @@ fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: FieldGuide, onBa
         }
         details?.takeIf { it.safety == "caution" || it.safety == "danger" }?.let { SafetyCard(it) }
         if (badge != null) {
+            InkStamp("Captured")
             Text("Captured ${badge.count}× — first on " +
                 DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(badge.firstCaughtAt)),
                 style = MaterialTheme.typography.bodyMedium)

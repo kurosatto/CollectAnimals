@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Capture Animals</title>
 <link rel="manifest" href="/manifest.webmanifest">
-<meta name="theme-color" content="#2f7d4f">
+<meta name="theme-color" content="#5b3a22">
 <meta name="description" content="Photograph wild animals and capture them in your Field Guide.">
 <link rel="icon" type="image/png" href="/icons/hummingbird/favicon-32.png">
 <link rel="apple-touch-icon" href="/icons/hummingbird/apple-touch-icon.png">
@@ -345,6 +345,106 @@
   @keyframes reveal-glow { 30% { opacity:1; transform:scale(1.1); } to { opacity:0; transform:scale(1.25); } }
   @media (prefers-reduced-motion: reduce) {
     .reveal .color { animation:none; clip-path:none; } .reveal .sil, .reveal::after { animation:none; } }
+  /* ---- Field Journal look (2026-11): a naturalist's notebook. Leather bars with
+     stitching, paper pages, taped-in habitat photo, handwritten notes, ink stamps.
+     Fonts: Fraunces (headings, body) and Caveat (handwriting), both OFL, self-hosted. ---- */
+  @font-face { font-family:"Fraunces"; src:url(/vendor/fonts/fraunces.woff2) format("woff2"); font-weight:100 900; font-display:swap; }
+  @font-face { font-family:"Caveat"; src:url(/vendor/fonts/caveat.woff2) format("woff2"); font-weight:400 700; font-display:swap; }
+  :root { --bg:#efe4c8; --card:#fbf5e6; --ink:#3a2c1c; --muted:#7a6448; --accent:#4d6b3a; --line:#d9c9a3;
+          --leather:#5b3a22; --leather2:#3f2715; --brass:#c9a45a; --stamp:#9b3b2a; --tape:rgba(240,225,170,.8);
+          --paper-lines:rgba(90,120,160,.13); --hand:#2f4c6b;
+          --common:#7a6f58; --uncommon:#4d6b3a; --rare:#2e5a7a; --legendary:#b07a1e; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#211a12; --card:#2c2318; --ink:#f0e4c8; --muted:#bba57f; --accent:#9cbf7c; --line:#4a3b28;
+            --leather:#3d2716; --leather2:#21140a; --paper-lines:rgba(200,180,140,.07); --hand:#a9c6e0; --stamp:#e08a74;
+            --common:#b6a888; --uncommon:#9cbf7c; --rare:#8fbde0; --legendary:#e4b75a; } }
+  body { font-family:"Fraunces", Georgia, "Times New Roman", serif; background-color:var(--bg);
+         background-image:radial-gradient(ellipse at 20% 0%, rgba(255,255,255,.35), transparent 55%),
+           repeating-linear-gradient(0deg, transparent 0 31px, var(--paper-lines) 31px 32px); }
+  input, select, textarea { font-family:inherit; background:var(--card); border-color:var(--line); }
+  h1, h2, h3 { font-family:"Fraunces", Georgia, serif; font-weight:800; letter-spacing:.2px; }
+  .card h2 { font-size:1.45rem; margin:0 0 12px; }
+  /* Leather header with stitching. */
+  header { background:var(--leather); color:#f3e3bf; border-radius:14px; padding:6px 14px; margin:0 0 4px;
+           background-image:radial-gradient(rgba(255,255,255,.06) 1px, transparent 1px); background-size:4px 4px;
+           box-shadow:inset 0 0 0 3px var(--leather), inset 0 0 0 5px rgba(201,164,90,.55), 0 3px 0 var(--leather2); }
+  header h1 { color:#fff3d6; }
+  header .muted, header #state-name { color:var(--brass) !important; font-family:"Caveat", cursive; font-size:1.35rem !important; font-weight:600; }
+  header button.link, header #offline { color:#f3e3bf; }
+  header #offline { background:rgba(0,0,0,.25); }
+  @media (max-width:719px) { main { padding-top:0; } header { margin:0 -16px 4px; border-radius:0 0 14px 14px; padding-top:max(6px, env(safe-area-inset-top)); } }
+  /* Pages: paper cards with a soft shadow instead of website boxes. */
+  .card { background:var(--card); border:1px solid var(--line); border-radius:6px; box-shadow:0 2px 0 var(--line), 0 6px 14px rgba(60,40,20,.12); }
+  .muted { color:var(--muted); }
+  /* Buttons: an ink-green pill that presses down; secondary ones are dashed pencil outlines. */
+  button { background:var(--accent); color:#fdf6e3; font-family:"Fraunces", Georgia, serif; font-weight:600;
+           border-radius:999px; box-shadow:0 3px 0 rgba(0,0,0,.28); }
+  button:active { transform:translateY(2px); box-shadow:0 1px 0 rgba(0,0,0,.28); }
+  button.link { box-shadow:none; font-weight:600; border-radius:0; }
+  button.link:active, nav#tabs button:active { transform:none; }
+  button.ghost, .seg button, .like, .pick button, .hab-bar button { background:transparent; color:var(--ink); border:1.5px dashed var(--muted); box-shadow:none; }
+  .seg button.on { background:var(--ink); color:var(--card); border:1.5px solid var(--ink); }
+  .photo-btn { border:1.5px dashed var(--muted); background:transparent; border-radius:999px; font-weight:600; gap:6px; }
+  .photo-btn .ic { width:24px; height:24px; image-rendering:pixelated; }
+  .parks-open { background:transparent; color:var(--ink); border:2px dashed var(--muted); border-radius:12px; box-shadow:none; width:100%; padding:10px 14px; font-size:1rem; }
+  .parks-open .ic { width:30px; height:30px; }
+  /* Tab bar: a leather strap with stitching; the open tab sits in a brass ring. */
+  nav#tabs { background:var(--leather); border:none; box-shadow:inset 0 3px 0 var(--leather), inset 0 5px 0 rgba(201,164,90,.5);
+             background-image:radial-gradient(rgba(255,255,255,.06) 1px, transparent 1px); background-size:4px 4px; }
+  nav#tabs button { color:#d9c49a; font-family:"Fraunces", Georgia, serif; box-shadow:none; border-radius:0; padding-top:10px; }
+  nav#tabs button .ic { width:34px; height:34px; padding:3px; border-radius:50%; border:2px solid transparent; opacity:.85; }
+  nav#tabs button.on { color:#fff3d6; }
+  nav#tabs button.on .ic { background:#f3ead4; border-color:var(--brass); opacity:1; transform:none; box-shadow:0 2px 0 var(--leather2); }
+  @media (min-width:720px) { nav#tabs { border-radius:14px; box-shadow:inset 0 0 0 3px var(--leather), inset 0 0 0 5px rgba(201,164,90,.5), 0 3px 0 var(--leather2); }
+    nav#tabs button .ic { width:30px; height:30px; } }
+  /* Habitat: a photo taped into the journal, with a handwritten caption. */
+  #hab-home .habitat { background:#fffaf0; padding:10px 10px 12px; transform:rotate(-1deg); margin:14px 4px 6px;
+                       box-shadow:0 6px 14px rgba(60,40,20,.28); }
+  #hab-home .habitat::before, #hab-home .habitat::after { content:""; position:absolute; top:-11px; width:84px; height:24px;
+       background:var(--tape); box-shadow:0 1px 2px rgba(0,0,0,.15); z-index:1; pointer-events:none; }
+  #hab-home .habitat::before { left:24px; transform:rotate(-7deg); }
+  #hab-home .habitat::after { right:24px; transform:rotate(6deg); }
+  #hab-canvas { border:none; border-radius:0; }
+  #hab-note, .hand { font-family:"Caveat", cursive; font-size:1.3rem; font-weight:600; color:var(--hand); line-height:1.15; }
+  .hab-bubble { font-family:"Fraunces", Georgia, serif; background:#fffaf0; color:#3a2c1c; border-color:#d9c9a3; }
+  /* Field Guide: specimen cards; ones not captured yet are dashed empty slots. */
+  .guide { gap:10px 8px; grid-template-columns:repeat(auto-fill,minmax(72px,1fr)); }
+  .guide .tile { background:#fffaf0; color:#3a2c1c; border:1px solid #e0d2ad; border-radius:2px; box-shadow:0 2px 5px rgba(60,40,20,.2); }
+  .guide .tile:nth-child(5n+2) { transform:rotate(-1.2deg); } .guide .tile:nth-child(7n+4) { transform:rotate(1deg); }
+  .guide .tile .sprite { background:#f1e7cf; }
+  .guide .tile .name { font-family:"Caveat", cursive; font-size:1.05rem; font-weight:600; line-height:1; }
+  .guide .tile .num { font-weight:700; color:#7a6448; text-align:left; }
+  .guide .tile.locked { background:transparent; border:1.5px dashed var(--muted); box-shadow:none; color:var(--muted); transform:none; }
+  .guide .tile.locked .sprite { background:transparent; }
+  .guide .tile.mine { border:1px solid #e0d2ad; }
+  .guide .tile:hover { border-color:var(--accent); }
+  .grid .tier, .guide .tier { letter-spacing:.18em; font-size:.72rem; }
+  .guide .section { font-size:1.1rem; border-bottom:1.5px solid var(--muted); }
+  /* Animal page: a journal entry with a "Captured" ink stamp. */
+  dialog { background:var(--card); border:none; border-radius:8px; box-shadow:0 10px 40px rgba(0,0,0,.4);
+           background-image:repeating-linear-gradient(0deg, transparent 0 31px, var(--paper-lines) 31px 32px); }
+  #dex-name { font-size:2rem; line-height:1.05; }
+  #dex-sci { font-style:italic; }
+  .dex-sprite { background:#fffaf0; padding:6px; width:96px; height:96px; box-shadow:0 4px 10px rgba(60,40,20,.25); transform:rotate(-2deg); }
+  .dex .status.mine { display:inline-block; color:var(--stamp); border:3px double var(--stamp); padding:2px 8px; transform:rotate(-4deg);
+                      text-transform:uppercase; letter-spacing:.12em; font-weight:800; margin-top:8px; }
+  .dex dt { font-weight:700; letter-spacing:.12em; }
+  #dex-fact { font-family:"Caveat", cursive; font-size:1.25rem; color:var(--hand); line-height:1.2; }
+  .dex .close { box-shadow:none; border-radius:50%; }
+  /* Small things in the same hand. */
+  .score, .set, .photo, .ach, .hot-row, .tile { border-color:var(--line); }
+  .set, .photo, .ach { background:#fffaf0; color:#3a2c1c; border-radius:4px; box-shadow:0 2px 5px rgba(60,40,20,.15); }
+  .set .desc, .photo .meta { color:#7a6448; }
+  .chip, .hot-species li { border-style:dashed; border-color:var(--muted); }
+  #toast { background:#fffaf0; color:#3a2c1c; border:1px solid #d9c9a3; font-family:"Fraunces", Georgia, serif; }
+  #version { font-family:"Caveat", cursive; font-size:1.1rem; }
+  .pitch-title { font-size:1.6rem; }
+  .auth-place { background:var(--leather); box-shadow:none; border-radius:999px; }
+  @media (max-width:520px) { header h1 { font-size:1.25rem; } h1 .logo { width:40px; height:36px; } header #state-name { display:none; } }
+  @media (prefers-color-scheme: dark) {
+    button { background:#5f8a45; } button.link { background:none; }
+    .guide .tile.locked { color:var(--muted); }
+    #hab-home .habitat { background:#efe4c8; } }
 </style>
 </head>
 <body>
@@ -405,9 +505,9 @@
     <div class="card" data-tab="catch">
       <h2>Capture an animal</h2>
       <form id="upload-form">
-        <label class="photo-btn">📷 Take photo
+        <label class="photo-btn"><img class="ic" src="/sprites/ui_tab_capture.png" alt="">Take photo
           <input id="photo-camera" type="file" accept="image/*" capture="environment" hidden></label>
-        <label class="photo-btn">🖼️ Choose from photos
+        <label class="photo-btn"><img class="ic" src="/sprites/ui_tab_photos.png" alt="">Choose from photos
           <input id="photo-library" type="file" accept="image/*" hidden></label>
         <span id="photo-name" class="muted"></span>
         <button type="submit">Identify</button>
