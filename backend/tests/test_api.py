@@ -646,7 +646,8 @@ def test_sprites(client):
 
 def test_sprite_animations(client):
     idx = client.get("/sprites/anim/index.json").json()
-    assert idx["rows"] == ["idle", "walk", "fly", "swim", "sleep", "sit", "look", "back"] and idx["frames"] == 4
+    assert idx["rows"] == ["idle", "walk", "fly", "swim", "sleep", "sit", "look", "back"] and idx["frames"] == 8
+    assert idx["size"] == 80 and 0 < idx["blink"] < 8  # 2x frames; idle has a blink frame
     assert {"walk", "sit", "look", "back"} <= set(idx["acts"]["western_gray_squirrel"])
     assert {"walk", "swim", "sit", "look", "back"} <= set(idx["acts"]["harbor_seal"])  # sit = banana pose
     assert {"walk", "swim", "look", "back"} <= set(idx["acts"]["american_bullfrog"])

@@ -7,7 +7,7 @@ import re
 
 import numpy as np
 
-from pixel import N, PAD_TOP, PAD_X, _XS, _YS, Sprite, mix
+from pixel import N, PAD_TOP, PAD_X, SS, _XS, _YS, Sprite, idx, mix, units
 
 PINK = "#f2a7b4"
 
@@ -33,10 +33,11 @@ EYE = "#1d1428"
 # --------------------------------------------------------------------------- mammals
 def _lift(s: Sprite, dy: int):
     """Raise everything but the bottom row of feet (a bob in the stride)."""
-    keep_col, keep_reg = s.col[28 + PAD_TOP:].copy(), s.reg[28 + PAD_TOP:].copy()
+    r = (28 + PAD_TOP) * SS
+    keep_col, keep_reg = s.col[r:].copy(), s.reg[r:].copy()
     s.shift(0, -dy)
     feet = keep_reg > 0
-    s.col[28 + PAD_TOP:][feet], s.reg[28 + PAD_TOP:][feet] = keep_col[feet], keep_reg[feet]
+    s.col[r:][feet], s.reg[r:][feet] = keep_col[feet], keep_reg[feet]
 
 
 # --------------------------------------------------------------------------- small mammals
@@ -160,7 +161,7 @@ def critter(s: Sprite, fur, light=WHITE, *, build="ground", ears="small", ear_in
         hy = min(ground - hry - 0.3, hy + drop + 1.5)
         hx += 1
     # Bounding gait: gather, push off, stretch out in the air, land.
-    reach, push, lift = ((0, 0, 0), (0.6, 1.8, 1), (2.4, 2.6, 2), (1.6, 0.4, 1))[f] if act == "walk" else (0, 0, 0)
+    reach, push, lift = s.cyc((0, 0, 0), (0.6, 1.8, 1), (2.4, 2.6, 2), (1.6, 0.4, 1)) if act == "walk" else (0, 0, 0)
     if swimming:
         reach, push = 1.2 * s.wave(), -1.2 * s.wave()
     g = dict(b, view=view, build=build, act=act, hx=hx, hy=hy, hrx=hrx, hry=hry, bx=bx, by=by, brx=brx, bry=bry,
@@ -200,7 +201,7 @@ def critter(s: Sprite, fur, light=WHITE, *, build="ground", ears="small", ear_in
     if sitting:
         s.ellipse(px_ - 1.5, ground - 0.6, b["foot"] + 0.6, 1.0, feet)
         # front paws held up to the mouth, nibbling
-        up = (0, 1, 0, 1)[f]
+        up = s.cyc(0, 1, 0, 1)
         s.path([(bx - 2, by - 2.5), (hx + 0.5, hy + hry + 1.2 - up)], 0.9, fur)
         s.ellipse(hx + 0.2, hy + hry + 1.2 - up, 1.3, 1.1, feet)
     elif swimming:
@@ -256,8 +257,7 @@ def back_stripes(s: Sprite, g, cols, top=0.5, width=1.0):
 
 def flecks(s: Sprite, mask, col, every=5, seed=0):
     """A scatter of single-pixel flecks inside mask."""
-    ys, xs = np.where(mask)
-    pts = [(x - PAD_X, y - PAD_TOP) for x, y in zip(xs, ys) if (x * 7 + y * 13 + seed) % every == 0]
+    pts = [(x, y) for x, y in units(mask) if ((x + PAD_X) * 7 + (y + PAD_TOP) * 13 + seed) % every == 0]
     s.paint(s.m_px(pts), col, within=mask)
 
 
@@ -392,7 +392,7 @@ def _critter_ear(s: Sprite, kind, hx, hy, hrx, hry, off, col, inner, view, tip_c
 
 def _critter_tail(s: Sprite, kind, x, y, col, tip, act, f):
     """The tail, joined to the rump at (x, y). Bushy tails sway a little as they go."""
-    sway = (0, 0.6, 1, 0.4)[f] if act == "walk" else 0
+    sway = s.cyc(0, 0.6, 1, 0.4) if act == "walk" else 0.5 * s.wave() if act in ("idle", "look") else 0
     if act == "sleep" and kind in ("squirrel", "bushy", "ringed"):
         # wrapped over the back like a blanket
         m = s.path([(x, y + 1), (x - 3, y - 3.5), (x - 8, y - 4.5), (x - 12, y - 3)], (2.6, 2.2), col)
@@ -481,7 +481,8 @@ def quad(s: Sprite, fur, light=WHITE, *, build="dog", ears="point", ear_in=PINK,
     if not lying:
         for x, back, sw in ((b["fx"] + 2.2, False, -w), (b["bx"] + 1.6, True, w)):
             _leg(s, x, b["top"], ground, b["leg"], far(legs), back, build, far(feet) if feet else None, sw)
-    _tail(s, tail, bx + brx - 1, by - bry * 0.3 + 0.8 * w, tail_col, tail_tip)
+    tw = w if s.act == "walk" else 0.6 * s.wave(0.25) if s.act == "idle" else 0  # an idle tail swishes
+    _tail(s, tail, bx + brx - 1, by - bry * 0.3 + 0.8 * tw, tail_col, tail_tip)
     ear_x = hx + (0.8 if build == "bear" else 2.6)
     _side_ear(s, ears, ear_x - 1, hy - hry + 0.6, far(head), None)
 
@@ -520,8 +521,8 @@ def quad(s: Sprite, fur, light=WHITE, *, build="dog", ears="point", ear_in=PINK,
         paw = feet or mix(legs, "#1a1420", 0.1)
         for dx in (0, 3.5):
             s.ellipse(b["fx"] - 2.5 + dx, ground - 1.2, 2.4, 1.3, paw)
-    elif s.act == "walk" and s.f % 2 == 0:
-        _lift(s, 1)
+    elif s.act == "walk":
+        _lift(s, 0.5 + 0.5 * math.cos(4 * math.pi * s.t))  # up as the legs pass
 
 
 def _leg(s: Sprite, x, top, ground, r, col, back, build, feet, swing=0.0):
@@ -606,7 +607,7 @@ def pinniped(s: Sprite, fur, light, *, spots=None, ears=False, proboscis=None, w
     ground = 30.5
     swim = act == "swim"
     w = s.wave() if act in ("walk", "swim") else 0
-    hump = (0, 1.6, 0.6, -0.4)[f] if act == "walk" else 0
+    hump = s.cyc(0, 1.6, 0.6, -0.4) if act == "walk" else 0
     if swim:
         # stretched out and rippling, the neck arched and the head held up out of the
         # water (not level like a fish), hind flippers sweeping side to side
@@ -615,7 +616,7 @@ def pinniped(s: Sprite, fur, light, *, spots=None, ears=False, proboscis=None, w
         head = (6.5, 11.5 + 0.4 * w, 3.3, 2.8)
     elif act == "sit":
         # banana: belly on the ground, both ends curled up (the tail end bobs a little)
-        lift = (0, 0.5, 1, 0.5)[f]
+        lift = s.cyc(0, 0.5, 1, 0.5)
         spine = [(28, 23 - lift), (23.5, 27.6), (16, 28.6), (9.5, 26.6)]
         rad = (1.8, 4.0)
         head = (6, 20.5, 3.4, 2.9)
@@ -655,7 +656,7 @@ def pinniped(s: Sprite, fur, light, *, spots=None, ears=False, proboscis=None, w
         k = 0
         for x in range(4, 30):
             for y in range(10, 31):
-                if body[y + PAD_TOP, x + PAD_X] and (x * 7 + y * 13) % 11 == 0 and k < spots:
+                if body[idx(x, y)] and (x * 7 + y * 13) % 11 == 0 and k < spots:
                     s.paint(s.m_px([(x, y)]), mix(fur, "#000000", 0.4))
                     k += 1
     if blotch:
@@ -814,14 +815,16 @@ def bird(s: Sprite, body, belly, *, head=None, wing=None, tail_col=None, beak="c
     if flying and w > -0.5:
         with s.unwarped():
             _flight_wing(s, cy, w, mix(wing, "#1a1420", 0.3), dx=2.5)
+    # Perched, the tail flicks up now and then (and dips back) like a real bird's.
+    tb = -1.4 * max(0.0, s.wave(0.1)) ** 2 if s.act == "idle" else 0
     if tail == "mid":
-        s.poly([(20, cy), (29, cy - 6), (31, cy - 3), (23, cy + 4)], tail_col)
+        s.poly([(20, cy), (29, cy - 6 + tb), (31, cy - 3 + tb), (23, cy + 4)], tail_col)
     elif tail == "long":
-        s.poly([(20, cy), (30, cy - 12), (32, cy - 9), (23, cy + 4)], tail_col)
+        s.poly([(20, cy), (30, cy - 12 + tb), (32, cy - 9 + tb), (23, cy + 4)], tail_col)
     elif tail == "short":
-        s.poly([(20, cy), (27, cy - 3), (28, cy + 1), (22, cy + 4)], tail_col)
+        s.poly([(20, cy), (27, cy - 3 + tb), (28, cy + 1 + tb), (22, cy + 4)], tail_col)
     elif tail == "fan":
-        s.poly([(20, cy), (29, cy - 9), (31, cy - 1), (23, cy + 4)], tail_col)
+        s.poly([(20, cy), (29, cy - 9 + tb), (31, cy - 1 + tb), (23, cy + 4)], tail_col)
     if not flying:
         _bird_legs(s, (13, 17), 25, 29, legs, w if s.act == "walk" else 0)
     rb = 8.5 if big else 8
@@ -856,17 +859,26 @@ def bird(s: Sprite, body, belly, *, head=None, wing=None, tail_col=None, beak="c
     s.eye(8, 10, color=eye_col, shine=None)
 
 
+def _lerp_pts(a, b, k):
+    return [(x0 + (x1 - x0) * k, y0 + (y1 - y0) * k) for (x0, y0), (x1, y1) in zip(a, b)]
+
+
+# The flight wing at the top of the beat, spread level and at the bottom: the same
+# eight points (shoulder, leading edge, tip at index 4, trailing edge) so the frames
+# in between blend from one to the next instead of snapping.
+_WING_UP = [(14, 0), (15, -6), (17, -12), (20, -17), (23.5, -20), (24, -15), (23.5, -7), (22, 0)]
+_WING_LEVEL = [(13, -0.5), (16, -2), (20, -2.8), (25, -3), (30, -1.5), (25, 0.5), (21, 1.2), (18, 1.5)]
+_WING_DOWN = [(14, 1), (14.5, 4), (15, 6), (17, 11), (19.5, 13.5), (21, 10), (21.5, 5), (22, 1)]
+
+
 def _flight_wing(s: Sprite, cy, w, col, dx=0):
-    """A long, pointed wing through the beat: raised high, spread level along the body,
-    and swept down below it. In canvas coordinates (after the bird is slimmed)."""
+    """A long, pointed wing through the beat: raised high (w=1), spread level along the
+    body (0) and swept down below it (-1), blending smoothly in between. In canvas
+    coordinates (after the bird is slimmed)."""
     y = cy + 2  # the shoulder
-    if w > 0.5:
-        pts = [(14, y), (15, y - 6), (17, y - 12), (20, y - 17), (23.5, y - 20), (24, y - 15), (23.5, y - 7), (22, y)]
-    elif w < -0.5:
-        pts = [(14, y + 1), (15, y + 6), (17, y + 11), (19.5, y + 13.5), (21, y + 10), (22, y + 1)]
-    else:
-        pts = [(13, y - 0.5), (18, y - 2.5), (25, y - 3), (30, y - 1.5), (25, y + 0.5), (18, y + 1.5)]
-    return s.poly([(x + dx, y) for x, y in pts], col, edge=not dx)
+    k = abs(w) ** 1.3
+    pts = _lerp_pts(_WING_LEVEL, _WING_UP if w >= 0 else _WING_DOWN, k)
+    return s.poly([(x + dx, y + py) for x, py in pts], col, edge=not dx)
 
 
 def _bird_legs(s: Sprite, xs, top, ground, col, w, toes=(-1,), toe_dy=0):
@@ -879,21 +891,34 @@ def _bird_legs(s: Sprite, xs, top, ground, col, w, toes=(-1,), toe_dy=0):
         s.px([(fx + t, foot + toe_dy) for t in toes], col)
 
 
+def _ell_lerp(a, b, k):
+    """Blend two ellipses (cx, cy, rx, ry, rot), turning the shorter way round."""
+    out = [p + (q - p) * k for p, q in zip(a[:4], b[:4])]
+    d = (b[4] - a[4] + 90) % 180 - 90
+    return out + [a[4] + d * k]
+
+
+def _beat_ellipse(x, y, w, size):
+    up = (x - 1, y - 6 * size, 7 * size, 3.4 * size, 25 - 90)  # long axis first, so they blend
+    level = (x + 1, y - 1, 8 * size, 2.6 * size, -8)
+    down = (x - 1, y + 4 * size, 6 * size, 3.2 * size, -25 + 90)
+    return _ell_lerp(level, up if w >= 0 else down, abs(w) ** 1.3)
+
+
 def _wing_beat(s: Sprite, x, y, w, col, size=1.0):
     """The near wing through a beat: raised (w=1), spread level (0) and swept down (-1)."""
-    if w > 0.5:
-        return s.ellipse(x - 1, y - 6 * size, 3.4 * size, 7 * size, col, rot=25, edge=True)
-    if w < -0.5:
-        return s.ellipse(x - 1, y + 4 * size, 3.2 * size, 6 * size, col, rot=-25, edge=True)
-    return s.ellipse(x + 1, y - 1, 8 * size, 2.6 * size, col, rot=-8, edge=True)
+    cx, cy, rx, ry, rot = _beat_ellipse(x, y, w, size)
+    return s.ellipse(cx, cy, rx, ry, col, rot=rot, edge=True)
 
 
 def _far_wing(s: Sprite, x, y, w, col, size=1.0):
     """The far wing, darker and behind the body, peeking out when raised or level."""
-    if w > 0.5:
-        s.ellipse(x + 2, y - 7 * size, 3 * size, 6 * size, col, rot=40)
-    elif abs(w) <= 0.5:
-        s.ellipse(x + 3, y - 3, 6 * size, 2.2 * size, col, rot=-20)
+    if w < -0.6:
+        return
+    up = (x + 2, y - 7 * size, 6 * size, 3 * size, 40 - 90)
+    level = (x + 3, y - 3, 6 * size, 2.2 * size, -20)
+    cx, cy, rx, ry, rot = _ell_lerp(level, up, max(0.0, w) ** 1.3)
+    s.ellipse(cx, cy, rx, ry, col, rot=rot)
 
 
 def _ripples(s: Sprite, k, pts=((2, 29), (4, 30), (27, 30), (29, 29), (8, 30), (22, 30))):
@@ -1018,12 +1043,10 @@ def _owl_flying(s: Sprite, body, face, belly, tufts, eye_col, beak, bars):
     y = 18  # the shoulder
 
     def wing(dx, col):
-        if w > 0.5:
-            pts = [(13, y), (13.5, y - 6), (16, y - 11), (20, y - 13.5), (23.5, y - 12), (24.5, y - 6), (23, y)]
-        elif w < -0.5:
-            pts = [(13, y + 1), (14, y + 6), (17, y + 10), (21, y + 10.5), (23, y + 7), (23, y + 1)]
-        else:
-            pts = [(12, y - 1), (17, y - 3.5), (25, y - 4), (30, y - 2), (26, y + 1), (18, y + 2)]
+        up = [(13, y), (13.5, y - 6), (16, y - 11), (20, y - 13.5), (23.5, y - 12), (24.5, y - 6), (23, y)]
+        down = [(13, y + 1), (14, y + 6), (17, y + 10), (21, y + 10.5), (23, y + 7), (23, y + 4), (23, y + 1)]
+        level = [(12, y - 1), (17, y - 3.5), (25, y - 4), (30, y - 2), (26, y + 1), (22, y + 1.6), (18, y + 2)]
+        pts = _lerp_pts(level, up if w >= 0 else down, abs(w) ** 1.3)  # blended through the beat
         m = s.poly([(x + dx, yy) for x, yy in pts], col, edge=not dx)
         # the pale flight-feather tips
         s.paint(m & ~s.m_poly([(x + dx - 0.6 * (x > 18), yy + (0.8 if yy < y else -0.8)) for x, yy in pts]),
@@ -1099,7 +1122,7 @@ def duck(s: Sprite, body, chest, head, *, bill="#f0c22a", ring=WHITE, speculum="
     if flying:
         _far_wing(s, 21, 20, w, mix(body, "#1a1420", 0.35))
     else:
-        _ripples(s, s.f if s.act == "swim" else 0)
+        _ripples(s, s.t * 4 if s.act == "swim" else 0)
     s.poly([(24, 20), (30, 16), (29, 22)], tail_col or body)
     s.ellipse(17, 23, 11, 6.5, body)
     s.ellipse(10, 22, 5, 5, chest)
@@ -1123,7 +1146,7 @@ def goose(s: Sprite):
     if flying:
         _far_wing(s, 23, 20, w, "#4e4036")
     else:
-        _ripples(s, s.f if s.act == "swim" else 0, ((2, 30), (6, 29), (25, 30), (29, 29)))
+        _ripples(s, s.t * 4 if s.act == "swim" else 0, ((2, 30), (6, 29), (25, 30), (29, 29)))
     s.poly([(25, 20), (31, 17), (30, 23)], BLACK)
     s.ellipse(19, 23, 10.5, 6.5, "#9a8670")
     s.ellipse(14, 25, 5, 4, "#e2d8c8")
@@ -1142,7 +1165,7 @@ def goose(s: Sprite):
 
 def hummingbird(s: Sprite, *, head="#d93a8a", crown="#6aa56e", throat=None):
     s.can("fly")
-    down = s.act == "fly" and s.f % 2 == 1
+    down = s.act == "fly" and s.frame % 2 == 1  # a blur of wingbeats
     _slim(s, (12, 11), (11.5, 12), 0.78, (16, 18), (16.5, 18.5), 1.0, 0.9, 29, (15, 15))
     if down:
         s.ellipse(23, 17, 7, 3, "#cfe8f7", rot=20, shade=False)
@@ -1509,9 +1532,10 @@ def _frog_eye(s: Sprite, x, y, r, skin, iris, cat, mask):
 
 def _frog_spots(s: Sprite, mask, n, col, big):
     """n spots spread over mask, always in the same places."""
-    ys, xs = np.where(mask)
-    if not len(xs):
+    pts = [(x + PAD_X, y + PAD_TOP) for x, y in units(mask)]
+    if not pts:
         return
+    xs, ys = [p[0] for p in pts], [p[1] for p in pts]
     order = sorted(range(len(xs)), key=lambda i: (xs[i] * 37 + ys[i] * 61) % 97)
     picked = []
     for i in order:
@@ -1531,7 +1555,7 @@ def butterfly(s: Sprite, fore, hind, *, body="#2b2630", pattern=None, tails=Fals
     """Top view, wings spread. Flying, the wings fold up and open again; asleep
     they're held closed."""
     s.can("fly")
-    k = {"fly": (1, 0.6, 0.25, 0.6)[s.f], "sleep": 0.25}.get(s.act, 1)
+    k = {"fly": s.cyc(1, 0.6, 0.25, 0.6), "sleep": 0.25}.get(s.act, 1)
     sq = lambda pts: [(16 + (x - 16) * k, y) for x, y in pts]  # noqa: E731
     if tails:
         s.path(sq([(11, 23), (10, 28)]), (1.2, 0.8), hind, mirror=True)
@@ -1594,7 +1618,7 @@ def beetle_top(s: Sprite, shell, *, head=BLACK, spots=(), stripes=False, fan=Fal
 
 def dragonfly(s: Sprite, thorax, abdomen, *, wing="#e6f4fc", wing_tint=None):
     s.can("fly")
-    flap = (0, 14, 0, -14)[s.f] if s.act == "fly" else 0
+    flap = s.cyc(0, 14, 0, -14) if s.act == "fly" else 0
     for cy in (10, 14):
         rot = (-8 if cy == 10 else 10) + (flap if cy == 10 else -flap)
         m = s.ellipse(8, cy, 7.5, 2.1, wing, rot=rot, shade=False, edge=True, mirror=True)
@@ -1814,7 +1838,7 @@ def horseshoe_crab(s: Sprite):
 
 def snail_shell(s: Sprite, shell, spots):
     s.can("walk")
-    stretch = (0, 1, 2, 1)[s.f] if s.act == "walk" else 0
+    stretch = s.cyc(0, 1, 2, 1) if s.act == "walk" else 0
     inside = s.act == "sleep"
     s.ellipse(15 - stretch / 2, 27, 12 + stretch / 2, 2.6, "#e8d8c0")
     m = s.ellipse(16, 17, 10, 10, shell, edge=True)

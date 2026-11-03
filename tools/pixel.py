@@ -22,13 +22,31 @@ from PIL import Image
 W = 32
 PAD_X = 4
 PAD_TOP = 8
-N = W + 2 * PAD_X
-assert N == W + PAD_TOP  # square
-_YS, _XS = np.mgrid[0:N, 0:N].astype(np.float32) + 0.5
+LOW = W + 2 * PAD_X          # the canvas in drawing units (40)
+assert LOW == W + PAD_TOP  # square
+# Supersampling: every drawing unit is SS x SS image pixels, so curves, thin legs
+# and the in-between frames of a stride or wingbeat land on half-pixels instead
+# of jumping a whole pixel. Drawings keep their 32-unit coordinates.
+SS = 2
+N = LOW * SS                 # the image is N x N pixels
+_YS, _XS = (np.mgrid[0:N, 0:N].astype(np.float32) + 0.5) / SS
 _YS -= PAD_TOP
 _XS -= PAD_X
 
+
+def idx(x, y):
+    """The image pixel at the centre of drawing unit (x, y): (row, col)."""
+    return int((y + PAD_TOP) * SS + SS // 2), int((x + PAD_X) * SS + SS // 2)
+
+
+def units(mask):
+    """The drawing units (x, y) whose centre lies in mask, like np.where at 1x."""
+    low = mask[SS // 2::SS, SS // 2::SS]
+    ys, xs = np.where(low)
+    return [(int(x) - PAD_X, int(y) - PAD_TOP) for x, y in zip(xs, ys)]
+
 OUTLINE_INK = (38, 26, 46)
+OUTLINE = 2  # outline thickness in image pixels
 SILHOUETTE = (74, 76, 102)
 LIGHT = np.array([-0.45, -0.62, 0.64], np.float32)  # from the upper left, toward the viewer
 LIGHT /= np.linalg.norm(LIGHT)
@@ -71,13 +89,13 @@ def _blur(m: np.ndarray, r: int) -> np.ndarray:
     return a
 
 
-def _lum(R: np.ndarray) -> np.ndarray:
+def _lum(R: np.ndarray, ss: int = SS) -> np.ndarray:
     """How directly each pixel of region R faces the light, treating R as a rounded form."""
     ys, xs = np.where(R)
-    size = min(ys.max() - ys.min(), xs.max() - xs.min()) + 1
-    h = _blur(R, 2 if size >= 8 else 1)
+    size = (min(ys.max() - ys.min(), xs.max() - xs.min()) + 1) / ss
+    h = _blur(R, (2 if size >= 8 else 1) * ss)
     gy, gx = np.gradient(h)
-    z = 0.22 if size >= 8 else 0.35
+    z = (0.22 if size >= 8 else 0.35) / ss
     n = np.stack([-gx, -gy, np.full_like(gx, z)], axis=-1)
     n /= np.linalg.norm(n, axis=-1, keepdims=True)
     flat = LIGHT[2]
@@ -99,9 +117,17 @@ def _seg_dist(x0, y0, x1, y1):
     return np.hypot(_XS - (x0 + t * dx), _YS - (y0 + t * dy))
 
 
-# Animation: every body plan can draw itself in these poses, 4 frames each.
+# Animation: every body plan can draw itself in these poses, FRAMES frames each.
 ACTS = ("idle", "walk", "fly", "swim", "sleep", "sit", "look", "back")
-FRAMES = 4
+FRAMES = 8
+OLD_FRAMES = 4  # body plans that still pick poses by s.f count in these
+# Still poses breathe (BREATH: how far the body rises, as a share of its height),
+# and on frame BLINK of the idle and look rows the eyes close for a blink.
+BREATHE = ("idle", "sit", "look", "back")
+BREATH = 0.035
+GROUND = 31.0
+BLINKS = ("idle", "look")
+BLINK = 4
 
 
 class Sprite:
@@ -114,22 +140,46 @@ class Sprite:
         self.last = np.zeros((N, N), bool)
         # The pose being drawn, and the poses this body plan really draws (the rest
         # fall back to idle). Eyes are found as they're drawn so sleep can close them.
-        self.act, self.f = act, f
+        # t runs 0..1 over the cycle (smooth motion); f is the older 4-step index
+        # (0..3) that a few drawings still switch on.
+        self.act, self.t = act, f / FRAMES
+        self.f = f * OLD_FRAMES // FRAMES
+        self.frame = f
         self.acts = {"idle", "sleep"}
         self.eye_px = np.zeros((N, N), bool)
         self.eye_boxes: list[tuple[int, int, int, int]] = []
-        self.fwd, self.xs, self.ys = None, _XS, _YS
+        # Standing still, every animal breathes: the whole drawing rises a touch off
+        # its feet and settles again (a base warp under any warp the body plan adds).
+        self.base = None
+        if act in BREATHE:
+            a = BREATH * (0.5 - 0.5 * math.cos(self.t * 2 * math.pi))
+            self.base = lambda x, y, a=a: (x, GROUND - (GROUND - y) * (1 + a))
+            self.base_grid = _XS, GROUND - (GROUND - _YS) / (1 + a)
+        self.fwd, self.xs, self.ys = self.base, *(self.base_grid if self.base else (_XS, _YS))
 
     def wave(self, off: float = 0.0) -> float:
         """Goes 0, 1, 0, -1 over the four frames (shifted by off, in cycles)."""
-        return math.sin((self.f / FRAMES + off) * 2 * math.pi)
+        return math.sin((self.t + off) * 2 * math.pi)
+
+    def cyc(self, *vals):
+        """Blend smoothly through vals over the cycle (a 4-step table becomes a smooth loop)."""
+        n = len(vals)
+        u = self.t * n
+        i = int(u) % n
+        k = u - int(u)
+        k = k * k * (3 - 2 * k)
+        a, b = vals[i], vals[(i + 1) % n]
+        if isinstance(a, tuple):
+            return tuple(p * (1 - k) + q * k for p, q in zip(a, b))
+        return a * (1 - k) + b * k
 
     def can(self, *acts):
         """Declare poses this body plan draws."""
         self.acts.update(acts)
 
     def shift(self, dx: int, dy: int):
-        """Move everything drawn so far."""
+        """Move everything drawn so far (in drawing units; halves move half a unit)."""
+        dx, dy = round(dx * SS), round(dy * SS)
         self.col = np.roll(np.roll(self.col, dy, axis=0), dx, axis=1)
         self.reg = np.roll(np.roll(self.reg, dy, axis=0), dx, axis=1)
         self.eye_px = np.roll(np.roll(self.eye_px, dy, axis=0), dx, axis=1)
@@ -148,7 +198,8 @@ class Sprite:
         """Mark a big eye (x0..x1, y0..y1 inclusive) to be closed when asleep."""
         if self.fwd is not None:
             (x0, y0), (x1, y1) = (tuple(round(v) for v in self._to(x, y)) for x, y in ((x0, y0), (x1, y1)))
-        x0, y0, x1, y1 = x0 + PAD_X, y0 + PAD_TOP, x1 + PAD_X, y1 + PAD_TOP  # stored as canvas pixels
+        x0, y0 = (x0 + PAD_X) * SS, (y0 + PAD_TOP) * SS  # stored as image pixels
+        x1, y1 = (x1 + PAD_X + 1) * SS - 1, (y1 + PAD_TOP + 1) * SS - 1
         self.eye_boxes.append((x0, y0, x1, y1))
         if mirror:
             self.eye_boxes.append((N - 1 - x1, y0, N - 1 - x0, y1))
@@ -171,18 +222,19 @@ class Sprite:
             boxes.append((min(xs), min(ys), max(xs), max(ys)))
         for x0, y0, x1, y1 in boxes:
             x0, y0, x1, y1 = max(x0, 0), max(y0, 0), min(x1, N - 1), min(y1, N - 1)
-            sx, sy = (x0 + x1) // 2, y0 - 1
+            sx, sy = (x0 + x1) // 2, y0 - SS
             if sy < 0 or self.reg[sy, sx] == 0 or self.eye_px[sy, sx]:
-                sx, sy = x0 - 1, (y0 + y1) // 2
+                sx, sy = x0 - SS, (y0 + y1) // 2
             if sx < 0 or self.reg[sy, sx] == 0:
                 continue
             self.col[y0:y1 + 1, x0:x1 + 1] = self.col[sy, sx]
             self.reg[y0:y1 + 1, x0:x1 + 1] = self.reg[sy, sx]
             lid = np.zeros((N, N), bool)
-            ly = y1 if y1 - y0 < 2 else (y0 + y1 + 1) // 2
-            lid[ly, x0:x1 + 1] = True
-            if x1 - x0 >= 3:
-                lid[ly - 1, x0], lid[ly - 1, x1], lid[ly, x0], lid[ly, x1] = True, True, False, False
+            ly = y1 - SS + 1 if y1 - y0 < 2 * SS else (y0 + y1 + 1) // 2
+            lid[ly:ly + SS, x0:x1 + 1] = True
+            if x1 - x0 >= 3 * SS:  # a curved lid on a big eye
+                lid[ly - SS:ly, x0:x0 + SS] = lid[ly - SS:ly, x1 - SS + 1:x1 + 1] = True
+                lid[ly:ly + SS, x0:x0 + SS] = lid[ly:ly + SS, x1 - SS + 1:x1 + 1] = False
             self.n += 1
             self.col[lid] = np.array(mix(tuple(self.col[sy, sx]), OUTLINE_INK, 0.75))
             self.reg[lid] = self.n
@@ -193,6 +245,9 @@ class Sprite:
         """Bend everything drawn from now on through fwd(x, y) -> (x', y') (numpy arrays
         in, arrays out): a body plan uses it to re-proportion a drawing without moving
         the details each species adds in the plan's own coordinates."""
+        if self.base is not None:
+            warp, base = fwd, self.base
+            fwd = lambda x, y: base(*warp(x, y))  # noqa: E731
         self.fwd = fwd
         qx, qy = _XS.copy(), _YS.copy()
         for _ in range(40):  # invert fwd numerically: the source point of each pixel
@@ -207,7 +262,8 @@ class Sprite:
         class _Plain:
             def __enter__(self):
                 self.saved = sprite.fwd, sprite.xs, sprite.ys
-                sprite.fwd, sprite.xs, sprite.ys = None, _XS, _YS
+                sprite.fwd = sprite.base
+                sprite.xs, sprite.ys = sprite.base_grid if sprite.base else (_XS, _YS)
 
             def __exit__(self, *exc):
                 sprite.fwd, sprite.xs, sprite.ys = self.saved
@@ -259,34 +315,21 @@ class Sprite:
         return m
 
     def m_line(self, x0, y0, x1, y1):
-        """1-pixel Bresenham line."""
-        m = np.zeros((N, N), bool)
+        """A line one drawing unit thick, through the centres of the end units."""
         (x0, y0), (x1, y1) = self._to(x0, y0), self._to(x1, y1)
-        x0, y0, x1, y1 = (int(round(v)) for v in (x0, y0, x1, y1))
-        dx, dy = abs(x1 - x0), -abs(y1 - y0)
-        sx, sy = (1 if x0 < x1 else -1), (1 if y0 < y1 else -1)
-        err = dx + dy
-        while True:
-            if 0 <= x0 + PAD_X < N and 0 <= y0 + PAD_TOP < N:
-                m[y0 + PAD_TOP, x0 + PAD_X] = True
-            if x0 == x1 and y0 == y1:
-                break
-            e2 = 2 * err
-            if e2 >= dy:
-                err += dy
-                x0 += sx
-            if e2 <= dx:
-                err += dx
-                y0 += sy
-        return m
+        x0, y0, x1, y1 = (round(v) + 0.5 for v in (x0, y0, x1, y1))
+        if (x0, y0) == (x1, y1):
+            return (np.abs(_XS - x0) < 0.5) & (np.abs(_YS - y0) < 0.5)
+        return _seg_dist(x0, y0, x1, y1) <= 0.56
 
     def m_px(self, pts):
         m = np.zeros((N, N), bool)
         for x, y in pts:
             if self.fwd is not None:
                 x, y = (round(v) for v in self._to(x, y))
-            if 0 <= x + PAD_X < N and 0 <= y + PAD_TOP < N:
-                m[int(y) + PAD_TOP, int(x) + PAD_X] = True
+            r, c = (int(y) + PAD_TOP) * SS, (int(x) + PAD_X) * SS
+            if 0 <= c < N and 0 <= r < N:
+                m[r:r + SS, c:c + SS] = True
         return m
 
     # -- painting --------------------------------------------------------------
@@ -301,7 +344,7 @@ class Sprite:
         self.col[mask] = c
         self.reg[mask] = self.n
         # small near-black dots are eyes (pupils); anything drawn on top later isn't
-        if not shade and sum(c) < 100 and 0 < mask.sum() <= 12:
+        if not shade and sum(c) < 100 and 0 < mask.sum() <= 12 * SS * SS:
             self.eye_px |= mask
         else:
             self.eye_px &= ~mask
@@ -350,12 +393,14 @@ class Sprite:
     def eye(self, x, y, size=2, color="#1d1428", shine="#ffffff", mirror=False):
         pts = [(x + i, y + j) for i in range(size) for j in range(size)]
         self.px(pts, color, mirror=mirror)
-        if size >= 2 and shine:
-            self.px([(x, y)], shine, mirror=mirror)
+        if size >= 2 and shine:  # a small catchlight in the eye's top corner
+            m = self.m_px([(x, y)])
+            m &= _shift(m, 1, 0) & _shift(m, 0, 1) if SS > 1 else m
+            self.fill(m, shine, shade=False, mirror=mirror)
 
     # -- output ----------------------------------------------------------------
     def render(self):
-        if self.act == "sleep":
+        if self.act == "sleep" or (self.act in BLINKS and self.frame == BLINK):
             self._close_eyes()
         col = self.col.astype(np.float32)
         filled = self.reg > 0
@@ -366,15 +411,15 @@ class Sprite:
             if r in self.edged:
                 # Darken this region's border against regions painted before it.
                 below = filled & ~R & (self.reg < r)
-                border = R & (_shift(below, 1, 0) | _shift(below, -1, 0)
-                              | _shift(below, 0, 1) | _shift(below, 0, -1))
+                border = R & (_shift(below, SS, 0) | _shift(below, -SS, 0)
+                              | _shift(below, 0, SS) | _shift(below, 0, -SS))
                 col[border] = col[border] * 0.72 + np.array(OUTLINE_INK) * 0.28
             if not self.shaded.get(r):
                 continue
             lum = _lum(R)
             # A later shape resting on this one casts a small shadow just below it.
             above = (self.reg > r) & np.isin(self.reg, [q for q, v in self.shaded.items() if v and q > r])
-            contact = R & (_shift(above, 0, -1) | _shift(above, 0, -2))
+            contact = R & (_shift(above, 0, -SS) | _shift(above, 0, -2 * SS))
             hi = R & (lum > 0.2)
             sh = R & (lum < -0.18)
             deep = R & (lum < -0.42)
@@ -396,6 +441,13 @@ class Sprite:
             tint = src * (1 - k) + np.array(OUTLINE_INK) * k
             img[nb, :3] = tint[nb].astype(np.uint8)
             img[nb, 3] = 255
+        # Thicken it to OUTLINE image pixels, each ring copying the one inside it.
+        for _ in range(OUTLINE - 1):
+            on = img[..., 3] > 0
+            for dx, dy in ((0, -1), (-1, 0), (0, 1), (1, 0)):
+                nb = _shift(on, dx, dy) & (img[..., 3] == 0)
+                src = np.roll(np.roll(img, -dy, axis=0), -dx, axis=1)
+                img[nb] = src[nb]
         return Image.fromarray(img, "RGBA")
 
 
@@ -420,7 +472,10 @@ def silhouette(img: Image.Image) -> Image.Image:
     col = np.zeros((N, N, 3), np.float32) + SILHOUETTE
     col[on & (lum > 0.2)] += 16
     col[on & (lum < -0.18)] *= 0.84
-    rim = on & ~(_shift(on, 0, 1) & _shift(on, 1, 0) & _shift(on, 0, -1) & _shift(on, -1, 0))
+    inner = on
+    for _ in range(SS):
+        inner = inner & _shift(inner, 0, 1) & _shift(inner, 1, 0) & _shift(inner, 0, -1) & _shift(inner, -1, 0)
+    rim = on & ~inner
     col[rim] = col[rim] * 0.72 + np.array(OUTLINE_INK) * 0.28
     out[on, :3] = np.clip(col[on], 0, 255).astype(np.uint8)
     out[on, 3] = 255

@@ -419,7 +419,7 @@ function habDecorPose(a, awake) {
 
 function habDecorAnim(a, awake) {
   if (!awake || !a.dv) return null;
-  if (habDecorLanded(a)) return ["idle", 0];
+  if (habDecorLanded(a)) return ["idle", habIdleFrame(a.phase * 4 / 3, 1)];
   return null;
 }
 

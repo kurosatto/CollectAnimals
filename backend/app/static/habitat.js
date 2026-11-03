@@ -20,12 +20,32 @@ const hab = { w: 0, L: null, animals: [], peek: false, picked: null, pickedUntil
               fx: [], visit: null };
 const habState = () => (hab.visit ? hab.visit.state : myState.code);
 const habImgs = {};
-// Animation sheets (species/sprites/anim): a row of four frames for each pose, and
-// an index of the poses each species really draws. Without them the scene falls
-// back to the single sprite, squashed and bobbed.
+// Animation sheets (species/sprites/anim): a row of frames for each pose (8 now, 4 in
+// older sheets), and an index of the poses each species really draws. Without them
+// the scene falls back to the single sprite, squashed and bobbed.
 const habSheets = {};
 let habAnimIdx = null;
 fetch("/sprites/anim/index.json").then((r) => (r.ok ? r.json() : null)).then((j) => { habAnimIdx = j; }).catch(() => {});
+// Every animal is a 40-unit drawing; its image may hold it at 2x (80 px), sharper than
+// the scenery's pixels. The canvas is drawn at HAB_RES x so those pixels show, and so
+// animals can stand on half pixels as they move.
+const HAB_UNIT = 40, HAB_RES = 2;
+const habSnap = (v) => Math.round(v * HAB_RES) / HAB_RES;
+const habNF = () => (habAnimIdx && habAnimIdx.frames) || 4;
+// The frame at time t, counted in quarter loops (t = 4 is one whole loop), so a pose
+// keeps its pace whatever number of frames the sheet has.
+function habCyc(t) {
+  const n = habNF();
+  return ((Math.floor(t * n / 4) % n) + n) % n;
+}
+// Standing still: a slow breath in and out, with a blink (the index's "blink" frame)
+// only every other breath, at a different moment for each animal.
+function habIdleFrame(t, seed = 0) {
+  const n = habNF(), u = Math.floor(t * n / 4), blink = habAnimIdx && habAnimIdx.blink;
+  let f = ((u % n) + n) % n;
+  if (blink != null && f === blink && (Math.floor(u / n) + seed) % 2) f = blink - 1;
+  return f;
+}
 // How big each animal is drawn, next to a 1.0 crow: from 0.4 for a bee to 1.5 for a
 // whale (tools/make_game_stats.py), so a seal is bigger than a banana slug.
 let habScaleIdx = {};
@@ -747,38 +767,41 @@ function habRestPose() {
   return ["idle", "idle", "sit", "look", "back"][Math.floor(Math.random() * 5)];
 }
 
-// Which pose of the animation sheet to show, and which of its four frames:
+// Which pose of the animation sheet to show, and which of its frames:
 // [pose, frame], or null when the species has no sheet.
 function habAnim(a, awake, roost) {
   const acts = habAnimIdx && habAnimIdx.acts[a.s.slug];
   if (!acts) return null;
   const has = (k) => acts.includes(k);
-  const cyc = (t) => ((Math.floor(t) % 4) + 4) % 4;
+  const cyc = habCyc;
+  // Still, it breathes (one breath every ~3 s) and now and then blinks.
+  const still = ["idle", habIdleFrame(a.phase * 4 / 3 + (a.x % 7) * .3, Math.round(a.x) & 1)];
   if (!awake) return ["sleep", cyc(a.phase * 1.2)];
-  if (roost || habDecorAnim(a, awake)) return ["idle", 0];  // sheltering from the rain, or perched on a decoration
-  if (a.mode === "perched") return ["idle", 0];
-  if (a.mode === "toPerch") return has("fly") ? ["fly", cyc(a.phase * 9 / (2 * Math.PI) * 4)] : ["idle", 0];
+  if (roost || habDecorAnim(a, awake)) return still;  // sheltering from the rain, or perched on a decoration
+  if (a.mode === "perched") return still;
+  if (a.mode === "toPerch") return has("fly") ? ["fly", cyc(a.phase * 9 / (2 * Math.PI) * 4)] : still;
   switch (a.role) {
     case "walk": case "shore": case "wade": case "beach": case "hop": {
       if (a.peck > 0) return ["idle", 0];
       if (a.pause > 0 || !has("walk")) {
         const r = a.rest && has(a.rest) ? a.rest : "idle";
-        return [r, r === "sit" ? cyc(a.phase * 2.5) : 0];  // sitting up, it nibbles
+        // sitting up, it nibbles; standing, looking about, it breathes
+        return r === "idle" ? still : [r, r === "sit" ? cyc(a.phase * 2.5) : habIdleFrame(a.phase * 4 / 3, 1)];
       }
       return ["walk", a.role === "hop" ? cyc((a.odo % 18) / 18 * 4) : cyc(a.odo / 3)];
     }
     case "fly": case "soar": case "dive": case "skim": case "hover": case "flutter": {
-      if (!has("fly")) return ["idle", 0];
-      if (a.role === "dive" && a.mode === "dive") return ["fly", 3];
+      if (!has("fly")) return still;
+      if (a.role === "dive" && a.mode === "dive") return ["fly", cyc(3)];
       const glider = HAB_GLIDERS.test(a.s.slug);
       if (glider && Math.sin(a.phase * .7 + a.x * .01) < .1) return ["fly", 0];  // gliding, wings level
       const rate = { hover: 24, flutter: 10, skim: 5 }[a.role] || (glider ? 6 : 12);
       return ["fly", cyc(a.phase * rate / (2 * Math.PI) * 4)];
     }
     case "swim": case "paddle": case "float": case "jelly":
-      return has("swim") ? ["swim", cyc(a.phase * 2.5)] : ["idle", 0];
+      return has("swim") ? ["swim", cyc(a.phase * 2.5)] : still;
   }
-  return ["idle", 0];
+  return still;
 }
 
 function habDraw() {
@@ -789,9 +812,10 @@ function habDraw() {
   // The sun and moon creep across the sky, so the scenery is redrawn every few pixels they move.
   const spot = (b) => (b ? b.xy.map((v) => v >> 2).join(",") + (b.lit ? "/" + Math.round(b.lit * 40) : "") : "-");
   const key = `${L.w}/${phase}/${habState()}/${habSeason()}/${spot(lights.sun)}/${spot(lights.moon)}`;
-  if (cv.width !== L.w) { cv.width = L.w; cv.height = HAB_H; }
+  if (cv.width !== L.w * HAB_RES) { cv.width = L.w * HAB_RES; cv.height = HAB_H * HAB_RES; }
   if (hab.bgKey !== key) { hab.bg = habBackground(L, phase, habState(), lights); hab.bgKey = key; }
   const c = cv.getContext("2d");
+  c.setTransform(HAB_RES, 0, 0, HAB_RES, 0, 0);
   c.imageSmoothingEnabled = false;
   c.drawImage(hab.bg, 0, 0);
   habWxShade(c, L, phase);
@@ -808,7 +832,7 @@ function habDraw() {
     const perched = awake && a.mode === "perched";
     // Landed on a decoration: drawn with it, not in the sky (unless it's the balloon).
     const landed = habDecorLanded(a) && a.dv.d.it.area !== "sky";
-    return { a, awake, phase, anim, roost: !!roost || perched, x: Math.round(x), y: Math.round(y), sx, sy, tilt,
+    return { a, awake, phase, anim, roost: !!roost || perched, x: habSnap(x), y: habSnap(y), sx, sy, tilt,
              sky: awake && HAB_FLIERS.has(a.role) && !perched && !roost && !landed,
              hidden: awake && a.mode === "under" || habDecorHidden(a, awake), z: habDecorZ(a, Math.round(y)) };
   });
@@ -918,9 +942,9 @@ function habSprite(c, p) {
   const { a, x, y } = p, sheet = habSheets[a.s.slug];
   const framed = p.anim && sheet && sheet.complete && sheet.naturalWidth;
   const img = framed ? habTinted(sheet, `${a.s.slug}@anim`, p.phase) : habTinted(raw, a.s.slug, p.phase);
-  // Frame size from the image (40 px: a 32 px drawing with room for wings, tails
-  // and antlers), feet on its bottom row.
-  const F = framed ? sheet.naturalWidth / habAnimIdx.frames : raw.naturalWidth;
+  // Drawn 40 units square (a 32-unit drawing with room for wings, tails and antlers)
+  // whatever the image's resolution, feet on its bottom row; FP is the frame in pixels.
+  const F = HAB_UNIT, FP = framed ? sheet.naturalWidth / habAnimIdx.frames : raw.naturalWidth;
   // Fliers and swimmers turn and squash around their middle, the rest around
   // their feet.
   const mid = p.sky || a.role === "swim" || a.role === "jelly" ? 16 : 0;
@@ -953,8 +977,8 @@ function habSprite(c, p) {
   if (a.dir > 0 && a.role !== "reef") c.scale(-1, 1);
   if (p.tilt) c.rotate(-p.tilt);
   if (p.sx !== 1 || p.sy !== 1) c.scale(p.sx, p.sy);
-  if (framed) c.drawImage(habFrame(img, habAnimIdx.rows.indexOf(p.anim[0]), p.anim[1], F), -F / 2, mid - F);
-  else c.drawImage(img, -F / 2, mid - F);
+  if (framed) c.drawImage(habFrame(img, habAnimIdx.rows.indexOf(p.anim[0]), p.anim[1], FP), -F / 2, mid - F, F, F);
+  else c.drawImage(img, -F / 2, mid - F, F, F);
   c.restore();
   if (a.role === "paddle") {
     c.fillStyle = "rgba(255,255,255,.55)";

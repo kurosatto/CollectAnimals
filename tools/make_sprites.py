@@ -5,8 +5,11 @@
     python tools/make_sprites.py --state NC --sheet nc.png  # sheet for one state's list
     python tools/make_sprites.py --anim-sheet anim.png     # preview of every animation
 
+Sprites are drawn at 2x: an 80x80 image for the 40-unit canvas (pixel.SS).
 Each species also gets an animation sheet, species/sprites/anim/<slug>.png: one row
-per pose (idle, walk, fly, swim, sleep, sit, look, back) of four 40x40 frames.
+per pose (idle, walk, fly, swim, sleep, sit, look, back) of eight 80x80 frames.
+Still poses breathe, and idle frame BLINK (in index.json as "blink") has the eyes
+shut; the apps show it only now and then.
 anim/index.json lists the poses each species really draws; the others repeat its
 idle row. sit is up on the haunches, look turns the head to you and back glances
 back over the shoulder (the small mammals and seals draw these).
@@ -23,8 +26,10 @@ import argparse
 import csv
 import json
 import sys
+from multiprocessing import Pool
 from pathlib import Path
 
+import numpy as np
 from PIL import Image, ImageDraw
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -50,7 +55,7 @@ import species_east  # noqa: E402,F401
 from archetypes import (BLACK, NOSE, PINK, S, WHITE, bee, beetle_top, bird, butterfly, critter,  # noqa: E402
                         dragonfly, duck, flecks, frog, goose, hummingbird, lizard, mantis, owl, pelican, pinniped, quad, snake,
                         sprite, star, turtle, vulture, wader, whale)
-from pixel import ACTS, FRAMES, N, Sprite, mix, silhouette  # noqa: E402
+from pixel import ACTS, BLINK, FRAMES, N, Sprite, mix, silhouette  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 STATES_JSON = ROOT / "species" / "states.json"
@@ -939,6 +944,22 @@ def load_species(state=None):
     return rows
 
 
+def save_png(img: Image.Image, path: Path):
+    """Save as an exact palette PNG when the picture has under 256 colours (about a
+    third of the size of RGBA, pixel for pixel the same), else as RGBA."""
+    a = np.asarray(img.convert("RGBA"))
+    on = a[..., 3] > 0
+    cols, inv = np.unique(a[on][:, :3], axis=0, return_inverse=True)
+    if len(cols) > 255 or (a[on][:, 3] != 255).any():
+        img.save(path, optimize=True)
+        return
+    idx = np.zeros(a.shape[:2], np.uint8)
+    idx[on] = inv.reshape(-1) + 1
+    p = Image.fromarray(idx, "P")
+    p.putpalette([0, 0, 0] + cols.astype(np.uint8).reshape(-1).tolist())
+    p.save(path, optimize=True, transparency=0)
+
+
 def draw(slug) -> Image.Image:
     s = Sprite()
     S[slug](s)
@@ -959,7 +980,11 @@ def animate(slug) -> tuple[Image.Image, list[str]]:
     return out, acts
 
 
-def sheet(rows, scale=4, cols=10, silhouettes=False):
+def _draw_all(slug):
+    return (slug, draw(slug), *animate(slug))
+
+
+def sheet(rows, scale=2, cols=10, silhouettes=False):  # sprites are 2x already
     cell = N * scale + 8
     n = len(rows)
     lines = (n + cols - 1) // cols
@@ -1001,16 +1026,17 @@ def main():
     index_path = anim_dir / "index.json"
     index = json.loads(index_path.read_text(encoding="utf-8"))["acts"] if index_path.exists() else {}
     anims = {}
-    for slug in slugs:
-        img = draw(slug)
-        img.save(args.out / f"{slug}.png", optimize=True)
-        silhouette(img).save(args.out / f"{slug}_silhouette.png", optimize=True)
-        anims[slug], index[slug] = animate(slug)
-        anims[slug].save(anim_dir / f"{slug}.png", optimize=True)
-    index_path.write_text(json.dumps({"frames": FRAMES, "rows": list(ACTS), "acts": dict(sorted(index.items()))},
+    with Pool() as pool:  # every frame is drawn at 2x now, so share the work out
+        for slug, img, sheet_img, acts in pool.imap_unordered(_draw_all, slugs, chunksize=4):
+            save_png(img, args.out / f"{slug}.png")
+            save_png(silhouette(img), args.out / f"{slug}_silhouette.png")
+            anims[slug], index[slug] = sheet_img, acts
+            save_png(sheet_img, anim_dir / f"{slug}.png")
+    index_path.write_text(json.dumps({"frames": FRAMES, "size": N, "blink": BLINK, "rows": list(ACTS),
+                                      "acts": dict(sorted(index.items()))},
                                      indent=1) + "\n", encoding="utf-8")
     if args.anim_sheet:
-        scale, cols = 3, 2
+        scale, cols = 1, 2  # sheets are 2x already
         cell_w, cell_h = N * FRAMES * scale + 10, N * len(ACTS) * scale + 18
         lines = (len(slugs) + cols - 1) // cols
         prev = Image.new("RGBA", (cols * cell_w, lines * cell_h), (246, 244, 238, 255))
