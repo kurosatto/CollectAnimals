@@ -18,7 +18,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -59,8 +58,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -72,6 +69,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -95,16 +95,13 @@ class MainActivity : ComponentActivity() {
         // A friend request notification opens the Friends tab.
         val openTab = intent?.getStringExtra(FriendAlerts.EXTRA_TAB)
         setContent {
-            MaterialTheme(colorScheme = if (isSystemInDarkTheme()) darkColorScheme(primary = Forest80)
-                                        else lightColorScheme(primary = Forest40)) {
+            JournalTheme {
                 App(openTab = openTab)
             }
         }
     }
 }
 
-private val Forest40 = Color(0xFF2E6B3F)
-private val Forest80 = Color(0xFF8FD3A0)
 
 fun rarityColor(rarity: String): Color = when (rarity) {
     "legendary" -> Color(0xFFE0A100)
@@ -186,42 +183,51 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
 
     Scaffold(topBar = {
         if (!gameOn) Column {
-            TopAppBar(title = { Text(if (tab == 0) "Capture Animals" else if (showParks) "Parks" else TABS[tab].title) }, actions = {
+            TopAppBar(modifier = Modifier.leather(top = false),
+                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent,
+                    titleContentColor = Journal.CreamBright, actionIconContentColor = Journal.Cream),
+                title = { Text(if (tab == 0) "Capture Animals" else if (showParks) "Parks" else TABS[tab].title) }, actions = {
                 if (state.states.size > 1) StateMenu(state.states, state.stateCode, state.mainState(), state.stateTiles,
                     onOpen = vm::loadStateTiles, onClose = vm::closeStateTiles, onView = vm::viewState, onMakeMain = vm::chooseState)
-                TextButton(onClick = { showAccount = true }) {
+                TextButton(onClick = { showAccount = true },
+                    colors = androidx.compose.material3.ButtonDefaults.textButtonColors(contentColor = Journal.Cream)) {
                     Text(state.account?.let { "👤 ${it.username}" } ?: "Log in", maxLines = 1,
                         overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 120.dp))
                 }
             })
             if (info != null) {
-                Column(Modifier.padding(horizontal = 16.dp)) {
-                    Text("$captured / $total ${dex?.region ?: ""} species captured",
-                        style = MaterialTheme.typography.bodyMedium)
+                Column(Modifier.padding(horizontal = 16.dp).padding(top = 6.dp)) {
+                    Text("$captured of $total ${dex?.region ?: ""} animals captured so far", style = handStyle(20))
                     Spacer(Modifier.height(4.dp))
                     LinearProgressIndicator(
                         progress = { if (total == 0) 0f else captured / total.toFloat() },
-                        modifier = Modifier.fillMaxWidth())
+                        modifier = Modifier.fillMaxWidth().height(8.dp), trackColor = MaterialTheme.colorScheme.outlineVariant,
+                        drawStopIndicator = {})
                     Spacer(Modifier.height(8.dp))
                 }
             }
         }
     }, bottomBar = {
         // One screen per job instead of one long page.
-        if (!gameOn) NavigationBar {
+        if (!gameOn) NavigationBar(Modifier.leather(bottom = false), containerColor = Color.Transparent, tonalElevation = 0.dp) {
             TABS.forEachIndexed { i, t ->
                 // Six tabs: one line of small text each, so "Field Guide" doesn't wrap.
                 NavigationBarItem(selected = tab == i, onClick = { tabChoice = i; parksOpen = false },
+                    colors = androidx.compose.material3.NavigationBarItemDefaults.colors(
+                        indicatorColor = Journal.Cream, selectedTextColor = Journal.CreamBright,
+                        unselectedTextColor = Journal.Cream.copy(alpha = .75f)),
                     icon = {
                         BadgedBox(badge = { if (t.key == "social" && requests > 0) Badge { Text("$requests") } }) {
-                            TabIcon(t.icon, Modifier.size(28.dp))
+                            TabIcon(t.icon, Modifier.size(28.dp).then(
+                                if (tab == i) Modifier.border(2.dp, Journal.Brass, RoundedCornerShape(50)).padding(2.dp) else Modifier))
                         }
                     },
                     label = { Text(t.title, maxLines = 1, softWrap = false, fontSize = 11.sp) })
             }
         }
-    }) { padding ->
-        Box(Modifier.padding(padding).fillMaxSize()) {
+    }, containerColor = MaterialTheme.colorScheme.background) { padding ->
+        val lines = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .45f)
+        Box(Modifier.padding(padding).fillMaxSize().paperLines(lines)) {
             when {
                 info == null -> CircularProgressIndicator(Modifier.align(Alignment.Center))
                 TABS[tab].key == "catch" -> {
@@ -311,15 +317,28 @@ fun CatchScreen(state: UiState, animals: List<HabitatAnimal>, onCapture: (Uri, P
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        // The habitat is the home page, taped in like a photo; while a photo is being
+        // identified it moves below the result so the result shows first.
+        val working = cropping != null || state.busy || state.result != null || state.error != null
+        if (!working) {
+            TapedPhoto(Modifier.fillMaxWidth()) { Habitat(habitat, animals, state.stateCode, onOpen = onOpenDex) }
+            Text("${animals.size} animals live in your habitat. Tap one to visit it.",
+                style = handStyle(22), modifier = Modifier.fillMaxWidth())
+        }
         Text("Photograph a wild animal. If it's one of the ${state.info?.species?.size ?: 100} " +
-            "${state.fieldGuide?.region ?: ""} species, you earn its badge.",
-            style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
+            "${state.fieldGuide?.region ?: ""} species, it's captured in your Field Guide.",
+            style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Button(onClick = ::launchCamera, enabled = !state.busy) { Text("Take photo") }
+            Button(onClick = ::launchCamera, enabled = !state.busy,
+                elevation = androidx.compose.material3.ButtonDefaults.buttonElevation(defaultElevation = 3.dp)) {
+                TabIcon("ui_tab_capture", Modifier.size(24.dp)); Spacer(Modifier.width(8.dp)); Text("Take photo")
+            }
             OutlinedButton(
                 onClick = { pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
                 enabled = !state.busy,
-            ) { Text("Choose photo") }
+                border = androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline),
+            ) { TabIcon("ui_tab_photos", Modifier.size(24.dp)); Spacer(Modifier.width(8.dp)); Text("Choose photo") }
         }
         if (state.account != null) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -356,7 +375,7 @@ fun CatchScreen(state: UiState, animals: List<HabitatAnimal>, onCapture: (Uri, P
                 naming = naming, sharing = state.account?.shareTrainingPhotos == true, signedIn = state.account != null)
         }
         // Your live habitat: the animals you've captured, in your state's scenery.
-        Habitat(habitat, animals, state.stateCode, onOpen = onOpenDex)
+        if (working) TapedPhoto(Modifier.fillMaxWidth()) { Habitat(habitat, animals, state.stateCode, onOpen = onOpenDex) }
     }
 }
 
@@ -375,7 +394,7 @@ fun ResultCard(r: CaptureResult, onDismiss: () -> Unit, onPick: (String?) -> Uni
                 contentScale = ContentScale.Crop)
             if (r.matched && r.species != null) {
                 if (r.newBadge) CaptureReveal(r.species.slug, Modifier.size(120.dp).align(Alignment.CenterHorizontally))
-                Text(if (r.newBadge) "New badge!" else "Captured again",
+                if (r.newBadge) InkStamp("Captured!") else Text("Captured again",
                     style = MaterialTheme.typography.labelLarge, color = rarityColor(r.species.rarity))
                 Text(r.species.commonName, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                 Text(r.species.scientificName, fontStyle = FontStyle.Italic)
@@ -508,10 +527,11 @@ fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, collection: Map<String, 
 
     LazyVerticalGrid(columns = GridCells.Adaptive(72.dp), modifier = Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         // Parks used to be its own tab; now it opens from here.
         if (onOpenParks != null) item(span = { GridItemSpan(maxLineSpan) }, key = "parks") {
-            OutlinedButton(onClick = onOpenParks, modifier = Modifier.fillMaxWidth()) {
+            OutlinedButton(onClick = onOpenParks, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
+                border = androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline)) {
                 TabIcon("ui_tab_parks", Modifier.size(24.dp))
                 Spacer(Modifier.width(8.dp))
                 Text("Parks to find animals")
@@ -535,7 +555,7 @@ fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, collection: Map<String, 
             }
             list.groupBy { it.rarity }.forEach { (rarity, tier) ->
                 item(span = { GridItemSpan(maxLineSpan) }, key = "tier-$i-$rarity") {
-                    Text(rarity.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.labelMedium,
+                    Text(rarity.uppercase(), style = MaterialTheme.typography.labelMedium, letterSpacing = 2.sp,
                         color = rarityColor(rarity), modifier = Modifier.padding(top = 4.dp))
                 }
                 // Within a rarity, animals around this month come first.
@@ -563,28 +583,33 @@ private fun Modifier.horizontalScrollCompat(): Modifier =
 @Composable
 fun SpeciesTile(number: Int, s: Species, badge: Badge?, onClick: () -> Unit) {
     val caught = badge != null
-    Card(
-        modifier = Modifier.clickable(onClick = onClick)
-            .border(2.dp, if (caught) rarityColor(s.rarity) else Color.Transparent, RoundedCornerShape(12.dp)),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor =
-            if (caught) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface),
+    // Field Journal: a captured animal is a specimen card pinned in at a slight angle;
+    // one not captured yet is an empty dashed slot with its silhouette.
+    val tilt = if (caught) listOf(-1.2f, 0.6f, 0f, 1f, -0.5f)[number % 5] else 0f
+    val outline = MaterialTheme.colorScheme.outline
+    val shape = RoundedCornerShape(3.dp)
+    Column(
+        Modifier.rotate(tilt).then(
+            if (caught) Modifier.shadow(3.dp, shape).background(Journal.Card, shape)
+            else Modifier.drawBehind {
+                drawRoundRect(outline, cornerRadius = androidx.compose.ui.geometry.CornerRadius(3.dp.toPx()),
+                    style = androidx.compose.ui.graphics.drawscope.Stroke(1.5.dp.toPx(),
+                        pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(10f, 8f))))
+            }).clickable(onClick = onClick).padding(5.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Column(Modifier.padding(4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Box(Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
-                PixelSprite(s.slug, caught, Modifier.fillMaxSize(0.85f))
-            }
-            Spacer(Modifier.height(4.dp))
-            Text("#%03d".format(number), style = MaterialTheme.typography.labelSmall, fontSize = 10.sp,
-                color = MaterialTheme.colorScheme.outline)
-            Text(s.commonName, style = MaterialTheme.typography.labelSmall, maxLines = 1,
-                overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
-                color = if (caught) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline)
-            // Small tiles, so many fit on a phone; the border and fill mark a captured one.
-            if (!caught) {
-                Box(Modifier.padding(top = 2.dp).size(8.dp).clip(RoundedCornerShape(50)).background(rarityColor(s.rarity)))
-            }
+        Text("#%03d".format(number), fontSize = 10.sp, fontFamily = Fraunces, fontWeight = FontWeight.Bold,
+            color = if (caught) Journal.CardMuted else outline, modifier = Modifier.fillMaxWidth())
+        Box(Modifier.fillMaxWidth().aspectRatio(1f)
+            .background(if (caught) Color(0xFFF1E7CF) else Color.Transparent), contentAlignment = Alignment.Center) {
+            PixelSprite(s.slug, caught, Modifier.fillMaxSize(0.85f))
+        }
+        Text(if (caught) s.commonName else "???", fontFamily = Caveat, fontSize = 16.sp, lineHeight = 16.sp, maxLines = 1,
+            overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 2.dp),
+            color = if (caught) Journal.CardInk else outline)
+        // The rarity dot, so a slot still hints how hard it is to find.
+        if (!caught) {
+            Box(Modifier.padding(top = 2.dp).size(7.dp).clip(RoundedCornerShape(50)).background(rarityColor(s.rarity)))
         }
     }
 }
