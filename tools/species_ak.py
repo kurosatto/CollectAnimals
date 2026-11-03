@@ -792,7 +792,7 @@ def _(s):
 def _chiton(s, girdle, plate, *, lines=None, plate_w=7):
     """Top view: an oval girdle with eight plates down the middle."""
     s.can("walk")
-    stretch = (0, 0.5, 1, 0.5)[s.f] if s.act == "walk" else 0
+    stretch = s.cyc(0, 0.5, 1, 0.5) if s.act == "walk" else 0
     s.ellipse(16, 17, 9 - stretch * 0.5, 14 + stretch, girdle, edge=True)
     for i in range(8):
         y = 5.5 + i * 3.2

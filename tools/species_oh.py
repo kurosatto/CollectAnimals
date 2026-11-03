@@ -70,7 +70,7 @@ def _(s):
 def _damsel(s, thorax, abdomen, *, tip=None, wing="#eef6fc"):
     """A damselfly: slimmer than a dragonfly, wide-set eyes, a thin tail."""
     s.can("fly")
-    flap = (0, 12, 0, -12)[s.f] if s.act == "fly" else 0
+    flap = s.cyc(0, 12, 0, -12) if s.act == "fly" else 0
     for cy in (10, 13):
         rot = (-10 if cy == 10 else 8) + (flap if cy == 10 else -flap)
         s.ellipse(9, cy, 6.5, 1.5, wing, rot=rot, shade=False, edge=True, mirror=True)

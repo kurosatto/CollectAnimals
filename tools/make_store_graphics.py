@@ -27,15 +27,18 @@ CAST = [("red_fox", 160, GROUND + 6), ("raccoon", 191, GROUND + 5), ("california
 
 def sprite(name):
     """A sprite by slug; "slug:fly" takes the first flying frame from its animation sheet
-    (species/sprites/anim: 40x40 frames, one row per action in index.json's "rows")."""
+    (species/sprites/anim: one row per action in index.json's "rows", "frames" across).
+    Sprites drawn at 2x (80 px for a 40-unit drawing) come back at 40 so the layout holds."""
     slug, _, act = name.partition(":")
     if act:
-        rows = json.loads((SPRITES / "anim" / "index.json").read_text())["rows"]
+        idx = json.loads((SPRITES / "anim" / "index.json").read_text())
         sheet = Image.open(SPRITES / "anim" / f"{slug}.png").convert("RGBA")
-        r = rows.index(act)
-        im = sheet.crop((0, r * 40, 40, r * 40 + 40))
+        r, f = idx["rows"].index(act), sheet.width // idx.get("frames", 4)
+        im = sheet.crop((0, r * f, f, r * f + f))
     else:
         im = Image.open(SPRITES / f"{slug}.png").convert("RGBA")
+    if im.width > 40:
+        im = im.resize((40, 40), Image.NEAREST)
     return im.crop(im.getbbox())
 
 

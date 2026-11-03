@@ -1970,7 +1970,7 @@ function mgClawDraw(c, r) {
   if (raw && raw.complete && raw.naturalWidth && !(r.mode === "over" && Math.floor(r.phase * 12) % 3 === 0)) {
     if (mgArt(c, "bank", 16, 193)) { mgArt(c, "bank", 48, 193); c.fillStyle = "#7a5232"; c.fillRect(0, 192, 68, 8); }
     else { c.fillStyle = "#7a9a50"; c.fillRect(0, 168, 60, 32); }
-    c.save(); c.translate(30, 182); c.scale(-1, 1); c.drawImage(raw, -raw.naturalWidth / 2, -raw.naturalWidth); c.restore();
+    c.save(); c.translate(30, 182); c.scale(-1, 1); c.drawImage(raw, -HAB_UNIT / 2, -HAB_UNIT, HAB_UNIT, HAB_UNIT); c.restore();
   }
 }
 
@@ -2067,18 +2067,20 @@ function mgPlayer(c, r) {
   const sheet = habSkin(mg.sheets[`/sprites/anim/${encodeURIComponent(s.slug)}.png`], habLook.skins[s.slug]);
   const acts = (habAnimIdx && habAnimIdx.acts[s.slug]) || [];
   const framed = sheet && sheet.complete && sheet.naturalWidth && acts.length;
-  const cyc = (t) => ((Math.floor(t) % 4) + 4) % 4;
+  const cyc = habCyc;
   // The game's own pose when the animal draws one (fly, walk, swim), else standing.
   let pose = acts.includes(mg.game.pose) ? mg.game.pose : key === "river" && acts.includes("walk") ? "walk" : "idle";
   let frame = 0;
   const moving = r.mode === "play";
   if (pose === "fly") frame = !moving ? cyc(r.phase * 4) : r.flap > 0 || r.vy < 20 ? cyc(r.phase * 14) : HAB_GLIDERS.test(s.slug) ? 0 : cyc(r.phase * 6);
-  else if (pose === "walk") frame = key === "trail" && !r.ground ? 1 : cyc((moving ? r.dist : r.phase * 20) / 9);
+  else if (pose === "walk") frame = key === "trail" && !r.ground ? cyc(1) : cyc((moving ? r.dist : r.phase * 20) / 9);
   else if (pose === "swim") frame = cyc(r.phase * (r.held ? 5 : 2.5));
+  else frame = habIdleFrame(r.phase * 4 / 3);
   if (r.mode === "over" && acts.includes("idle")) { pose = "idle"; frame = 0; }
   const img = framed ? sheet : raw;
   if (!img || !img.complete || !img.naturalWidth) return;
-  const F = framed ? sheet.naturalWidth / habAnimIdx.frames : raw.naturalWidth;
+  // Drawn 40 units square whatever the image's resolution (80 px sheets are 2x).
+  const F = HAB_UNIT, FP = framed ? sheet.naturalWidth / habAnimIdx.frames : raw.naturalWidth;
   if (r.mode === "over" && Math.floor(r.phase * 12) % 3 === 0) return;  // blink after a bump
   let x = Math.round(r.x), y = Math.round(r.y), bob = 0;
   if (!framed) bob = Math.round(Math.sin(r.phase * 8) * 2);
@@ -2092,8 +2094,8 @@ function mgPlayer(c, r) {
   c.scale(-1, 1);
   if (key === "sky" && moving) c.rotate(Math.max(-.35, Math.min(.35, r.vy / 400)));
   if (key === "river" && moving) c.rotate(Math.max(-.3, Math.min(.3, r.vy / 350)));
-  if (framed) c.drawImage(mgFrame(sheet, `${s.slug}~${habLook.skins[s.slug] || ""}`, habAnimIdx.rows.indexOf(pose), frame, F), -F / 2, -F + bob);
-  else c.drawImage(raw, -F / 2, -F + bob);
+  if (framed) c.drawImage(mgFrame(sheet, `${s.slug}~${habLook.skins[s.slug] || ""}`, habAnimIdx.rows.indexOf(pose), frame, FP), -F / 2, -F + bob, F, F);
+  else c.drawImage(raw, -F / 2, -F + bob, F, F);
   c.restore();
 }
 
@@ -2213,14 +2215,15 @@ function mgAnimal(c, r, x, y, poses, o = {}) {
   const framed = pose && sheet && sheet.complete && sheet.naturalWidth;
   const img = framed ? sheet : raw;
   if (!img || !img.complete || !img.naturalWidth) return;
-  const F = framed ? sheet.naturalWidth / habAnimIdx.frames : raw.naturalWidth;
-  const frame = ((Math.floor(o.frame ?? r.phase * 8) % 4) + 4) % 4, k = o.scale || 1;
+  const F = HAB_UNIT, FP = framed ? sheet.naturalWidth / habAnimIdx.frames : raw.naturalWidth;
+  // Frames count in quarter loops (habCyc); a still animal breathes and blinks.
+  const frame = pose === "idle" && !o.frame ? habIdleFrame(r.phase * 4 / 3) : habCyc(o.frame ?? r.phase * 8), k = o.scale || 1;
   c.save();
   c.translate(Math.round(x), Math.round(y));
   if (o.rot) c.rotate(o.rot);
   c.scale(o.flip === false ? k : -k, k);
-  if (framed) c.drawImage(mgFrame(sheet, `${s.slug}~${skin || ""}`, habAnimIdx.rows.indexOf(pose), frame, F), -F / 2, -F);
-  else c.drawImage(raw, -F / 2, -F + (r.mode === "play" && !o.still ? Math.round(Math.sin(r.phase * 8) * 2) : 0));
+  if (framed) c.drawImage(mgFrame(sheet, `${s.slug}~${skin || ""}`, habAnimIdx.rows.indexOf(pose), frame, FP), -F / 2, -F, F, F);
+  else c.drawImage(raw, -F / 2, -F + (r.mode === "play" && !o.still ? Math.round(Math.sin(r.phase * 8) * 2) : 0), F, F);
   c.restore();
 }
 

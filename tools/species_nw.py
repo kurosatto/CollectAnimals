@@ -732,7 +732,7 @@ def _(s):
     # A see-through white sea slug with an orange stripe edged in electric blue and
     # rows of orange-and-white tipped spikes.
     s.can("walk")
-    st = (0, 1, 2, 1)[s.f] if s.act == "walk" else 0
+    st = s.cyc(0, 1, 2, 1) if s.act == "walk" else 0
     for i in range(7):
         x = 10 + i * 2.8
         top = 14 + (i % 2) * 2

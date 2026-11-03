@@ -634,7 +634,7 @@ def _(s):
 @sprite("african_giant_snail")
 def _(s):
     s.can("walk")
-    stretch = (0, 1, 2, 1)[s.f] if s.act == "walk" else 0
+    stretch = s.cyc(0, 1, 2, 1) if s.act == "walk" else 0
     s.ellipse(14 - stretch / 2, 27, 13 + stretch / 2, 2.6, "#8a7a6a")
     # a tall spiral shell: whorls getting smaller toward the tip, with dark flame streaks
     for cx, cy, r, c in ((28.5, 3, 1.8, "#e8c890"), (26.5, 6, 2.8, "#c89a5a"), (23.5, 10.5, 4.2, "#a8743a"),
@@ -717,7 +717,7 @@ def _(s):
 @sprite("hawaiian_black_nerite")
 def _(s):
     s.can("walk")
-    st = (0, 1, 2, 1)[s.f] if s.act == "walk" else 0
+    st = s.cyc(0, 1, 2, 1) if s.act == "walk" else 0
     s.ellipse(15 - st / 2, 27, 12 + st / 2, 2.6, "#5a5a60")
     m = s.fill(s.m_ellipse(17, 22, 10, 9) & s.m_poly([(0, 0), (32, 0), (32, 26), (0, 26)]), "#1e1c22", edge=True)
     s.paint(s.m_path([(24, 18), (21, 15), (17, 15)], 0.5), "#3a3840", within=m)
@@ -836,7 +836,7 @@ def _(s):
 @sprite("pacific_white_spotted_sea_cucumber")
 def _(s):
     s.can("walk")
-    st = (0, 1, 2, 1)[s.f] if s.act == "walk" else 0
+    st = s.cyc(0, 1, 2, 1) if s.act == "walk" else 0
     c = "#6a4a3a"
     s.ellipse(16, 28, 14, 2, "#c8b89a")
     m = s.ellipse(17 - st / 2, 22, 13 + st / 2, 6, c, edge=True)

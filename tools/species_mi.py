@@ -41,7 +41,7 @@ def _(s):
     if flying:
         _far_wing(s, 23, 20, w, "#c8ccd4")
     else:
-        _ripples(s, s.f if s.act == "swim" else 0, ((2, 30), (6, 29), (25, 30), (29, 29)))
+        _ripples(s, s.t * 4 if s.act == "swim" else 0, ((2, 30), (6, 29), (25, 30), (29, 29)))
     s.poly([(25, 20), (31, 17), (30, 23)], "#e8eaee")
     s.ellipse(19, 23, 10.5, 6.5, WHITE)
     if flying:

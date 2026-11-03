@@ -439,7 +439,7 @@ def _(s):
     if flying:
         _far_wing(s, 23, 21, w, "#3a3a40")
     else:
-        _ripples(s, s.f if s.act == "swim" else 0, ((2, 30), (6, 29), (25, 30), (29, 29)))
+        _ripples(s, s.t * 4 if s.act == "swim" else 0, ((2, 30), (6, 29), (25, 30), (29, 29)))
     s.poly([(25, 21), (30, 20), (29, 23)], "#3a3a40")
     s.ellipse(19, 24, 10.5, 5.5, "#4a4a52")
     s.ellipse(15, 26, 6, 3, WHITE)
@@ -854,7 +854,7 @@ def _(s):
     def pat(s, fm, hm):
         w = fm | hm
         core = w
-        for _ in range(2):
+        for _ in range(4):  # two drawing units in from the edge (2x supersampled)
             core = core & np.roll(core, 1, 0) & np.roll(core, -1, 0) & np.roll(core, 1, 1) & np.roll(core, -1, 1)
         rim = w & ~core & ~s.m_poly([(14, 0), (18, 0), (18, 32), (14, 32)])
         s.paint(rim, "#26243a")

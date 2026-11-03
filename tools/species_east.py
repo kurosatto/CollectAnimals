@@ -827,7 +827,7 @@ def _(s):
 def _delta_moth(s, wing, mark, body):
     """A small moth resting with its wings folded into a flat triangle (top view)."""
     s.can("fly")
-    k = (1.0, 1.35, 1.6, 1.35)[s.f] if s.act == "fly" else 1.0
+    k = s.cyc(1.0, 1.35, 1.6, 1.35) if s.act == "fly" else 1.0
     sq = lambda pts: [(16 + (x - 16) * k, y) for x, y in pts]  # noqa: E731
     m = s.poly(sq([(15.5, 9), (5, 25), (9, 28), (16, 24)]), wing, mirror=True, edge=True)
     mark(s, m)
@@ -1132,7 +1132,7 @@ def _(s):
 def _(s):
     # A round, glossy moon snail with a dark spiral "eye", gliding on a big foot.
     s.can("walk")
-    st = (0, 1, 2, 1)[s.f] if s.act == "walk" else 0
+    st = s.cyc(0, 1, 2, 1) if s.act == "walk" else 0
     s.ellipse(15 - st / 2, 27, 14 + st / 2, 3, "#ecdcc8")
     m = s.ellipse(17, 17, 11, 10, "#c8b8a8", edge=True)
     s.paint(s.m_ellipse(20, 13, 5.5, 5) & ~s.m_ellipse(20.5, 13.3, 3.6, 3.2), "#5a4a6a", within=m)
