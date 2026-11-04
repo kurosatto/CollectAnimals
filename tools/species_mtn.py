@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from archetypes import (BLACK, EYE, WHITE, _bird_legs, _far_wing, _ripples, _wing_beat, back_stripes, beetle_top,
+from archetypes import (BLACK, EYE, WHITE, _bird_legs, _far_wing, _ripples, _wing_beat, back_stripes, beetle_top, pelican, flying_waterbird,
                         bird, butterfly, critter, duck, fish, flecks, frog, grasshopper, hummingbird, lizard,
                         mantis, quad, snake, spider_top, sprite)
 from pixel import SS, mix
@@ -126,26 +126,8 @@ def _(s):
 @sprite("american_white_pelican")
 def _(s):
     # Huge and snowy white, black flight feathers and a big orange bill.
-    s.can("walk", "fly")
-    flying = s.act == "fly"
-    w = s.wave()
-    if flying:
-        _far_wing(s, 22, 19, w, "#2b2630", 1.1)
-    s.poly([(25, 17), (31, 15), (30, 21)], "#ece8e0")
-    if not flying:
-        _bird_legs(s, (15, 19), 24, 28, "#f09a3a", w if s.act == "walk" else 0, toes=(-2, -1, 0), toe_dy=1)
-    s.ellipse(18.5, 20, 9.5, 6, "#f6f4ee")
-    if flying:
-        m = _wing_beat(s, 21, 18, w, "#f0ede6", 1.1)
-    else:
-        m = s.ellipse(20.5, 18, 7.5, 3.8, "#f0ede6", rot=-10, edge=True)
-    s.paint(s.m_poly([(24, 14), (30, 14), (30, 22), (24, 22)]), "#2b2630", within=m)
-    s.path([(12, 20), (10, 15), (12, 10)], 2.4, "#f6f4ee")
-    s.ellipse(12.5, 7.5, 4.4, 3.8, "#f6f4ee", edge=True)
-    s.poly([(10, 6.5), (-1, 9), (0, 10.5), (10, 9)], "#f08a2a")
-    s.poly([(10, 9), (0, 10.5), (3, 13.5), (10, 12.5)], "#f0a040")
-    s.px([(13, 4), (14, 3)], "#f0d080")  # breeding knob on the bill top
-    s.eye(11, 6)
+    pelican(s, body="#f6f4ee", belly="#f6f4ee", wing="#f0ede6", tip="#2b2630", neck="#f6f4ee", head="#f6f4ee",
+            crown=None, bill="#f08a2a", pouch="#f0a040", legs="#f09a3a", knob=True, tail="#ece8e0")
 
 
 @sprite("mountain_bluebird")
@@ -436,6 +418,15 @@ def _(s):
     s.can("swim", "fly")
     flying = s.act == "fly"
     w = s.wave()
+    if flying:  # grebes fly neck out and feet trailing
+        hm, bob = flying_waterbird(s, body="#4a4a52", belly=WHITE, wing="#2e2e34", tail="#3a3a40",
+                                   neck=[(11, 19), (7, 17.5), (4.5, 16.5)], neck_col=WHITE, head=(3.5, 16),
+                                   head_col=WHITE, head_r=(2.6, 2.1), cy=19, body_r=(8.5, 3.8), legs="#5a5a62")
+        s.paint(s.m_ellipse(4, 14.4, 2.8, 1.3), "#2b2630", within=hm)
+        s.poly([(1, 15.5), (-4.5, 16.5), (1, 17)], "#d8c82a")
+        s.px([(2, 15)], "#e02a2a")
+        s.shift(0, bob)
+        return
     if flying:
         _far_wing(s, 23, 21, w, "#3a3a40")
     else:

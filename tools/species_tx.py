@@ -3,7 +3,7 @@
 states reuse them."""
 from __future__ import annotations
 
-from archetypes import (BLACK, EYE, WHITE, beetle_top, bird, butterfly, crab, critter, dragonfly, duck, fish,
+from archetypes import (cormorant, gull, BLACK, EYE, WHITE, beetle_top, bird, butterfly, crab, critter, dragonfly, duck, fish,
                         flecks, frog, lizard, quad, snake, sprite, teeth, wader)
 from pixel import mix
 
@@ -207,13 +207,9 @@ def _(s):
 
 @sprite("laughing_gull")
 def _(s):
-    def wing(s, m):
-        s.paint(s.m_ellipse(25, 17, 3, 1.6), BLACK, within=m)
+    # Dark gray back, a black hood with white eye crescents, a dark red bill.
+    gull(s, "#5a5e6a", spots=False, bill="#a8202a", legs="#3a2a2a", hood="#2b2630")
 
-    def face(s):
-        s.paint(s.m_px([(7, 8), (9, 8), (8, 12)]), WHITE, within=s.last)
-    bird(s, WHITE, WHITE, head="#2b2630", wing="#6a6a74", tail_col=WHITE, beak="thin", beak_col="#a8202a",
-         legs="#3a2a2a", tail="mid", wing_mark=wing, face=face)
 
 
 @sprite("yellow_crowned_night_heron")
@@ -265,10 +261,9 @@ def _(s):
 
 @sprite("neotropic_cormorant")
 def _(s):
-    duck(s, "#2a2a30", "#34343c", "#2a2a30", bill="#6a5a4a", ring=None, speculum="#3a3a44", tail_col="#1e1e24")
-    s.px([(5, 15), (6, 15), (6, 14)], "#e8c070")
-    s.px([(0, 13), (0, 14)], "#4a3a2a")
-    s.eye(7, 10, color="#3ac8a0")
+    # Slim and long-tailed, a pale-edged yellowish throat.
+    cormorant(s, "#2a2a30", throat="#e8c070", eye_col="#3ac8a0", bill="#6a5a4a")
+
 
 
 # --------------------------------------------------------------------------- reptiles

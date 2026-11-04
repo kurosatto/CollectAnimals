@@ -5,9 +5,9 @@
     python tools/make_sprites.py --state NC --sheet nc.png  # sheet for one state's list
     python tools/make_sprites.py --anim-sheet anim.png     # preview of every animation
 
-Sprites are drawn at 2x: an 80x80 image for the 40-unit canvas (pixel.SS).
+Sprites are 40x40 pixels, one per drawing unit (pixel.SS = 1; kuro prefers that to 2x).
 Each species also gets an animation sheet, species/sprites/anim/<slug>.png: one row
-per pose (idle, walk, fly, swim, sleep, sit, look, back) of eight 80x80 frames.
+per pose (idle, walk, fly, swim, sleep, sit, look, back) of twelve 40x40 frames.
 Still poses breathe, and idle frame BLINK (in index.json as "blink") has the eyes
 shut; the apps show it only now and then.
 anim/index.json lists the poses each species really draws; the others repeat its
@@ -52,7 +52,7 @@ import species_sw  # noqa: E402,F401
 import species_mtn  # noqa: E402,F401
 import species_nw  # noqa: E402,F401
 import species_east  # noqa: E402,F401
-from archetypes import (BLACK, NOSE, PINK, S, WHITE, bee, beetle_top, bird, butterfly, critter,  # noqa: E402
+from archetypes import (gull, BLACK, NOSE, PINK, S, WHITE, bee, beetle_top, bird, butterfly, critter,  # noqa: E402
                         dragonfly, duck, flecks, frog, goose, hummingbird, lizard, mantis, owl, pelican, pinniped, quad, snake,
                         sprite, star, turtle, vulture, wader, whale)
 from pixel import ACTS, BLINK, FRAMES, N, Sprite, mix, silhouette  # noqa: E402
@@ -550,12 +550,9 @@ def _(s):
 
 @sprite("western_gull")
 def _(s):
-    def wing(s, m):
-        s.paint(s.m_px([(24, 17), (25, 17), (25, 18)]), WHITE, within=m)
-        s.paint(s.m_poly([(23, 15), (27, 14), (27, 19), (23, 19)]), "#2b2630", within=m)
-    bird(s, WHITE, WHITE, head=WHITE, wing="#5e6270", tail_col=WHITE, beak="crow", beak_col="#f0c830",
-         legs="#f0a8a8", tail="short", wing_mark=wing, big=True)
-    s.px([(3, 13)], "#e0403a")
+    # Dark slate back, pink legs and a heavy yellow bill with a red spot.
+    gull(s, "#5e6270", bill="#f0c830", legs="#f0a8a8", big=True, bill_spot="#e0403a")
+
 
 
 @sprite("greater_roadrunner")

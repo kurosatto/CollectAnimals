@@ -1,7 +1,7 @@
 {
- "frames": 8,
+ "frames": 12,
  "size": 40,
- "blink": 4,
+ "blink": 6,
  "rows": [
   "idle",
   "walk",
@@ -1579,6 +1579,7 @@
   ],
   "double_crested_cormorant": [
    "idle",
+   "walk",
    "fly",
    "swim",
    "sleep"
@@ -3077,6 +3078,7 @@
   ],
   "neotropic_cormorant": [
    "idle",
+   "walk",
    "fly",
    "swim",
    "sleep"
@@ -3460,6 +3462,7 @@
   ],
   "pelagic_cormorant": [
    "idle",
+   "walk",
    "fly",
    "swim",
    "sleep"

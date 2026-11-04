@@ -1,7 +1,7 @@
 """Sprites for the New York species that aren't on an earlier state's list."""
 from __future__ import annotations
 
-from archetypes import (BLACK, WHITE, back_stripes, bird, butterfly, crab, critter, frog, goose, lizard, quad,
+from archetypes import (cormorant, gull, BLACK, WHITE, back_stripes, bird, butterfly, crab, critter, frog, goose, lizard, quad,
                         snake, sprite, teeth, turtle)
 from pixel import mix
 from species_tx import _segmented
@@ -79,24 +79,16 @@ def _(s):
 # --------------------------------------------------------------------------- birds
 @sprite("ring_billed_gull")
 def _(s):
-    def wing(s, m):
-        s.paint(s.m_poly([(23, 15), (27, 14), (27, 19), (23, 19)]), "#2b2630", within=m)
-        s.paint(s.m_px([(25, 16)]), WHITE, within=m)
+    # Pale gray, yellow legs, and a black ring round the yellow bill.
+    gull(s, "#a8b0bc", bill="#f0d040", legs="#f0d040", bill_ring=BLACK, eye_col="#f0e070")
 
-    def ring(s):
-        s.px([(2, 13), (3, 13)], BLACK)
-    bird(s, WHITE, WHITE, head=WHITE, wing="#a8b0bc", tail_col=WHITE, beak="crow", beak_col="#f0d040",
-         legs="#f0d040", tail="short", wing_mark=wing, face=ring, eye_col="#f0d040")
 
 
 @sprite("american_herring_gull")
 def _(s):
-    def wing(s, m):
-        s.paint(s.m_poly([(23, 15), (27, 14), (27, 19), (23, 19)]), "#2b2630", within=m)
-        s.paint(s.m_px([(24, 17), (26, 17)]), WHITE, within=m)
-    bird(s, WHITE, WHITE, head=WHITE, wing="#9aa4b2", tail_col=WHITE, beak="crow", beak_col="#f0c830",
-         legs="#f0a8a8", tail="short", wing_mark=wing, big=True, eye_col="#f0d860")
-    s.px([(3, 13)], "#e0403a")
+    # Big and silver-backed, pink legs, a pale eye and a red spot on the bill.
+    gull(s, "#9aa4b2", bill="#f0c830", legs="#f0a8a8", big=True, eye_col="#f0d860", bill_spot="#e0403a")
+
 
 
 @sprite("gray_catbird")
@@ -129,16 +121,21 @@ def _(s):
 @sprite("white_throated_sparrow")
 def _(s):
     def face(s):
-        h = s.last
-        s.paint(s.m_line(5, 8, 15, 8), WHITE, within=h)
-        s.paint(s.m_line(5, 7, 15, 7) | s.m_line(6, 11, 15, 11), "#2b2630", within=h)
-        s.paint(s.m_px([(6, 9), (7, 9)]), "#f2d22a", within=h)
-        s.paint(s.m_ellipse(7, 15, 2.6, 1.6), WHITE, within=h)
+        h = s.last  # black and white crown stripes, a yellow spot before the eye, a white throat
+        s.paint(s.m_ellipse(12, 6.5, 5.8, 2.6), "#2b2630", within=h)
+        s.paint(s.m_path([(8, 5.4), (16, 5.6)], 0.7), WHITE, within=h)
+        s.paint(s.m_path([(5.5, 8.6), (10, 8.2), (16.5, 8.8)], 0.8), WHITE, within=h)
+        s.paint(s.m_ellipse(6, 8.6, 1.2, 0.9), "#f2d22a", within=h)
+        s.paint(s.m_path([(9.5, 10.6), (16.5, 10.8)], 0.6), "#2b2630", within=h)
+        s.paint(s.m_ellipse(7.5, 14.8, 2.9, 1.9), WHITE, within=h)
+        s.paint(s.m_path([(5.5, 13.2), (9.5, 13.6)], 0.45), "#4a4a50", within=h)
 
     def wing(s, m):
-        s.paint(s.m_line(16, 18, 23, 16), "#5a3a26", within=m)
+        s.paint(s.m_path([(16, 18), (23, 16)], 0.5), "#5a3a26", within=m)
+        s.paint(s.m_path([(15, 20.5), (22, 18.5)], 0.4), WHITE, within=m)
     bird(s, "#8a6448", "#c4c4c4", head="#9a9aa0", wing="#9a6c4a", tail_col="#7a5a40", beak="cone",
          beak_col="#6a6a70", legs="#d0a080", tail="mid", wing_mark=wing, face=face)
+
 
 
 @sprite("common_grackle")
