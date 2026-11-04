@@ -7,7 +7,7 @@ import numpy as np
 from archetypes import (BLACK, EYE, WHITE, _bird_legs, _far_wing, _ripples, _wing_beat, back_stripes, beetle_top,
                         bird, butterfly, critter, duck, fish, flecks, frog, grasshopper, hummingbird, lizard,
                         mantis, quad, snake, spider_top, sprite)
-from pixel import mix
+from pixel import SS, mix
 from species_tx import _segmented
 
 
@@ -854,7 +854,7 @@ def _(s):
     def pat(s, fm, hm):
         w = fm | hm
         core = w
-        for _ in range(4):  # two drawing units in from the edge (2x supersampled)
+        for _ in range(2 * SS):  # two drawing units in from the edge
             core = core & np.roll(core, 1, 0) & np.roll(core, -1, 0) & np.roll(core, 1, 1) & np.roll(core, -1, 1)
         rim = w & ~core & ~s.m_poly([(14, 0), (18, 0), (18, 32), (14, 32)])
         s.paint(rim, "#26243a")

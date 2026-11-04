@@ -26,10 +26,10 @@ const habImgs = {};
 const habSheets = {};
 let habAnimIdx = null;
 fetch("/sprites/anim/index.json").then((r) => (r.ok ? r.json() : null)).then((j) => { habAnimIdx = j; }).catch(() => {});
-// Every animal is a 40-unit drawing; its image may hold it at 2x (80 px), sharper than
-// the scenery's pixels. The canvas is drawn at HAB_RES x so those pixels show, and so
-// animals can stand on half pixels as they move.
-const HAB_UNIT = 40, HAB_RES = 2;
+// Every animal is a 40-unit drawing (40 px images; a 2x sheet of 80 px would draw at the
+// same size). HAB_RES 2 would draw the canvas at 2x for such sheets; at 1 animals stand
+// on whole pixels, matching the scenery (kuro prefers that look).
+const HAB_UNIT = 40, HAB_RES = 1;
 const habSnap = (v) => Math.round(v * HAB_RES) / HAB_RES;
 const habNF = () => (habAnimIdx && habAnimIdx.frames) || 4;
 // The frame at time t, counted in quarter loops (t = 4 is one whole loop), so a pose
