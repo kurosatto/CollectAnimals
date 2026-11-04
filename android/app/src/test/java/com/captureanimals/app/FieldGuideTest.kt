@@ -69,7 +69,7 @@ class FieldGuideTest {
         assertEquals(100, dex.seasons.size)
         assertEquals("Often out at night", dex.dayNight("barn_owl"))
         assertEquals("Often out at night", dex.dayNight("great_horned_owl"))
-        assertTrue(dex.dayNight("western_fence_lizard")!!.startsWith("☀️"))
+        assertTrue(dex.dayNight("western_fence_lizard")!!.endsWith("aytime"))
         // A spring-and-summer animal, and the wrap from December into January.
         assertEquals("Apr–Jun", Season(intArrayOf(1, 1, 1, 9, 10, 8, 2, 1, 1, 1, 1, 1), IntArray(0)).bestMonths())
         assertEquals("Dec–Jan", Season(intArrayOf(10, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 9), IntArray(0)).bestMonths())
