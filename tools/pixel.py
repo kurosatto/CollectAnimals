@@ -24,10 +24,10 @@ PAD_X = 4
 PAD_TOP = 8
 LOW = W + 2 * PAD_X          # the canvas in drawing units (40)
 assert LOW == W + PAD_TOP  # square
-# Supersampling: every drawing unit is SS x SS image pixels, so curves, thin legs
-# and the in-between frames of a stride or wingbeat land on half-pixels instead
-# of jumping a whole pixel. Drawings keep their 32-unit coordinates.
-SS = 2
+# Supersampling: every drawing unit is SS x SS image pixels. kuro preferred the
+# original 1:1 pixel look (2026-11-04), so SS is 1; 2 draws everything at 2x
+# (smoother curves, half-pixel motion). Drawings keep their 32-unit coordinates.
+SS = 1
 N = LOW * SS                 # the image is N x N pixels
 _YS, _XS = (np.mgrid[0:N, 0:N].astype(np.float32) + 0.5) / SS
 _YS -= PAD_TOP
@@ -46,7 +46,7 @@ def units(mask):
     return [(int(x) - PAD_X, int(y) - PAD_TOP) for x, y in zip(xs, ys)]
 
 OUTLINE_INK = (38, 26, 46)
-OUTLINE = 2  # outline thickness in image pixels
+OUTLINE = SS  # outline thickness in image pixels
 SILHOUETTE = (74, 76, 102)
 LIGHT = np.array([-0.45, -0.62, 0.64], np.float32)  # from the upper left, toward the viewer
 LIGHT /= np.linalg.norm(LIGHT)
@@ -151,8 +151,8 @@ class Sprite:
         # Standing still, every animal breathes: the whole drawing rises a touch off
         # its feet and settles again (a base warp under any warp the body plan adds).
         self.base = None
-        if act in BREATHE:
-            a = BREATH * (0.5 - 0.5 * math.cos(self.t * 2 * math.pi))
+        a = BREATH * (0.5 - 0.5 * math.cos(self.t * 2 * math.pi)) if act in BREATHE else 0
+        if a > 1e-6:  # (frame 0 is the plain drawing, exactly the still sprite)
             self.base = lambda x, y, a=a: (x, GROUND - (GROUND - y) * (1 + a))
             self.base_grid = _XS, GROUND - (GROUND - _YS) / (1 + a)
         self.fwd, self.xs, self.ys = self.base, *(self.base_grid if self.base else (_XS, _YS))
@@ -317,10 +317,34 @@ class Sprite:
     def m_line(self, x0, y0, x1, y1):
         """A line one drawing unit thick, through the centres of the end units."""
         (x0, y0), (x1, y1) = self._to(x0, y0), self._to(x1, y1)
+        if SS == 1:
+            return self._bresenham(x0, y0, x1, y1)
         x0, y0, x1, y1 = (round(v) + 0.5 for v in (x0, y0, x1, y1))
         if (x0, y0) == (x1, y1):
             return (np.abs(_XS - x0) < 0.5) & (np.abs(_YS - y0) < 0.5)
         return _seg_dist(x0, y0, x1, y1) <= 0.56
+
+    @staticmethod
+    def _bresenham(x0, y0, x1, y1):
+        """The classic 1-pixel line (at 1x, as the sprites were first drawn)."""
+        m = np.zeros((N, N), bool)
+        x0, y0, x1, y1 = (int(round(v)) for v in (x0, y0, x1, y1))
+        dx, dy = abs(x1 - x0), -abs(y1 - y0)
+        sx, sy = (1 if x0 < x1 else -1), (1 if y0 < y1 else -1)
+        err = dx + dy
+        while True:
+            if 0 <= x0 + PAD_X < N and 0 <= y0 + PAD_TOP < N:
+                m[y0 + PAD_TOP, x0 + PAD_X] = True
+            if x0 == x1 and y0 == y1:
+                break
+            e2 = 2 * err
+            if e2 >= dy:
+                err += dy
+                x0 += sx
+            if e2 <= dx:
+                err += dx
+                y0 += sy
+        return m
 
     def m_px(self, pts):
         m = np.zeros((N, N), bool)

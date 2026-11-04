@@ -146,11 +146,11 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
 - Change habitat and map behaviour in `habitat.js` and the web first;
   Android packages `backend/app/static` and `species/` as assets, so it picks
   them up on its next build. Keep web and Android at feature parity.
-- Sprites are drawn at 2x (80 px images for the 40-unit drawing grid, `pixel.SS`) with
-  8 frames per pose (`pixel.FRAMES`); body plans animate from `s.t` (0..1) via
-  `s.wave()` / `s.cyc(...)`, and still poses breathe and blink. The habitat canvas
-  draws at `HAB_RES` 2x and always draws an animal 40 units square (`HAB_UNIT`),
-  whatever its image size; frame picks go through `habCyc()` / `habIdleFrame()`.
+- Sprites have 8 frames per pose (`pixel.FRAMES`); body plans animate from `s.t`
+  (0..1) via `s.wave()` / `s.cyc(...)`, and still poses breathe, blink and swish
+  tails. They stay at the original 1:1 pixels (`pixel.SS = 1`): kuro tried 2x
+  (0.35.0 preview) and preferred the old look. The apps always draw an animal 40
+  units square (`HAB_UNIT`) and pick frames with `habCyc()` / `habIdleFrame()`.
 - A new species needs a drawing function in `tools/species_<st>.py` (else it
   shows the "?" egg). A state's habitat should feature a **signature landmark**
   for that state (TX mesas and windmill, FL mangroves and a launch pad, NY

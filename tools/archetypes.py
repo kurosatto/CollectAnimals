@@ -481,7 +481,7 @@ def quad(s: Sprite, fur, light=WHITE, *, build="dog", ears="point", ear_in=PINK,
     if not lying:
         for x, back, sw in ((b["fx"] + 2.2, False, -w), (b["bx"] + 1.6, True, w)):
             _leg(s, x, b["top"], ground, b["leg"], far(legs), back, build, far(feet) if feet else None, sw)
-    tw = w if s.act == "walk" else 0.6 * s.wave(0.25) if s.act == "idle" else 0  # an idle tail swishes
+    tw = w if s.act == "walk" else 0.6 * s.wave() if s.act == "idle" else 0  # an idle tail swishes
     _tail(s, tail, bx + brx - 1, by - bry * 0.3 + 0.8 * tw, tail_col, tail_tip)
     ear_x = hx + (0.8 if build == "bear" else 2.6)
     _side_ear(s, ears, ear_x - 1, hy - hry + 0.6, far(head), None)
@@ -816,7 +816,7 @@ def bird(s: Sprite, body, belly, *, head=None, wing=None, tail_col=None, beak="c
         with s.unwarped():
             _flight_wing(s, cy, w, mix(wing, "#1a1420", 0.3), dx=2.5)
     # Perched, the tail flicks up now and then (and dips back) like a real bird's.
-    tb = -1.4 * max(0.0, s.wave(0.1)) ** 2 if s.act == "idle" else 0
+    tb = -1.4 * (0.5 - 0.5 * math.cos(2 * math.pi * s.t)) ** 2 if s.act == "idle" else 0
     if tail == "mid":
         s.poly([(20, cy), (29, cy - 6 + tb), (31, cy - 3 + tb), (23, cy + 4)], tail_col)
     elif tail == "long":
