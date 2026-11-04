@@ -1,7 +1,7 @@
 """Sprites for the Michigan species that aren't on an earlier state's list."""
 from __future__ import annotations
 
-from archetypes import (BLACK, WHITE, _far_wing, _ripples, _wing_beat, beetle_top, bird, duck, fish, lizard,
+from archetypes import (BLACK, WHITE, flying_waterbird, _far_wing, _ripples, _wing_beat, beetle_top, bird, duck, fish, lizard,
                         quad, spider_top, sprite, turtle)
 from pixel import mix
 from species_oh import _damsel
@@ -38,6 +38,14 @@ def _(s):
     s.can("swim", "fly")
     flying = s.act == "fly"
     w = s.wave()
+    if flying:  # the long white neck stretched straight out, slow broad wingbeats
+        hm, bob = flying_waterbird(s, body=WHITE, belly=WHITE, wing="#eef0f4", tip="#d8dce4", tail="#e8eaee",
+                                   neck=[(11, 18), (7, 16.5), (4, 15.5)], neck_col=WHITE, head=(2.5, 15),
+                                   head_col=WHITE, head_r=(2.8, 2.2), cy=19, body_r=(9.5, 4.4), size=1.3)
+        s.poly([(0.5, 14), (-3.5, 15.5), (-3, 16.6), (0.5, 16.4)], "#1e1a1e")
+        s.eye(1, 14, shine="#ffffff", color="#000000")
+        s.shift(0, bob)
+        return
     if flying:
         _far_wing(s, 23, 20, w, "#c8ccd4")
     else:

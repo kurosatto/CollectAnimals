@@ -1,18 +1,15 @@
 """Sprites for the New Jersey species that aren't on an earlier state's list."""
 from __future__ import annotations
 
-from archetypes import WHITE, bird, crab, sprite, turtle
+from archetypes import WHITE, bird, crab, gull, sprite, turtle
 
 
 # --------------------------------------------------------------------------- birds
 @sprite("great_black_backed_gull")
 def _(s):
     # The biggest gull: a black back and wings, white head and a heavy yellow bill.
-    def wing(s, m):
-        s.paint(s.m_px([(24, 17), (25, 17), (25, 18)]), WHITE, within=m)
-    bird(s, WHITE, WHITE, head=WHITE, wing="#26242a", tail_col=WHITE, beak="crow", beak_col="#f0c830",
-         legs="#f0c0c0", tail="short", wing_mark=wing, big=True)
-    s.px([(3, 13)], "#e0403a")
+    gull(s, "#26242a", bill="#f0c830", legs="#f0c0c0", big=True, bill_spot="#e0403a")
+
 
 
 # --------------------------------------------------------------------------- reptiles

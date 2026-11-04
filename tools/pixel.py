@@ -15,6 +15,7 @@ outline tinted from the colour it borders, darker along the bottom and right.
 from __future__ import annotations
 
 import math
+import re
 
 import numpy as np
 from PIL import Image
@@ -119,7 +120,7 @@ def _seg_dist(x0, y0, x1, y1):
 
 # Animation: every body plan can draw itself in these poses, FRAMES frames each.
 ACTS = ("idle", "walk", "fly", "swim", "sleep", "sit", "look", "back")
-FRAMES = 8
+FRAMES = 12
 OLD_FRAMES = 4  # body plans that still pick poses by s.f count in these
 # Still poses breathe (BREATH: how far the body rises, as a share of its height),
 # and on frame BLINK of the idle and look rows the eyes close for a blink.
@@ -127,7 +128,12 @@ BREATHE = ("idle", "sit", "look", "back")
 BREATH = 0.035
 GROUND = 31.0
 BLINKS = ("idle", "look")
-BLINK = 4
+BLINK = 6
+# Animals with no eyes to draw (kuro: anemones, sea stars, urchins and the like
+# shouldn't have faces): whatever eyes their drawing has are painted out.
+FACELESS = re.compile(r"anemone|urchin|sea_star|_star$|jelly|sponge|sea_cucumber|limpet|chiton|coral|sand_dollar"
+                      r"|barnacle|mussel|clam|oyster(?!catcher)|scallop|by_the_wind|sea_pen|sea_squirt|tunicate|nudibranch"
+                      r"|dorid|sea_lemon|hydroid|bryozoan")
 
 
 class Sprite:
@@ -204,8 +210,9 @@ class Sprite:
         if mirror:
             self.eye_boxes.append((N - 1 - x1, y0, N - 1 - x0, y1))
 
-    def _close_eyes(self):
-        """Asleep: paint over each eye with the face around it and draw a closed lid."""
+    def _close_eyes(self, lid=True):
+        """Asleep: paint over each eye with the face around it and draw a closed lid
+        (lid=False just paints the eyes out)."""
         boxes = list(self.eye_boxes)
         seen = np.zeros((N, N), bool)
         for y, x in zip(*np.where(self.eye_px)):
@@ -229,15 +236,17 @@ class Sprite:
                 continue
             self.col[y0:y1 + 1, x0:x1 + 1] = self.col[sy, sx]
             self.reg[y0:y1 + 1, x0:x1 + 1] = self.reg[sy, sx]
-            lid = np.zeros((N, N), bool)
+            if not lid:
+                continue
+            lm = np.zeros((N, N), bool)
             ly = y1 - SS + 1 if y1 - y0 < 2 * SS else (y0 + y1 + 1) // 2
-            lid[ly:ly + SS, x0:x1 + 1] = True
+            lm[ly:ly + SS, x0:x1 + 1] = True
             if x1 - x0 >= 3 * SS:  # a curved lid on a big eye
-                lid[ly - SS:ly, x0:x0 + SS] = lid[ly - SS:ly, x1 - SS + 1:x1 + 1] = True
-                lid[ly:ly + SS, x0:x0 + SS] = lid[ly:ly + SS, x1 - SS + 1:x1 + 1] = False
+                lm[ly - SS:ly, x0:x0 + SS] = lm[ly - SS:ly, x1 - SS + 1:x1 + 1] = True
+                lm[ly:ly + SS, x0:x0 + SS] = lm[ly:ly + SS, x1 - SS + 1:x1 + 1] = False
             self.n += 1
-            self.col[lid] = np.array(mix(tuple(self.col[sy, sx]), OUTLINE_INK, 0.75))
-            self.reg[lid] = self.n
+            self.col[lm] = np.array(mix(tuple(self.col[sy, sx]), OUTLINE_INK, 0.75))
+            self.reg[lm] = self.n
             self.shaded[self.n] = False
 
     # -- masks -----------------------------------------------------------------
@@ -424,7 +433,9 @@ class Sprite:
 
     # -- output ----------------------------------------------------------------
     def render(self):
-        if self.act == "sleep" or (self.act in BLINKS and self.frame == BLINK):
+        if FACELESS.search(getattr(self, "slug", "") or ""):
+            self._close_eyes(lid=False)  # no eyes at all
+        elif self.act == "sleep" or (self.act in BLINKS and self.frame == BLINK):
             self._close_eyes()
         col = self.col.astype(np.float32)
         filled = self.reg > 0

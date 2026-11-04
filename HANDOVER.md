@@ -154,7 +154,7 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
 - Change habitat and map behaviour in `habitat.js` and the web first;
   Android packages `backend/app/static` and `species/` as assets, so it picks
   them up on its next build. Keep web and Android at feature parity.
-- Sprites have 8 frames per pose (`pixel.FRAMES`); body plans animate from `s.t`
+- Sprites have 12 frames per pose (`pixel.FRAMES`); body plans animate from `s.t`
   (0..1) via `s.wave()` / `s.cyc(...)`, and still poses breathe, blink and swish
   tails. They stay at the original 1:1 pixels (`pixel.SS = 1`): kuro tried 2x
   (0.35.0 preview) and preferred the old look. The apps always draw an animal 40

@@ -572,13 +572,15 @@ function habDive(a, dt) {
     if (a.y >= surf + 5) { habSplash(a.x, surf, 20, true); a.mode = "under"; a.t = rnd(.5, 1); }
   } else if (a.mode === "under") {
     a.t -= dt;
-    if (a.t <= 0) { a.mode = "rise"; a.vy = -55; habSplash(a.x, surf, 6); }
+    // Most dives come up with a fish, held for a few seconds.
+    if (a.t <= 0) { a.mode = "rise"; a.vy = -55; habSplash(a.x, surf, 6); a.fish = Math.random() < .8 ? rnd(4, 7) : 0; }
   } else if (a.mode === "rise") {
     a.y += a.vy * dt; a.x += a.vx * a.speed * .5 * dt; a.tilt = -.4;
     if (a.y <= a.cy) { a.mode = "fly"; a.diveIn = rnd(4, 10); }
   } else {
     a.x += a.vx * a.speed * dt;
     a.y += (a.cy - a.y) * Math.min(1, dt * 2);
+    if (a.fish > 0) a.fish -= dt;
     // Patrol the coast (or the pond) so there's water below often.
     const L = hab.L, p = L.pond, [min, max] = /kingfisher/.test(a.s.slug)
       ? [p.x - p.rx - 60, p.x + p.rx + 60] : [L.w * .3, L.w + 30];
@@ -943,6 +945,38 @@ function habFrame(sheet, row, frame, F) {
   return frames[key];
 }
 
+// Where a fish goes on a flying frame: the bill tip (the frontmost drawn
+// pixel), or the talons (the lowest one) for an osprey. Cached per frame.
+function habCatchSpot(fr, talons) {
+  const k = talons ? "_talon" : "_tip";
+  if (fr[k] === undefined) {
+    fr[k] = null;
+    try {
+      const w = fr.width, h = fr.height, d = fr.getContext("2d").getImageData(0, 0, w, h).data;
+      if (talons) {
+        for (let y = h - 1; y >= 0 && !fr[k]; y--) for (let x = 0; x < w; x++) if (d[(y * w + x) * 4 + 3] > 128) { fr[k] = [x, y]; break; }
+      } else {
+        for (let x = 0; x < w && !fr[k]; x++) for (let y = 0; y < h; y++) if (d[(y * w + x) * 4 + 3] > 128) { fr[k] = [x, y]; break; }
+      }
+    } catch (e) { /* unreadable canvas: no fish drawn */ }
+  }
+  return fr[k];
+}
+
+// A small silver fish held in the bill (or an osprey's talons). Drawn in the
+// sprite's own (left-facing) space so it turns and tilts with the bird.
+function habFish(c, fr, F, FP, mid, talons) {
+  const at = habCatchSpot(fr, talons);
+  if (!at) return;
+  const u = F / FP, x = Math.round(-F / 2 + at[0] * u) + (talons ? 0 : 1), y = Math.round(mid - F + at[1] * u);
+  // Hangs head-up from the bill tip (or talons), tail flapping below.
+  const flap = Math.sin(performance.now() / 90) > 0 ? 1 : -1;
+  c.fillStyle = "#3d4a52"; c.fillRect(x - 1, y, 4, 7); c.fillRect(x - 1 + flap, y + 7, 4, 2);
+  c.fillStyle = "#8fa3ae"; c.fillRect(x, y + 1, 1, 5);
+  c.fillStyle = "#d9e4ea"; c.fillRect(x + 1, y + 1, 1, 5);
+  c.fillStyle = "#1b2226"; c.fillRect(x + 1, y + 1, 1, 1);
+}
+
 function habSprite(c, p) {
   const raw = habImgs[p.a.s.slug];
   if (!raw || !raw.complete || !raw.naturalWidth) return;
@@ -986,6 +1020,8 @@ function habSprite(c, p) {
   if (p.sx !== 1 || p.sy !== 1) c.scale(p.sx, p.sy);
   if (framed) c.drawImage(habFrame(img, habAnimIdx.rows.indexOf(p.anim[0]), p.anim[1], FP), -F / 2, mid - F, F, F);
   else c.drawImage(img, -F / 2, mid - F, F, F);
+  if (framed && p.awake && a.role === "dive" && a.fish > 0 && (a.mode === "fly" || a.mode === "rise"))
+    habFish(c, habFrame(img, habAnimIdx.rows.indexOf(p.anim[0]), p.anim[1], FP), F, FP, mid, /osprey/.test(a.s.slug));
   c.restore();
   if (a.role === "paddle") {
     c.fillStyle = "rgba(255,255,255,.55)";

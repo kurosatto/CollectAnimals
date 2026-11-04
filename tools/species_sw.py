@@ -3,7 +3,7 @@ earlier state's list: desert lizards and toads, Sky Island birds, chipmunks and
 antelope squirrels, and the bugs of the creosote flats."""
 from __future__ import annotations
 
-from archetypes import (BLACK, EYE, WHITE, back_stripes, bird, butterfly, critter, dragonfly, duck, face_stripes,
+from archetypes import (cormorant, gull, BLACK, EYE, WHITE, back_stripes, bird, butterfly, critter, dragonfly, duck, face_stripes,
                         fish, flecks, frog, grasshopper, lizard, mantis, quad, snail_shell, spider_top, sprite,
                         wader)
 from pixel import mix
@@ -400,14 +400,9 @@ def _(s):
 
 @sprite("california_gull")
 def _(s):
-    # Medium gray back, black wingtips, and a yellow bill with a red and a black spot.
-    def wing(s, m):
-        s.paint(s.m_px([(24, 17), (25, 17), (25, 18)]), WHITE, within=m)
-        s.paint(s.m_poly([(23, 15), (27, 14), (27, 19), (23, 19)]), "#2b2630", within=m)
-    bird(s, WHITE, WHITE, head=WHITE, wing="#9a9eaa", tail_col=WHITE, beak="crow", beak_col="#f0d030",
-         legs="#c8cc4a", tail="short", wing_mark=wing, big=True)
-    s.px([(3, 13)], "#e0403a")
-    s.px([(2, 12)], BLACK)
+    # Medium gray back, black wingtips, and a yellow bill with a red spot.
+    gull(s, "#9a9eaa", bill="#f0d030", legs="#c8cc4a", big=True, bill_spot="#e0403a")
+
 
 
 @sprite("white_faced_ibis")

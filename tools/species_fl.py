@@ -1,7 +1,7 @@
 """Sprites for the Florida species that aren't on an earlier state's list."""
 from __future__ import annotations
 
-from archetypes import (BLACK, WHITE, bird, butterfly, critter, dolphin, dragonfly, duck, fish, flecks, frog,
+from archetypes import (cormorant, gull, BLACK, WHITE, bird, butterfly, critter, dolphin, dragonfly, duck, fish, flecks, frog,
                         lizard, snake, spider_top, sprite, turtle, wader)
 from pixel import mix
 from species_tx import _segmented
@@ -121,9 +121,9 @@ def _(s):
 
 @sprite("double_crested_cormorant")
 def _(s):
-    duck(s, "#26262c", "#30303a", "#26262c", bill="#5a4a3a", ring=None, speculum="#3a3a44", tail_col="#1a1a20")
-    s.px([(5, 14), (6, 14), (5, 15), (6, 15)], "#f0902a")
-    s.eye(7, 10, color="#3ac8a0")
+    # Black with an orange throat pouch and turquoise eyes.
+    cormorant(s, "#26262c", throat="#f0902a", eye_col="#3ac8a0", bill="#5a4a3a")
+
 
 
 @sprite("tricolored_heron")

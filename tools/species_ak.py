@@ -6,7 +6,7 @@ import math
 
 import numpy as np
 
-from archetypes import (BLACK, EYE, S, WHITE, _far_wing, _ripples, _wing_beat, back_stripes, beetle_top, bird,
+from archetypes import (cormorant, gull, BLACK, EYE, S, WHITE, _far_wing, _ripples, _wing_beat, back_stripes, beetle_top, bird,
                         butterfly, critter, dolphin, duck, fish, flecks, frog, jelly, lizard, lying_flat, pinniped,
                         quad, sea_turtle, sprite, star, wader)
 from pixel import mix
@@ -137,14 +137,8 @@ def _(s):
 # --------------------------------------------------------------------------- gulls and terns
 def _gull(s, mantle, *, tips=BLACK, spots=True, bill="#f0d040", legs="#f0d040", big=False, eye_col=EYE,
           head=WHITE, bill_spot=None):
-    def wing(s, m):
-        s.paint(s.m_poly([(23, 15), (27, 14), (27, 19), (23, 19)]), tips, within=m)
-        if spots:
-            s.paint(s.m_px([(25, 16)]), WHITE, within=m)
-    bird(s, WHITE, WHITE, head=head, wing=mantle, tail_col=WHITE, beak="crow" if big else "cone", beak_col=bill,
-         legs=legs, tail="short", wing_mark=wing, big=big, eye_col=eye_col)
-    if bill_spot:
-        s.px([(3, 13)], bill_spot)
+    gull(s, mantle, tips=tips, spots=spots, bill=bill, legs=legs, big=big, eye_col=eye_col, head=head,
+         bill_spot=bill_spot, thin_bill=not big)
 
 
 @sprite("short_billed_gull")
@@ -175,16 +169,8 @@ def _(s):
 @sprite("bonapartes_gull")
 def _(s):
     # Small, with a black hood, thin black bill and orange-red legs.
-    def wing(s, m):
-        s.paint(s.m_poly([(24, 15), (27, 14), (27, 19), (24, 19)]), BLACK, within=m)
-        s.paint(s.m_line(16, 17, 23, 16), WHITE, within=m)
+    gull(s, "#b0b8c4", bill=BLACK, legs="#f0603a", hood=BLACK, thin_bill=True, spots=False)
 
-    def hood(s):
-        s.paint(s.m_ellipse(10, 11, 6.5, 6) & ~s.m_ellipse(14, 17, 4, 2.5), BLACK, within=s.last)
-    bird(s, WHITE, WHITE, head=WHITE, wing="#b0b8c4", tail_col=WHITE, beak="thin", beak_col=BLACK,
-         legs="#f0603a", tail="short", wing_mark=wing, face=hood)
-    s.px([(8, 9), (9, 9)], WHITE)
-    s.eye(8, 10, shine=None)
 
 
 @sprite("arctic_tern")
@@ -258,13 +244,10 @@ def _(s):
 
 @sprite("pelagic_cormorant")
 def _(s):
-    # Slim and glossy green-black with a thin bill and a red face patch.
-    duck(s, "#1e2428", "#242c30", "#1e2428", bill="#2b2630", ring=None, speculum="#2a3a34", tail_col="#14181a")
-    s.ellipse(3, 12.8, 3.6, 1, "#2b2630")
-    s.px([(5, 13), (6, 13), (6, 14)], "#d8302a")
-    s.paint(s.m_ellipse(25, 24, 1.6, 1.2), WHITE)
-    s.px([(11, 6), (12, 5)], "#1e2428")
-    s.eye(7, 10, color="#2a8a6a")
+    # Slim and glossy green-black with a thin bill, a red face and white flank patches.
+    cormorant(s, "#1e2428", wing="#24302c", face="#d8302a", eye_col="#2a8a6a", bill="#2b2630", crest=True,
+              flank=WHITE)
+
 
 
 # --------------------------------------------------------------------------- loons and grebes
