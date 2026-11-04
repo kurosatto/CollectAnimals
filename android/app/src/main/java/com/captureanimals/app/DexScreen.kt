@@ -37,7 +37,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -63,7 +62,7 @@ fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: FieldGuide, onBa
             style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.outline)
         Text(s.commonName, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(s.scientificName, fontStyle = FontStyle.Italic)
+            Text(s.scientificName, style = MaterialTheme.typography.bodySmall)
             RarityTag(s.rarity)
         }
 
@@ -102,7 +101,7 @@ fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: FieldGuide, onBa
                 Column(Modifier.padding(16.dp)) {
                     Text("Fun facts", style = MaterialTheme.typography.labelLarge, color = rarityColor(s.rarity))
                     // Same as the web page: the facts are the reward for catching it.
-                    if (badge == null) Text("🔒", style = MaterialTheme.typography.bodyLarge)
+                    if (badge == null) TabIcon("ui_ic_lock", Modifier.padding(top = 4.dp).size(20.dp))
                     else {
                         val context = LocalContext.current
                         val facts = remember(s.slug, details.funFact) {
@@ -122,7 +121,7 @@ fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: FieldGuide, onBa
         Text("Where to find it", style = MaterialTheme.typography.titleMedium)
         RangeMap(dex, s.slug, rarityColor(s.rarity), Modifier.fillMaxWidth())
         details?.whereToFind?.takeIf { it.isNotBlank() }?.let {
-            Text("📍 $it", style = MaterialTheme.typography.bodyMedium)
+            IconText("pin", it, style = MaterialTheme.typography.bodyMedium)
         }
         details?.activeTime?.takeIf { it.isNotBlank() }?.let { LabeledLine("Most active", it) }
         details?.spottingTip?.takeIf { it.isNotBlank() }?.let { LabeledLine("Spotting tip", it) }
@@ -143,7 +142,7 @@ fun SafetyCard(d: SpeciesDetails) {
     val danger = d.safety == "danger"
     Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(
         containerColor = (if (danger) Color(0xFFD64545) else Color(0xFFE0A100)).copy(alpha = 0.15f))) {
-        Text((if (danger) "⚠️ Dangerous: " else "✋ ") + d.safetyNote +
+        IconText("warn", (if (danger) "Dangerous: " else "") + d.safetyNote +
             (if (d.safeDistance.isNotBlank()) " Stay at least ${d.safeDistance} away." else ""),
             Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
     }
@@ -154,7 +153,7 @@ fun SafetyCard(d: SpeciesDetails) {
 private fun WhenToLook(season: Season, dayNight: String?, color: Color) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text("When to look", style = MaterialTheme.typography.titleMedium)
-        Text("📅 Best months: ${season.bestMonths()}", style = MaterialTheme.typography.bodyMedium)
+        Text("Best months: ${season.bestMonths()}", style = MaterialTheme.typography.bodyMedium)
         dayNight?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
         val max = season.months.maxOrNull()?.coerceAtLeast(1) ?: 1
         Row(Modifier.fillMaxWidth().height(56.dp), horizontalArrangement = Arrangement.spacedBy(3.dp),

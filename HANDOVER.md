@@ -143,6 +143,14 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
   had it removed everywhere.) No "maybe out" / "out of season" wording.
 
 **Code**
+- **Look (0.37.0, phone fit)**: Field Journal colours and leather bars, but no italic
+  or handwritten fonts: Pixelify Sans (headings, buttons, labels) + Space Grotesk (text),
+  both OFL, in `static/vendor/fonts` and `res/font`. The habitat is the first thing on the
+  Habitat tab, edge to edge on phones, with no photo frame or tape. One-line top bar.
+  **No generic emojis in the UI**: use the 16 px pixel icons from `tools/make_ui_icons.py`
+  (`ui_ic_<name>.png`: pin, coin, shop, lock, bell, sun, moon, warn, chat, trophy, palette,
+  sound, logout) via `ico()`/`icoText()` (web), `mgIco()` (minigames.js), `IconText` (Android).
+  Check layouts at 360 px wide.
 - Change habitat and map behaviour in `habitat.js` and the web first;
   Android packages `backend/app/static` and `species/` as assets, so it picks
   them up on its next build. Keep web and Android at feature parity.

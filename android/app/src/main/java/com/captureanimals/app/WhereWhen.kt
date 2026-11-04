@@ -99,9 +99,9 @@ typealias SaveWhereWhen = suspend (LocalDateTime, Pair<Double, Double>?) -> Stri
 fun WhereWhenRow(ww: WhereWhen, parks: List<Park>, onSave: SaveWhereWhen) {
     var editing by remember { mutableStateOf(false) }
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text("📅 " + ww.takenAt.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)) +
+        Text(ww.takenAt.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)) +
             (SOURCE[ww.timeSource]?.let { " · $it" } ?: ""), style = MaterialTheme.typography.bodyMedium)
-        Text("📍 " + (ww.place ?: "No place saved") +
+        IconText("pin", (ww.place ?: "No place saved") +
             (SOURCE[ww.placeSource]?.takeIf { ww.place != null }?.let { " · $it" } ?: ""),
             style = MaterialTheme.typography.bodyMedium)
         TextButton(onClick = { editing = true }, contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) {
@@ -144,7 +144,7 @@ fun WhereWhenDialog(ww: WhereWhen, parks: List<Park>, onSave: SaveWhereWhen, onC
                     }
                 }
                 Text("Where you took it", style = MaterialTheme.typography.labelLarge)
-                Text("📍 " + (placeName ?: place?.let { "%.4f, %.4f".format(it.first, it.second) } ?: "No place"))
+                IconText("pin", placeName ?: place?.let { "%.4f, %.4f".format(it.first, it.second) } ?: "No place")
                 androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     if (parks.isNotEmpty()) OutlinedButton(onClick = { picking = "park" }) { Text("Pick a park") }
                     if (hasLocationPermission(context)) OutlinedButton(onClick = {

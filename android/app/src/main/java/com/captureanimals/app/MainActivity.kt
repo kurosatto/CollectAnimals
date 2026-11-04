@@ -19,6 +19,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -57,7 +60,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -76,7 +78,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -183,27 +184,31 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
 
     Scaffold(topBar = {
         if (!gameOn) Column {
-            TopAppBar(modifier = Modifier.leather(top = false),
-                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent,
-                    titleContentColor = Journal.CreamBright, actionIconContentColor = Journal.Cream),
-                title = { Text(if (tab == 0) "Capture Animals" else if (showParks) "Parks" else TABS[tab].title) }, actions = {
+            // One slim leather line (kuro, 2026-11-04): title, state, and your picture and name
+            // (log out is in the account dialog it opens).
+            Row(Modifier.fillMaxWidth().leather(top = false).windowInsetsPadding(WindowInsets.statusBars)
+                .height(46.dp).padding(start = 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(if (tab == 0) "Capture Animals" else if (showParks) "Parks" else TABS[tab].title,
+                    style = MaterialTheme.typography.titleMedium, color = Journal.CreamBright, maxLines = 1,
+                    overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                 if (state.states.size > 1) StateMenu(state.states, state.stateCode, state.mainState(), state.stateTiles,
                     onOpen = vm::loadStateTiles, onClose = vm::closeStateTiles, onView = vm::viewState, onMakeMain = vm::chooseState)
-                TextButton(onClick = { showAccount = true },
+                TextButton(onClick = { showAccount = true }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp),
                     colors = androidx.compose.material3.ButtonDefaults.textButtonColors(contentColor = Journal.Cream)) {
-                    Text(state.account?.let { "👤 ${it.username}" } ?: "Log in", maxLines = 1,
-                        overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 120.dp))
+                    state.account?.let { Avatar(it.avatar, Modifier.size(22.dp)); Spacer(Modifier.width(5.dp)) }
+                    Text(state.account?.username ?: "Log in", maxLines = 1, style = MaterialTheme.typography.labelLarge,
+                        overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 110.dp))
                 }
-            })
+            }
             if (info != null) {
-                Column(Modifier.padding(horizontal = 16.dp).padding(top = 6.dp)) {
-                    Text("$captured of $total ${dex?.region ?: ""} animals captured so far", style = handStyle(20))
-                    Spacer(Modifier.height(4.dp))
+                // Progress on one short line instead of a sentence over a thick bar.
+                Row(Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("$captured/$total captured", style = handStyle(13))
+                    Spacer(Modifier.width(8.dp))
                     LinearProgressIndicator(
                         progress = { if (total == 0) 0f else captured / total.toFloat() },
-                        modifier = Modifier.fillMaxWidth().height(8.dp), trackColor = MaterialTheme.colorScheme.outlineVariant,
+                        modifier = Modifier.weight(1f).height(6.dp), trackColor = MaterialTheme.colorScheme.outlineVariant,
                         drawStopIndicator = {})
-                    Spacer(Modifier.height(8.dp))
                 }
             }
         }
@@ -313,32 +318,30 @@ fun CatchScreen(state: UiState, animals: List<HabitatAnimal>, onCapture: (Uri, P
     }
 
     Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 12.dp, end = 12.dp, bottom = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // The habitat is the home page, taped in like a photo; while a photo is being
-        // identified it moves below the result so the result shows first.
+        // The habitat is the home page, edge to edge with no frame (kuro, 2026-11-04); while a
+        // photo is being identified it moves below the result so the result shows first.
         val working = cropping != null || state.busy || state.result != null || state.error != null
-        if (!working) {
-            TapedPhoto(Modifier.fillMaxWidth()) { Habitat(habitat, animals, state.stateCode, onOpen = onOpenDex) }
-            Text("${animals.size} animals live in your habitat. Tap one to visit it.",
-                style = handStyle(22), modifier = Modifier.fillMaxWidth())
-        }
+        if (!working) Habitat(habitat, animals, state.stateCode, Modifier.bleed(12.dp), onOpen = onOpenDex)
+        else Spacer(Modifier.height(4.dp))
         Text("Photograph a wild animal. If it's one of the ${state.info?.species?.size ?: 100} " +
             "${state.fieldGuide?.region ?: ""} species, it's captured in your Field Guide.",
-            style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Button(onClick = ::launchCamera, enabled = !state.busy,
+        val compact = androidx.compose.foundation.layout.PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = ::launchCamera, enabled = !state.busy, contentPadding = compact,
                 elevation = androidx.compose.material3.ButtonDefaults.buttonElevation(defaultElevation = 3.dp)) {
-                TabIcon("ui_tab_capture", Modifier.size(24.dp)); Spacer(Modifier.width(8.dp)); Text("Take photo")
+                TabIcon("ui_tab_capture", Modifier.size(20.dp)); Spacer(Modifier.width(6.dp)); Text("Take photo")
             }
             OutlinedButton(
                 onClick = { pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
-                enabled = !state.busy,
+                enabled = !state.busy, contentPadding = compact,
                 border = androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline),
-            ) { TabIcon("ui_tab_photos", Modifier.size(24.dp)); Spacer(Modifier.width(8.dp)); Text("Choose photo") }
+            ) { TabIcon("ui_tab_photos", Modifier.size(20.dp)); Spacer(Modifier.width(6.dp)); Text("Choose photo") }
         }
         if (state.account != null) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -375,7 +378,7 @@ fun CatchScreen(state: UiState, animals: List<HabitatAnimal>, onCapture: (Uri, P
                 naming = naming, sharing = state.account?.shareTrainingPhotos == true, signedIn = state.account != null)
         }
         // Your live habitat: the animals you've captured, in your state's scenery.
-        if (working) TapedPhoto(Modifier.fillMaxWidth()) { Habitat(habitat, animals, state.stateCode, onOpen = onOpenDex) }
+        if (working) Habitat(habitat, animals, state.stateCode, Modifier.bleed(12.dp), onOpen = onOpenDex)
     }
 }
 
@@ -397,7 +400,8 @@ fun ResultCard(r: CaptureResult, onDismiss: () -> Unit, onPick: (String?) -> Uni
                 if (r.newBadge) InkStamp("Captured!") else Text("Captured again",
                     style = MaterialTheme.typography.labelLarge, color = rarityColor(r.species.rarity))
                 Text(r.species.commonName, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                Text(r.species.scientificName, fontStyle = FontStyle.Italic)
+                Text(r.species.scientificName, style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
                 RarityTag(r.species.rarity)
             }
             Text(r.message, style = MaterialTheme.typography.bodyLarge)
@@ -405,7 +409,7 @@ fun ResultCard(r: CaptureResult, onDismiss: () -> Unit, onPick: (String?) -> Uni
             changeState?.let { (states, go) ->
                 // No place in a game state (no GPS in the photo, or taken elsewhere): say where it was taken.
                 var picking by remember { mutableStateOf(false) }
-                OutlinedButton(onClick = { picking = true }) { Text("📍 Taken in another state?") }
+                OutlinedButton(onClick = { picking = true }) { IconText("pin", "Taken in another state?") }
                 if (picking) StateListDialog(states, "Where was this photo taken?",
                     "The photo has no location we can use, so it was checked against " +
                         "${states.firstOrNull { it.code == r.state }?.name ?: "your state"}'s animals.",
@@ -424,7 +428,7 @@ fun ResultCard(r: CaptureResult, onDismiss: () -> Unit, onPick: (String?) -> Uni
             if (!r.picked) PickPanel(r, onPick)
             // "What was it?" once the photo doesn't count: after "None of these", or nothing to pick from.
             if (naming != null && !r.matched && (r.picked || r.choices.isEmpty())) {
-                r.named?.let { Text("🙏 $it", style = MaterialTheme.typography.bodyMedium) }
+                r.named?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
                     ?: NamePanel(naming, sharing, signedIn, key = r.photo)
             }
             Row(Modifier.align(Alignment.End)) {
@@ -485,7 +489,7 @@ fun NamePanel(naming: NameActions, sharing: Boolean, signedIn: Boolean, key: Any
         androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             hits.forEach { e ->
                 OutlinedButton(enabled = !sent, onClick = { sent = true; naming.onName(e) }) {
-                    Text(e.name, fontStyle = if (e.isGroup) FontStyle.Italic else FontStyle.Normal)
+                    Text(e.name, fontWeight = if (e.isGroup) FontWeight.Bold else FontWeight.Normal)
                 }
             }
         }
@@ -598,13 +602,13 @@ fun SpeciesTile(number: Int, s: Species, badge: Badge?, onClick: () -> Unit) {
             }).clickable(onClick = onClick).padding(5.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text("#%03d".format(number), fontSize = 10.sp, fontFamily = Fraunces, fontWeight = FontWeight.Bold,
+        Text("#%03d".format(number), fontSize = 10.sp, fontFamily = PixelFont, fontWeight = FontWeight.Bold,
             color = if (caught) Journal.CardMuted else outline, modifier = Modifier.fillMaxWidth())
         Box(Modifier.fillMaxWidth().aspectRatio(1f)
             .background(if (caught) Color(0xFFF1E7CF) else Color.Transparent), contentAlignment = Alignment.Center) {
             PixelSprite(s.slug, caught, Modifier.fillMaxSize(0.85f))
         }
-        Text(if (caught) s.commonName else "???", fontFamily = Caveat, fontSize = 16.sp, lineHeight = 16.sp, maxLines = 1,
+        Text(if (caught) s.commonName else "???", fontFamily = PixelFont, fontSize = 11.sp, lineHeight = 13.sp, maxLines = 1,
             overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 2.dp),
             color = if (caught) Journal.CardInk else outline)
         // The rarity dot, so a slot still hints how hard it is to find.

@@ -93,10 +93,10 @@ class FieldGuide(val details: Map<String, SpeciesDetails>, val ranges: RangeGrid
         val share = seasons[slug]?.nightShare ?: return null
         val r = share / (avgNightShare ?: return null)
         return when {
-            r >= 1.8 -> "🌙 Often out at night"
-            r >= 1.2 -> "🌗 Day and night"
-            r <= 0.5 -> "☀️ Daytime"
-            else -> "☀️ Mostly daytime"
+            r >= 1.8 -> "Often out at night"
+            r >= 1.2 -> "Day and night"
+            r <= 0.5 -> "Daytime"
+            else -> "Mostly daytime"
         }
     }
 

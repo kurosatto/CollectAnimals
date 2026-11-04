@@ -1,3 +1,5 @@
-Fraunces (Undercase Type) and Caveat (Impallari Type) are licensed under the
-SIL Open Font License, Version 1.1: https://openfontlicense.org
-Copies of both fonts are also in android/app/src/main/res/font/.
+Pixelify Sans (The Pixelify Sans Project Authors, https://github.com/eifetx/Pixelify-Sans)
+and Space Grotesk (The Space Grotesk Project Authors, https://github.com/floriankarsten/space-grotesk)
+are licensed under the SIL Open Font License, Version 1.1: https://openfontlicense.org
+(full text in OFL-pixelify.txt and OFL-spacegrotesk.txt). The files here are subset to Latin.
+Static copies of both fonts are also in android/app/src/main/res/font/.

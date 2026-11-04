@@ -573,8 +573,8 @@ private fun FeedSection(s: SocialState, social: SocialViewModel, game: UiState, 
         item {
             // Your state, or Global: everyone in every state, for when you travel.
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                FilterChip(s.feedScope == "state", { social.loadFeed("state") }, label = { Text("📍 $stateName") })
-                FilterChip(s.feedScope == "all", { social.loadFeed("all") }, label = { Text("🌎 Global") })
+                FilterChip(s.feedScope == "state", { social.loadFeed("state") }, label = { IconText("pin", stateName) })
+                FilterChip(s.feedScope == "all", { social.loadFeed("all") }, label = { Text("Global") })
                 FilterChip(s.feedScope == "friends", { social.loadFeed("friends") }, label = { Text("Friends") })
             }
         }
@@ -601,7 +601,7 @@ private fun FeedCard(p: OnlinePhoto, social: SocialViewModel, onOpenDex: (String
                 // Animals you haven't unlocked stay hidden, as on the website.
                 Box(Modifier.fillMaxWidth().height(120.dp).background(MaterialTheme.colorScheme.surfaceVariant),
                     contentAlignment = Alignment.Center) {
-                    Text("❓ Capture this animal, or befriend someone who has, to see this one",
+                    Text("Capture this animal, or befriend someone who has, to see this one",
                         Modifier.padding(16.dp), textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.outline)
                 }
             }
@@ -622,7 +622,7 @@ private fun FeedCard(p: OnlinePhoto, social: SocialViewModel, onOpenDex: (String
                     TextButton(onClick = { social.toggleLike(p) }, enabled = !p.isMine) {
                         Text((if (p.likedByMe) "♥ " else "♡ ") + p.likeCount)
                     }
-                    TextButton(onClick = { social.openComments(p) }) { Text("💬 ${p.commentCount}") }
+                    TextButton(onClick = { social.openComments(p) }) { IconText("chat", "${p.commentCount}") }
                 }
             }
         }
@@ -658,7 +658,7 @@ private fun FriendsSection(s: SocialState, social: SocialViewModel) {
         section("Waiting for them to accept", f.outgoing) { u ->
             TextButton(onClick = { social.remove(u.username) }) { Text("Cancel") }
         }
-        section("Bot friends to add 🤖", s.suggestions) { u ->
+        section("Bot friends to add", s.suggestions) { u ->
             TextButton(onClick = { social.addFriend(u.username) }) { Text("Add") }
         }
     }
@@ -677,18 +677,21 @@ private fun androidx.compose.foundation.lazy.LazyListScope.section(
     items(people, key = { "$title-${it.username}" }) { u -> FriendRow(u, onOpen) { actions(u) } }
 }
 
-/** One line per person, bots included, so every row is the same height. Tapping a
- *  friend opens their Field Guide. */
+/** One row per person, bots included. A long name wraps onto more lines instead of
+ *  being cut off (kuro, 2026-11-04), with the count under it. Tapping a friend opens
+ *  their Field Guide. */
 @Composable
 private fun FriendRow(u: FriendEntry, onOpen: ((String) -> Unit)?, actions: @Composable () -> Unit) {
-    Row(Modifier.fillMaxWidth().height(48.dp).let { m -> onOpen?.let { m.clickable { it(u.username) } } ?: m },
+    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(vertical = 4.dp)
+        .let { m -> onOpen?.let { m.clickable { it(u.username) } } ?: m },
         verticalAlignment = Alignment.CenterVertically) {
-        Avatar(u.avatar, Modifier.size(36.dp))
-        Spacer(Modifier.size(10.dp))
-        Text((if (u.isBot) "🤖 " else "") + u.username, Modifier.weight(1f), maxLines = 1,
-            overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyLarge)
-        if (u.caught > 0) Text("${u.caught} captured", style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.outline, maxLines = 1, modifier = Modifier.padding(end = 4.dp))
+        Avatar(u.avatar, Modifier.size(32.dp))
+        Spacer(Modifier.size(8.dp))
+        Column(Modifier.weight(1f)) {
+            Text(u.username, style = MaterialTheme.typography.titleSmall)
+            if (u.caught > 0) Text("${u.caught} captured", style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline, maxLines = 1)
+        }
         actions()
     }
     HorizontalDivider()
@@ -716,7 +719,7 @@ fun FriendGuideDialog(s: SocialState, social: SocialViewModel, game: UiState, on
                 if (g != null && g.places.size > 1) Row(Modifier.horizontalScroll(rememberScrollState()).padding(top = 6.dp),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     for (p in g.places) FilterChip(p.state == g.state, { if (p.state != g.state) social.openGuide(who, p.state) },
-                        label = { Text((if (p.state == g.primaryState) "📍 " else "") + "${p.name} · ${p.caught}") })
+                        label = { Text((if (p.state == g.primaryState) "★ " else "") + "${p.name} · ${p.caught}") })
                 }
                 Spacer(Modifier.height(8.dp))
                 when {

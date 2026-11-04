@@ -50,7 +50,10 @@ object StateList {
 fun StateMenu(states: List<StateInfo>, viewing: String, main: String, tiles: List<StateTile>?,
               onOpen: () -> Unit, onClose: () -> Unit, onView: (String) -> Unit, onMakeMain: (String) -> Unit) {
     val name = states.firstOrNull { it.code == viewing }?.name ?: viewing
-    TextButton(onClick = onOpen) { Text(if (viewing == main) "📍 $viewing" else "📍 $viewing (visiting)") }
+    TextButton(onClick = onOpen, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp),
+        colors = androidx.compose.material3.ButtonDefaults.textButtonColors(contentColor = Journal.Cream)) {
+        IconText("pin", if (viewing == main) viewing else "$viewing (visiting)", style = MaterialTheme.typography.labelLarge)
+    }
     if (tiles == null) return
     AlertDialog(onDismissRequest = onClose, confirmButton = {
         if (viewing != main) TextButton(onClick = { onClose(); onMakeMain(viewing) }) { Text("★ Make $name my main state") }
@@ -66,7 +69,7 @@ fun StateMenu(states: List<StateInfo>, viewing: String, main: String, tiles: Lis
                     items(tiles, key = { it.code }) { t ->
                         states.firstOrNull { it.code == t.code }?.let { st ->
                             StateTile(st, main = t.code == viewing,
-                                label = if (t.main) "★ Main state" else if (t.code == viewing) "👀 Looking now" else "",
+                                label = if (t.main) "★ Main state" else if (t.code == viewing) "Looking now" else "",
                                 sub = "${t.caught} of ${t.total} captured") {
                                 onClose()
                                 if (t.code != viewing) onView(t.code)
@@ -75,7 +78,7 @@ fun StateMenu(states: List<StateInfo>, viewing: String, main: String, tiles: Lis
                     }
                 }
                 if (tiles.size < states.size) {
-                    Text("📷 Capture an animal in another state to unlock it (${tiles.size} of ${states.size} unlocked).",
+                    Text("Capture an animal in another state to unlock it (${tiles.size} of ${states.size} unlocked).",
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
@@ -124,9 +127,9 @@ fun StatePicker(states: List<StateInfo>, onDismiss: () -> Unit, onPick: (String)
                     style = MaterialTheme.typography.bodyMedium)
                 val found = states.firstOrNull { it.code == guess }
                 when {
-                    found != null -> StateTile(found, main = true, label = "📍 You're here") { onPick(found.code) }
+                    found != null -> StateTile(found, main = true, label = "You're here") { onPick(found.code) }
                     guess == null && !asked -> TextButton(onClick = { asked = true; askLocation.launch(LOCATION_PERMISSIONS) }) {
-                        Text("📍 Use my location")
+                        IconText("pin", "Use my location")
                     }
                     guess != null -> Text("Couldn't tell where you are, so pick from the list.",
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

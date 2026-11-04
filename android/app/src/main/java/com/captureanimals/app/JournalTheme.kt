@@ -3,11 +3,13 @@ package com.captureanimals.app
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.Typography
@@ -18,21 +20,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /*
  * The "Field Journal" look (2026-11, kuro picked it from four directions): a naturalist's
  * notebook. Leather top and tab bars with stitching, paper pages with faint ruled lines,
- * the habitat taped in like a photo, handwritten notes and ink stamps. Same look as the
- * website (index.html, "Field Journal look"). Fonts are OFL: Fraunces and Caveat (res/font).
+ * ink stamps. Same look as the website (index.html, "Field Journal look" and "Phone fit").
+ * 2026-11-04 (kuro): the habitat fills the screen width with no photo frame, and no italic
+ * or handwritten fonts: Pixelify Sans (pixel, for headings, buttons, labels) and Space
+ * Grotesk (reading text), both OFL (res/font).
  */
 
 object Journal {
@@ -50,14 +55,21 @@ object Journal {
     val HandDark = Color(0xFFA9C6E0)
 }
 
-val Fraunces = FontFamily(
-    Font(R.font.fraunces_semibold, FontWeight.Normal),
-    Font(R.font.fraunces_semibold, FontWeight.Medium),
-    Font(R.font.fraunces_semibold, FontWeight.SemiBold),
-    Font(R.font.fraunces_extrabold, FontWeight.Bold),
-    Font(R.font.fraunces_extrabold, FontWeight.ExtraBold),
+/** The pixel font: headings, buttons, tabs, labels and names. */
+val PixelFont = FontFamily(
+    Font(R.font.pixelify_semibold, FontWeight.Normal),
+    Font(R.font.pixelify_semibold, FontWeight.Medium),
+    Font(R.font.pixelify_semibold, FontWeight.SemiBold),
+    Font(R.font.pixelify_bold, FontWeight.Bold),
+    Font(R.font.pixelify_bold, FontWeight.ExtraBold),
 )
-val Caveat = FontFamily(Font(R.font.caveat_semibold, FontWeight.Normal), Font(R.font.caveat_semibold, FontWeight.SemiBold))
+/** Reading text. */
+val TextFont = FontFamily(
+    Font(R.font.spacegrotesk_medium, FontWeight.Normal),
+    Font(R.font.spacegrotesk_medium, FontWeight.Medium),
+    Font(R.font.spacegrotesk_bold, FontWeight.SemiBold),
+    Font(R.font.spacegrotesk_bold, FontWeight.Bold),
+)
 
 private val LightJournal = lightColorScheme(
     primary = Color(0xFF4D6B3A), onPrimary = Color(0xFFFDF6E3),
@@ -91,15 +103,19 @@ private val DarkJournal = darkColorScheme(
 
 private fun journalType(): Typography {
     val base = Typography()
-    fun TextStyle.f(weight: FontWeight? = null) = copy(fontFamily = Fraunces, fontWeight = weight ?: fontWeight)
+    // Pixel headings, buttons and labels; a little smaller than Material's defaults so more
+    // fits on a phone.
+    fun TextStyle.px(size: Int, weight: FontWeight = FontWeight.Bold) =
+        copy(fontFamily = PixelFont, fontWeight = weight, fontSize = size.sp, lineHeight = (size * 1.25).sp)
+    fun TextStyle.tx(size: Int) = copy(fontFamily = TextFont, fontSize = size.sp, lineHeight = (size * 1.4).sp)
     return Typography(
-        displayLarge = base.displayLarge.f(FontWeight.ExtraBold), displayMedium = base.displayMedium.f(FontWeight.ExtraBold),
-        displaySmall = base.displaySmall.f(FontWeight.ExtraBold), headlineLarge = base.headlineLarge.f(FontWeight.ExtraBold),
-        headlineMedium = base.headlineMedium.f(FontWeight.ExtraBold), headlineSmall = base.headlineSmall.f(FontWeight.ExtraBold),
-        titleLarge = base.titleLarge.f(FontWeight.ExtraBold), titleMedium = base.titleMedium.f(FontWeight.ExtraBold),
-        titleSmall = base.titleSmall.f(FontWeight.Bold), bodyLarge = base.bodyLarge.f(), bodyMedium = base.bodyMedium.f(),
-        bodySmall = base.bodySmall.f(), labelLarge = base.labelLarge.f(FontWeight.SemiBold),
-        labelMedium = base.labelMedium.f(FontWeight.SemiBold), labelSmall = base.labelSmall.f(FontWeight.SemiBold),
+        displayLarge = base.displayLarge.px(44), displayMedium = base.displayMedium.px(36),
+        displaySmall = base.displaySmall.px(30), headlineLarge = base.headlineLarge.px(26),
+        headlineMedium = base.headlineMedium.px(23), headlineSmall = base.headlineSmall.px(20),
+        titleLarge = base.titleLarge.px(19), titleMedium = base.titleMedium.px(16),
+        titleSmall = base.titleSmall.px(14), bodyLarge = base.bodyLarge.tx(15), bodyMedium = base.bodyMedium.tx(14),
+        bodySmall = base.bodySmall.tx(12), labelLarge = base.labelLarge.px(14, FontWeight.SemiBold),
+        labelMedium = base.labelMedium.px(12, FontWeight.SemiBold), labelSmall = base.labelSmall.px(11, FontWeight.SemiBold),
     )
 }
 
@@ -109,10 +125,30 @@ fun JournalTheme(content: @Composable () -> Unit) {
         typography = journalType(), content = content)
 }
 
-/** Handwriting, for notes and names on specimen cards. */
+/** Notes and names on specimen cards, in the pixel font (was handwriting until 2026-11-04). */
 @Composable
-fun handStyle(size: Int = 20): TextStyle = TextStyle(fontFamily = Caveat, fontSize = size.sp, lineHeight = (size * 1.1).sp,
-    color = if (isSystemInDarkTheme()) Journal.HandDark else Journal.Hand)
+fun handStyle(size: Int = 14): TextStyle = TextStyle(fontFamily = PixelFont, fontWeight = FontWeight.Medium,
+    fontSize = size.sp, lineHeight = (size * 1.25).sp, color = if (isSystemInDarkTheme()) Journal.HandDark else Journal.Hand)
+
+/** A 16 px pixel icon (tools/make_ui_icons.py: pin, coin, lock, warn, chat...) in front of
+ *  a line of text, in place of an emoji. */
+@Composable
+fun IconText(icon: String, text: String, modifier: Modifier = Modifier, style: TextStyle = LocalTextStyle.current,
+             color: Color = Color.Unspecified) {
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+        TabIcon(if (icon.startsWith("tab_")) "ui_$icon" else "ui_ic_$icon", Modifier.size(16.dp))
+        Spacer(Modifier.width(5.dp))
+        Text(text, style = style, color = color)
+    }
+}
+
+/** Lets a child reach past its parent's side padding, so the habitat can fill the screen width. */
+fun Modifier.bleed(side: Dp): Modifier = layout { m, c ->
+    val extra = (side * 2).roundToPx()
+    val w = c.maxWidth + extra
+    val p = m.measure(c.copy(minWidth = w, maxWidth = w))
+    layout(c.maxWidth, p.height) { p.place(-side.roundToPx(), 0) }
+}
 
 /** Faint ruled lines, like notebook paper. */
 fun Modifier.paperLines(color: Color): Modifier = drawBehind {
@@ -139,19 +175,9 @@ fun Modifier.leather(top: Boolean = true, bottom: Boolean = true): Modifier = ba
     if (bottom) stitch(size.height - inset)
 }
 
-/** A photo taped into the journal: white border, a slight tilt, two strips of tape. */
-@Composable
-fun TapedPhoto(modifier: Modifier = Modifier, tilt: Float = -1.2f, content: @Composable () -> Unit) {
-    Box(modifier.padding(top = 12.dp, start = 4.dp, end = 4.dp)) {
-        Box(Modifier.rotate(tilt).shadow(6.dp).background(Journal.Card).padding(8.dp)) { content() }
-        Box(Modifier.align(Alignment.TopStart).offset(x = 20.dp, y = (-10).dp).rotate(-7f).size(78.dp, 22.dp).background(Journal.Tape))
-        Box(Modifier.align(Alignment.TopEnd).offset(x = (-20).dp, y = (-10).dp).rotate(6f).size(78.dp, 22.dp).background(Journal.Tape))
-    }
-}
-
 /** A red ink stamp, like "Captured", set at an angle. */
 @Composable
 fun InkStamp(text: String, modifier: Modifier = Modifier, color: Color = MaterialTheme.colorScheme.tertiary) {
     Text(text.uppercase(), modifier.rotate(-4f).border(2.5.dp, color, RoundedCornerShape(4.dp)).padding(horizontal = 10.dp, vertical = 4.dp),
-        color = color, fontFamily = Fraunces, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, letterSpacing = 1.5.sp)
+        color = color, fontFamily = PixelFont, fontWeight = FontWeight.Bold, fontSize = 14.sp, letterSpacing = 1.5.sp)
 }

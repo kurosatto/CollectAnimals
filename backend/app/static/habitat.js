@@ -286,12 +286,19 @@ function habNote() {
   const who = hab.visit ? `${hab.visit.username}'s habitat` : "here";
   $("hab-note").textContent = !n ? (hab.visit ? `No animals in ${who} yet.` : "Capture animals and they'll move in here.")
     : `${n} animal${n > 1 ? "s" : ""} live${n > 1 ? "" : "s"} ${hab.visit ? "in " + who : "here"}` + (asleep ? `, ${asleep} asleep` : "")
-      + (hab.wx ? ". " + habWxLine() : ". Tap one to say hi.") + ` ${HAB_SEASON_ICON[habSeason()]} ${habSeason()[0].toUpperCase() + habSeason().slice(1)}.`;
+      + (hab.wx ? ". " + habWxLine() : ". Tap one to say hi.") + ` ${habSeason()[0].toUpperCase() + habSeason().slice(1)}.`;
   const night = phase === "night";
-  if (night) $("hab-note").textContent += ` ${habMoonName().join(" ")}.`;
+  if (night) $("hab-note").textContent += ` ${habMoonName()[1]}.`;
   const here = document.getElementById("hab-wx-here");
   if (here) here.hidden = !(hab.wxAsk && hab.wx && !hab.visit);
-  $("hab-peek").textContent = hab.peek ? "Back to now" : night || phase === "dusk" ? "☀️ Peek at daytime" : "🌙 Peek at night";
+  // Pixel sun and moon icons (tools/make_ui_icons.py), not emojis.
+  const toDay = night || phase === "dusk", peek = $("hab-peek");
+  if (hab.peek) peek.textContent = "Back to now";
+  else {
+    const ic = document.createElement("img");
+    ic.className = "pi"; ic.alt = ""; ic.src = `/sprites/ui_ic_${toDay ? "sun" : "moon"}.png`;
+    peek.replaceChildren(ic, toDay ? "Peek at daytime" : "Peek at night");
+  }
 }
 
 // Birds out on the landmark are far away, so they're drawn smaller.
@@ -1059,7 +1066,7 @@ function habSay(a) {
   b.innerHTML = "";
   const name = document.createElement("div");
   name.className = "hab-name";
-  name.textContent = a.s.common_name + (mood ? ` · ${mood}` : awake ? "" : " 💤");
+  name.textContent = a.s.common_name + (mood ? ` · ${mood}` : awake ? "" : " · asleep");
   b.append(name);
   if (facts.length) {
     const fact = document.createElement("div");
@@ -1311,8 +1318,8 @@ function habSeasonScene(sc, season, state) {
 
 // "🌧️ Raining in Houston, 61°F." for the line under the scene.
 function habWxLine() {
-  const w = hab.wx, moon = habPhase() === "night" && (w.sky === "clear" || w.sky === "partly");
-  let line = `${moon ? habMoonName()[0] : HAB_WX_ICON[w.sky]} ${HAB_WX_WORDS[w.sky]}`;
+  const w = hab.wx;
+  let line = HAB_WX_WORDS[w.sky];
   if (w.wind === "windy") line += " and windy";
   if (w.place) line += ` ${w.near ? "near" : "in"} ${w.place}`;
   if (w.temp_f != null) line += `, ${w.temp_f}°F`;
@@ -1322,7 +1329,7 @@ function habWxLine() {
 // What a tapped animal is up to in this weather, or null.
 function habWxMood(a, awake) {
   if (!hab.wx) return null;
-  if (habTuckedIn(a)) return habCold() ? "tucked in from the cold 💤" : "hibernating till spring 💤";
+  if (habTuckedIn(a)) return habCold() ? "tucked in from the cold" : "hibernating till spring";
   if (!awake) return null;
   if (habSheltering(a)) return "staying dry";
   if (habWet() && habLovesRain(a)) return "loves the rain";
