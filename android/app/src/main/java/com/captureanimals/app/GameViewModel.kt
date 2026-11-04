@@ -475,7 +475,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 "That looks like a wild animal that isn't in the $stateName collection yet. It's coming soon!"
             else -> "We couldn't match this to any animal in the $stateName collection."
         }
-        if (newlyUnlocked) message = "📍 You unlocked $stateName! $message"
+        if (newlyUnlocked) message = "You unlocked $stateName! $message"
         else if (code != ui.mainState() && matched) message += " It counts in your $stateName Field Guide."
         if (place != null && here == null) {
             message = "This photo was taken outside the states in the game, so it was checked against $stateName. $message"

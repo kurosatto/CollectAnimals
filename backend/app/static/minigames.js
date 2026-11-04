@@ -148,47 +148,55 @@ function mgShopBar(list) {
   const d = mg.shop;
   if (!d) return;
   const bar = mgEl("div", "mg-shopbar"), open = mgStore.get("shop") === "1";
-  const btn = mgEl("button", "mg-back", open ? "Close shop" : "🛍️ Shop");
+  const btn = open ? mgEl("button", "mg-back", "Close shop") : mgWith("button", "mg-back mg-shopbtn", "shop", "Shop");
   btn.onclick = () => { mgStore.set("shop", open ? "0" : "1"); mgList(); };
-  bar.append(mgEl("b", "mg-coins", `🪙 ${d.coins} coins`), btn);
+  bar.append(mgWith("b", "mg-coins", "coin", `${d.coins} coins`), btn);
   list.append(bar);
   if (!open) return;
   const shop = mgEl("div", "mg-shop");
-  shop.append(mgEl("div", "mg-how", "Finish levels to earn coins. Decorations go in your habitat, and the animals you've caught come to visit them. Skins recolor your animal in the games."));
-  // One shelf at a time: the decorations by group, then the skins.
-  const groups = [...new Set(d.items.map((i) => (i.kind === "skin" ? "Skins" : i.group || "Habitat")))];
+  shop.append(mgEl("div", "mg-how", "Finish levels to earn coins. Decorations go in your habitat, and the animals you've captured come to visit them."));
+  // One shelf at a time, picked from a single scrolling row of shelf tabs: the decoration
+  // groups (each shown by its first item's picture), then the skins.
+  const shelfOf = (i) => (i.kind === "skin" ? "Skins" : i.group || "Habitat");
+  const groups = [...new Set(d.items.map(shelfOf))];
   let tab = mgStore.get("shopTab");
   if (!groups.includes(tab)) tab = groups[0];
-  const tabs = mgEl("div", "mg-shelves");
-  for (const g of groups) {
-    const owned = d.items.filter((i) => (i.kind === "skin" ? "Skins" : i.group || "Habitat") === g && i.owned).length;
-    const b = mgEl("button", "mg-tab" + (g === tab ? " on" : ""), owned ? `${g} · ${owned}` : g);
-    b.onclick = () => { mgStore.set("shopTab", g); mgList(); };
-    tabs.append(b);
-  }
-  shop.append(tabs);
-  for (const it of d.items.filter((i) => (i.kind === "skin" ? "Skins" : i.group || "Habitat") === tab)) {
-    const row = mgEl("div", "mg-item");
+  const picOf = (it) => {
     const pic = mgEl("i", "mg-icon");
     if (it.kind === "decor") {
       pic.style.backgroundImage = `url(/sprites/decor/${it.key.split(".")[1]}.png)`;
       pic.style.backgroundSize = `${(it.frames || 1) * 100}% 100%`;
-    } else pic.textContent = "🎨";
+    } else pic.append(mgIco("palette"));
+    return pic;
+  };
+  const tabs = mgEl("div", "mg-shelves");
+  for (const g of groups) {
+    const items = d.items.filter((i) => shelfOf(i) === g), owned = items.filter((i) => i.owned).length;
+    const b = mgEl("button", "mg-shelf" + (g === tab ? " on" : ""));
+    b.append(picOf(items[0]), mgEl("span", null, g), mgEl("small", null, `${owned}/${items.length}`));
+    b.onclick = () => { mgStore.set("shopTab", g); mgList(); };
+    tabs.append(b);
+  }
+  shop.append(tabs);
+  const shelf = mgEl("div", "mg-items");
+  for (const it of d.items.filter((i) => shelfOf(i) === tab)) {
+    const card = mgEl("div", "mg-item" + (it.owned ? " owned" : ""));
     const name = mgEl("span", "mg-name");
     name.append(mgEl("b", null, it.name), mgEl("span", "muted", it.kind === "skin" ? "Recolors your animal in the games" : it.note));
-    row.append(pic, name);
+    card.append(picOf(it), name);
     let b;
     if (!it.owned) {
-      b = mgEl("button", "mg-play", `🪙 ${it.price}`);
+      b = mgWith("button", "mg-play", "coin", String(it.price));
       b.disabled = d.coins < it.price;
       b.onclick = () => mgShopDo("/games/shop/buy", { item: it.key });
     } else if (it.kind === "decor") {
       b = mgEl("button", "mg-back", it.on ? "Hide" : "Show");
       b.onclick = () => mgShopDo("/games/shop/decor", { item: it.key, on: !it.on });
-    } else b = mgEl("span", "muted", "Owned");
-    row.append(b);
-    shop.append(row);
+    } else b = mgEl("span", "muted mg-owned", "Owned");
+    card.append(b);
+    shelf.append(card);
   }
+  shop.append(shelf);
   list.append(shop);
 }
 
@@ -282,6 +290,10 @@ function mgBoard(box, level, scope) {
 }
 
 const mgEl = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+// A small pixel icon (tools/make_ui_icons.py: coin, shop, lock, palette, sound_on...), not an emoji.
+const mgIco = (name) => { const i = mgEl("img", "pi"); i.src = `/sprites/ui_ic_${name}.png`; i.alt = ""; return i; };
+// An element with a pixel icon in front of its text.
+const mgWith = (tag, cls, icon, text) => { const e = mgEl(tag, cls); e.append(mgIco(icon), text); return e; };
 
 function mgBuild() {
   if (mg.built) return;
@@ -322,14 +334,33 @@ function mgBuild() {
   .mg-lv:disabled { opacity:.55; cursor:default; }
   .mg-shopbar { display:flex; justify-content:space-between; align-items:center; }
   .mg-coins { font-size:.95rem; }
-  .mg-shop { border:1px solid var(--line); border-radius:12px; padding:8px 12px; display:grid; gap:6px; }
-  .mg-item { display:grid; grid-template-columns:auto 1fr auto; gap:8px; align-items:center; font-size:.85rem; }
+  .mg-shop { border:1px solid var(--line); border-radius:10px; padding:8px; display:grid; gap:8px; min-width:0; }
+  .mg-shop .mg-how { margin:0; font-size:.8rem; }
+  .mg-coins, .mg-shopbtn, .mg-play, .mg-lock, .mg-lv span, .mg-back { display:inline-flex; align-items:center; gap:5px; }
+  .pi { width:16px; height:16px; image-rendering:pixelated; flex:none; }
+  .mg-padlock .pi { width:18px; height:18px; }
+  /* Shelves: one scrolling row of picture tabs instead of a heap of wrapped pills. */
+  .mg-shelves { display:flex; gap:6px; overflow-x:auto; padding:2px 2px 6px; scroll-snap-type:x proximity;
+                scrollbar-width:thin; -webkit-overflow-scrolling:touch; }
+  .mg-shelf { flex:none; width:78px; scroll-snap-align:start; display:grid; justify-items:center; gap:2px; padding:6px 4px;
+              font:inherit; font-size:.68rem; line-height:1.1; text-align:center; border-radius:8px; border:1.5px dashed var(--line);
+              background:transparent; color:var(--ink); cursor:pointer; box-shadow:none; }
+  .mg-shelf span { min-height:2.2em; display:flex; align-items:center; }
+  .mg-shelf small { color:var(--muted); font-size:.62rem; }
+  .mg-shelf.on { border:1.5px solid var(--accent); background:rgba(127,200,150,.16); }
+  .mg-shelf:active { transform:none; }
+  /* Items: a grid of small cards, two across on a phone. */
+  .mg-items { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:6px; }
+  .mg-item { display:grid; grid-template-columns:40px minmax(0,1fr); grid-template-rows:auto auto; gap:4px 8px; align-items:start;
+             font-size:.8rem; padding:6px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.35); }
+  .mg-item.owned { border-color:var(--accent); }
+  .mg-item > button, .mg-item > .mg-owned { grid-column:1 / -1; justify-content:center; width:100%; padding:4px 8px; font-size:.78rem; }
+  .mg-item > .mg-owned { text-align:center; }
   .mg-icon { width:40px; height:40px; background-repeat:no-repeat; image-rendering:pixelated; font-style:normal;
-             font-size:1.4rem; display:grid; place-items:center; }
-  .mg-name { display:flex; flex-direction:column; gap:1px; line-height:1.25; }
-  .mg-name .muted { font-size:.75rem; }
-  .mg-shelves { display:flex; gap:4px; flex-wrap:wrap; }
-  .mg-item .mg-play { padding:3px 12px; }
+             display:grid; place-items:center; }
+  .mg-icon .pi { width:32px; height:32px; }
+  .mg-name { display:flex; flex-direction:column; gap:1px; line-height:1.2; min-width:0; overflow-wrap:anywhere; }
+  .mg-name .muted { font-size:.7rem; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
   .mg-item .mg-play:disabled { opacity:.45; cursor:default; }
   .mg-looks { display:flex; gap:4px; flex-wrap:wrap; align-items:baseline; margin-top:4px; font-size:.75rem; }
   .mg-looks:empty { display:none; }
@@ -384,7 +415,7 @@ function mgBuild() {
   name.id = "mg-playing";
   back.onclick = mgQuit;
   const mute = mgEl("button", "mg-back");
-  const label = () => { mute.textContent = mgAudio.muted ? "🔇 Music off" : "🔊 Music on"; };
+  const label = () => { mute.replaceChildren(mgIco(mgAudio.muted ? "sound_off" : "sound_on"), mgAudio.muted ? "Music off" : "Music on"); };
   mute.onclick = () => {
     mgAudio.muted = !mgAudio.muted; mgStore.set("muted", mgAudio.muted ? "1" : "0"); label();
     if (mgAudio.muted) mgMusicStop(mg.run); else if (mg.run && mg.run.mode === "play") mgMusicStart(mg.run);
@@ -676,7 +707,7 @@ function mgList() {
       img.src = `/sprites/${encodeURIComponent(s.slug)}.png`; img.alt = "";
       thumb.append(img);
     } else {
-      thumb.append(mgEl("span", "mg-padlock", "🔒"));
+      thumb.append(mgWith("span", "mg-padlock", "lock", ""));
     }
     tile.append(thumb, mgEl("b", null, g.title),
                 mgEl("span", null, players.length ? `${cleared}/${lvls.length} cleared` : "Locked"));
@@ -704,7 +735,7 @@ function mgGame(list, g) {
     if (cleared) h.append(mgEl("span", "mg-best", `${cleared} of ${lvls.length} levels cleared`));
     card.append(h, mgEl("div", "mg-how", g.how));
     if (!players.length) {
-      card.append(mgEl("div", "mg-lock", `🔒 Capture a ${g.kind} to unlock this game.`));
+      card.append(mgWith("div", "mg-lock", "lock", `Capture a ${g.kind} to unlock this game.`));
       list.append(card);
       return;
     }
@@ -750,7 +781,7 @@ function mgGame(list, g) {
     lvls.forEach((L, i) => {
       const rec = mgRec(g.key, i), b = mgEl("button", "mg-lv" + (i === lv ? " on" : ""));
       b.append(mgEl("b", null, `${i + 1}. ${L.name}`),
-               mgEl("span", null, !open(i) ? `🔒 Finish level ${i} first` : rec.pct >= 100 ? `✓ Best ${rec.points || rec.got} points` : rec.pct ? `Best ${rec.pct}%${rec.points ? `, ${rec.points} points` : ""}` : "New"));
+               !open(i) ? mgWith("span", null, "lock", `Finish level ${i} first`) : mgEl("span", null, rec.pct >= 100 ? `✓ Best ${rec.points || rec.got} points` : rec.pct ? `Best ${rec.pct}%${rec.points ? `, ${rec.points} points` : ""}` : "New"));
       b.disabled = !open(i);
       b.onclick = () => {
         lv = i; mgStore.set("lvl." + g.key, i); levels.querySelectorAll(".mg-lv").forEach((e, j) => e.classList.toggle("on", j === i));
@@ -2156,7 +2187,7 @@ function mgHud(c, r) {
   else if (r.mode === "paused") mgPanel(c, [["Paused", 15], ["Tap to keep going", 11, "#ffd28a"]], top);
   else if (r.mode === "over") {
     const lines = [[(P && P.why && P.why[r.why]) || (r.why === "bee" ? "Ouch, a bee!" : r.why === "missed" ? "Three got away!" : "Bump!"), 15], [`You made it ${r.pct}% of the way`, 12, "#ffd28a"]];
-    if (r.points) lines.push([`${r.points} points${r.coins ? `  +${r.coins} coins 🪙` : ""}`, 11, "#ffd28a"]);
+    if (r.points) lines.push([`${r.points} points${r.coins ? `  +${r.coins} coins` : ""}`, 11, "#ffd28a"]);
     lines.push([r.newBest ? "That's your best yet!" : `Best: ${r.rec.pct}%`, 11, r.newBest ? "#9be59b" : "#fff"]);
     lines.push(["Tap to try again", 10, "#cfe"]);
     mgPanel(c, lines, Math.min(top, MG_H - 8 - (lines.length * 16 + 14)));
@@ -2165,7 +2196,7 @@ function mgHud(c, r) {
                    [`${r.score} of ${r.total} ${g.key === "pool" || g.key === "claw" ? word : g.thing[1]} × ${r.p.tempo} speed bonus`, 10]];
     if (g.key === "river" && r.litter) lines.push([`You cleaned up ${r.litter} piece${r.litter === 1 ? "" : "s"} of litter`, 10]);
     if (r.score >= r.total) lines.push(["You got every one!", 11, "#9be59b"]);
-    if (r.coins) lines.push([`+${r.coins} coins 🪙`, 11, "#ffd28a"]);
+    if (r.coins) lines.push([`+${r.coins} coins`, 11, "#ffd28a"]);
     if (r.newBest) lines.push(["Your best score yet!", 11, "#9be59b"]);
     else if (r.animalBest) lines.push([`Your best with this animal! (Best ever: ${r.rec.points})`, 10, "#9be59b"]);
     else lines.push([`Best: ${r.rec.points} as a ${r.rec.who}`, 10]);

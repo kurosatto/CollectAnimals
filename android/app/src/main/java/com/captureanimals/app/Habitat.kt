@@ -192,6 +192,7 @@ class AssetClient(private val context: Context) : WebViewClient() {
         "css" -> "text/css"
         "png" -> "image/png"
         "svg" -> "image/svg+xml"
+        "woff2" -> "font/woff2"
         else -> "application/octet-stream"
     }
 }
