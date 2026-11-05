@@ -126,7 +126,7 @@ def critter(s: Sprite, fur, light=WHITE, *, build="ground", ears="small", ear_in
         s.can("swim")
         return _floating(s, fur, light, head or fur, muzzle or light, nose, feet or mix(fur, "#1a1420", 0.12),
                          tail_col or fur, eye_col)
-    s.can("walk", "sit", "look", "back")
+    s.can("walk", "sit", "look", "back", "eat")
     if build in ("otter", "beaver"):
         s.can("swim")
     b = CRITTERS[build]
@@ -154,6 +154,9 @@ def critter(s: Sprite, fur, light=WHITE, *, build="ground", ears="small", ear_in
         bry *= 0.9
         brot = 0
         hy -= 1.5
+    if act == "eat":
+        # Head down, nibbling the grass in front of its front paws.
+        hx, hy = hx - 1.2, 30.5 - hry - 0.4 - s.cyc(0, 0.6, 0, 0.6)
     if lying:
         # Curled up low: the head drops onto the front paws.
         drop = round(ground - 0.4 - (by + bry))
@@ -463,7 +466,20 @@ def quad(s: Sprite, fur, light=WHITE, *, build="dog", ears="point", ear_in=PINK,
     behind, markings and front are called with (s, build dict) to add patterns, horns
     and antlers at the right places."""
     b = BUILDS[build]
-    s.can("walk")
+    s.can("walk", "eat")
+    if s.act == "eat":
+        # Grazing (or sniffing the ground): the head comes down to the grass and
+        # nibbles; the neck reaches down to it. Antlers and markings that place
+        # themselves by b["head"] follow it down.
+        b = dict(b)
+        hx0, hy0, hrx0, hry0 = b["head"]
+        ny = 30.5 - hry0 - 1.6 - s.cyc(0, 0.7, 0, 0.7)
+        dx, dy = -1.0, ny - hy0
+        b["head"] = (hx0 + dx, ny, hrx0, hry0)
+        (sx0, sy0), (sx1, sy1), sr = b["snout"]
+        b["snout"] = ((sx0 + dx, sy0 + dy), (sx1 + dx + 1.0, sy1 + dy + 1.0), sr)
+        (n0, (nx1, ny1), nr) = b["neck"]
+        b["neck"] = (n0, (nx1 + dx, ny1 + dy * 0.85), nr)
     w = s.wave() if s.act == "walk" else 0
     lying = s.act == "sleep"
     head = head or fur
