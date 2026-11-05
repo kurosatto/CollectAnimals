@@ -287,7 +287,7 @@ def _(s):
     def chest(s, m):
         s.paint(s.m_px([(10, 21), (12, 22), (14, 21), (11, 23), (13, 23), (15, 22)]), "#5a3a26", within=m)
     raptor(s, "#6e4a32", "#f2e6d2", head="#7a5238", wing="#634330", tail="#c4583a", build="buteo",
-           cere="#e8c860", chest=chest, face=lambda s, m: s.paint(s.m_ellipse(10.5, 12, 2.6, 1.4), "#f2e6d2", within=m))
+           cere="#e8c860", chest=chest, face=lambda s, m: s.paint(s.m_ellipse(11.5, 9.5, 2.6, 1.4), "#f2e6d2", within=m))
 
 
 @sprite("red_shouldered_hawk")
@@ -312,8 +312,8 @@ def _(s):
     def chest(s, m):
         s.paint(s.m_px([(x + (y // 2) % 2, y) for y in range(14, 26, 2) for x in range(8, 19, 2)]), "#d8885a", within=m)
     def face(s, m):
-        s.paint(s.m_ellipse(10, 7.5, 3.4, 1.6), "#2f3644", within=m)
-        s.paint(s.m_ellipse(10.5, 11.5, 2.6, 1.4), "#d8b49a", within=m)
+        s.paint(s.m_ellipse(11, 5, 3.4, 1.6), "#2f3644", within=m)
+        s.paint(s.m_ellipse(11.5, 9, 2.6, 1.4), "#d8b49a", within=m)
     def tail(s, m):
         for y in (22, 26, 30):
             s.paint(s.m_line(17, y, 28, y), "#2f3644", within=m)
@@ -325,8 +325,8 @@ def _(s):
 def _(s):
     # A little falcon: rufous back, blue-grey wings, and two black "moustache" marks.
     def face(s, m):
-        s.paint(s.m_ellipse(10.5, 7, 2.8, 1.4), "#6a84b8", within=m)
-        s.paint(s.m_line(9, 10, 9, 12.5) | s.m_line(12.5, 9.5, 12.5, 12.5), BLACK, within=m)
+        s.paint(s.m_ellipse(11.5, 4.5, 2.8, 1.4), "#6a84b8", within=m)
+        s.paint(s.m_line(10, 7.5, 10, 10) | s.m_line(13.5, 7, 13.5, 10), BLACK, within=m)
     def chest(s, m):
         s.paint(s.m_px([(11, 19), (13, 21), (11, 23), (14, 18)]), "#3a2a20", within=m)
     raptor(s, "#c86a3a", "#f4e4cc", head="#f4ece4", wing="#6a84b8", tail="#c86a3a", build="falcon",
@@ -345,7 +345,7 @@ def _(s):
     # Dark brown all over with a golden nape.
     raptor(s, "#5a3e2a", "#5a3e2a", head="#5a3e2a", wing="#4a321f", tail="#4a321f", build="eagle",
            cere="#f0c030", legs="#f0c030", eye_col="#8a5a20",
-           face=lambda s, m: s.paint(s.m_ellipse(12.5, 8, 3.2, 3.4), "#d8a04a", within=m))
+           face=lambda s, m: s.paint(s.m_ellipse(13.5, 5.5, 3.2, 3.4), "#d8a04a", within=m))
 
 
 @sprite("osprey")
@@ -353,7 +353,7 @@ def _(s):
     # White below, dark brown above, a white head with a dark stripe through the eye,
     # and bare blue-grey legs (no feathered trousers) for grabbing fish.
     def face(s, m):
-        s.paint(s.m_poly([(7.5, 8.5), (14, 9), (14, 11.5), (8, 10)]), "#3a2e2a", within=m)
+        s.paint(s.m_poly([(8.5, 6), (15, 6.5), (15, 9), (9, 7.5)]), "#3a2e2a", within=m)
     def chest(s, m):
         s.paint(s.m_px([(10, 13), (12, 13), (14, 14), (11, 14)]), "#8a7464", within=m)
     raptor(s, "#4a3a30", WHITE, head=WHITE, wing="#3e3028", tail="#5a4a3e", build="osprey", bill="#2b2630",

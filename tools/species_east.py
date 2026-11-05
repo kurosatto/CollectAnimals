@@ -148,7 +148,7 @@ def _(s):
 def _(s):
     # The "grey ghost": pale grey male with black wingtips, a white rump and an owlish face.
     def face(s, m):
-        s.paint(s.m_ellipse(10, 9.5, 3.4, 3.2) & ~s.m_ellipse(10, 9.5, 2.5, 2.3), "#8a8e98", within=m)
+        s.paint(s.m_ellipse(11, 7, 3.4, 3.2) & ~s.m_ellipse(11, 7, 2.5, 2.3), "#8a8e98", within=m)
     def wing(s, m):
         s.paint(s.m_ellipse(24, 26, 3, 2.2, rot=50), BLACK, within=m)
     raptor(s, "#a4a8b2", WHITE, head="#a8acb6", wing="#9ca0aa", tail="#9aa0aa", build="harrier",
@@ -160,7 +160,7 @@ def _(s):
     # Sleek and grey with a pale silvery head, ruby eyes and a black tail.
     raptor(s, "#6a6e78", "#8e949e", head="#cdd1d6", wing="#5a5e68", tail="#1e1c24", build="kite",
            bill="#2b2630", cere="#3a3a44", legs="#d8a050", eye_col="#c02a2a",
-           face=lambda s, m: s.paint(s.m_px([(7, 8), (8, 8)]), "#2b2630", within=m))
+           face=lambda s, m: s.paint(s.m_px([(8, 5), (9, 5)]), "#2b2630", within=m))
 
 
 @sprite("broad_winged_hawk")

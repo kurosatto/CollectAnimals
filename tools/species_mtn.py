@@ -173,7 +173,7 @@ def _(s):
     def bib(s, m):
         s.paint(s.m_poly([(7, 11), (20, 11), (20, 18), (7, 17)]), "#7a4e30", within=m)
     raptor(s, "#5a4232", "#f2e8d8", head="#5a4232", wing="#4e3a2c", tail="#7a6a5a", build="buteo",
-           chest=bib, face=lambda s, m: s.paint(s.m_ellipse(10.5, 12, 2.6, 1.4), "#f4ece0", within=m))
+           chest=bib, face=lambda s, m: s.paint(s.m_ellipse(11.5, 9.5, 2.6, 1.4), "#f4ece0", within=m))
 
 
 @sprite("mountain_chickadee")
