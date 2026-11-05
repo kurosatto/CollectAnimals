@@ -817,8 +817,11 @@ def bird(s: Sprite, body, belly, *, head=None, wing=None, tail_col=None, beak="c
     """Side view, facing left. Walks on alternating legs and flies with its wing
     beating up and down (legs tucked). Drawn in round, roomy coordinates (which the
     species' own markings use too) and then re-proportioned: a smaller head held up on
-    a short neck, a longer body, and longer legs."""
-    s.can("walk", "fly")
+    a short neck, a longer body, and longer legs. Pecking at the ground ("eat") it bends
+    forward from the hips over its standing legs."""
+    s.can("walk", "fly", "eat")
+    if s.act == "eat":
+        s.bend(48 * s.cyc(0.45, 1, 0.45, 1), 15.5, 25.5, 4)
     flying = s.act == "fly"
     w = s.wave()
     head = head or body
@@ -885,6 +888,8 @@ def _lerp_pts(a, b, k):
 _WING_UP = [(14, 0), (15, -6), (17, -12), (20, -17), (23.5, -20), (24, -15), (23.5, -7), (22, 0)]
 _WING_LEVEL = [(13, -0.5), (16, -2), (20, -2.8), (25, -3), (30, -1.5), (25, 0.5), (21, 1.2), (18, 1.5)]
 _WING_DOWN = [(14, 1), (14.5, 4), (15, 6), (17, 11), (19.5, 13.5), (21, 10), (21.5, 5), (22, 1)]
+# Plunging: folded back tight along the body, tips past the tail.
+_WING_TUCK = [(13, -0.5), (16, -2.2), (20, -3), (25, -3.2), (31, -2.5), (26, -1), (21, 0.2), (17, 0.8)]
 
 
 def _flight_wing(s: Sprite, cy, w, col, dx=0, tip=None):
@@ -893,7 +898,8 @@ def _flight_wing(s: Sprite, cy, w, col, dx=0, tip=None):
     coordinates (after the bird is slimmed)."""
     y = cy + 2  # the shoulder
     k = abs(w) ** 1.3
-    pts = [(x + dx, y + py) for x, py in _lerp_pts(_WING_LEVEL, _WING_UP if w >= 0 else _WING_DOWN, k)]
+    src = _WING_TUCK if getattr(s, "diving", False) else _lerp_pts(_WING_LEVEL, _WING_UP if w >= 0 else _WING_DOWN, k)
+    pts = [(x + dx, y + py) for x, py in src]
     m = s.poly(pts, col, edge=not dx)
     if not dx:  # darker flight feathers toward the tip
         mid = ((pts[2][0] + pts[6][0]) / 2, (pts[2][1] + pts[6][1]) / 2)
@@ -924,9 +930,14 @@ _BIG_DOWN = [(0, 1), (1, 4), (2.5, 7.5), (4.5, 10.5), (7, 12.5), (8.5, 12.8), (9
              (6, 1)]
 
 
-def _big_wing_pts(sx, sy, w, size=1.0):
+# Plunging: the wing folded back tight along the body, its tip past the tail.
+_BIG_TUCK = [(-1, 0), (2, -1.3), (5.5, -2), (9.5, -2.4), (13.5, -2.4), (17, -1.8), (17.5, -0.8), (14, 0.2), (10, 0.8),
+             (6, 1), (3, 1)]
+
+
+def _big_wing_pts(sx, sy, w, size=1.0, tuck=False):
     k = abs(w) ** 1.2
-    pts = _lerp_pts(_BIG_LEVEL, _BIG_UP if w >= 0 else _BIG_DOWN, k)
+    pts = _BIG_TUCK if tuck else _lerp_pts(_BIG_LEVEL, _BIG_UP if w >= 0 else _BIG_DOWN, k)
     return [(sx + x * size, sy + y * size) for x, y in pts]
 
 
@@ -934,7 +945,7 @@ def _big_wing(s: Sprite, sx, sy, w, col, *, size=1.0, tip=None, coverts=None, fa
     """A broad wing from the shoulder (sx, sy): pale coverts along the leading edge,
     darker flight feathers toward the tip. far=True draws the dim far wing (only
     while it shows above the body)."""
-    pts = _big_wing_pts(sx, sy, w, size)
+    pts = _big_wing_pts(sx, sy, w, size, tuck=getattr(s, "diving", False))
     if far:
         return s.poly([(x + 2, y - 0.5) for x, y in pts], mix(col, "#1a1420", 0.32))
     m = s.poly(pts, col, edge=True)
@@ -1148,7 +1159,9 @@ def _owl_flying(s: Sprite, body, face, belly, tufts, eye_col, beak, bars):
 
 def wader(s: Sprite, body, *, neck=None, head=None, beak="#e8b830", legs="#3d3532", plume=None,
           cap=None, wing=None, curved=False, face=None):
-    s.can("walk", "fly")
+    s.can("walk", "fly", "eat")
+    if s.act == "eat":  # stabbing down at a fish
+        s.bend(45 * s.cyc(0.3, 1, 0.3, 0.3), 19, 19.5, 3)
     flying = s.act == "fly"
     w = s.wave()
     neck = neck or body
@@ -1355,7 +1368,9 @@ def gull(s: Sprite, mantle, *, tips=BLACK, spots=True, bill="#f0d040", legs="#f0
     rounded head with a sloping forehead, a stout hooked bill (thin for the small
     hooded gulls) and pink, yellow or black webbed feet. Flies on long, narrow,
     pointed wings with the same dark tips."""
-    s.can("walk", "fly")
+    s.can("walk", "fly", "eat")
+    if s.act == "eat":  # picking at something on the beach
+        s.bend(50 * s.cyc(0.4, 1, 0.4, 1), 17, 24.5, 4)
     w = s.wave()
     if s.act == "fly":
         _flight_wing(s, 16, w, mix(mantle, "#1a1420", 0.3), dx=2.5, tip=mix(tips, "#1a1420", 0.2))
@@ -1505,6 +1520,134 @@ def vulture(s: Sprite, *, head_col, body="#2f2a2e", ruff=None, wing_patch=None, 
     s.px([(2, hy + 1)], mix(beak, "#000000", 0.45))  # the hook
     s.eye(7, round(hy) - 1, size=1)
     s.eye_box(7, round(hy) - 1, 7, round(hy) - 1)
+
+
+# How each kind of bird of prey is built: overall size, body length and depth, tail
+# length, how far the folded wingtips reach, head size, bill size, and feathered legs.
+RAPTORS = {
+    #           k     body_rx body_ry tail  wing  head_r      bill  trousers
+    "eagle":   (1.0,  6.4,    9.2,    7.0,  1.0,  (3.7, 3.2), 1.25, True),
+    "buteo":   (0.9,  6.2,    8.6,    7.0,  0.92, (3.5, 3.1), 1.0,  True),
+    "osprey":  (0.92, 5.4,    8.6,    7.0,  1.08, (3.3, 2.9), 1.0,  False),
+    "accip":   (0.84, 5.4,    8.4,    10.0, 0.8,  (3.3, 2.9), 0.9,  False),
+    "harrier": (0.88, 5.4,    8.4,    10.0, 0.95, (3.4, 3.1), 0.85, False),
+    "kite":    (0.8,  5.2,    8.0,    9.0,  1.1,  (3.2, 2.9), 0.85, False),
+    "falcon":  (0.72, 5.6,    8.2,    8.5,  1.0,  (3.4, 3.1), 0.9,  False),
+}
+
+
+def raptor(s: Sprite, back, front, *, head=None, wing=None, tail=None, build="buteo", bill="#2b2630",
+           cere="#e8c040", legs="#e8c040", eye_col="#5a3a10", brow=True, chest=None, wing_mark=None,
+           tail_mark=None, face=None, flight_under=None):
+    """A bird of prey from the side, facing left. Perched it sits upright: the body
+    leaning back, long wings folded along its sides reaching down the tail, a flat-
+    crowned head with a shading brow over the eye and a deep hooked bill with a
+    coloured cere, feathered 'trousers' (eagles and buteos) and strong yellow feet
+    with dark talons. It flies and soars on broad wings with fingered tips, legs
+    tucked up under the tail. build picks the proportions (RAPTORS). chest(s, m),
+    wing_mark(s, m), tail_mark(s, m) and face(s, head_mask) add a species' markings
+    in the perched drawing's coordinates; flight_under(s, body_mask) in flight."""
+    s.can("walk", "fly", "eat")
+    k, brx, bry, tail_len, wing_k, (hrx, hry), bill_k, trousers = RAPTORS[build]
+    head = head or back
+    wing = wing or mix(back, "#1a1420", 0.12)
+    tail = tail or back
+    dark = mix(wing, "#1a1420", 0.35)
+    if s.act == "eat":
+        s.bend(38 + 10 * s.cyc(0, 1, 0, 1), 15, 25)  # tearing at a meal on the ground
+    if s.act == "fly":
+        _raptor_flight(s, back, front, head, wing, tail, dark, k, wing_k, hrx, hry, bill, bill_k, cere, legs, eye_col,
+                       brow, flight_under, build)
+        return
+    # Scaled about the feet, so smaller hawks stand on the same ground.
+    s.set_warp(lambda x, y: (16 + (x - 16) * k, 31 - (31 - y) * k))
+    step = s.wave() if s.act == "walk" else 0
+    # tail, hanging down behind
+    ty = min(30.5, 23.5 + tail_len)
+    tx = 21 + (ty - 22) * 0.4
+    tm = s.poly([(16.5, 20), (tx, ty), (tx + 3.6, ty - 1.3), (21, 18.5)], tail, edge=True)
+    if tail_mark:
+        tail_mark(s, tm)
+    # far foot
+    s.line(16.5, 26, 16 - round(max(0, -step)), 30, mix(legs, "#1a1420", 0.25))
+    # body, leaning back
+    body = s.ellipse(16, 17.5, brx, bry, back, rot=25)
+    chest_m = s.m_ellipse(13.4, 18.5, brx * 0.62, bry * 0.86, rot=25) & body
+    s.fill(chest_m, front, shade=False)
+    if chest:
+        chest(s, chest_m)
+    # legs: feathered thighs, then bare yellow legs to the feet
+    lift = max(0, step)
+    if trousers:
+        s.ellipse(14, 25, 2.9, 2.6, front if front != back else back, rot=10)
+    s.path([(13.6, 26), (13.2 - lift, 29.6 - lift)], 0.9, legs)
+    fy = round(30 - lift)
+    s.px([(round(10.8 - lift) + i, fy) for i in range(3)] + [(round(14 - lift), fy)], legs)  # toes
+    s.px([(round(10 - lift), fy), (round(15 - lift), fy)], "#1a1420")  # talons
+    # long wing folded along the side, the primaries reaching down over the tail
+    tip_x, tip_y = 15.5 + 7.5 * wing_k, 17.5 + 8 * wing_k
+    wm = s.poly([(12.5, 11.5), (17.5, 11), (21, 15), (tip_x + 1.5, tip_y - 1), (tip_x, tip_y + 1.2), (19, 25),
+                 (15.5, 22.5), (13, 17)], wing, edge=True)
+    s.paint(s.m_poly([(19.8, 18.5), (tip_x + 1.5, tip_y - 1), (tip_x, tip_y + 1.2), (18.5, 23)]), dark, within=wm)
+    # rows of coverts catching the light along the top of the wing
+    s.paint(s.m_path([(13, 12.5), (17.5, 12), (20, 15)], 0.6), mix(wing, "#ffffff", 0.18), within=wm)
+    for y in (16.5, 19.5):
+        s.paint(s.m_line(15, y, 19.5, y + 0.6), mix(wing, "#1a1420", 0.2), within=wm)
+    if wing_mark:
+        wing_mark(s, wm)
+    # head on a thick neck: flat crown, brow over the eye, deep hooked bill
+    hx, hy = 10, 9.5
+    s.path([(14, 13.5), (hx + 1, hy + 1)], 3.0, head)
+    hm = s.ellipse(hx, hy, hrx, hry, head, edge=True)
+    if face:
+        face(s, hm)
+    _raptor_bill(s, hx - hrx + 1.0, hy - 0.6, bill_k, bill, cere)
+    ex, ey = round(hx - 1.6), round(hy - 0.8)
+    s.px([(ex, ey), (ex + 1, ey)], eye_col)
+    s.px([(ex, ey)], "#1a1420")
+    if brow:  # the bony brow that gives hawks and eagles their fierce look
+        s.paint(s.m_line(ex - 1, ey - 1, ex + 2, ey - 1), mix(head, "#1a1420", 0.45), within=hm)
+    s.eye_box(ex, ey, ex + 1, ey)
+    if s.act == "walk":
+        _lift(s, 0.5 + 0.5 * math.cos(4 * math.pi * s.t))
+
+
+def _raptor_bill(s: Sprite, x, y, k, bill, cere):
+    """A deep hooked bill pointing left from (x, y) at the face, with the cere at its base."""
+    s.poly([(x + 0.6, y - 1.2 * k), (x - 2.2 * k, y - 0.9 * k), (x - 3.4 * k, y + 0.4 * k), (x - 3.3 * k, y + 2.1 * k),
+            (x - 2.6 * k, y + 1.4 * k), (x - 1.6 * k, y + 1.5 * k), (x + 0.6, y + 1.6 * k)], bill, edge=True)
+    s.fill(s.m_poly([(x + 0.6, y - 1.2 * k), (x - 0.8 * k, y - 1.1 * k), (x - 0.8 * k, y + 0.6 * k),
+                     (x + 0.6, y + 0.6 * k)]), cere, shade=False)
+
+
+def _raptor_flight(s, back, front, head, wing, tail, dark, k, wing_k, hrx, hry, bill, bill_k, cere, legs, eye_col,
+                   brow, under, build):
+    """Side on, level, on broad wings: the far wing, a fanned tail, the body with its
+    paler underside, the head and bill, and the near wing with fingered primaries."""
+    s.set_warp(lambda x, y: (16 + (x - 16) * (0.6 + 0.4 * k), 18 + (y - 18) * (0.6 + 0.4 * k)))
+    w = s.wave()
+    size = 1.25 * wing_k
+    bx, by = 17.5, 18
+    _big_wing(s, bx - 5, by - 2, w, mix(wing, "#1a1420", 0.1), size=size, far=True)
+    s.poly([(bx + 6, by - 1.8), (31, by - 3), (31.5, by + 2.5), (bx + 6, by + 2)], tail, edge=True)  # tail, fanned
+    s.px([(bx + 4, by + 3), (bx + 5, by + 3)], legs)  # feet tucked up under the tail
+    b = s.ellipse(bx, by, 8.2, 3.4, back)
+    bm = s.m_ellipse(bx - 1.5, by + 1.6, 6.4, 2.0) & b
+    s.fill(bm, front, shade=False)
+    if under:
+        under(s, bm)
+    hx, hy = bx - 9.5, by - 1.4
+    s.path([(bx - 6, by - 0.5), (hx + 1, hy + 0.3)], 2.6, head)
+    hm = s.ellipse(hx, hy, hrx * 0.95, hry * 0.9, head, edge=True)
+    _raptor_bill(s, hx - hrx * 0.95 + 1.0, hy - 0.2, bill_k * 0.9, bill, cere)
+    ex, ey = round(hx - 1.4), round(hy - 0.8)
+    s.px([(ex, ey), (ex + 1, ey)], eye_col)
+    s.px([(ex, ey)], "#1a1420")
+    if brow:
+        s.paint(s.m_line(ex - 1, ey - 1, ex + 2, ey - 1), mix(head, "#1a1420", 0.45), within=hm)
+    s.eye_box(ex, ey, ex + 1, ey)
+    _big_wing(s, bx - 5, by - 2, w, wing, size=size, tip=dark, coverts=mix(wing, "#ffffff", 0.16))
+    s.shift(0, round(0.6 * w))
 
 
 # --------------------------------------------------------------------------- reptiles & amphibians

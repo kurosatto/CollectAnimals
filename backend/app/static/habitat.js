@@ -708,9 +708,9 @@ function habStep(a, dt, awake) {
     if (HAB_LOOKERS.has(a.role) && (a.look -= dt) <= 0) {
       const bird = a.s.category === "bird";
       a.look = bird && a.role !== "wade" ? rnd(.5, 1.3) : rnd(1.2, 3.5);
-      if (a.role === "wade" && Math.random() < .6) { a.peck = .35; habRipple(a.x + a.dir * 12, a.y - 1); }
+      if (a.role === "wade" && Math.random() < .6) { a.peck = .6; habRipple(a.x + a.dir * 12, a.y - 1); }
       else if (bird && (a.drinking || Math.random() < .7)) {
-        a.peck = .3;
+        a.peck = .6;
         if (a.drinking) habRipple(a.x + a.dir * 10, hab.L.pond.y - 1);
       } else if (bird && HAB_SINGERS.test(a.s.slug) && Math.random() < .3) a.react = { kind: "note", life: 1.6 };
       else if (!a.drinking && a.rest !== "eat") a.dir = -a.dir;
@@ -766,12 +766,11 @@ const HAB_RAPTORS = /hawk|eagle|kestrel|falcon|harrier|kite|osprey|owl/;
 // Who walks down to the pond for a drink.
 const HAB_DRINKERS = new Set(["walk"]);
 
-// Count down the little actions; stretch on waking up.
+// Count down the little actions.
 function habTimers(a, dt, awake) {
-  for (const k of ["flee", "swoop", "shy", "stretch", "chaseT"]) if (a[k] > 0) a[k] -= dt;
+  for (const k of ["flee", "swoop", "shy", "chaseT"]) if (a[k] > 0) a[k] -= dt;
   if (a.chaseT <= 0) a.chase = null;
-  if (!awake) { a.slept = true; a.toDrink = a.drinking = false; return; }
-  if (a.slept) { a.slept = false; a.stretch = 1.4; }
+  if (!awake) a.toDrink = a.drinking = false;
 }
 
 // A few spots the animal could run to, the one farthest from x.
@@ -879,64 +878,49 @@ function habSocial(dt, phase) {
   }
 }
 
-// Wingbeat 0..1 (1 = wings down, sprite squashed). Big birds flap in bursts
-// and glide in between; small ones flap all the time.
-function habFlap(a, rate) {
-  if (HAB_GLIDERS.test(a.s.slug) && Math.sin(a.phase * .7 + a.x * .01) < .1) return 0;
-  return (Math.sin(a.phase * rate) + 1) / 2;
-}
-
-// Drawn pose: [x, feet y, x scale, y scale, nose-down tilt] with the bounce,
-// bob, wingbeat or squash that goes with how it moves.
+// Drawn pose: [x, feet y, x scale, y scale, tilt] (the scales and tilt stay 1, 1, 0
+// except for a bird perched far off, drawn smaller), with the arc of a hop or a bob.
 function habPose(a, awake, roost) {
+  // Only where the animal is: every bit of motion (wingbeats, hops, breathing, dives,
+  // leaps) is a drawn frame of its sheet, never the picture stretched or turned.
+  // (A bird perched up on the sea stack is drawn smaller, all over, as it's farther away.)
   if (roost) return roost;
   const visiting = habDecorPose(a, awake);
   if (visiting) return visiting;
   if (awake && a.mode === "perched") return [a.x, a.y, HAB_PERCH_SCALE, HAB_PERCH_SCALE, 0];
-  let { x, y } = a, sx = 1, sy = 1;
-  const tilt = a.tilt || 0;
-  if (!awake) return [x, y, 1, 1 + Math.sin(a.phase * 1.3) * .03, 0];
+  let { x, y } = a;
+  if (!awake) return [x, y, 1, 1, 0];
   const moving = a.pause <= 0;
   switch (a.role) {
-    case "hop": {
-      if (!moving) { sy = 1 + Math.sin(a.phase * 2.2) * .03; break; }
-      const h = Math.abs(Math.sin(a.odo / 18 * Math.PI));
-      y -= h * 9;
-      // Stretched in the air, squashed on landing and takeoff.
-      if (h < .2) { sy = .86; sx = 1.1; } else { sy = 1 + h * .12; sx = 1 - h * .07; }
+    case "hop":
+      if (moving) y -= Math.abs(Math.sin(a.odo / 18 * Math.PI)) * 9;  // the arc of each hop
       break;
-    }
     case "walk": case "shore": case "wade": case "beach":
-      if (moving) { y -= Math.floor(a.odo / 3) % 2; sy = 1 - Math.abs(Math.sin(a.odo * Math.PI / 6)) * .06; sx = 2 - sy; }
-      else sy = 1 + Math.sin(a.phase * 2.2) * .025;
-      if (a.peck > 0) return [x, y, 1, 1, .55];
+      if (moving && !a.hasWalk) y -= Math.floor(a.odo / 3) % 2;  // no walk frames: a little bob
       break;
-    case "fly": y += Math.sin(a.phase * 3) * 2; sy = 1 - habFlap(a, HAB_GLIDERS.test(a.s.slug) ? 7 : 13) * .3; break;
-    case "soar": y += Math.sin(a.phase * 3) * 2; sy = Math.sin(a.phase * .45) > .75 ? 1 - habFlap(a, 6) * .3 : 1; break;
-    case "dive":
-      if (a.mode === "dive") sx = .85;
-      else if (a.mode === "rise") sy = 1 - (Math.sin(a.phase * 16) + 1) / 2 * .32;
-      else { y += Math.sin(a.phase * 3) * 2; sy = 1 - habFlap(a, 7) * .3; }
-      break;
-    case "skim": y += Math.sin(a.phase * 2) * .6; sy = 1 - (Math.sin(a.phase * 9) + 1) / 2 * .12; break;
-    case "hover": sy = 1 - Math.abs(Math.sin(a.phase * 40)) * .2; y += Math.sin(a.phase * 5) * 1.5; break;
-    case "flutter": y += Math.sin(a.phase * 9) * 3; x += Math.sin(a.phase * 2.3) * 2;
-      sy = .55 + Math.abs(Math.cos(a.phase * 11)) * .45; break;
-    case "swim":
-      if (a.mode !== "leap") { y += Math.sin(a.phase * 1.5) * 1.5; sx = 1 + Math.sin(a.phase * 4) * .04; }
-      break;
+    case "fly": case "soar": y += Math.sin(a.phase * 3) * 2; break;
+    case "dive": if (a.mode !== "dive" && a.mode !== "rise") y += Math.sin(a.phase * 3) * 2; break;
+    case "skim": y += Math.sin(a.phase * 2) * .6; break;
+    case "hover": y += Math.sin(a.phase * 5) * 1.5; break;
+    case "flutter": y += Math.sin(a.phase * 9) * 3; x += Math.sin(a.phase * 2.3) * 2; break;
+    case "swim": if (a.mode !== "leap") y += Math.sin(a.phase * 1.5) * 1.5; break;
     case "float": case "paddle": y += Math.sin(a.phase * 1.5) * 1.5; break;
-    case "jelly": y += Math.sin(a.phase * .8) * 6; sy = 1 + Math.sin(a.phase * .8 + 1.6) * .12; sx = 2 - sy; break;
+    case "jelly": y += Math.sin(a.phase * .8) * 6; break;
   }
   // Shaking off the rain or shivering, and jumping at thunder (or a tap).
   if (a.shake > 0) x += Math.floor(a.shake * 28) % 2 ? 1 : -1;
   if (a.jump > 0) y -= Math.sin(a.jump / .35 * Math.PI) * 7;
-  // Tapped: a flier swoops up in an arc, a sea anemone or turtle pulls in.
+  // Tapped: a flier swoops up in an arc.
   if (a.swoop > 0) y -= Math.sin((1 - a.swoop / 1.2) * Math.PI) * 14;
-  if (a.shy > 0) { const k = Math.sin(Math.min(1, (1.6 - a.shy) / .3) * Math.PI / 2) * Math.min(1, a.shy / .4); sy *= 1 - .3 * k; sx *= 1 + .08 * k; }
-  // Just woke up: a long stretch.
-  if (a.stretch > 0) { const k = Math.sin((1 - a.stretch / 1.4) * Math.PI); sx *= 1 + .12 * k; sy *= 1 - .08 * k; }
-  return [x, y, sx, sy, tilt];
+  return [x, y, 1, 1, 0];
+}
+
+// The "dive" row is drawn pitched from 55 degrees nose up (frame 0) to 75 nose down
+// (the last frame), as tools/make_sprites.py DIVE_DEG; the frame for a tilt in radians
+// (positive = nose down).
+function habPitchFrame(tilt) {
+  const n = habNF(), deg = tilt * 180 / Math.PI;
+  return Math.max(0, Math.min(n - 1, Math.round((deg + 55) / 130 * (n - 1))));
 }
 
 // What a ground animal does while it stands still: just stand, sit up on its
@@ -956,12 +940,18 @@ function habAnim(a, awake, roost) {
   // Still, it breathes (one breath every ~3 s) and now and then blinks.
   const still = ["idle", habIdleFrame(a.phase * 4 / 3 + (a.x % 7) * .3, Math.round(a.x) & 1)];
   if (!awake) return ["sleep", cyc(a.phase * 1.2)];
+  // Tapped: a reef animal or jelly pulls in and opens up again; a turtle or snail
+  // tucks into its shell for a moment.
+  if (a.shy > 0) {
+    if (has("hide")) return ["hide", Math.min(habNF() - 1, Math.floor((1 - a.shy / 1.6) * habNF()))];
+    if (HAB_SHY.test(a.s.slug)) return ["sleep", 0];
+  }
   if (roost || habDecorAnim(a, awake)) return still;  // sheltering from the rain, or perched on a decoration
   if (a.mode === "perched") return still;
   if (a.mode === "toPerch") return has("fly") ? ["fly", cyc(a.phase * 9 / (2 * Math.PI) * 4)] : still;
   switch (a.role) {
     case "walk": case "shore": case "wade": case "beach": case "hop": {
-      if (a.peck > 0) return ["idle", 0];
+      if (a.peck > 0 || (a.drinking && a.s.category === "bird")) return has("eat") ? ["eat", cyc(a.phase * 2.5)] : still;
       if (a.pause > 0 || !has("walk")) {
         const r = a.rest && has(a.rest) ? a.rest : "idle";
         // sitting up, it nibbles; standing, looking about, it breathes
@@ -971,14 +961,18 @@ function habAnim(a, awake, roost) {
     }
     case "fly": case "soar": case "dive": case "skim": case "hover": case "flutter": {
       if (!has("fly")) return still;
-      if (a.role === "dive" && a.mode === "dive") return ["fly", cyc(3)];
+      // Plunging: drawn steeper and steeper, wings swept back. Climbing out: flapping hard.
+      if (a.role === "dive" && a.mode === "dive") return has("dive") ? ["dive", habPitchFrame(a.tilt)] : ["fly", cyc(3)];
+      if (a.role === "dive" && a.mode === "rise") return ["fly", cyc(a.phase * 16 / (2 * Math.PI) * 4)];
       const glider = HAB_GLIDERS.test(a.s.slug);
       if (glider && Math.sin(a.phase * .7 + a.x * .01) < .1) return ["fly", 0];  // gliding, wings level
       const rate = { hover: 24, flutter: 10, skim: 5 }[a.role] || (glider ? 6 : 12);
       return ["fly", cyc(a.phase * rate / (2 * Math.PI) * 4)];
     }
     case "swim": case "paddle": case "float": case "jelly":
-      return has("swim") ? ["swim", cyc(a.phase * 2.5)] : still;
+      // A dolphin or whale leaping: drawn nose up as it leaves the water, nose down coming back.
+      if (a.mode === "leap" && has("dive")) return ["dive", habPitchFrame(a.tilt)];
+      return has("swim") ? ["swim", cyc(a.phase * (a.role === "jelly" ? 1 : 2.5))] : still;
   }
   return still;
 }
@@ -1005,9 +999,7 @@ function habDraw() {
     const roost = habRestSpot(a, awake, roosting);
     let [x, y, sx = 1, sy = 1, tilt = 0] = habPose(a, awake, roost);
     const anim = habAnim(a, awake, roost);
-    // The frames already beat the wings, step the legs and breathe, so drop the
-    // squash that stood in for them (hops and jellies keep theirs).
-    if (anim && anim[0] !== "idle" && a.role !== "hop" && a.role !== "jelly" && a.mode !== "rise" && !(roost && roost[2])) sx = sy = 1;
+    a.hasWalk = !!anim && (habAnimIdx.acts[a.s.slug] || []).includes("walk");
     const perched = awake && a.mode === "perched";
     // Landed on a decoration: drawn with it, not in the sky (unless it's the balloon).
     const landed = habDecorLanded(a) && a.dv.d.it.area !== "sky";
@@ -1187,7 +1179,6 @@ function habSprite(c, p) {
   c.translate(x, y - mid);
   if (k !== 1) c.scale(k, k);
   if (a.dir > 0 && a.role !== "reef") c.scale(-1, 1);
-  if (p.tilt) c.rotate(-p.tilt);
   if (p.sx !== 1 || p.sy !== 1) c.scale(p.sx, p.sy);
   if (framed) c.drawImage(habFrame(img, habAnimIdx.rows.indexOf(p.anim[0]), p.anim[1], FP), -F / 2, mid - F, F, F);
   else c.drawImage(img, -F / 2, mid - F, F, F);

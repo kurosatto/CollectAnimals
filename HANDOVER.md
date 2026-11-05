@@ -159,9 +159,16 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
   tails. They stay at the original 1:1 pixels (`pixel.SS = 1`): kuro tried 2x
   (0.35.0 preview) and preferred the old look. The apps always draw an animal 40
   units square (`HAB_UNIT`) and pick frames with `habCyc()` / `habIdleFrame()`.
-- Sheet rows are `pixel.ACTS` (idle, walk, fly, swim, sleep, sit, look, back, eat);
-  append new rows at the end so the apps' row indices stay valid. `eat` is the
-  head-down grazing pose (quad and critter body plans), also used for drinking.
+- Sheet rows are `pixel.ACTS` (idle, walk, fly, swim, sleep, sit, look, back, eat,
+  dive, hide); append new rows at the end so the apps' row indices stay valid.
+  `eat` is grazing (quad, critter) or pecking (bird, wader, gull, raptor), also
+  used for drinking. `dive` (plunge divers, leaping dolphins and whales) is drawn
+  pitched from 55 degrees nose up to 75 nose down (`make_sprites.DIVE_DEG`,
+  `habPitchFrame()`), `hide` is reef animals and jellies pulling in.
+- kuro doesn't want pictures stretched, squashed or turned to fake motion: every
+  movement in the habitat is a drawn frame. Bends of a whole drawing are done in
+  the sprite generator (`Sprite.pitch` / `Sprite.bend`), drawn pixel by pixel.
+  Birds of prey use the `raptor()` body plan.
 - Habitat interactions live in habitat.js (`habReact` on tap, `habSocial` for
   animals noticing each other, `habTimers`): bolting, looking at you (`?`),
   swooping, pulling in, drinking at the pond, pecking, singing, freezing under a

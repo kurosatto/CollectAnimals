@@ -25,6 +25,8 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
+import re
 import sys
 from multiprocessing import Pool
 from pathlib import Path
@@ -52,7 +54,7 @@ import species_sw  # noqa: E402,F401
 import species_mtn  # noqa: E402,F401
 import species_nw  # noqa: E402,F401
 import species_east  # noqa: E402,F401
-from archetypes import (gull, BLACK, NOSE, PINK, S, WHITE, bee, beetle_top, bird, butterfly, critter,  # noqa: E402
+from archetypes import (gull, raptor, BLACK, NOSE, PINK, S, WHITE, bee, beetle_top, bird, butterfly, critter,  # noqa: E402
                         dragonfly, duck, flecks, frog, goose, hummingbird, lizard, mantis, owl, pelican, pinniped, quad, snake,
                         sprite, star, turtle, vulture, wader, whale)
 from pixel import ACTS, BLINK, FRAMES, N, Sprite, mix, silhouette  # noqa: E402
@@ -281,69 +283,82 @@ def _(s):
 
 @sprite("red_tailed_hawk")
 def _(s):
-    def belly(s, m):
-        s.paint(s.m_px([(10, 22), (12, 23), (14, 22), (16, 23), (11, 24), (15, 24)]), "#6a4a34", within=m)
-    bird(s, "#7a5238", "#f2e6d2", head="#7a5238", tail_col="#c4583a", beak="hook", beak_col="#e0c070",
-         legs="#e8c04a", tail="fan", belly_mark=belly, big=True,
-         face=lambda s: s.paint(s.m_ellipse(10, 14.5, 4, 2), "#f2e6d2", within=s.last))
+    # Brown above, a pale chest with a dark belly band, and the brick-red tail.
+    def chest(s, m):
+        s.paint(s.m_px([(10, 21), (12, 22), (14, 21), (11, 23), (13, 23), (15, 22)]), "#5a3a26", within=m)
+    raptor(s, "#6e4a32", "#f2e6d2", head="#7a5238", wing="#634330", tail="#c4583a", build="buteo",
+           cere="#e8c860", chest=chest, face=lambda s, m: s.paint(s.m_ellipse(10.5, 12, 2.6, 1.4), "#f2e6d2", within=m))
 
 
 @sprite("red_shouldered_hawk")
 def _(s):
-    def belly(s, m):
-        for y in (19, 21, 23, 25):
-            s.paint(s.m_line(9, y, 19, y), "#f2e6d2", within=m)
+    # A rusty, finely barred chest, red shoulders, and a checkered black-and-white wing.
+    def chest(s, m):
+        for y in (16, 18, 20, 22, 24):
+            s.paint(s.m_line(9, y, 18, y), "#f2e6d2", within=m)
     def wing(s, m):
-        s.paint(s.m_ellipse(17, 17, 3, 2), "#c45a34", within=m)
-        s.paint(s.m_px([(20, 21), (22, 20), (24, 19), (21, 18)]), WHITE, within=m)
-    bird(s, "#6a4a38", "#c86a44", head="#8a5a40", tail_col="#3a2e2a", beak="hook", beak_col="#e0c070",
-         legs="#e8c04a", tail="fan", belly_mark=belly, wing_mark=wing, big=True)
+        s.paint(s.m_ellipse(15, 13, 2.6, 1.8), "#c45a34", within=m)
+        s.paint(s.m_px([(17, 20), (19, 21), (18, 23), (20, 24), (17, 17)]), WHITE, within=m)
+    def tail(s, m):
+        for y in (22, 25, 28):
+            s.paint(s.m_line(17, y, 26, y), WHITE, within=m)
+    raptor(s, "#6a4a38", "#c86a44", head="#8a5a40", wing="#3e3028", tail="#2b2630", build="buteo",
+           chest=chest, wing_mark=wing, tail_mark=tail)
 
 
 @sprite("coopers_hawk")
 def _(s):
-    def belly(s, m):
-        for y in (19, 21, 23, 25):
-            s.paint(s.m_line(9, y, 19, y), "#d8885a", within=m)
-    bird(s, "#5e6a7c", "#f6eee4", head="#5e6a7c", tail_col="#4e5868", beak="hook", beak_col="#e0c070",
-         legs="#e8c04a", tail="long", belly_mark=belly, eye_col="#c8302a",
-         face=lambda s: s.paint(s.m_ellipse(10, 15, 4, 2.2), "#d8b49a", within=s.last))
-    s.paint(s.m_line(23, 13, 29, 6) | s.m_line(24, 14, 30, 7), "#3a4250")
+    # Slate-blue back, a dark cap, red eyes, an orange-barred chest and a long banded tail.
+    def chest(s, m):
+        s.paint(s.m_px([(x + (y // 2) % 2, y) for y in range(14, 26, 2) for x in range(8, 19, 2)]), "#d8885a", within=m)
+    def face(s, m):
+        s.paint(s.m_ellipse(10, 7.5, 3.4, 1.6), "#2f3644", within=m)
+        s.paint(s.m_ellipse(10.5, 11.5, 2.6, 1.4), "#d8b49a", within=m)
+    def tail(s, m):
+        for y in (22, 26, 30):
+            s.paint(s.m_line(17, y, 28, y), "#2f3644", within=m)
+    raptor(s, "#5e6a7c", "#f6eee4", wing="#56627a", tail="#6a7486", build="accip", eye_col="#c8302a",
+           cere="#e8d060", chest=chest, face=face, tail_mark=tail)
 
 
 @sprite("american_kestrel")
 def _(s):
-    def face(s):
-        s.paint(s.m_ellipse(12, 7, 4, 2), "#6a84b8", within=s.last)
-        s.paint(s.m_line(8, 13, 8, 15) | s.m_line(13, 12, 13, 15), BLACK, within=s.last)
-    def wing(s, m):
-        s.paint(s.m_ellipse(21, 18, 5, 2.4, rot=-15), "#6a84b8", within=m)
-    bird(s, "#c86a3a", "#f4e4cc", head=WHITE, tail_col="#c86a3a", beak="hook", beak_col="#7a8aa0",
-         legs="#e8c04a", tail="mid", face=face, wing_mark=wing)
+    # A little falcon: rufous back, blue-grey wings, and two black "moustache" marks.
+    def face(s, m):
+        s.paint(s.m_ellipse(10.5, 7, 2.8, 1.4), "#6a84b8", within=m)
+        s.paint(s.m_line(9, 10, 9, 12.5) | s.m_line(12.5, 9.5, 12.5, 12.5), BLACK, within=m)
+    def chest(s, m):
+        s.paint(s.m_px([(11, 19), (13, 21), (11, 23), (14, 18)]), "#3a2a20", within=m)
+    raptor(s, "#c86a3a", "#f4e4cc", head="#f4ece4", wing="#6a84b8", tail="#c86a3a", build="falcon",
+           bill="#5a6a80", cere="#e8c040", face=face, chest=chest)
 
 
 @sprite("bald_eagle")
 def _(s):
-    bird(s, "#4a3428", "#5a4030", head=WHITE, wing="#3e2a20", tail_col=WHITE, beak="hook",
-         beak_col="#f0c030", legs="#f0c030", tail="fan", big=True, eye_col="#6a4a10")
-    s.eye(8, 10, color="#5a3a10")
+    # Dark brown body and wings, a white head and tail, and a big yellow bill.
+    raptor(s, "#4a3428", "#4a3428", head=WHITE, wing="#3e2a20", tail=WHITE, build="eagle", bill="#f0c030",
+           cere="#f0c030", legs="#f0c030", eye_col="#e8d070")
 
 
 @sprite("golden_eagle")
 def _(s):
-    bird(s, "#5a3e2a", "#6a4a32", head="#5a3e2a", wing="#4a321f", tail_col="#4a321f", beak="hook",
-         beak_col="#3a3438", legs="#f0c030", tail="fan", big=True,
-         face=lambda s: s.paint(s.m_ellipse(14, 9, 4, 4), "#d8a04a", within=s.last))
-    s.px([(5, 10), (5, 11)], "#f0c030")
+    # Dark brown all over with a golden nape.
+    raptor(s, "#5a3e2a", "#5a3e2a", head="#5a3e2a", wing="#4a321f", tail="#4a321f", build="eagle",
+           cere="#f0c030", legs="#f0c030", eye_col="#8a5a20",
+           face=lambda s, m: s.paint(s.m_ellipse(12.5, 8, 3.2, 3.4), "#d8a04a", within=m))
 
 
 @sprite("osprey")
 def _(s):
-    def face(s):
-        s.paint(s.m_poly([(7, 11), (17, 10), (17, 13), (8, 12)]), "#3a2e2a", within=s.last)
-    bird(s, "#4a3a30", WHITE, head=WHITE, wing="#3e3028", tail_col="#5a4a3e", beak="hook",
-         beak_col="#2b2630", legs="#b8c0c8", tail="mid", face=face, big=True, eye_col="#c8a020")
-    s.eye(8, 10, color="#1d1428")
+    # White below, dark brown above, a white head with a dark stripe through the eye,
+    # and bare blue-grey legs (no feathered trousers) for grabbing fish.
+    def face(s, m):
+        s.paint(s.m_poly([(7.5, 8.5), (14, 9), (14, 11.5), (8, 10)]), "#3a2e2a", within=m)
+    def chest(s, m):
+        s.paint(s.m_px([(10, 13), (12, 13), (14, 14), (11, 14)]), "#8a7464", within=m)
+    raptor(s, "#4a3a30", WHITE, head=WHITE, wing="#3e3028", tail="#5a4a3e", build="osprey", bill="#2b2630",
+           cere="#5a6470", legs="#b8c0c8", eye_col="#e8c020", face=face, chest=chest,
+           tail_mark=lambda s, m: [s.paint(s.m_line(17, y, 26, y), "#7a6a5e", within=m) for y in (23, 27)])
 
 
 @sprite("turkey_vulture")
@@ -963,18 +978,59 @@ def draw(slug) -> Image.Image:
     return s.render()
 
 
+# Poses made from a body plan's own drawing, re-drawn pixel by pixel through a bend
+# (pixel.Sprite.pitch / set_base) instead of the apps stretching or turning a picture:
+# plunge divers and leaping dolphins get a "dive" row pitched from nose up to nose
+# down (frame f is DIVE_DEG[f] degrees, -55 to 75; the habitat picks the frame from the angle),
+# reef animals and jellies a "hide" row (pulling in and opening up again), and
+# jellies drawn without a swim pose a pulsing bell.
+DIVERS = re.compile(r"pelican|royal_tern|kingfisher|osprey|cormorant|anhinga|booby|gannet")
+LEAPERS = re.compile(r"dolphin|whale|orca|porpoise")
+HIDERS = re.compile(r"anemone|urchin|sea_star|_star$|sea_cucumber|nudibranch|dorid|sea_lemon|jelly|nettle|man_o_war"
+                    r"|tube_worm|feather_duster|coral|sea_pen|hydroid")
+JELLIES = re.compile(r"jelly|nettle|man_o_war")
+DIVE_DEG = [-55 + 130 * f / (FRAMES - 1) for f in range(FRAMES)]
+
+
+def _made_pose(slug, act, f, acts):
+    """A Sprite set up to draw a generated pose, or None if this animal has none."""
+    if act == "dive" and LEAPERS.search(slug) and "swim" in acts:
+        s = Sprite("swim", f)
+        s.pitch(DIVE_DEG[f], 16, 20)
+        return s
+    if act == "dive" and DIVERS.search(slug) and "fly" in acts:
+        s = Sprite("fly", 0)
+        s.diving = True  # wings swept back along the body
+        s.pitch(DIVE_DEG[f], 16, 18)
+        return s
+    if act == "hide" and HIDERS.search(slug):
+        k = math.sin(math.pi * f / (FRAMES - 1)) ** 0.7  # closes up, then opens again
+        s = Sprite("idle", 0)
+        s.set_base(lambda x, y, k=k: (16 + (x - 16) * (1 + 0.12 * k), 31 - (31 - y) * (1 - 0.5 * k)))
+        return s
+    if act == "swim" and JELLIES.search(slug) and "swim" not in acts:
+        w = math.sin(2 * math.pi * f / FRAMES)  # the bell squeezes and relaxes
+        s = Sprite("idle", 0)
+        s.set_base(lambda x, y, w=w: (16 + (x - 16) * (1 - 0.07 * w), 6 + (y - 6) * (1 + 0.09 * w)))
+        return s
+    return None
+
+
 def animate(slug) -> tuple[Image.Image, list[str]]:
     """The animation sheet (a row of frames per pose) and the poses really drawn."""
     out = Image.new("RGBA", (N * FRAMES, N * len(ACTS)), (0, 0, 0, 0))
     probe = Sprite()
     S[slug](probe)
     acts = [a for a in ACTS if a in probe.acts]
+    made = [a for a in ACTS if a not in acts and _made_pose(slug, a, 0, acts)]
     for row, act in enumerate(ACTS):
         for f in range(FRAMES):
-            s = Sprite(act if act in acts else "idle", f if act in acts else 0)
+            s = _made_pose(slug, act, f, acts) if act in made else None
+            if s is None:
+                s = Sprite(act if act in acts else "idle", f if act in acts else 0)
             S[slug](s)
             out.alpha_composite(s.render(), (N * f, N * row))
-    return out, acts
+    return out, [a for a in ACTS if a in acts or a in made]
 
 
 def _draw_all(slug):

@@ -119,7 +119,7 @@ def _seg_dist(x0, y0, x1, y1):
 
 
 # Animation: every body plan can draw itself in these poses, FRAMES frames each.
-ACTS = ("idle", "walk", "fly", "swim", "sleep", "sit", "look", "back", "eat")
+ACTS = ("idle", "walk", "fly", "swim", "sleep", "sit", "look", "back", "eat", "dive", "hide")
 FRAMES = 12
 OLD_FRAMES = 4  # body plans that still pick poses by s.f count in these
 # Still poses breathe (BREATH: how far the body rises, as a share of its height),
@@ -134,6 +134,40 @@ BLINK = 6
 FACELESS = re.compile(r"anemone|urchin|sea_star|_star$|jelly|sponge|sea_cucumber|limpet|chiton|coral|sand_dollar"
                       r"|barnacle|mussel|clam|oyster(?!catcher)|scallop|by_the_wind|sea_pen|sea_squirt|tunicate|nudibranch"
                       r"|dorid|sea_lemon|hydroid|bryozoan")
+
+
+def _invert(fwd, inv=None):
+    """Each pixel's source point under the bend fwd: refined from inv's rough guess
+    where that converges, and found by a fine search of the drawing where it doesn't
+    (a big turn or a sharp bend)."""
+    qx, qy = inv(_XS, _YS) if inv else (_XS.copy(), _YS.copy())
+    qx, qy = np.asarray(qx, np.float64), np.asarray(qy, np.float64)
+    for _ in range(40):
+        fx, fy = fwd(qx, qy)
+        qx, qy = qx + 0.7 * (_XS - fx), qy + 0.7 * (_YS - fy)
+    fx, fy = fwd(qx, qy)
+    bad = np.hypot(fx - _XS, fy - _YS) > 0.25
+    if bad.any():
+        step = 0.125 / SS
+        gy, gx = np.mgrid[-PAD_TOP - 4:LOW - PAD_TOP + 4:step, -PAD_X - 4:LOW - PAD_X + 4:step]
+        gx, gy = gx.ravel(), gy.ravel()
+        fx, fy = fwd(gx, gy)
+        ix = np.floor((fx + PAD_X) * SS).astype(int)
+        iy = np.floor((fy + PAD_TOP) * SS).astype(int)
+        ok = (ix >= 0) & (ix < N) & (iy >= 0) & (iy < N)
+        gx, gy, fx, fy, ix, iy = gx[ok], gy[ok], fx[ok], fy[ok], ix[ok], iy[ok]
+        d = np.hypot(fx - _XS[iy, ix], fy - _YS[iy, ix])
+        cell = iy * N + ix
+        order = np.lexsort((d, cell))
+        first = order[np.r_[True, cell[order][1:] != cell[order][:-1]]]
+        first = first[d[first] < 0.5 / SS]  # a real source point, not just the nearest one
+        found = np.zeros(N * N, bool)
+        found[cell[first]] = True
+        sx, sy = np.full(N * N, 1e3), np.full(N * N, 1e3)  # nothing maps here: far off the drawing
+        sx[cell[first]], sy[cell[first]] = gx[first], gy[first]
+        sx, sy = sx.reshape(N, N), sy.reshape(N, N)
+        qx, qy = np.where(bad, sx, qx), np.where(bad, sy, qy)
+    return qx.astype(np.float32), qy.astype(np.float32)
 
 
 class Sprite:
@@ -162,6 +196,40 @@ class Sprite:
             self.base = lambda x, y, a=a: (x, GROUND - (GROUND - y) * (1 + a))
             self.base_grid = _XS, GROUND - (GROUND - _YS) / (1 + a)
         self.fwd, self.xs, self.ys = self.base, *(self.base_grid if self.base else (_XS, _YS))
+
+    def set_base(self, fwd, inv=None):
+        """Bend the whole drawing (under any warp the body plan adds) through fwd: the
+        generated poses use it to pitch a bird into a dive or bend it down to peck.
+        Everything is still drawn and rasterized fresh, pixel by pixel. inv, a rough
+        inverse, starts the search for each pixel's source point (needed for big turns)."""
+        self.base = fwd
+        self.base_grid = _invert(fwd, inv)
+        self.fwd, (self.xs, self.ys) = fwd, self.base_grid
+
+    def pitch(self, deg: float, cx: float = 16.0, cy: float = 18.0):
+        """Turn the whole animal nose down by deg (nose up when negative) about (cx, cy)."""
+        a = math.radians(deg)
+        c, s_ = math.cos(a), math.sin(a)
+        self.set_base(lambda x, y: (cx + (x - cx) * c + (y - cy) * s_, cy - (x - cx) * s_ + (y - cy) * c),
+                      lambda x, y: (cx + (x - cx) * c - (y - cy) * s_, cy + (x - cx) * s_ + (y - cy) * c))
+
+    def bend(self, deg: float, px: float, py: float, soft: float = 3.0, back: float = 6.0):
+        """Bend the front of the animal (everything above py and ahead of px) down and
+        forward by deg about (px, py), easing in over `soft` units so the legs below and
+        the tail behind stay put: a bird pecking at the ground."""
+        a = math.radians(deg)
+
+        def weight(x, y):
+            ky = np.clip((py - y) / soft, 0, 1)
+            kx = np.clip((px + back - x) / back, 0, 1)
+            k = ky * kx
+            return k * k * (3 - 2 * k)
+
+        def fwd(x, y):
+            t = a * weight(x, y)
+            c, s_ = np.cos(t), np.sin(t)
+            return px + (x - px) * c + (y - py) * s_, py - (x - px) * s_ + (y - py) * c
+        self.set_base(fwd)
 
     def wave(self, off: float = 0.0) -> float:
         """Goes 0, 1, 0, -1 over the four frames (shifted by off, in cycles)."""
@@ -254,15 +322,19 @@ class Sprite:
         """Bend everything drawn from now on through fwd(x, y) -> (x', y') (numpy arrays
         in, arrays out): a body plan uses it to re-proportion a drawing without moving
         the details each species adds in the plan's own coordinates."""
+        # Each pixel's source point: undo the base bend (already worked out), then
+        # invert this warp numerically from there.
+        tx, ty = self.base_grid if self.base is not None else (_XS, _YS)
+        qx, qy = tx.copy(), ty.copy()
+        for _ in range(40):
+            fx, fy = fwd(qx, qy)
+            qx, qy = qx + 0.7 * (tx - fx), qy + 0.7 * (ty - fy)
+        self.xs, self.ys = qx, qy
+        self._warp = fwd
         if self.base is not None:
             warp, base = fwd, self.base
             fwd = lambda x, y: base(*warp(x, y))  # noqa: E731
         self.fwd = fwd
-        qx, qy = _XS.copy(), _YS.copy()
-        for _ in range(40):  # invert fwd numerically: the source point of each pixel
-            fx, fy = fwd(qx, qy)
-            qx, qy = qx + 0.7 * (_XS - fx), qy + 0.7 * (_YS - fy)
-        self.xs, self.ys = qx, qy
 
     def unwarped(self):
         """Context manager: draw in plain canvas coordinates for a while."""
@@ -271,15 +343,20 @@ class Sprite:
         class _Plain:
             def __enter__(self):
                 self.saved = sprite.fwd, sprite.xs, sprite.ys
+                sprite._plain = True
                 sprite.fwd = sprite.base
                 sprite.xs, sprite.ys = sprite.base_grid if sprite.base else (_XS, _YS)
 
             def __exit__(self, *exc):
                 sprite.fwd, sprite.xs, sprite.ys = self.saved
+                sprite._plain = False
         return _Plain()
 
     def _to(self, x, y):
-        """Where a drawing coordinate lands on the canvas."""
+        """Where a drawing coordinate lands on the canvas. (Drawing unwarped, a point is
+        left where it is, and a bend of the whole animal moves it as it's drawn.)"""
+        if getattr(self, "_plain", False):
+            return x, y
         if self.fwd is None:
             return x, y
         fx, fy = self.fwd(np.float32(x), np.float32(y))

@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import math
 
-from archetypes import (BLACK, EYE, WHITE, _fluke, beetle_top, bird, butterfly, crab, critter, dragonfly, duck,
+from archetypes import (raptor, BLACK, EYE, WHITE, _fluke, beetle_top, bird, butterfly, crab, critter, dragonfly, duck,
                         fish, flecks, frog, goose, jelly, lizard, pinniped, snake, spider_top, sprite, star, turtle,
                         wader)
 from pixel import _XS, _YS, mix
@@ -146,39 +146,33 @@ def _(s):
 
 @sprite("northern_harrier")
 def _(s):
-    # The "grey ghost": pale grey male with black wingtips, white rump and an owlish face.
+    # The "grey ghost": pale grey male with black wingtips, a white rump and an owlish face.
+    def face(s, m):
+        s.paint(s.m_ellipse(10, 9.5, 3.4, 3.2) & ~s.m_ellipse(10, 9.5, 2.5, 2.3), "#8a8e98", within=m)
     def wing(s, m):
-        s.paint(s.m_ellipse(25, 16.5, 2.8, 1.8, rot=-15), BLACK, within=m)
-
-    def face(s):
-        s.paint(s.m_ellipse(10, 12, 4.6, 4.4) & ~s.m_ellipse(10, 12, 3.6, 3.4), "#8a8e98", within=s.last)
-    bird(s, "#a4a8b2", WHITE, head="#a8acb6", wing="#9ca0aa", tail_col="#9aa0aa", beak="hook",
-         beak_col="#3a3a44", legs="#f0c040", tail="long", wing_mark=wing, face=face, big=True, eye_col="#e0b020")
-    s.ellipse(22.5, 22.5, 2.4, 1.6, WHITE)
-    for k in (0, 3, 6):
-        s.paint(s.m_line(23 + k * 0.8, 12 - k * 1.1, 25 + k * 0.8, 13 - k * 1.1), "#5a5e68")
+        s.paint(s.m_ellipse(24, 26, 3, 2.2, rot=50), BLACK, within=m)
+    raptor(s, "#a4a8b2", WHITE, head="#a8acb6", wing="#9ca0aa", tail="#9aa0aa", build="harrier",
+           bill="#3a3a44", cere="#e0c040", legs="#f0c040", eye_col="#e0b020", face=face, wing_mark=wing)
 
 
 @sprite("mississippi_kite")
 def _(s):
     # Sleek and grey with a pale silvery head, ruby eyes and a black tail.
-    bird(s, "#6a6e78", "#8e949e", head="#cdd1d6", wing="#5a5e68", tail_col="#1e1c24", beak="hook",
-         beak_col="#2b2630", legs="#d8a050", tail="long", eye_col="#c02a2a")
-    s.px([(7, 10), (8, 9), (9, 9)], "#2b2630")  # dark smudge round the eye
+    raptor(s, "#6a6e78", "#8e949e", head="#cdd1d6", wing="#5a5e68", tail="#1e1c24", build="kite",
+           bill="#2b2630", cere="#3a3a44", legs="#d8a050", eye_col="#c02a2a",
+           face=lambda s, m: s.paint(s.m_px([(7, 8), (8, 8)]), "#2b2630", within=m))
 
 
 @sprite("broad_winged_hawk")
 def _(s):
     # Brown with a rusty-barred chest and a bold black-and-white banded tail.
     def bars(s, m):
-        for y in (20, 22, 24):
-            s.paint(s.m_line(9, y, 18, y), "#b8603a", within=m)
-
-    def face(s):
-        s.paint(s.m_ellipse(9, 15, 3.5, 1.6), "#f2e6d2", within=s.last)
-    bird(s, "#6a4630", "#f2e6d2", head="#6a4630", wing="#5e3e2a", tail_col="#2b2630", beak="hook",
-         beak_col="#e0c070", legs="#e8c04a", tail="fan", belly_mark=bars, face=face, big=True)
-    s.paint(s.m_line(25, 13, 28, 18) | s.m_line(28, 11, 30, 16), WHITE)
+        s.paint(s.m_px([(x + (y // 2) % 2, y) for y in range(15, 26, 2) for x in range(8, 19, 2)]), "#b8603a", within=m)
+    def tail(s, m):
+        for y in (24, 28):
+            s.paint(s.m_line(17, y, 27, y), WHITE, within=m)
+    raptor(s, "#6a4630", "#f2e6d2", head="#6a4630", wing="#5e3e2a", tail="#2b2630", build="buteo",
+           chest=bars, tail_mark=tail)
 
 
 @sprite("hairy_woodpecker")
