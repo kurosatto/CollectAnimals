@@ -8,9 +8,9 @@
 //   with the last answer as the offline fallback. The page clears it on log out.
 // - Everything else (photos, galleries, the feed, uploads, any POST) goes straight to the network,
 //   so other players' photos never fill up the phone.
-const VERSION = "13";
+const VERSION = "14";
 const SHELL = `shell-v${VERSION}`;
-const ASSETS = "assets-v6";  // v6 drops sheets without the grazing (eat) row
+const ASSETS = "assets-v7";  // v7 drops sheets without the dive and hide rows
 const API = "api-v1";
 const SHELL_URLS = ["/", "/habitat.js", "/decor.js", "/decor.json", "/minigames.js", "/manifest.webmanifest", "/vendor/leaflet/leaflet.js",
   "/vendor/leaflet/leaflet.css", "/vendor/fonts/pixelify.woff2", "/vendor/fonts/spacegrotesk.woff2", "/icons/hummingbird/icon-192.png", "/icons/hummingbird/favicon-32.png",

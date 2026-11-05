@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from archetypes import (BLACK, EYE, WHITE, _bird_legs, _far_wing, _ripples, _wing_beat, back_stripes, beetle_top, pelican, flying_waterbird,
+from archetypes import (raptor, BLACK, EYE, WHITE, _bird_legs, _far_wing, _ripples, _wing_beat, back_stripes, beetle_top, pelican, flying_waterbird,
                         bird, butterfly, critter, duck, fish, flecks, frog, grasshopper, hummingbird, lizard,
                         mantis, quad, snake, spider_top, sprite)
 from pixel import SS, mix
@@ -171,11 +171,9 @@ def _(s):
 def _(s):
     # A dark brown bib across a pale belly and a white throat.
     def bib(s, m):
-        s.paint(s.m_poly([(7, 14), (20, 14), (20, 20), (7, 20)]), "#7a4e30", within=m)
-    bird(s, "#5a4232", "#f2e8d8", head="#5a4232", wing="#4e3a2c", tail_col="#7a6a5a", beak="hook",
-         beak_col="#e0c070", legs="#e8c04a", tail="fan", belly_mark=bib, big=True,
-         face=lambda s: s.paint(s.m_ellipse(9, 14.5, 3.5, 1.8), "#f4ece0", within=s.last))
-    s.paint(s.m_line(26, 13, 29, 16), "#3a2a20")
+        s.paint(s.m_poly([(7, 11), (20, 11), (20, 18), (7, 17)]), "#7a4e30", within=m)
+    raptor(s, "#5a4232", "#f2e8d8", head="#5a4232", wing="#4e3a2c", tail="#7a6a5a", build="buteo",
+           chest=bib, face=lambda s, m: s.paint(s.m_ellipse(10.5, 12, 2.6, 1.4), "#f4ece0", within=m))
 
 
 @sprite("mountain_chickadee")
