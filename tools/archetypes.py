@@ -1554,7 +1554,7 @@ def raptor(s: Sprite, back, front, *, head=None, wing=None, tail=None, build="bu
     tail = tail or back
     dark = mix(wing, "#1a1420", 0.35)
     if s.act == "eat":
-        s.bend(38 + 10 * s.cyc(0, 1, 0, 1), 15, 25)  # tearing at a meal on the ground
+        s.bend(30 + 8 * s.cyc(0, 1, 0, 1), 15.5, 20, 4)  # tearing at a meal on the ground
     if s.act == "fly":
         _raptor_flight(s, back, front, head, wing, tail, dark, k, wing_k, hrx, hry, bill, bill_k, cere, legs, eye_col,
                        brow, flight_under, build)
@@ -1571,8 +1571,9 @@ def raptor(s: Sprite, back, front, *, head=None, wing=None, tail=None, build="bu
     # far foot
     s.line(16.5, 26, 16 - round(max(0, -step)), 30, mix(legs, "#1a1420", 0.25))
     # body, leaning back
-    body = s.ellipse(16, 17.5, brx, bry, back, rot=25)
-    chest_m = s.m_ellipse(13.4, 18.5, brx * 0.62, bry * 0.86, rot=25) & body
+    # (upright, head held high over the chest: not hunched like a vulture)
+    body = s.ellipse(15.6, 18.5, brx * 0.95, bry, back, rot=14)
+    chest_m = s.m_ellipse(13.4, 18.5, brx * 0.6, bry * 0.88, rot=14) & body
     s.fill(chest_m, front, shade=False)
     if chest:
         chest(s, chest_m)
@@ -1586,18 +1587,18 @@ def raptor(s: Sprite, back, front, *, head=None, wing=None, tail=None, build="bu
     s.px([(round(10 - lift), fy), (round(15 - lift), fy)], "#1a1420")  # talons
     # long wing folded along the side, the primaries reaching down over the tail
     tip_x, tip_y = 15.5 + 7.5 * wing_k, 17.5 + 8 * wing_k
-    wm = s.poly([(12.5, 11.5), (17.5, 11), (21, 15), (tip_x + 1.5, tip_y - 1), (tip_x, tip_y + 1.2), (19, 25),
-                 (15.5, 22.5), (13, 17)], wing, edge=True)
+    wm = s.poly([(14, 12.5), (17.5, 12), (20.2, 15.5), (tip_x + 1.5, tip_y - 1), (tip_x, tip_y + 1.2), (19, 25),
+                 (15.5, 22.5), (14, 17)], wing, edge=True)
     s.paint(s.m_poly([(19.8, 18.5), (tip_x + 1.5, tip_y - 1), (tip_x, tip_y + 1.2), (18.5, 23)]), dark, within=wm)
     # rows of coverts catching the light along the top of the wing
-    s.paint(s.m_path([(13, 12.5), (17.5, 12), (20, 15)], 0.6), mix(wing, "#ffffff", 0.18), within=wm)
-    for y in (16.5, 19.5):
-        s.paint(s.m_line(15, y, 19.5, y + 0.6), mix(wing, "#1a1420", 0.2), within=wm)
+    s.paint(s.m_path([(14.5, 13.3), (17.5, 13), (19.6, 15.8)], 0.6), mix(wing, "#ffffff", 0.18), within=wm)
+    for y in (17, 20):
+        s.paint(s.m_line(15.5, y, 19.5, y + 0.6), mix(wing, "#1a1420", 0.2), within=wm)
     if wing_mark:
         wing_mark(s, wm)
     # head on a thick neck: flat crown, brow over the eye, deep hooked bill
-    hx, hy = 10, 9.5
-    s.path([(14, 13.5), (hx + 1, hy + 1)], 3.0, head)
+    hx, hy = 11, 7
+    s.path([(13.6, 13.5), (hx + 1, hy + 1.5)], 2.8, head)
     hm = s.ellipse(hx, hy, hrx, hry, head, edge=True)
     if face:
         face(s, hm)
