@@ -159,6 +159,13 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
   tails. They stay at the original 1:1 pixels (`pixel.SS = 1`): kuro tried 2x
   (0.35.0 preview) and preferred the old look. The apps always draw an animal 40
   units square (`HAB_UNIT`) and pick frames with `habCyc()` / `habIdleFrame()`.
+- Sheet rows are `pixel.ACTS` (idle, walk, fly, swim, sleep, sit, look, back, eat);
+  append new rows at the end so the apps' row indices stay valid. `eat` is the
+  head-down grazing pose (quad and critter body plans), also used for drinking.
+- Habitat interactions live in habitat.js (`habReact` on tap, `habSocial` for
+  animals noticing each other, `habTimers`): bolting, looking at you (`?`),
+  swooping, pulling in, drinking at the pond, pecking, singing, freezing under a
+  hawk, play chase, gulls following a pelican's fish.
 - A new species needs a drawing function in `tools/species_<st>.py` (else it
   shows the "?" egg). A state's habitat should feature a **signature landmark**
   for that state (TX mesas and windmill, FL mangroves and a launch pad, NY

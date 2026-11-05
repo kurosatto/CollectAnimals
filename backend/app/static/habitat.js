@@ -645,6 +645,7 @@ function habPerchStep(a, dt) {
 function habStep(a, dt, awake) {
   a.phase += dt;
   habWxReact(a, dt, awake);
+  habTimers(a, dt, awake);
   if (habDecorStep(a, dt, awake)) return;
   if (awake && HAB_SEABIRDS.test(a.s.slug) && HAB_FLIERS.has(a.role) && habPerchStep(a, dt)) return;
   if (!awake && (a.mode === "toPerch" || a.mode === "perched")) a.mode = a.role === "dive" ? "fly" : null;
@@ -679,6 +680,13 @@ function habStep(a, dt, awake) {
   if (a.role === "float" && (a.rip = (a.rip || 0) - dt) <= 0) { a.rip = rnd(1.5, 3); habRipple(a.x, hab.L.water + 3); }
   if (a.peck > 0) a.peck -= dt;
   if (a.role === "fly") {
+    // A gull tags along after a diver carrying a fish, hoping it drops it.
+    const f = a.chase;
+    if (f && f.fish > 0 && f.mode === "fly") {
+      const goal = f.x - Math.sign(f.vx) * 16;
+      a.vx = Math.max(-1.4, Math.min(1.4, (goal - a.x) / 20)) || a.vx;
+      a.y += (f.y + 6 - a.y) * Math.min(1, dt * 1.5);
+    } else a.chase = null;
     a.x += a.vx * a.speed * dt;
     a.dir = Math.sign(a.vx);
     if (a.x < -30 || a.x > hab.L.w + 30) { a.vx = -a.vx; a.y = rnd(42, 128); }
@@ -693,25 +701,182 @@ function habStep(a, dt, awake) {
   if (a.role === "reef") return;
   if (a.pause > 0) {
     a.pause -= dt;
-    // Standing still: glance the other way now and then; waders stab at fish.
+    // Drinking at the pond: little rings where the nose touches the water.
+    if (a.drinking && (a.rip = (a.rip || 0) - dt) <= 0) { a.rip = rnd(.8, 1.4); habRipple(a.x + a.dir * 13, hab.L.pond.y - 1); }
+    // Standing still: glance the other way now and then; waders stab at fish,
+    // birds on the ground peck at seeds and now and then sing.
     if (HAB_LOOKERS.has(a.role) && (a.look -= dt) <= 0) {
-      a.look = rnd(1.2, 3.5);
+      const bird = a.s.category === "bird";
+      a.look = bird && a.role !== "wade" ? rnd(.5, 1.3) : rnd(1.2, 3.5);
       if (a.role === "wade" && Math.random() < .6) { a.peck = .35; habRipple(a.x + a.dir * 12, a.y - 1); }
-      else a.dir = -a.dir;
+      else if (bird && (a.drinking || Math.random() < .7)) {
+        a.peck = .3;
+        if (a.drinking) habRipple(a.x + a.dir * 10, hab.L.pond.y - 1);
+      } else if (bird && HAB_SINGERS.test(a.s.slug) && Math.random() < .3) a.react = { kind: "note", life: 1.6 };
+      else if (!a.drinking && a.rest !== "eat") a.dir = -a.dir;
     }
     return;
   }
+  if (a.drinking) a.drinking = false;
+  // Chasing a playmate: run to where it is now.
+  if (a.chase && a.chaseT > 0) {
+    const o = a.chase;
+    if (Math.hypot(o.x - a.x, o.y - a.y) < 8) {
+      // Caught up: both stop and face each other for a moment.
+      a.chaseT = 0; a.chase = null; o.flee = 0;
+      for (const [m, n] of [[a, o], [o, a]]) { m.pause = rnd(1.2, 2); m.rest = "idle"; m.dir = Math.sign(n.x - m.x) || 1; }
+      return;
+    }
+    a.tx = o.x + Math.sign(a.x - o.x) * 4; a.ty = o.y;
+  }
   const dx = a.tx - a.x, dy = a.ty - a.y, d = Math.hypot(dx, dy);
-  const step = a.speed * dt;
+  // Startled animals dash, chasers run.
+  const step = a.speed * dt * (a.flee > 0 ? 3 : a.chaseT > 0 ? 2.6 : 1);
   if (d <= step) {
     a.x = a.tx; a.y = a.ty;
     a.pause = a.role === "hover" ? rnd(.4, 1.4) : rnd(1, 5);
     a.rest = habRestPose();
-    [a.tx, a.ty] = habSpot(a);
+    if (a.toDrink) {
+      // At the water's edge: face the pond and drink (a grazer's head-down pose).
+      a.toDrink = false; a.drinking = true;
+      a.dir = a.x < hab.L.pond.x ? 1 : -1;
+      a.pause = rnd(4, 7); a.rest = "eat"; a.rip = .4;
+    }
+    if (HAB_DRINKERS.has(a.role) && /mammal|bird/.test(a.s.category) && !a.drinking && Math.random() < .14) {
+      const p = hab.L.pond, side = Math.random() < .5 ? -1 : 1;
+      a.tx = p.x + side * (p.rx + 9); a.ty = p.y + 1; a.toDrink = true;
+    } else [a.tx, a.ty] = habSpot(a);
     return;
   }
   a.x += dx / d * step; a.y += dy / d * step; a.odo += step;
   if (Math.abs(dx) > .5 && a.role !== "beach") a.dir = Math.sign(dx);
+}
+
+// ---- Interactions: what the animals do when you tap them, and with each other.
+// Small songbirds (not crows, gulls, waders or fowl) sing now and then.
+const HAB_SINGERS = /sparrow|finch|warbler|robin|wren|thrush|bluebird|cardinal|chickadee|titmouse|oriole|tanager|bunting|grosbeak|meadowlark|mockingbird|thrasher|catbird|junco|towhee|lark|goldfinch|siskin|canary|bulbul|shama|white_eye|leiothrix|amakihi|apapane|i_iwi|phoebe|flycatcher|kingbird|blackbird|bobolink|dickcissel|vireo|kinglet|waxwing|swallow|nuthatch|verdin|bushtit/;
+// Ground animals that bolt when startled (the rest stop and look at you).
+const HAB_SKITTISH = /squirrel|chipmunk|rabbit|cottontail|hare|jackrabbit|mouse|vole|rat$|kangaroo_rat|pika|lizard|skink|anole|whiptail|fence|spiny|racerunner|quail|grouse|ptarmigan|francolin|pheasant|roadrunner|killdeer|sanderling|turnstone|plover|sandpiper|dunlin|willet|tattler|chicken|turkey/;
+// Shy ones that pull in instead.
+const HAB_SHY = /turtle|tortoise|terrapin|cooter|slider|snapping|softshell|snail|slug|crab|armadillo|hedgehog|porcupine|opossum/;
+// Young-at-heart mammals that play chase with each other.
+const HAB_PLAYFUL = /squirrel|chipmunk|otter|fox|coyote|raccoon|rabbit|cottontail|hare|marmot|prairie_dog|dog$|cat$|ferret|mink|weasel|skunk|pika/;
+// Hunters overhead that make small animals freeze.
+const HAB_RAPTORS = /hawk|eagle|kestrel|falcon|harrier|kite|osprey|owl/;
+// Who walks down to the pond for a drink.
+const HAB_DRINKERS = new Set(["walk"]);
+
+// Count down the little actions; stretch on waking up.
+function habTimers(a, dt, awake) {
+  for (const k of ["flee", "swoop", "shy", "stretch", "chaseT"]) if (a[k] > 0) a[k] -= dt;
+  if (a.chaseT <= 0) a.chase = null;
+  if (!awake) { a.slept = true; a.toDrink = a.drinking = false; return; }
+  if (a.slept) { a.slept = false; a.stretch = 1.4; }
+}
+
+// A few spots the animal could run to, the one farthest from x.
+function habAwayFrom(a, x) {
+  let best = habSpot(a);
+  for (let i = 0; i < 5; i++) {
+    const t = habSpot(a);
+    if (Math.abs(t[0] - x) > Math.abs(best[0] - x)) best = t;
+  }
+  return best;
+}
+
+function habBolt(a, fromX) {
+  if (a.dv || a.mode) return;
+  [a.tx, a.ty] = habAwayFrom(a, fromX);
+  a.flee = 1.6; a.pause = 0; a.toDrink = a.drinking = false; a.chase = null; a.chaseT = 0;
+  a.jump = .35; a.react = { kind: "!", life: 1.2 };
+}
+
+// Tapped: each kind of animal answers in its own way.
+function habReact(a) {
+  if (hab.t < (a.tapCd || 0)) return;
+  a.tapCd = hab.t + 1.5;
+  const awake = habAwake(a, habPhase()), slug = a.s.slug, bird = a.s.category === "bird";
+  const acts = (habAnimIdx && habAnimIdx.acts[slug]) || [];
+  if (!awake) { a.shake = .25; return; }  // stirs in its sleep and dozes on
+  if (a.dv || a.mode === "perched" || a.mode === "toPerch") {
+    if (bird) a.react = { kind: HAB_SINGERS.test(slug) ? "note" : "?", life: 1.6 };
+    return;
+  }
+  switch (a.role) {
+    case "swim":
+      if (a.leapIn !== undefined && a.mode !== "leap") { a.leapIn = 0; return; }  // dolphins and whales leap
+      if (a.mode) return;
+      a.flee = 1.5; a.pause = 0; [a.tx, a.ty] = habAwayFrom(a, a.x); return;
+    case "paddle": case "float":
+      a.jump = .35; habSplash(a.x, a.y - (a.role === "float" ? 6 : 4), 6);
+      if (a.role === "paddle") { a.flee = 1.5; a.pause = 0; [a.tx, a.ty] = habAwayFrom(a, a.x); }
+      return;
+    case "reef": case "jelly": case "dangle": a.shy = 1.6; return;
+    case "fly": case "soar": case "dive": case "skim":
+      if (a.mode === "dive" || a.mode === "under" || a.mode === "rise") return;
+      a.swoop = 1.2;
+      if (HAB_SINGERS.test(slug)) a.react = { kind: "note", life: 1.6 };
+      return;
+    case "hover": case "flutter":
+      a.flee = 1.2; a.pause = 0; [a.tx, a.ty] = habAwayFrom(a, a.x); return;
+  }
+  if (HAB_SHY.test(slug)) { a.shy = 1.6; a.pause = Math.max(a.pause, 2.5); a.rest = "idle"; return; }
+  if (HAB_SKITTISH.test(slug) || a.role === "hop" || (bird && a.role !== "wade")) {
+    habBolt(a, a.x - a.dir * 10);
+    // It startles its skittish neighbours too.
+    for (const o of hab.animals) {
+      if (o !== a && HAB_LAND.has(o.role) && Math.abs(o.x - a.x) < 40 && Math.abs(o.y - a.y) < 24 && habAwake(o, habPhase())
+          && (HAB_SKITTISH.test(o.s.slug) || o.s.category === "bird")) habBolt(o, a.x);
+    }
+    return;
+  }
+  // The rest stop and turn to look at you.
+  a.pause = Math.max(a.pause, 3); a.toDrink = a.drinking = false;
+  a.rest = acts.includes("look") ? "look" : "idle";
+  a.react = { kind: "?", life: 1.6 };
+}
+
+// Every half second: the animals notice each other.
+function habSocial(dt, phase) {
+  if ((hab.socialIn = (hab.socialIn || 0) - dt) > 0) return;
+  hab.socialIn = .5;
+  const t = hab.t, up = hab.animals.filter((a) => habAwake(a, phase) && !a.dv);
+  const ready = (a) => t >= (a.socialCd || 0);
+  const free = (a) => HAB_LAND.has(a.role) && !a.mode && !(a.flee > 0) && !(a.chaseT > 0) && !a.drinking;
+  // A hawk or eagle passing low overhead: small animals below freeze for a moment.
+  for (const r of up) {
+    if (!HAB_RAPTORS.test(r.s.slug) || !HAB_FLIERS.has(r.role) || r.mode === "perched") continue;
+    for (const a of up) {
+      if (a === r || !free(a) || !ready(a) || HAB_RAPTORS.test(a.s.slug) || habScale(a.s.slug) > .8) continue;
+      if (Math.abs(a.x - r.x) > 26) continue;
+      a.socialCd = t + 12;
+      a.pause = Math.max(a.pause, 1.8); a.rest = "idle";
+      a.react = { kind: "!", life: 1.2 };
+    }
+  }
+  // A gull spots a diver with a fish and follows it.
+  for (const d of up) {
+    if (!(d.fish > 0) || d.role !== "dive" || d.mode !== "fly") continue;
+    const g = up.find((o) => /gull/.test(o.s.slug) && o.role === "fly" && !o.mode && !o.chase && Math.abs(o.x - d.x) < 160);
+    if (g) g.chase = d;
+  }
+  // Two playful animals that meet play chase; two others meeting stop to sniff.
+  const land = up.filter((a) => free(a) && ready(a));
+  for (let i = 0; i < land.length; i++) {
+    for (let j = i + 1; j < land.length; j++) {
+      const a = land[i], b = land[j];
+      if (!ready(a) || !ready(b) || Math.abs(a.x - b.x) > 30 || Math.abs(a.y - b.y) > 14) continue;
+      a.socialCd = b.socialCd = t + rnd(15, 25);
+      if (Math.random() > .5) continue;
+      if (HAB_PLAYFUL.test(a.s.slug) && HAB_PLAYFUL.test(b.s.slug) && a.s.category === "mammal" && b.s.category === "mammal") {
+        const [c, r] = Math.random() < .5 ? [a, b] : [b, a];
+        [r.tx, r.ty] = habAwayFrom(r, c.x); r.flee = 2.5; r.pause = 0;
+        c.chase = r; c.chaseT = 3; c.pause = 0;
+      } else if (a.s.category === "mammal" || b.s.category === "mammal") {
+        for (const [m, n] of [[a, b], [b, a]]) { m.pause = Math.max(m.pause, rnd(1.5, 2.5)); m.rest = "idle"; m.dir = Math.sign(n.x - m.x) || 1; }
+      }
+    }
+  }
 }
 
 // Wingbeat 0..1 (1 = wings down, sprite squashed). Big birds flap in bursts
@@ -763,17 +928,22 @@ function habPose(a, awake, roost) {
     case "float": case "paddle": y += Math.sin(a.phase * 1.5) * 1.5; break;
     case "jelly": y += Math.sin(a.phase * .8) * 6; sy = 1 + Math.sin(a.phase * .8 + 1.6) * .12; sx = 2 - sy; break;
   }
-  // Shaking off the rain or shivering, and jumping at thunder.
+  // Shaking off the rain or shivering, and jumping at thunder (or a tap).
   if (a.shake > 0) x += Math.floor(a.shake * 28) % 2 ? 1 : -1;
   if (a.jump > 0) y -= Math.sin(a.jump / .35 * Math.PI) * 7;
+  // Tapped: a flier swoops up in an arc, a sea anemone or turtle pulls in.
+  if (a.swoop > 0) y -= Math.sin((1 - a.swoop / 1.2) * Math.PI) * 14;
+  if (a.shy > 0) { const k = Math.sin(Math.min(1, (1.6 - a.shy) / .3) * Math.PI / 2) * Math.min(1, a.shy / .4); sy *= 1 - .3 * k; sx *= 1 + .08 * k; }
+  // Just woke up: a long stretch.
+  if (a.stretch > 0) { const k = Math.sin((1 - a.stretch / 1.4) * Math.PI); sx *= 1 + .12 * k; sy *= 1 - .08 * k; }
   return [x, y, sx, sy, tilt];
 }
 
 // What a ground animal does while it stands still: just stand, sit up on its
-// haunches, turn its head to look at you, or glance back over its shoulder
-// (only the animals whose sheets draw that pose).
+// haunches, turn its head to look at you, glance back over its shoulder, or put
+// its head down to graze (only the animals whose sheets draw that pose).
 function habRestPose() {
-  return ["idle", "idle", "sit", "look", "back"][Math.floor(Math.random() * 5)];
+  return ["idle", "idle", "sit", "look", "back", "eat", "eat"][Math.floor(Math.random() * 7)];
 }
 
 // Which pose of the animation sheet to show, and which of its frames:
@@ -795,7 +965,7 @@ function habAnim(a, awake, roost) {
       if (a.pause > 0 || !has("walk")) {
         const r = a.rest && has(a.rest) ? a.rest : "idle";
         // sitting up, it nibbles; standing, looking about, it breathes
-        return r === "idle" ? still : [r, r === "sit" ? cyc(a.phase * 2.5) : habIdleFrame(a.phase * 4 / 3, 1)];
+        return r === "idle" ? still : [r, r === "sit" || r === "eat" ? cyc(a.phase * 2.5) : habIdleFrame(a.phase * 4 / 3, 1)];
       }
       return ["walk", a.role === "hop" ? cyc((a.odo % 18) / 18 * 4) : cyc(a.odo / 3)];
     }
@@ -861,6 +1031,7 @@ function habDraw() {
   habFx(c, phase);
   habDecorFx(c, phase);
   habWxDraw(c, L, phase, poses);
+  habReactDraw(c, poses);
   for (const p of poses) {
     if (/firefly/.test(p.a.s.slug) && p.awake && phase !== "day") {
       const on = Math.sin(p.a.phase * 4) > -.2;
@@ -1156,6 +1327,7 @@ function habTap(ev) {
     return;
   }
   hab.picked = h.a;
+  habReact(h.a);
   // A different fact first each time you come back to it.
   hab.factIdx = Math.floor(Math.random() * 3);
   habSay(h.a);
@@ -1225,6 +1397,7 @@ function habLoop(now) {
   habWeather();
   habDecorTick(dt);
   hab.animals.forEach((a) => habStep(a, dt, habAwake(a, phase)));
+  habSocial(dt, phase);
   habFxStep(dt);
   habWxStep(dt);
   habDraw();
@@ -1480,13 +1653,14 @@ function habWxShade(c, L, phase) {
   c.fillRect(0, 0, L.w, HAB_H);
 }
 
-const HAB_GLYPHS = { note: ["..###", "..#.#", "..#..", "###..", "###.."], "!": ["##", "##", "##", "..", "##"] };
+const HAB_GLYPHS = { note: ["..###", "..#.#", "..#..", "###..", "###.."], "!": ["##", "##", "##", "..", "##"],
+                     "?": [".##.", "#..#", "..#.", "....", "..#."] };
 function habGlyph(c, kind, x, y) {
   const rows = HAB_GLYPHS[kind];
   const dots = (dx, dy) => rows.forEach((r, j) => [...r].forEach((ch, i) => ch === "#" && c.fillRect(x + i + dx, y + j + dy, 1, 1)));
   c.fillStyle = "#1c2a1c";
   [[-1, 0], [1, 0], [0, -1], [0, 1]].forEach(([dx, dy]) => dots(dx, dy));
-  c.fillStyle = kind === "!" ? "#ff6a4a" : "#ffffff";
+  c.fillStyle = kind === "!" ? "#ff6a4a" : kind === "?" ? "#ffe27a" : "#ffffff";
   dots(0, 0);
 }
 
@@ -1538,12 +1712,16 @@ function habWxDraw(c, L, phase, poses) {
     c.fillStyle = `rgba(255,255,255,${(hab.flash * .8).toFixed(2)})`;
     c.fillRect(0, 0, L.w, HAB_H);
   }
+}
+
+// The animals' little reactions over their heads: ! startled, ? curious, a note singing.
+function habReactDraw(c, poses) {
   for (const p of poses) {
     const r = p.a.react;
     if (!r || p.hidden) continue;
     const k = 1 - r.life / (r.kind === "!" ? 1.2 : 1.6);
     c.globalAlpha = Math.min(1, r.life * 2);
-    habGlyph(c, r.kind, p.x + 6, Math.round(p.y - 36 - k * 6));
+    habGlyph(c, r.kind, p.x + 6, Math.round(p.y - 36 * habScale(p.a.s.slug) - k * 6));
     c.globalAlpha = 1;
   }
 }

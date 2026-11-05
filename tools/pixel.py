@@ -119,7 +119,7 @@ def _seg_dist(x0, y0, x1, y1):
 
 
 # Animation: every body plan can draw itself in these poses, FRAMES frames each.
-ACTS = ("idle", "walk", "fly", "swim", "sleep", "sit", "look", "back")
+ACTS = ("idle", "walk", "fly", "swim", "sleep", "sit", "look", "back", "eat")
 FRAMES = 12
 OLD_FRAMES = 4  # body plans that still pick poses by s.f count in these
 # Still poses breathe (BREATH: how far the body rises, as a share of its height),
