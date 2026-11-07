@@ -182,6 +182,11 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
   Photos, feeds and POSTs are never cached.
 - Map tiles: USGS National Map topo only (public domain). Never OpenStreetMap
   tiles (their usage policy forbids this).
+- Field Guide sighting maps sit on a drawn atlas plate per state,
+  `backend/app/static/maps/<CODE>.webp`, made by `tools/make_state_maps.py`
+  (Natural Earth 1:10m + AWS Terrain Tiles relief, both free for commercial use).
+  The same script rewrites `species/<state>_outline.json` (Great Lakes cut out)
+  with the `frame` the image covers; web and Android place sightings with it.
 - Bump `release.json` only when kuro asks (major updates).
 
 **Safety and privacy (kid-friendly)**

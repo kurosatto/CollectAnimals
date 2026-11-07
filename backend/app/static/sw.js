@@ -3,12 +3,12 @@
 //   the cached copy is used when offline or when the server is down (the tunnel then answers 5xx).
 // - Sprites: network first (the server lets the browser keep them 10 minutes), so redrawn
 //   animals show up everywhere at once after an update; the cached copy is used offline.
-// - Icons and vendor files: served from cache, refreshed in the background.
+// - Icons, vendor files and the state maps: served from cache, refreshed in the background.
 // - Your own game data (GET /me..., /species, /states, /map, /hotspots, /friends): network first
 //   with the last answer as the offline fallback. The page clears it on log out.
 // - Everything else (photos, galleries, the feed, uploads, any POST) goes straight to the network,
 //   so other players' photos never fill up the phone.
-const VERSION = "15";
+const VERSION = "16";
 const SHELL = `shell-v${VERSION}`;
 const ASSETS = "assets-v8";  // v8 drops the 0.40 birds of prey
 const API = "api-v1";
@@ -64,7 +64,7 @@ self.addEventListener("notificationclick", (e) => {
   })());
 });
 
-const isAsset = (p) => /^\/(sprites|icons|vendor)\//.test(p);
+const isAsset = (p) => /^\/(sprites|icons|vendor|maps)\//.test(p);
 const isGameData = (p) => /^\/(me|states|species|map|hotspots|friends)(\/|$)/.test(p)
   && !/^\/species\/[^/]+\/photos/.test(p);
 

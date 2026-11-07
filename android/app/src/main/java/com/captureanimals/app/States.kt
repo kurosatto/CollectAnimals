@@ -49,7 +49,8 @@ object States {
                 val ranges = optional("ranges")
                     ?: JSONObject().put("grid", s.optJSONObject("grid") ?: gridFor(bounds)).put("species", JSONObject()).toString()
                 var guide = FieldGuide.parse(details, ranges, optional("outline") ?: boxOutline(bounds),
-                    optional("hotspots"), optional("seasons"), region = name)
+                    optional("hotspots"), optional("seasons"), region = name,
+                    mapAsset = "maps/${s.getString("code")}.webp")
                 val dex = optional("dex")
                 if (dex != null) guide = guide.withDetails(overlay(guide.details, dex))
                 guide
@@ -67,7 +68,7 @@ object States {
     }
 
     // Same as the backend's places.state_at: how far outside a box still counts
-    // (degrees), and how far off a coarse outline a beach or island still counts (km).
+    // (degrees), and how far off a simplified outline a beach or island still counts (km).
     private const val MARGIN = 0.3
     private const val COAST_KM = 5.0
 
@@ -79,12 +80,15 @@ object States {
         states.mapNotNull { st -> fit(st, lat, lon)?.let { Triple(it, st.bounds?.area ?: 0.0, st) } }
             .minWithOrNull(compareBy({ it.first }, { it.second }))?.third
 
-    /** 0 inside the outline, 1 just off its edge, 2 inside the box of a state with no outline, 3 just outside it. */
-    private fun fit(st: StateInfo, lat: Double, lon: Double): Int? {
+    /**
+     * 0 inside the outline, 1 to 1.1 just off its edge (closer is better, so a harbour goes
+     * to the nearer shore), 2 inside the box of a state with no outline, 3 just outside it.
+     */
+    private fun fit(st: StateInfo, lat: Double, lon: Double): Double? {
         val b = st.bounds ?: return null
         if (!b.contains(lat, lon, MARGIN)) return null
         val rings = st.outlineRings
-        if (rings.isEmpty()) return if (b.contains(lat, lon)) 2 else 3
+        if (rings.isEmpty()) return if (b.contains(lat, lon)) 2.0 else 3.0
         var inside = false
         for (r in rings) {
             val n = r.size / 2
@@ -94,8 +98,9 @@ object States {
                 if ((y1 > lat) != (y2 > lat) && lon < x1 + (lat - y1) * (x2 - x1) / (y2 - y1)) inside = !inside
             }
         }
-        if (inside) return 0
+        if (inside) return 0.0
         val kx = 111.32 * Math.cos(Math.toRadians(lat))
+        var best = Double.MAX_VALUE
         for (r in rings) {
             val n = r.size / 2
             for (i in 0 until n) {
@@ -103,10 +108,10 @@ object States {
                 val bx = (r[2 * ((i + 1) % n)] - lon) * kx; val by = (r[2 * ((i + 1) % n) + 1] - lat) * 110.57
                 val dx = bx - ax; val dy = by - ay
                 val t = if (dx != 0.0 || dy != 0.0) (-(ax * dx + ay * dy) / (dx * dx + dy * dy)).coerceIn(0.0, 1.0) else 0.0
-                if (Math.hypot(ax + t * dx, ay + t * dy) <= COAST_KM) return 1
+                best = minOf(best, Math.hypot(ax + t * dx, ay + t * dy))
             }
         }
-        return null
+        return if (best <= COAST_KM) 1 + 0.1 * best / COAST_KM else null
     }
 
     /** A quarter-degree sighting grid over the state's bounds, for a state with no ranges file yet. */

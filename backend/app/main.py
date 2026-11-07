@@ -234,6 +234,8 @@ def android_apk(name: str):
 
 
 app.mount("/icons", StaticFiles(directory=STATIC_DIR / "icons"), name="icons")
+# Each state's drawn Field Guide map (tools/make_state_maps.py).
+app.mount("/maps", StaticFiles(directory=STATIC_DIR / "maps"), name="maps")
 
 
 @app.get("/manifest.webmanifest", include_in_schema=False)
