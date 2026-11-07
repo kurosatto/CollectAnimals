@@ -35,7 +35,7 @@ seasons in the habitat, states unlocked by where your photos were taken.
 | `backend/app/{scoring,goals,places,states,weather,household,limits,storage}.py` | Photo scores, sets/challenges, location blurring and place names, state lookup, api.weather.gov, pets-and-pests, rate limits, photo storage |
 | `backend/app/config.py` | Every setting, read from env vars (see §5) |
 | `backend/app/static/index.html` | The whole web client (~2.3k lines, vanilla JS, no build step) |
-| `backend/app/static/habitat.js` | Habitat engine (scenes per state, perches, motion, weather, seasons, real sun and moon). **Shared with Android** |
+| `backend/app/static/habitat.js` | Habitat engine (scenes per state: per-state terrain backdrops in `habFarScene`, water kinds in `HAB_WATER_KIND`, landmarks; perches, motion, weather, seasons, real sun and moon). **Shared with Android** |
 | `backend/app/static/decor.js`, `species/decor.json`, `tools/make_decor.py` | The ~100 shop decorations for your own habitat: catalog, sprites (`species/sprites/decor/`), placement (12 meadow spots, pond, beach, sea, sky) and the animal visits (perch, hide, ride, slide...). Admin accounts own every shop item |
 | `backend/app/static/sw.js`, `manifest.webmanifest`, `icons/` | PWA (install, offline Field Guide) |
 | `backend/tests/` | pytest, ~105 tests, ~2 min |
