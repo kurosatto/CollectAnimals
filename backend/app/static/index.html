@@ -102,9 +102,10 @@
   .dex-head h2 { margin:0; }
   .dex-body { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px; margin-top:12px; }
   @media (max-width:520px) { .dex-body { grid-template-columns:1fr; } }
-  .dex-map svg { width:100%; height:auto; display:block; }
+  .dex-map svg { width:100%; height:auto; display:block; border-radius:6px; }
   .dex-map .land { fill:var(--bg); stroke:var(--muted); stroke-width:1.5; stroke-linejoin:round; }
-  .dex-map .cell { fill:var(--accent); }
+  .dex-map .cell { fill:#2f7d4f; }
+  .dex-map .cells { mix-blend-mode:multiply; }
   .dex dt { font-size:.75rem; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin-top:10px; }
   .dex dd { margin:2px 0 0; }
   .hot-wrap { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.2fr); gap:16px; }
@@ -1433,7 +1434,8 @@ function avatarImg(n, cls = "") {
 }
 
 // The player's state (from /me) picks the Dex, Hotspots and map. Outline rings
-// are [lon, lat] from /map/<state>; the map is scaled so every state is ~430 px wide.
+// are [lon, lat] from /map/<state>, with the "frame" (lon/lat box) its drawn map
+// /maps/<CODE>.webp covers (tools/make_state_maps.py).
 let states = [];
 // Until /states and /me answer: no state, and a map of the lower 48.
 let myState = { code: "", name: "", bounds: { west: -124.8, east: -66.9, south: 24.5, north: 49.4 } };
@@ -1443,6 +1445,16 @@ let mainCode = "";
 let OUTLINE = [];
 let MAP = {};
 const px = (lon, lat) => [(lon - MAP.lon0) * MAP.kx, (MAP.lat1 - lat) * MAP.ky];
+// Pixel frame for a state's map: the drawn map's own frame when it has one, otherwise
+// its bounds scaled to 430 px wide.
+function mapFrame(st, o) {
+  const f = o && o.frame;
+  if (f) return { lon0: f.west, lat1: f.north, kx: f.width / (f.east - f.west), ky: f.height / (f.north - f.south),
+    w: f.width, h: f.height, img: `/maps/${st.code}.webp` };
+  const b = st.bounds, k = Math.cos((b.south + b.north) / 2 * Math.PI / 180);
+  const scale = 430 / ((b.east - b.west) * k);
+  return { lon0: b.west, lat1: b.north, kx: scale * k, ky: scale, w: 430, h: (b.north - b.south) * scale };
+}
 
 async function loadStates() {
   try { states = await api("/states"); } catch { states = []; }
@@ -1460,12 +1472,10 @@ async function useState(code) {
   $("my-state").replaceChildren(pin, el("span", "st-long", (myState.name || "") + (visiting ? " (visiting)" : "")),
     el("span", "st-short", (myState.code || "") + (visiting ? " (visiting)" : "")));
   $("my-state").classList.toggle("hidden", states.length < 2);
-  const b = myState.bounds;
-  const k = Math.cos((b.south + b.north) / 2 * Math.PI / 180);
-  const scale = 430 / ((b.east - b.west) * k);
-  MAP = { lon0: b.west, lat1: b.north, kx: scale * k, ky: scale };
-  OUTLINE = [];
-  try { OUTLINE = (await api(`/map/${myState.code}`)).rings || []; } catch {}
+  let o = null;
+  try { o = await api(`/map/${myState.code}`); } catch {}
+  OUTLINE = (o && o.rings) || [];
+  MAP = mapFrame(myState, o);
 }
 
 // The state dialog. With `tiles` (from /me/states), the player's unlocked states
@@ -1597,20 +1607,21 @@ async function stateMap(code) {
   const st = states.find((x) => x.code === code);
   if (!st || st.code === myState.code) return null;
   if (!(code in outlines)) {
-    try { outlines[code] = (await api(`/map/${code}`)).rings || []; } catch { outlines[code] = []; }
+    try { outlines[code] = await api(`/map/${code}`); } catch { outlines[code] = null; }
   }
-  const b = st.bounds, k = Math.cos((b.south + b.north) / 2 * Math.PI / 180);
-  const scale = 430 / ((b.east - b.west) * k);
-  const map = { lon0: b.west, lat1: b.north, kx: scale * k, ky: scale };
-  return { st, outline: outlines[code], map, px: (lon, lat) => [(lon - map.lon0) * map.kx, (map.lat1 - lat) * map.ky] };
+  const o = outlines[code], map = mapFrame(st, o);
+  return { st, outline: (o && o.rings) || [], map, px: (lon, lat) => [(lon - map.lon0) * map.kx, (map.lat1 - lat) * map.ky] };
 }
 
-// A sighting map, on your state's outline unless `other` (from stateMap) says otherwise.
+// A sighting map on your state's drawn map (or its plain outline), unless `other`
+// (from stateMap) says otherwise. Sightings are soft green washes, like a range map.
+let mapIds = 0;
 function rangeSvg(range, other = null) {
   const { st, outline, map, px: to } = other || { st: myState, outline: OUTLINE, map: MAP, px };
-  const w = to(st.bounds.east, 0)[0], h = to(0, st.bounds.south)[1];
+  const { w, h } = map;
   const land = outline.map((ring) => "M" + ring.map(([lon, lat]) =>
     to(lon, lat).map((v) => v.toFixed(1)).join(",")).join("L") + "Z").join("");
+  const base = map.img ? `<image href="${map.img}" width="${w}" height="${h}"/>` : `<path class="land" d="${land}"/>`;
   let cells = "";
   if (range) {
     const { lon0, lat0, step } = range.grid;
@@ -1622,8 +1633,10 @@ function rangeSvg(range, other = null) {
         height="${(step * map.ky).toFixed(1)}" opacity="${op}"/>`;
     }
   }
+  const id = `soft${++mapIds}`, blur = range ? (range.grid.step * map.kx * 0.45).toFixed(1) : 0;
   return `<svg viewBox="0 0 ${w.toFixed(0)} ${h.toFixed(0)}" role="img" aria-label="Map of ${st.name} sightings">
-    <path class="land" d="${land}"/>${cells}</svg>`;
+    <defs><filter id="${id}" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="${blur}"/></filter></defs>
+    ${base}<g class="cells" filter="url(#${id})">${cells}</g></svg>`;
 }
 
 // "When to look": sightings by month (Animal Crossing style) and a day/night hint.
@@ -2652,7 +2665,7 @@ function drawHotspots() {
   if (window.L) { drawHotMap(); drawHotList(); return; }
   const svg = rangeSvg(null).replace("</svg>", hotspots.map((h, i) => {
     const [x, y] = px(h.lon, h.lat);
-    const r = 5 + Math.min(7, h.species.length / 6);
+    const r = (5 + Math.min(7, h.species.length / 6)) * MAP.w / 430;
     return `<circle class="hot-pin${hotSelected === i ? " on" : ""}" data-i="${i}" cx="${x.toFixed(1)}"
       cy="${y.toFixed(1)}" r="${r.toFixed(1)}"><title></title></circle>`;
   }).join("") + "</svg>");

@@ -82,7 +82,8 @@ def place_name(lat: float, lon: float, town_km: float = 25, prefix: str = "near"
 
 
 _outlines: dict[str, list] = {}
-# The outlines are coarse (1:50m), so a beach or an island just off them still counts.
+# Outlines are simplified (Natural Earth 1:10m), so a beach, a pier or an island just
+# off them still counts.
 _COAST_KM = 5
 
 
@@ -94,10 +95,11 @@ def _rings(state) -> list:
     return rings
 
 
-def _fit(state, lat: float, lon: float) -> int | None:
-    """How well a point fits a state, best first: 0 inside its outline, 1 just
-    off its edge, 2 inside the bounding box of a state with no outline yet,
-    3 just outside that box. None when it's not in the state."""
+def _fit(state, lat: float, lon: float) -> float | None:
+    """How well a point fits a state, best first: 0 inside its outline, 1 to 1.1
+    just off its edge (closer is better, so a harbour goes to the nearer shore),
+    2 inside the bounding box of a state with no outline yet, 3 just outside that
+    box. None when it's not in the state."""
     b = state.bounds
     if not (b["south"] - _MARGIN <= lat <= b["north"] + _MARGIN and b["west"] - _MARGIN <= lon <= b["east"] + _MARGIN):
         return None
@@ -113,14 +115,14 @@ def _fit(state, lat: float, lon: float) -> int | None:
         return 0
     # Distance to the outline, on a flat projection (fine at a few km).
     kx = 111.32 * math.cos(math.radians(lat))
+    best = math.inf
     for ring in rings:
         for (x1, y1), (x2, y2) in zip(ring, ring[1:] + ring[:1]):
             ax, ay, bx, by = (x1 - lon) * kx, (y1 - lat) * 110.57, (x2 - lon) * kx, (y2 - lat) * 110.57
             dx, dy = bx - ax, by - ay
             t = max(0.0, min(1.0, -(ax * dx + ay * dy) / (dx * dx + dy * dy))) if dx or dy else 0.0
-            if math.hypot(ax + t * dx, ay + t * dy) <= _COAST_KM:
-                return 1
-    return None
+            best = min(best, math.hypot(ax + t * dx, ay + t * dy))
+    return 1 + 0.1 * best / _COAST_KM if best <= _COAST_KM else None
 
 
 def in_state(state, lat: float, lon: float) -> bool:

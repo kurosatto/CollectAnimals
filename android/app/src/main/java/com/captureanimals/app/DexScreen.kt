@@ -31,13 +31,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.text.DateFormat
@@ -191,16 +194,17 @@ private fun StatCard(label: String, value: String, modifier: Modifier) {
 
 /**
  * Equirectangular frame around a state outline, with longitudes squeezed by the cosine
- * of its middle latitude, which is close enough at state scale. Widened a little to the
- * west so offshore sightings (whales, seals) stay on the California map.
+ * of its middle latitude, which is close enough at state scale. With a drawn map, its
+ * own frame; otherwise widened a little to the west so offshore sightings (whales,
+ * seals) stay on the California map.
  */
 class StateFrame(o: Outline) {
-    private val kx = cos(Math.toRadians((o.minLat + o.maxLat) / 2))
-    val minLon = o.minLon - 0.6
-    val maxLon = o.maxLon + 0.2
-    val minLat = o.minLat - 0.2
-    val maxLat = o.maxLat + 0.2
-    val aspect = ((maxLon - minLon) * kx / (maxLat - minLat)).toFloat()
+    val minLon = o.frame?.get(0) ?: (o.minLon - 0.6)
+    val maxLon = o.frame?.get(1) ?: (o.maxLon + 0.2)
+    val minLat = o.frame?.get(2) ?: (o.minLat - 0.2)
+    val maxLat = o.frame?.get(3) ?: (o.maxLat + 0.2)
+    private val kx = cos(Math.toRadians((minLat + maxLat) / 2))
+    val aspect = (o.frame?.get(4) ?: ((maxLon - minLon) * kx / (maxLat - minLat))).toFloat()
 
     fun x(lon: Double, width: Float) = ((lon - minLon) / (maxLon - minLon) * width).toFloat()
     fun y(lat: Double, height: Float) = ((maxLat - lat) / (maxLat - minLat) * height).toFloat()
@@ -214,11 +218,19 @@ class StateFrame(o: Outline) {
     }
 }
 
-/** State outline with the species' sighting cells shaded on top. */
+/**
+ * The state's drawn map (or its plain outline) with the species' sightings as soft
+ * green washes on top, like a field guide's range map.
+ */
 @Composable
 fun RangeMap(dex: FieldGuide, slug: String, color: Color, modifier: Modifier = Modifier) {
     val g = dex.ranges
     val frame = remember(dex) { StateFrame(dex.outline) }
+    val context = LocalContext.current
+    val map = remember(dex.mapAsset) {
+        dex.mapAsset?.let { a -> runCatching { context.assets.open(a).use(BitmapFactory::decodeStream)?.asImageBitmap() }.getOrNull() }
+    }
+    val wash = Color(0xFF2F7D4F)
     val land = MaterialTheme.colorScheme.surfaceVariant
     val sea = MaterialTheme.colorScheme.surface
     val border = MaterialTheme.colorScheme.outline
@@ -227,17 +239,20 @@ fun RangeMap(dex: FieldGuide, slug: String, color: Color, modifier: Modifier = M
 
     Canvas(modifier.aspectRatio(frame.aspect).clip(RoundedCornerShape(16.dp)).background(sea)) {
         val path = frame.outlinePath(dex.outline, size)
-        drawPath(path, land)
+        if (map != null) drawImage(map, dstSize = IntSize(size.width.toInt(), size.height.toInt()),
+            filterQuality = FilterQuality.High)
+        else drawPath(path, land)
         val cw = frame.x(frame.minLon + g.step, size.width)
-        val ch = size.height - frame.y(frame.minLat + g.step, size.height)
         for ((col, row, n) in cells) {
-            val lon = g.lon0 + col * g.step
-            val lat = g.lat0 + row * g.step
+            val lon = g.lon0 + (col + 0.5) * g.step
+            val lat = g.lat0 + (row + 0.5) * g.step
             // Log scale so a few sightings still show next to city hotspots.
             val t = (0.25 + 0.75 * ln(1.0 + n) / ln(1.0 + maxCount)).toFloat()
-            drawRect(color.copy(alpha = t), topLeft = Offset(frame.x(lon, size.width), frame.y(lat + g.step, size.height)),
-                size = Size(cw, ch))
+            val c = Offset(frame.x(lon, size.width), frame.y(lat, size.height))
+            val r = cw * 1.1f
+            val ink = if (map != null) wash else color
+            drawCircle(Brush.radialGradient(listOf(ink.copy(alpha = 0.8f * t), ink.copy(alpha = 0f)), c, r), r, c)
         }
-        drawPath(path, border, style = Stroke(width = 1.5.dp.toPx()))
+        if (map == null) drawPath(path, border, style = Stroke(width = 1.5.dp.toPx()))
     }
 }

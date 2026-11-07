@@ -65,20 +65,26 @@ class RangeGrid(val lon0: Double, val lat0: Double, val step: Double, val cols: 
     fun sightings(slug: String) = cells[slug].orEmpty().sumOf { it[2] }
 }
 
-/** A state outline's rings as [lon, lat] pairs (species/<state>_outline.json). */
-class Outline(val rings: List<DoubleArray>) {
+/**
+ * A state outline's rings as [lon, lat] pairs (species/<state>_outline.json), and the
+ * [frame] (west, east, south, north, width / height) its drawn map covers, when it has one.
+ */
+class Outline(val rings: List<DoubleArray>, val frame: DoubleArray? = null) {
     val minLon = rings.minOf { r -> (r.indices step 2).minOf { r[it] } }
     val maxLon = rings.maxOf { r -> (r.indices step 2).maxOf { r[it] } }
     val minLat = rings.minOf { r -> (1 until r.size step 2).minOf { r[it] } }
     val maxLat = rings.maxOf { r -> (1 until r.size step 2).maxOf { r[it] } }
 }
 
-/** One state's Field Guide data; [region] is the state's name. */
+/**
+ * One state's Field Guide data; [region] is the state's name and [mapAsset] its drawn
+ * map (maps/<CODE>.webp, made by tools/make_state_maps.py).
+ */
 class FieldGuide(val details: Map<String, SpeciesDetails>, val ranges: RangeGrid, val outline: Outline,
               val parks: List<Park> = emptyList(), val seasons: Map<String, Season> = emptyMap(),
-              val region: String = "California") {
+              val region: String = "California", val mapAsset: String? = null) {
 
-    fun withDetails(d: Map<String, SpeciesDetails>) = FieldGuide(d, ranges, outline, parks, seasons, region)
+    fun withDetails(d: Map<String, SpeciesDetails>) = FieldGuide(d, ranges, outline, parks, seasons, region, mapAsset)
 
     // People mostly look by day, so compare each species with the average listed one.
     private val avgNightShare: Double? by lazy {
@@ -146,7 +152,7 @@ class FieldGuide(val details: Map<String, SpeciesDetails>, val ranges: RangeGrid
         }
 
         fun parse(detailsCsv: String, rangesJson: String, outlineJson: String, hotspotsJson: String? = null,
-                  seasonsJson: String? = null, region: String = "California"): FieldGuide {
+                  seasonsJson: String? = null, region: String = "California", mapAsset: String? = null): FieldGuide {
             val rows = parseCsv(detailsCsv)
             val header = rows.first()
             val idx = { name: String -> header.indexOf(name).also { require(it >= 0) { "details.csv lacks $name" } } }
@@ -174,13 +180,18 @@ class FieldGuide(val details: Map<String, SpeciesDetails>, val ranges: RangeGrid
             val ranges = RangeGrid(g.getDouble("lon0"), g.getDouble("lat0"), g.getDouble("step"),
                 g.getInt("cols"), g.getInt("rows"), cells)
 
-            val ringsJson = JSONObject(outlineJson).getJSONArray("rings")
+            val outlineObj = JSONObject(outlineJson)
+            val ringsJson = outlineObj.getJSONArray("rings")
+            val frame = outlineObj.optJSONObject("frame")?.let { f ->
+                doubleArrayOf(f.getDouble("west"), f.getDouble("east"), f.getDouble("south"), f.getDouble("north"),
+                    f.getDouble("width") / f.getDouble("height"))
+            }
             val rings = List(ringsJson.length()) { i ->
                 val ring = ringsJson.getJSONArray(i)
                 DoubleArray(ring.length() * 2) { j -> ring.getJSONArray(j / 2).getDouble(j % 2) }
             }
-            return FieldGuide(details, ranges, Outline(rings), hotspotsJson?.let(::parseParks).orEmpty(),
-                seasonsJson?.let(::parseSeasons).orEmpty(), region)
+            return FieldGuide(details, ranges, Outline(rings, frame), hotspotsJson?.let(::parseParks).orEmpty(),
+                seasonsJson?.let(::parseSeasons).orEmpty(), region, mapAsset.takeIf { frame != null })
         }
 
         /** Minimal RFC 4180 CSV: quoted fields, doubled quotes, commas/newlines inside quotes. */
