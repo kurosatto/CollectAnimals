@@ -2154,7 +2154,9 @@ function habBackground(L, phase, state, lights = {}) {
   // Hills, far then near, each with a lit top edge (low and gentle in flat states).
   // The hills always slope down to the shore, even when the far scenery runs on.
   const envH = (x, len) => { const k = clamp01((L.sea - 4 - x) / len); return k * k * (3 - 2 * k); };
-  const hills = sc.flat ? [[150, 3, .021, sc.far, 20], [158, 2, .034, sc.near, 21]]
+  const bio = HAB_BIOME[state];
+  if (bio) habFoothills(fc, bio);
+  const hills = bio ? [] : sc.flat ? [[150, 3, .021, sc.far, 20], [158, 2, .034, sc.near, 21]]
     : [[132, 12, .021, sc.far, 20], [150, 9, .034, sc.near, 21]];
   hills.forEach(([base, amp, k, hex, seed], li) => {
     const pal = P(...hex);
@@ -2234,7 +2236,7 @@ function habBackground(L, phase, state, lights = {}) {
   }
   if (inland) habFarBank(fc); else for (let x = L.sea - 30; x < W; x++) img.set(x, L.water, P(HAB_WATER[wk].line));
   // Meadow with patchy grass color.
-  const mead = P(...sc.meadow);
+  const mead = P(...(bio === "desert" ? HAB_GROUND[state] || HAB_GROUND.desert : sc.meadow));
   for (let y = L.water + 4; y < H; y++) for (let x = 0; x < L.shore[y] + 3; x++) {
     const n = fbm(x / 16, y / 7, 17);
     if (sc.snow && n + (fbm(x / 5, y / 3, 27) - .5) * .3 > .42) img.set(x, y, ramp(snowPal, .4 + (n - .42) * 3, x, y));
@@ -2253,14 +2255,31 @@ function habBackground(L, phase, state, lights = {}) {
     const reach = Math.floor(vnoise(0, y / 3, 6) * 5);
     for (let i = 0; i < reach; i++) img.set(x0 + i, y, ramp(mead, .5 - i * .1, x0 + i, y));
   }
+  if (bio === "north" || bio === "alpine") {
+    // Rounded granite boulders along a cold shore.
+    const gr = P("#4e4e56", "#686870", "#84848c", "#a0a0a8"), bl = pxLayer(W, H);
+    for (let i = 0; i < 8; i++) {
+      const y = 186 + i * 10 + Math.floor(hash2(i, 1, 840) * 6), x = Math.round((L.shore[y] + L.surf[y]) / 2 + (hash2(i, 2, 840) - .5) * 10);
+      pxBlob(bl, x, y, 3 + Math.floor(hash2(i, 3, 840) * 4), 2 + Math.floor(hash2(i, 4, 840) * 2), gr, { rough: .3, seed: i + 5 });
+    }
+    bl.onto(img, P("#2a2a30"));
+  } else if (bio === "marsh") {
+    // Marsh grass where the meadow meets the water.
+    const mg = P("#4a5a2a", "#647438", "#8a9a50");
+    for (let y = L.water + 4; y < H; y += 2) for (let b = 0; b < 3; b++) {
+      const x = L.shore[y] + Math.floor(hash2(y, b, 841) * 10), h = 4 + Math.floor(hash2(b, y, 842) * 5);
+      for (let k = 0; k < h; k++) img.set(x + Math.round(k * (b - 1) * .25), y - k, mg[k > h - 3 ? 2 : b % 2]);
+    }
+  }
   // Grass tufts and clusters of flowers.
   const blade = P(sc.meadow[0], sc.meadow[3]);
-  for (let i = 0; i < 260; i++) {
+  if (bio) habGround(fc, bio, mulberry(77));
+  else for (let i = 0; i < 260; i++) {
     const x = Math.floor(r() * (L.land - 6)), y = L.water + 7 + Math.floor(r() * (H - L.water - 8));
     img.set(x, y, blade[0]); img.set(x, y - 1, blade[0]); img.set(x + 1, y - 2, blade[1]); img.set(x - 1, y - 1, blade[1]);
   }
   const flowerSets = sc.flowers.map((f) => P(...f));
-  for (let i = 0; i < sc.flowerCount; i++) {
+  for (let i = 0; i < (bio ? 0 : sc.flowerCount); i++) {
     const cx = Math.floor(r() * (L.land - 16)) + 6, cy = L.water + 12 + Math.floor(r() * (H - L.water - 16));
     const [petal, mid] = flowerSets[Math.floor(r() * flowerSets.length)];
     for (let j = 0; j < 3 + r() * 3; j++) {
@@ -2269,7 +2288,7 @@ function habBackground(L, phase, state, lights = {}) {
       img.set(x - 1, y, petal); img.set(x + 1, y, petal); img.set(x, y - 1, petal); img.set(x, y + 1, petal); img.set(x, y, mid);
     }
   }
-  if (sc.leaves === "fall") {
+  if (sc.leaves === "fall" && !bio) {
     // Fallen leaves scattered on the meadow (plenty under New York's maples).
     const lv = [P("#c8441c"), P("#e8782a"), P("#e8b82a"), P("#9a2a16")];
     for (let i = 0; i < (sc.dots === "maple" ? 90 : 45); i++) {
@@ -2287,27 +2306,52 @@ function habBackground(L, phase, state, lights = {}) {
   }
   rocks.onto(img, P("#262a35"));
   // Pond: a ring of stones, deep water, sky reflection, lily pads and cattails.
-  const p = L.pond, pond = pxLayer(W, H), pw = P("#1f5f97", "#2b76b0", "#3b8fc8", "#5eaee0");
+  const ps = bio && habPondStyle(bio, state);
+  const p = L.pond, pond = pxLayer(W, H), pw = P(...(ps?.water || ["#1f5f97", "#2b76b0", "#3b8fc8", "#5eaee0"]));
   for (let dy = -p.ry; dy <= p.ry; dy++) for (let dx = -p.rx; dx <= p.rx; dx++) {
     const d = (dx / p.rx) ** 2 + (dy / p.ry) ** 2;
     if (d > 1) continue;
     pond.set(p.x + dx, p.y + dy, ramp(pw, .2 + (dy + p.ry) / (2 * p.ry) * .7 - (d > .75 && dy < 0 ? .2 : 0), p.x + dx, p.y + dy));
   }
-  const pebble = P("#6d6a62", "#8c887d", "#a9a597", "#c4c0b1");
-  for (let a = 0; a < Math.PI * 2; a += .26) {
+  const pebble = P(...(ps?.rim || ["#6d6a62", "#8c887d", "#a9a597", "#c4c0b1"]));
+  if (ps && !ps.rim) {
+    // A muddy bank instead of stones.
+    const mud = P("#3a2e22", "#4e3e2e", "#64503c");
+    for (let a = 0; a < Math.PI * 2; a += .02) {
+      const w = 1 + Math.floor(vnoise(a * 3, 0, 832) * 3);
+      for (let k = 0; k < w; k++) {
+        const x = Math.round(p.x + Math.cos(a) * (p.rx + k)), y = Math.round(p.y + Math.sin(a) * (p.ry + k * .6));
+        if (pond.get(x, y) < 0) pond.set(x, y, mud[Math.min(2, k + (Math.sin(a) < 0 ? 0 : 1))]);
+      }
+    }
+  } else for (let a = 0; a < Math.PI * 2; a += ps?.big ? .34 : .26) {
     const x = Math.round(p.x + Math.cos(a) * (p.rx + 2)), y = Math.round(p.y + Math.sin(a) * (p.ry + 1.5));
-    pxBlob(pond, x, y, 2 + (hash2(a * 100, 1) > .5 ? 1 : 0), 2, pebble);
+    const big = ps?.big && hash2(a * 100, 2) > .6;
+    pxBlob(pond, x, y, 2 + (hash2(a * 100, 1) > .5 ? 1 : 0) + (big ? 2 : 0), 2 + (big ? 1 : 0), pebble, { rough: .3, seed: Math.round(a * 50) });
   }
-  pond.onto(img, P("#3c5a2c"));
+  pond.onto(img, ps && !ps.rim ? undefined : P("#3c5a2c"));
   const refl = P("#8fd0f5"), pad = P("#3e7d34", "#5a9c42", "#76b653");
   for (const [dx, dy, w] of [[-18, -5, 9], [6, -3, 12], [-6, 4, 6]]) for (let i = 0; i < w; i++) img.set(p.x + dx + i, p.y + dy, refl);
-  for (const [dx, dy] of [[-p.rx + 12, 2], [p.rx - 16, -3], [8, 6]]) {
+  if (ps?.duckweed) for (let i = 0; i < 90; i++) {
+    const a = hash2(i, 1, 830) * Math.PI * 2, d = .55 + hash2(i, 2, 830) * .4;
+    img.set(Math.round(p.x + Math.cos(a) * p.rx * d), Math.round(p.y + Math.sin(a) * p.ry * d), pad[1 + (i % 2)]);
+  }
+  if (ps?.knees) for (const dx of [-p.rx - 6, -p.rx + 6, p.rx - 4, p.rx + 7, -4]) {
+    // Cypress knees poking up around the bayou.
+    const ky = dx === -4 ? p.y - p.ry - 3 : p.y + (dx < 0 ? 3 : -2), kh = 3 + Math.floor(hash2(dx, 3, 831) * 3);
+    for (let k = 0; k < kh; k++) for (let w = -Math.floor((kh - k) / 2); w <= Math.floor((kh - k) / 2); w++) img.set(p.x + dx + w, ky - k, P(w < 0 ? "#6a5440" : "#4e3c2c"));
+  }
+  if (!ps || ps.lilies) for (const [dx, dy] of [[-p.rx + 12, 2], [p.rx - 16, -3], [8, 6]]) {
     pxBlob(img, p.x + dx, p.y + dy, 4, 2, pad);
     img.set(p.x + dx + 1, p.y + dy - 1, pw[2]); img.set(p.x + dx + 2, p.y + dy, pw[2]);
   }
-  img.set(p.x + p.rx - 16, p.y - 4, P("#ffd1e6")); img.set(p.x + p.rx - 15, p.y - 4, P("#ff9cc6")); img.set(p.x + p.rx - 16, p.y - 5, P("#ffd1e6"));
+  if (!ps || ps.lilies) { img.set(p.x + p.rx - 16, p.y - 4, P("#ffd1e6")); img.set(p.x + p.rx - 15, p.y - 4, P("#ff9cc6")); img.set(p.x + p.rx - 16, p.y - 5, P("#ffd1e6")); }
   const reed = P("#2f6a2c", "#4c8f3c"), cat = P("#6b4227", "#8a5833");
-  for (const dx of [-p.rx - 3, -p.rx + 1, -p.rx + 4, p.rx - 2, p.rx + 2, p.rx + 5]) {
+  if (ps?.sedge) for (const dx of [-p.rx - 2, -p.rx + 3, p.rx - 3, p.rx + 3, p.rx + 6]) {
+    // Sedge tufts instead of cattails at a cold mountain pool.
+    for (let b = -2; b <= 2; b++) for (let k = 0; k < 6 - Math.abs(b); k++) img.set(p.x + dx + b + Math.round(b * k * .2), p.y - 1 - k, reed[k > 2 ? 1 : 0]);
+  }
+  for (const dx of [-p.rx - 3, -p.rx + 1, -p.rx + 4, p.rx - 2, p.rx + 2, p.rx + 5].slice(0, ps && !ps.sedge ? ps.reeds : ps?.sedge ? 0 : 6)) {
     const hgt = 12 + Math.floor(hash2(dx, 2) * 6);
     for (let i = 0; i < hgt; i++) { img.set(p.x + dx, p.y - 1 - i, reed[i % 3 ? 0 : 1]); }
     img.set(p.x + dx - 1, p.y - 4, reed[1]); img.set(p.x + dx + 1, p.y - 7, reed[1]);
@@ -3199,6 +3243,253 @@ function habFarm(c, st) {
     barnAt(Math.round(W * .3), gy - 4, 2); silo(Math.round(W * .3) + 16, gy - 4, 30, 5);
   }
   fl.onto(c.img, P("#2a2a2a"));
+}
+
+// Biomes for the near scenery: the foothills, the meadow floor, the pond and the
+// shore change with them. States without one keep the classic look.
+const HAB_BIOME = {};
+for (const [bio, sts] of Object.entries({
+  desert: "AZ NM NV UT", prairie: "ND SD NE KS OK TX", alpine: "CO WY MT ID",
+  forest: "TN WV KY AR VT NH PA NY OH IN IL IA MO WI MI MA CT RI NJ DE MD VA NC GA AL",
+  north: "ME MN AK WA OR", marsh: "LA MS FL SC", tropical: "HI",
+})) for (const st of sts.split(" ")) HAB_BIOME[st] = bio;
+const HAB_FARM_STATES = new Set(["KS", "IA", "OK", "IN", "WI"]);
+const HAB_GROUND = {
+  desert: ["#a88c5c", "#b89c6a", "#c8ac7a", "#d6bc8c"], UT: ["#a8704a", "#b8805a", "#c8926a", "#d6a47c"],
+  NM: ["#a8845a", "#b89468", "#c8a678", "#d6b88a"],
+};
+// Leafy canopy seen from the side: lumpy crowns lit from the upper left, darker
+// in the gaps between trees.
+function habCanopy(c, pals, o = {}) {
+  const s = o.size || 4;
+  return (x, z, ht, sx, sz, y, dep) => {
+    const n = vnoise(x / s, y / (s * .8), 720 + z), m = vnoise((x + 1) / s, (y + 1) / (s * .8), 720 + z);
+    let light = .52 + (n - m) * 3.2 + (n - .5) * .5 - Math.min(dep, 30) * .012 - sx * .08;
+    if (n < .28) light -= .3;
+    const pal = pals.length > 1 ? pals[Math.floor(vnoise(x / 11, y / 7 + z * 2, 721) * pals.length * .999)] : pals[0];
+    return ramp(pal, light, x, y);
+  };
+}
+// Crowns along a skyline: round bumps for leafy trees, spires for conifers.
+function habCrowns(x, z, kind, s) {
+  const p = kind === "conifer" ? 5 : 7, cell = Math.floor((x + z * 3) / p), j = hash2(cell, z, 722);
+  const u = ((x + z * 3) % p) / p, hh = s * (.6 + j * .6);
+  if (kind === "conifer") return hh * 1.6 * Math.max(0, 1 - Math.abs(u * 2 - 1) * 1.15);
+  return hh * Math.sqrt(Math.max(0, 1 - (u * 2 - 1) ** 2));
+}
+function habLeafPals(c, kind) {
+  const P = c.P, sc = c.sc;
+  const green = { forest: ["#1e3a1e", "#2a4e26", "#386432", "#4a7a3e", "#5e9048"], marsh: ["#26382a", "#344a34", "#425c3e", "#58704c"],
+    tropical: ["#1a4a20", "#26622a", "#347a34", "#4a9440", "#66ae54"], conifer: HAB_CONIFER }[kind] || ["#1e3a1e", "#2a4e26", "#386432", "#4a7a3e"];
+  if (kind === "conifer" || kind === "tropical" || kind === "marsh") return [P(...green)];
+  if (sc.leaves === "fall") return [P("#6a1e14", "#922c18", "#b84420", "#d8642a"), P("#8a4612", "#b05e16", "#d07e22", "#e8a034"),
+    P("#8a6e12", "#b0901c", "#d0b02a", "#e8cc48"), P(...green.slice(0, 4))];
+  if (sc.leaves === "bare") return [P("#3a3430", "#4e4640", "#62584e", "#786c60")];
+  return [P(...green)];
+}
+// Foothills between the far scenery and the meadow, drawn with the terrain
+// renderer so they get real shading and a skyline of tree crowns.
+function habFoothills(c, bio) {
+  const { L, P, sc } = c, envH = (x) => { const k = clamp01((L.sea - 14 - x) / 60); return k * k * (3 - 2 * k); };
+  const low = bio === "prairie" || bio === "marsh" || HAB_FARM_STATES.has(c.state), back = low ? 22 : bio === "desert" ? 34 : 52, front = low ? 12 : back * .5;
+  const kind = bio === "north" || bio === "alpine" ? "conifer" : bio === "desert" || bio === "prairie" ? "none" : "leafy";
+  const hf = (x, z) => {
+    let h = 0;
+    if (z >= 6 && z <= 13) h = back * (.6 + .5 * fbm(x / 60, 1, 701)) * (1 - Math.abs(z - 9.5) / 4.5);
+    if (z <= 4) h = Math.max(h, front * (.55 + .55 * fbm(x / 45, 2, 702)) * (1 - Math.abs(z - 2) / 3));
+    if (h <= 0) return 0;
+    if (kind !== "none") h += habCrowns(x, z, kind, z > 5 ? 4 : 6);
+    else if (bio === "prairie" && fbm(x / 30, z, 703) > .66) h += habCrowns(x, z, "leafy", 3);  // trees along creeks
+    return h * envH(x + 10);
+  };
+  const leafy = habCanopy(c, habLeafPals(c, bio === "marsh" ? "marsh" : bio === "tropical" ? "tropical" : "forest"), { size: 4 });
+  const conifer = habCanopy(c, habLeafPals(c, "conifer"), { size: 3 });
+  const snow = P("#a8b4c8", "#c8d2e2", "#e4eaf2", "#ffffff");
+  const ground = P(...(bio === "desert" ? (HAB_GROUND[c.state] || HAB_GROUND.desert) : sc.near));
+  const rock = P("#6a5a4a", "#847260", "#9e8a74", "#b8a48a"), shrub = P("#3e4a2e", "#4e5c38", "#627044");
+  const moss = P("#7a8a6a", "#94a280");
+  const color = (x, z, ht, sx, sz, y, dep) => {
+    let col;
+    if (bio === "desert") {
+      const band = Math.sin(ht * .5 + vnoise(x / 20, z, 704) * 3) * .12;
+      col = Math.abs(sx) > 1.4 ? ramp(rock, .5 - sx * .25 + band, x, y) : ramp(ground, .55 - sx * .3 + band + (hash2(x, y, 705) - .5) * .2, x, y);
+      if (hash2(x >> 1, y >> 1, 706) > .93 && dep > 1) col = ramp(shrub, .5 - sx * .2, x, y);
+    } else if (bio === "prairie" && !(fbm(x / 30, z, 703) > .66 && dep < 9)) {
+      const wind = Math.sin(x * .25 + y * 1.3 + vnoise(x / 9, y, 707) * 4) * .1;
+      col = ramp(ground, .55 - sx * .25 + wind - dep * .01 + (hash2(x, y, 708) - .5) * .18, x, y);
+    } else if (kind === "conifer") {
+      col = conifer(x, z, ht, sx, sz, y, dep);
+      if (bio === "north" && hash2(x >> 2, y >> 2, 710) > .9 && dep > 6) col = ramp(rock, .5 - sx * .2, x, y);
+    } else {
+      col = leafy(x, z, ht, sx, sz, y, dep);
+      // Spanish moss hanging from the live oaks and cypress.
+      if (bio === "marsh" && x % 4 === 0 && dep > 1 && dep < 4 + hash2(x, z, 712) * 6) col = ramp(moss, .5, x, y);
+    }
+    if (c.snowy && (bio !== "desert" || ht > 14) && vnoise(x / 1.5, y, 713) > (kind === "conifer" ? .62 : .45)) col = pxMix(col, 0xe8eef6, .65);
+    return col;
+  };
+  habTerrain({ ...c, foot: L.water + 5, coastEnd: L.sea - 4 }, { n: 14, shrink: .03, haze: .03, hazeK: .012, h: hf, color });
+  if (sc.saguaro) {
+    // Saguaros with raised arms standing on the slopes.
+    const cac = P("#2e5a30", "#3d6a3a", "#4f8046", "#64965a");
+    for (let i = 0; i < 12; i++) {
+      const x = 6 + Math.floor(hash2(i, 1, 850) * (L.sea - 40)), y = L.water + 3 + Math.floor(hash2(i, 2, 850) * 6);
+      const hh = 9 + Math.floor(hash2(i, 3, 850) * 10), arm = Math.round(hh * .45), s = c.atmo;
+      for (let j = 0; j < hh; j++) for (let dx = -1; dx <= 1; dx++) c.img.set(x + dx, y - j, s(cac[dx + 2], .08));
+      c.img.set(x, y - hh, s(cac[2], .08));
+      for (const side of hash2(i, 4, 850) < .5 ? [-1, 1] : [1]) {
+        c.img.set(x + side * 2, y - arm, s(cac[1], .08)); c.img.set(x + side * 3, y - arm, s(cac[1], .08));
+        for (let j = arm; j < arm + 4 + (i % 3); j++) c.img.set(x + side * 3, y - j, s(cac[side > 0 ? 3 : 0], .08));
+      }
+    }
+  }
+}
+// Low plants, stones and litter on the meadow, by biome. `free` keeps them off the pond.
+function habGround(c, bio, r) {
+  const { img, P, L, H, sc, season } = c, p = L.pond;
+  const free = (x, y, m = 6) => ((x - p.x) / (p.rx + m)) ** 2 + ((y - p.y) / (p.ry + m * .6)) ** 2 > 1 && x < L.shore[Math.min(H - 1, Math.max(0, y))] - 3;
+  const spot = (top = 6) => [Math.floor(r() * (L.land - 8)) + 2, L.water + top + Math.floor(r() * (H - L.water - top - 2))];
+  const bloom = season === "spring" ? 1.4 : season === "summer" ? 1 : season === "fall" ? .4 : sc.snow ? 0 : .2;
+  const mead = sc.meadow, blade = P(mead[0], mead[1], mead[3]);
+  const stone = (x, y, s, pal, lichen) => {
+    pxBlob(img, x + 1, y + 1, s + 1, Math.max(1, s * .6), P("#3a3a2e"), { rough: .3, seed: x });  // shadow
+    pxBlob(img, x, y, s, Math.max(1, s * .7), pal, { rough: .35, grain: 1, seed: x + y });
+    if (lichen) for (let i = 0; i < s; i++) img.set(x - s + 1 + Math.floor(hash2(x, i, 801) * s * 2 - 1), y - Math.floor(hash2(i, y, 802) * s * .6), lichen);
+  };
+  const tufts = (n, hmax, pal) => {
+    for (let i = 0; i < n; i++) {
+      const [x, y] = spot(4); if (!free(x, y, 3)) continue;
+      const h = 2 + Math.floor(r() * hmax) + (y > 230 ? 1 : 0);
+      for (let k = 0; k < h; k++) { img.set(x, y - k, pal[k ? 1 : 0]); if (k > 1) img.set(x + (i % 2 ? 1 : -1), y - k - 1, pal[2]); }
+      if (r() < .5) for (let k = 0; k < h - 1; k++) img.set(x + 2, y - k, pal[k ? 1 : 0]);
+    }
+  };
+  const flowers = (n, sets) => {
+    for (let i = 0; i < n * bloom; i++) {
+      const [x, y] = spot(8); if (!free(x, y)) continue;
+      const [pet, mid] = sets[i % sets.length].map((h) => P(h));
+      img.set(x, y + 1, blade[0]); img.set(x, y + 2, blade[0]);
+      img.set(x - 1, y, pet); img.set(x + 1, y, pet); img.set(x, y - 1, pet); img.set(x, y + 1, pet); img.set(x, y, mid);
+    }
+  };
+  if (bio === "desert") {
+    // Gravel, flat stones, creosote bushes, prickly pear and a little dry grass.
+    const grav = P("#7a6a52", "#968266", "#e0d0b0");
+    for (let i = 0; i < 700; i++) { const [x, y] = spot(4); if (free(x, y, 0)) img.set(x, y, grav[i % 3]); }
+    const sand = c.state === "UT" ? P("#7a3e26", "#9a5236", "#b8684a", "#d08a66") : P("#7a6650", "#968068", "#b29a80", "#ccb69a");
+    for (let i = 0; i < 9; i++) { const [x, y] = spot(10); if (free(x, y, 8)) stone(x, y, 2 + Math.floor(r() * 3), sand); }
+    const creo = P("#2e3a22", "#3e4c2c", "#566238", "#6e7a46"), stem = P("#4a3e30");
+    for (let i = 0; i < 7; i++) {
+      const [x, y] = spot(14); if (!free(x, y, 12)) continue;
+      for (let k = 0; k < 4; k++) { img.set(x - 2 + k, y - Math.abs(k - 1.5) | 0, stem); }
+      pxBlob(img, x, y - 4, 5 + Math.floor(r() * 2), 3, creo, { rough: .7, grain: 1, seed: i + 40 });
+      if (season === "spring") for (let k = 0; k < 4; k++) img.set(x - 3 + Math.floor(hash2(i, k, 803) * 7), y - 5 - Math.floor(hash2(k, i, 804) * 3), P("#f0d040"));
+    }
+    const pear = P("#3e6a3a", "#4e8048", "#66985a", "#82b070");
+    for (let i = 0; i < 4; i++) {
+      const [x, y] = spot(16); if (!free(x, y, 12)) continue;
+      for (const [dx, dy, w, h] of [[0, -3, 3, 4], [-4, -7, 2, 3], [3, -8, 2, 3], [0, -10, 2, 3]]) {
+        pxBlob(img, x + dx, y + dy, w, h, pear, { rough: .2, seed: i + dx });
+        img.set(x + dx - 1, y + dy - 1, pear[3]);
+      }
+      if (season !== "winter") for (const [dx, dy] of [[-4, -11], [3, -12]]) img.set(x + dx, y + dy, P(season === "spring" ? "#f0c030" : "#a02850"));
+      for (let k = 0; k < 6; k++) img.set(x - 4 + Math.floor(hash2(i, k, 805) * 9), y - 2 - Math.floor(hash2(k, i, 806) * 10), P("#e8e0b8"));  // spines
+    }
+    tufts(40, 3, P("#8a7a3e", "#a8964e", "#c8b46a"));
+    flowers(10, [["#f0d040", "#c88a20"], ["#e87a3a", "#f0d040"]]);  // desert marigold, globe mallow
+    return;
+  }
+  if (bio === "prairie") {
+    // Tall grass and the prairie flowers: coneflowers and black-eyed susans.
+    const g = season === "fall" || sc.snow ? P("#8a6a2e", "#b08a3e", "#d0ae5e") : P(mead[0], mead[2], mead[3]);
+    tufts(420, 5, g);
+    const seed = P(season === "fall" ? "#e0c070" : "#c8b870");
+    for (let i = 0; i < 80; i++) { const [x, y] = spot(4); if (free(x, y, 2)) { img.set(x, y - 6, seed); img.set(x, y - 7, seed); img.set(x, y - 5, blade[0]); img.set(x, y - 4, blade[0]); } }
+    flowers(26, [["#c86ab0", "#6a3a20"], ["#f0c020", "#3a2010"], ["#ffffff", "#f0d040"]]);
+    return;
+  }
+  if (bio === "alpine") {
+    // A mountain meadow: lupine and paintbrush, lichened granite boulders.
+    tufts(160, 3, blade);
+    const gran = P("#5a5a62", "#74747c", "#90909a", "#acacb4");
+    for (let i = 0; i < 5; i++) { const [x, y] = spot(10); if (free(x, y, 10)) stone(x, y, 3 + Math.floor(r() * 4), gran, P("#c8c070")); }
+    for (let i = 0; i < 34 * bloom; i++) {
+      const [x, y] = spot(8); if (!free(x, y)) continue;
+      const lup = i % 3 !== 2, col = lup ? P("#5a4ab0", "#7a6ad0", "#a49af0") : P("#a82a20", "#d84a30", "#f07a50");
+      for (let k = 0; k < 3; k++) img.set(x, y - k, blade[0]);
+      for (let k = 0; k < (lup ? 5 : 3); k++) { img.set(x, y - 3 - k, col[k % 3]); if (k % 2 === 0) img.set(x + (lup ? 1 : -1), y - 3 - k, col[1]); }
+    }
+    flowers(10, [["#ffffff", "#f0d040"], ["#f0d040", "#c88a20"]]);
+    return;
+  }
+  if (bio === "forest" || bio === "north" || bio === "tropical") {
+    // Woodland edge: ferns, a mossy log, mushrooms, stones; granite and blueberry
+    // in the north; lava rock and ginger in Hawaii.
+    tufts(bio === "tropical" ? 150 : 120, 3, blade);
+    const fern = bio === "tropical" ? P("#1e5a22", "#2e7a30", "#46984a") : season === "fall" ? P("#7a5a20", "#a07a2a", "#c09a40") : P("#2a5a26", "#3a7432", "#56903e");
+    if (!sc.snow) for (let i = 0; i < (bio === "tropical" ? 14 : 9); i++) {
+      const [x, y] = spot(10); if (!free(x, y, 10)) continue;
+      for (const side of [-1, 1]) for (let f = 0; f < 3; f++) for (let t = 0; t < 5 + f; t++) {
+        const fx = x + side * (t + f), fy = y - 1 - f * 2 - Math.round(t * .9) + Math.round((t * t) * .12);
+        img.set(fx, fy, fern[t % 3 === 0 ? 0 : t > 3 ? 2 : 1]);
+      }
+    }
+    const rockPal = bio === "tropical" ? P("#1e1c1e", "#2e2a2c", "#403a3a", "#58504c") : P("#5a5a5a", "#747472", "#8e8e8a", "#a8a8a2");
+    for (let i = 0; i < (bio === "north" ? 6 : 3); i++) { const [x, y] = spot(12); if (free(x, y, 10)) stone(x, y, 2 + Math.floor(r() * (bio === "north" ? 5 : 3)), rockPal, bio === "tropical" ? null : P("#7a9a4a")); }
+    if (bio !== "tropical") {
+      // A fallen log with moss along the top.
+      const lx = Math.round(L.land * .64), ly = 196, bark = P("#3a2a1e", "#54402c", "#6e563c"), mo = P("#4a7a2a", "#6a9a3a");
+      if (free(lx, ly, 14) && free(lx + 18, ly, 14)) {
+        for (let k = 0; k < 20; k++) for (let t = 0; t < 4; t++) img.set(lx + k, ly - t, bark[t === 3 ? 2 : t === 0 ? 0 : 1]);
+        for (let k = 0; k < 20; k++) if (hash2(k, 1, 807) > .35) img.set(lx + k, ly - 4, sc.snow ? P("#eef2f8") : mo[k % 2]);
+        for (let t = 0; t < 4; t++) img.set(lx + 20, ly - t, P("#a08060")), img.set(lx + 21, ly - t, P("#c8a07a"));
+      }
+      const cap = bio === "north" ? P("#c83020", "#f0f0e8") : P("#8a5a34", "#c8a07a");
+      if (season !== "winter") for (let i = 0; i < 4; i++) {
+        const [x, y] = spot(14); if (!free(x, y, 8)) continue;
+        img.set(x, y, P("#e8e0d0")); img.set(x, y - 1, P("#e8e0d0"));
+        for (let d = -1; d <= 1; d++) img.set(x + d, y - 2, cap[0]); img.set(x, y - 3, cap[0]); img.set(x - 1, y - 3, cap[1]);
+      }
+    }
+    if (bio === "north" && !sc.snow) {
+      const berry = P("#2a4a2a", "#3a5e34", "#4e7444"), fruit = P("#3a4a8a");
+      for (let i = 0; i < 8; i++) { const [x, y] = spot(10); if (!free(x, y, 8)) continue; pxBlob(img, x, y - 2, 3, 2, berry, { rough: .6, seed: i }); if (season === "summer") img.set(x + 1, y - 2, fruit), img.set(x - 1, y - 3, fruit); }
+    }
+    const fl = bio === "tropical" ? [["#e02a30", "#ffd040"], ["#ffffff", "#ffd040"], ["#e86a20", "#ffd040"]]
+      : bio === "north" ? [["#ffffff", "#c8c040"], ["#c86ab0", "#ffffff"]] : sc.flowers.map(([a, b]) => [a, b]);
+    flowers(bio === "tropical" ? 26 : 18, fl);
+    if (sc.leaves === "fall") {
+      const lv = [P("#c8441c"), P("#e8782a"), P("#e8b82a"), P("#9a2a16")];
+      for (let i = 0; i < 120; i++) { const [x, y] = spot(6); if (free(x, y, 2)) { img.set(x, y, lv[i % 4]); if (hash2(i, 74) > .5) img.set(x + 1, y, lv[(i + 1) % 4]); } }
+    }
+    return;
+  }
+  if (bio === "marsh") {
+    // Wet ground: puddles, sawgrass clumps and pickerelweed.
+    tufts(200, 4, blade);
+    const pud = P("#3a5a6a", "#5a8aa0", "#9ad0e8");
+    for (let i = 0; i < 6; i++) {
+      const [x, y] = spot(12); if (!free(x, y, 14)) continue;
+      pxBlob(img, x, y, 6 + Math.floor(r() * 5), 2, pud, { rough: .3, seed: i });
+      for (let k = -3; k < 3; k++) img.set(x + k, y - 1, pud[2]);
+    }
+    const saw = P("#4a5a2a", "#647438", "#7e8e48");
+    for (let i = 0; i < 14; i++) {
+      const [x, y] = spot(8); if (!free(x, y, 6)) continue;
+      for (let b = -3; b <= 3; b++) for (let k = 0; k < 7 - Math.abs(b); k++) img.set(x + b + Math.round(b * k * .15), y - k, saw[k > 4 ? 2 : b < 0 ? 0 : 1]);
+    }
+    flowers(18, [["#6a5ad0", "#ffffff"], ["#ffffff", "#f0d040"]]);
+  }
+}
+// The pond's look by biome: rim stones, water color, lilies, reeds.
+function habPondStyle(bio, state) {
+  if (bio === "desert") return { rim: state === "UT" ? ["#7a3e26", "#9a5236", "#b8684a", "#d08a66"] : ["#7a6650", "#968068", "#b29a80", "#ccb69a"], big: 1,
+    water: ["#1e5a6a", "#28707e", "#3a8a92", "#5aa8a8"], lilies: false, reeds: 2 };
+  if (bio === "alpine" || bio === "north") return { rim: ["#4e4e56", "#686870", "#84848c", "#a0a0a8"], big: 1,
+    water: ["#183e66", "#20507e", "#2e6894", "#4a88b0"], lilies: bio === "north", reeds: 3, sedge: true };
+  if (bio === "tropical") return { rim: ["#1e1c1e", "#2e2a2c", "#403a3a", "#58504c"], big: 1, lilies: true, reeds: 0 };
+  if (bio === "marsh") return { rim: null, water: ["#1e3a32", "#2a4a3e", "#3a5e4a", "#5a7a5e"], lilies: true, reeds: 6, duckweed: true, knees: true };
+  return null;
 }
 
 // Far scenery for states with their own: true when it drew something.
