@@ -2057,26 +2057,12 @@ function habBackground(L, phase, state, lights = {}) {
     for (let dx = -1; dx <= 1; dx++) for (let y = gy - 4; y < gy; y++) img.set(bx + dx, y, atmo(P("#e8e2d4")[0], .2));
     for (let y = gy - 16; y < gy; y++) for (let dx = 0; dx < 4; dx++) img.set(bx + 8 + dx, y, atmo(silo[dx === 0 ? 2 : dx === 3 ? 0 : 1], .2));
     for (let dx = 0; dx < 4; dx++) img.set(bx + 8 + dx, gy - 17, atmo(silo[2], .2));
-  } else if (state === "PA") {
-    // The Ridge-and-Valley Appalachians: long ridges with flat, even crests, one
-    // behind another, each notched once where a river cuts through.
-    [[90, "#b4c8dc", "#c4d4e6"], [104, "#8eaac4", "#a2bcd2"], [118, "#6a8ca8", "#7e9eb8"]].forEach(([base, a, b], i) => {
-      const pal = P(a, b), notch = Math.round(coastEnd * [.62, .3, .5][i]);
-      for (let x = 0; x < coastEnd; x++) {
-        const d = Math.abs(x - notch), gap = d < 7 ? Math.round((7 - d) * 1.6) : 0;
-        const h = fade(x, Math.round(base + gap + (vnoise(x / 70, i, 31 + i) - .5) * 4));
-        for (let y = h; y < foot; y++) img.set(x, y, y === h ? pal[1] : ramp(pal, .7 - (y - h) / 30, x, y));
-      }
-    });
-  } else if (state === "NC" || state === "VA" || land.far === "ridges") {
-    // The Blue Ridge: ridges fading into the haze.
-    [[96, "#9fb6dc", "#b4c8e8"], [108, "#8199c8", "#98aedb"], [121, "#6683b8", "#7c97c9"]].forEach(([base, a, b], i) => {
-      const pal = P(a, b);
-      for (let x = 0; x < coastEnd; x++) {
-        const h = fade(x, Math.round(base - fbm(x / 40, i * 3, 11 + i) * 18 + Math.sin(x / 23 + i) * 2));
-        for (let y = h; y < foot; y++) img.set(x, y, y === h ? pal[1] : ramp(pal, .7 - (y - h) / 30, x, y));
-      }
-    });
+  } else if (state === "PA" || state === "NC" || state === "VA" || land.far === "ridges") {
+    // The Blue Ridge, or Pennsylvania's long even Ridge-and-Valley crests: ridges
+    // one behind another, going blue in the haze, the nearest wooded.
+    const pa = state === "PA";
+    habPaintRidges(fc, pa ? [[8, 26, 160], [18, 52, 200], [30, 74, 260], [42, 90, 300]] : [[6, 28, 50], [14, 50, 70], [24, 76, 90], [36, 96, 120], [46, 108, 150]],
+      { vs: 1.25, blue: "#7a96c8", mist: !pa, pines: .2, crownMax: 16, seed: pa ? 548 : 549 });
   } else if (state === "FL" || land.far === "cypress") {
     // Cypress domes and cabbage palms on the far edge of the sawgrass.
     const dome = P("#3d5a44", "#4b6b4f", "#5b7d5a", "#6d8f66"), far = pxLayer(W, H);
@@ -2235,12 +2221,29 @@ function habBackground(L, phase, state, lights = {}) {
     img.set(x, y, ramp(sea, v, x, y));
   }
   if (inland) habFarBank(fc); else for (let x = L.sea - 30; x < W; x++) img.set(x, L.water, P(HAB_WATER[wk].line));
-  // Meadow with patchy grass color.
-  const mead = P(...(bio === "desert" ? HAB_GROUND[state] || HAB_GROUND.desert : sc.meadow));
+  // Meadow, painted: lighter and hazier far off, rich and dark close up, with
+  // the shadows of clouds drifting over it in big soft shapes.
+  // The ground's colors run from cool shadow to warm sunlight around its palette.
+  const meadHex = bio === "desert" ? HAB_GROUND[state] || HAB_GROUND.desert : sc.meadow;
+  const mead = P(hexMix(meadHex[0], "#1e3048", .5), hexMix(meadHex[0], "#1e3048", .25), ...meadHex, hexMix(meadHex[3], "#fff2c8", .3));
+  const meadV = (x, y) => {
+    const d = (y - L.water) / (H - L.water);
+    return .74 - d * .42 + (fbm(x / 40, y / 14, 17) - .5) * .2 - (fbm(x / 70 + 3, y / 22, 71) > .54 ? .17 : 0);
+  };
   for (let y = L.water + 4; y < H; y++) for (let x = 0; x < L.shore[y] + 3; x++) {
-    const n = fbm(x / 16, y / 7, 17);
-    if (sc.snow && n + (fbm(x / 5, y / 3, 27) - .5) * .3 > .42) img.set(x, y, ramp(snowPal, .4 + (n - .42) * 3, x, y));
-    else img.set(x, y, ramp(mead, .35 + (n - .5) * 1.1 + (y < L.water + 8 ? .2 : 0), x, y));
+    const v = meadV(x, y);
+    if (sc.snow && fbm(x / 22, y / 9, 27) > .4) img.set(x, y, ramp(snowPal, v + .1, x, y));
+    else img.set(x, y, ramp(mead, v, x, y));
+  }
+  // Grass strokes: short upright blades in a lighter or darker tone than the
+  // ground under them, longer toward the viewer.
+  for (let i = 0; i < 2400; i++) {
+    const x = Math.floor(hash2(i, 1, 860) * (L.land - 2)), y = L.water + 5 + Math.floor(Math.pow(hash2(i, 2, 860), .8) * (H - L.water - 6));
+    if (x >= L.shore[y] - 2) continue;
+    const d = (y - L.water) / (H - L.water), len = 1 + Math.round(d * 4 * hash2(i, 3, 860)), lean = hash2(i, 4, 860) > .5 ? 1 : 0;
+    const onSnow = sc.snow && fbm(x / 22, y / 9, 27) > .4, pal = onSnow ? snowPal : mead;
+    const c = ramp(pal, meadV(x, y) + (hash2(i, 5, 860) > .45 ? .2 : -.22), x, y);
+    for (let j = 0; j < len; j++) img.set(x + (j > len / 2 ? lean : 0), y - j, c);
   }
   // Sandy shore curving down to the sea, wet near the water.
   const sand = P(...HAB_WATER[wk].sand), wet = P(...HAB_WATER[wk].wet);
@@ -2311,7 +2314,8 @@ function habBackground(L, phase, state, lights = {}) {
   for (let dy = -p.ry; dy <= p.ry; dy++) for (let dx = -p.rx; dx <= p.rx; dx++) {
     const d = (dx / p.rx) ** 2 + (dy / p.ry) ** 2;
     if (d > 1) continue;
-    pond.set(p.x + dx, p.y + dy, ramp(pw, .2 + (dy + p.ry) / (2 * p.ry) * .7 - (d > .75 && dy < 0 ? .2 : 0), p.x + dx, p.y + dy));
+    // The far bank's shadow along the top, then the sky reflected, brighter toward the viewer.
+    pond.set(p.x + dx, p.y + dy, ramp(pw, dy < -p.ry + 3 + (d > .8 ? 1 : 0) ? .05 : .45 + (dy + p.ry) / (2 * p.ry) * .55, p.x + dx, p.y + dy));
   }
   const pebble = P(...(ps?.rim || ["#6d6a62", "#8c887d", "#a9a597", "#c4c0b1"]));
   if (ps && !ps.rim) {
@@ -2357,6 +2361,12 @@ function habBackground(L, phase, state, lights = {}) {
     img.set(p.x + dx - 1, p.y - 4, reed[1]); img.set(p.x + dx + 1, p.y - 7, reed[1]);
     for (let i = 0; i < 4; i++) { img.set(p.x + dx, p.y - hgt - i, cat[i % 2]); img.set(p.x + dx + 1, p.y - hgt - i, cat[0]); }
     img.set(p.x + dx, p.y - hgt - 4, reed[0]);
+  }
+  // Dark blades along the bottom edge frame the scene from up close.
+  for (let x = 0; x < L.shore[H - 1] - 2; x++) {
+    const h = Math.round(3 + vnoise(x / 5, 0, 870) * 10);
+    for (let j = 0; j < h; j++) if ((x * 7 + j * 3) % 5 !== 0 || j < 2)
+      img.set(x + Math.round(j * (vnoise(x / 3, 1, 871) - .5)), H - 1 - j, ramp(sc.snow ? snowPal : mead, j / h * .2, x, H - 1 - j));
   }
   // State extras on the shore and in the sea.
   if (state === "CA" || land.sea === "stack") {
@@ -3079,14 +3089,14 @@ function habMountainColor(c, o) {
   const forest = P(...(o.forest || HAB_CONIFER)), fall = o.fall && c.season === "fall" ? o.fall.map((f) => P(...f)) : null;
   return (x, z, ht, sx, sz, y, dep) => {
     const steep = Math.abs(sx) + Math.max(0, -sz) * .5;
-    const light = clamp01(.55 - sx * .16 + sz * .05 + (vnoise(x / 3, y / 2, 610 + z) - .5) * .22 - dep * .006);
+    const light = clamp01(.55 - Math.max(-.4, Math.min(.4, sx * .2)) + sz * .05 + (vnoise(x / 9, y / 6, 610 + z) - .5) * .12 - dep * .005 + (dep < 1 ? .15 : 0));
     const bands = o.bands ? Math.sin((ht + vnoise(x / 25, z, 611) * 6) * o.bands) * .14 : 0;
     const sn = (o.snow ?? 9999) + (vnoise(x / 7, z / 2, 612) - .5) * 14;
     const tr = (o.tree ?? -1) + (vnoise(x / 5, z / 3, 613) - .5) * 10;
     if (ht > sn && steep < 2.6 || c.snowy && ht > tr && steep < 1.4) return ramp(snow, light + .25, x, y);
     if (ht < tr && steep < 2.4) {
       // Little tree crowns: a lit pixel up-left of each, darker between them.
-      const cx = x % 3, cy = (y + (x / 3 | 0) * 2) % 4, crown = cx === 0 && cy === 0 ? .3 : cx === 2 || cy === 3 ? -.25 : 0;
+      const cx = x % 3, cy = (y + (x / 3 | 0) * 2) % 4, crown = cx === 0 && cy === 0 ? .26 : cx === 2 || cy === 3 ? -.18 : 0;
       if (fall) {
         // Groves of fall color, in patches rather than speckles.
         const g = vnoise(x / 9, y / 5, 615);
@@ -3109,7 +3119,7 @@ function habStrataColor(c, o) {
   const P = c.P, bands = o.bands.map(([h, pal]) => [h, P(...pal)]), shrub = o.shrubs ? P(...o.shrubs) : null;
   const snow = P("#8e9fc0", "#b8c6e2", "#dfe7f6", "#ffffff");
   return (x, z, ht, sx, sz, y, dep) => {
-    const light = clamp01(.58 - sx * .2 + (vnoise(x / 3, y / 2, 640 + z) - .5) * .2 - Math.min(dep, 20) * .01 + (dep === 0 ? .15 : 0));
+    const light = clamp01(.58 - Math.max(-.4, Math.min(.4, sx * .22)) + (vnoise(x / 8, y / 5, 640 + z) - .5) * .1 - Math.min(dep, 20) * .01 + (dep === 0 ? .18 : 0));
     if (o.snow && ht > o.snow + (vnoise(x / 6, z, 641) - .5) * 10 && Math.abs(sx) < 2) return ramp(snow, light + .2, x, y);
     const hh = ht + (vnoise(x / 18, z / 2, 642) - .5) * (o.wobble ?? 4);
     let pal = bands[0][1];
@@ -3249,7 +3259,7 @@ function habFarm(c, st) {
 // shore change with them. States without one keep the classic look.
 const HAB_BIOME = {};
 for (const [bio, sts] of Object.entries({
-  desert: "AZ NM NV UT", prairie: "ND SD NE KS OK TX", alpine: "CO WY MT ID",
+  desert: "AZ NM NV UT", prairie: "ND SD NE KS OK TX CA", alpine: "CO WY MT ID",
   forest: "TN WV KY AR VT NH PA NY OH IN IL IA MO WI MI MA CT RI NJ DE MD VA NC GA AL",
   north: "ME MN AK WA OR", marsh: "LA MS FL SC", tropical: "HI",
 })) for (const st of sts.split(" ")) HAB_BIOME[st] = bio;
@@ -3291,7 +3301,7 @@ function habLeafPals(c, kind) {
 // renderer so they get real shading and a skyline of tree crowns.
 function habFoothills(c, bio) {
   const { L, P, sc } = c, envH = (x) => { const k = clamp01((L.sea - 14 - x) / 60); return k * k * (3 - 2 * k); };
-  const low = bio === "prairie" || bio === "marsh" || HAB_FARM_STATES.has(c.state), back = low ? 22 : bio === "desert" ? 34 : 52, front = low ? 12 : back * .5;
+  const low = bio === "prairie" || bio === "marsh" || HAB_FARM_STATES.has(c.state), back = low ? 22 : bio === "desert" ? 14 : 52, front = low ? 12 : bio === "desert" ? 8 : back * .5;
   const kind = bio === "north" || bio === "alpine" ? "conifer" : bio === "desert" || bio === "prairie" ? "none" : "leafy";
   const hf = (x, z) => {
     let h = 0;
@@ -3328,7 +3338,12 @@ function habFoothills(c, bio) {
     if (c.snowy && (bio !== "desert" || ht > 14) && vnoise(x / 1.5, y, 713) > (kind === "conifer" ? .62 : .45)) col = pxMix(col, 0xe8eef6, .65);
     return col;
   };
-  habTerrain({ ...c, foot: L.water + 5, coastEnd: L.sea - 4 }, { n: 14, shrink: .03, haze: .03, hazeK: .012, h: hf, color });
+  if (kind !== "none") {
+    // Wooded foothills: two painted ridges of tree crowns sloping down to the shore.
+    const pals = habLeafPals(c, bio === "marsh" ? "marsh" : bio === "tropical" ? "tropical" : "forest");
+    habPaintRidges({ ...c, foot: L.water + 5, coastEnd: L.sea - 4 }, [[9, back, 60], [2, front, 45]],
+      { shrink: .03, haze: .02, hazeK: .01, env: (x) => envH(x + 10), pals, pines: kind === "conifer" ? .9 : bio === "forest" ? .2 : .05, crownMax: 12, seed: 560 });
+  } else habTerrain({ ...c, foot: L.water + 5, coastEnd: L.sea - 4 }, { n: 14, shrink: .03, haze: .03, hazeK: .012, h: hf, color });
   if (sc.saguaro) {
     // Saguaros with raised arms standing on the slopes.
     const cac = P("#2e5a30", "#3d6a3a", "#4f8046", "#64965a");
@@ -3375,7 +3390,7 @@ function habGround(c, bio, r) {
   if (bio === "desert") {
     // Gravel, flat stones, creosote bushes, prickly pear and a little dry grass.
     const grav = P("#7a6a52", "#968266", "#e0d0b0");
-    for (let i = 0; i < 700; i++) { const [x, y] = spot(4); if (free(x, y, 0)) img.set(x, y, grav[i % 3]); }
+    for (let i = 0; i < 120; i++) { const [x, y] = spot(4); if (free(x, y, 0)) img.set(x, y, grav[i % 3]); }
     const sand = c.state === "UT" ? P("#7a3e26", "#9a5236", "#b8684a", "#d08a66") : P("#7a6650", "#968068", "#b29a80", "#ccb69a");
     for (let i = 0; i < 9; i++) { const [x, y] = spot(10); if (free(x, y, 8)) stone(x, y, 2 + Math.floor(r() * 3), sand); }
     const creo = P("#2e3a22", "#3e4c2c", "#566238", "#6e7a46"), stem = P("#4a3e30");
@@ -3492,9 +3507,98 @@ function habPondStyle(bio, state) {
   return null;
 }
 
+// Painted ridges, far to near: each ridge a clean silhouette whose color fades into
+// the haze with distance, lit on the slopes facing the sun (from the left) with a
+// bright rim along the crest, and wooded ridges covered in individually shaded
+// tree crowns. ridges: [[slice, height, wavelength]], o: { pal (hex ramp, dark to
+// light) or pals (one per crown kind), shrink, vs, haze, hazeK, blue, pines, mist, seed }.
+function habPaintRidges(c, ridges, o = {}) {
+  const { img, P, W, foot } = c, k = o.shrink ?? .028, vs = o.vs ?? 1, seed = o.seed ?? 540, span = Math.min(c.coastEnd, W + 2);
+  const leafy = o.pals || habLeafPals(c, "forest"), conifer = habLeafPals(c, "conifer")[0];
+  const blue = o.blue ? hexRgb(o.blue) : null, blueC = blue ? (blue[0] << 16) | (blue[1] << 8) | blue[2] : 0;
+  const snowy = c.snowy, mist = o.mist ? 0xdde6ea : 0;
+  const sorted = [...ridges].sort((a, b) => b[0] - a[0]);
+  sorted.forEach(([lz, lh, wl], ri) => {
+    const f = 1 / (1 + lz * k), haze = Math.min(.85, (o.haze ?? .05) + lz * (o.hazeK ?? .016));
+    const tint = (col) => { let v = c.atmo(col, haze); if (blue) v = pxMix(v, blueC, Math.min(.6, lz * .022)); return v; };
+    const crest = (x) => lh * (.62 + .5 * fbm(x / wl, lz, seed) + .12 * habRidged(x / (wl * .4), lz, seed + 9)) * (o.env ? o.env(x) : 1);
+    const top = (x) => foot - crest(x) * f * vs;
+    const base = leafy[0].map(tint), con = conifer.map(tint);
+    const near = 1 - Math.min(1, lz / 40);
+    for (let x = 0; x < span; x++) {
+      const t = Math.round(top(x)), slope = top(x + 2) - top(x - 2);
+      for (let y = t; y < foot; y++) {
+        let v = .42 + Math.max(-.25, Math.min(.25, slope * .1)) - (y - t) * .004 + (y - t < 1.5 ? .25 : 0);
+        let col = ramp(base, v, x, y);
+        if (mist && ri < sorted.length - 1) { const m = clamp01((y - t) / 24); col = pxMix(col, c.atmo(mist, .1), Math.round(m * m * .55 * 5 + bayer(x, y) - .5) / 5); }
+        img.set(x, y, col);
+      }
+    }
+    if (lz > (o.crownMax ?? 22) || o.crowns === false) return;
+    // Crowns packed over the slope, rounder for broadleaf trees and pointed for
+    // conifers, lit from the upper left; nearer ridges get bigger crowns.
+    const cr = 1.4 + near * 2.6, sp = cr * 1.45, pines = o.pines ?? .3;
+    let row = 0;
+    for (let gy = 0; gy < 70 * f; gy += sp * .72, row++) for (let gx = -4; gx < span + 4; gx += sp) {
+      const jx = hash2(gx | 0, row, seed + lz) - .5, cx = gx + jx * sp + (row % 2) * sp * .5;
+      const ty = top(cx), cy = ty + gy + (hash2(gx | 0, row, seed + lz + 1) - .5) * 2 - cr * .3;
+      if (cy > foot + 1 || crest(cx) < 1) continue;
+      const slope = top(cx + 2) - top(cx - 2), pine = hash2(gx | 0, row, seed + lz + 2) < pines;
+      const pal = pine ? con : leafy[Math.floor(vnoise(cx / 14, cy / 8 + lz, seed + 3) * leafy.length * .999)].map(tint);
+      const rad = cr * (.8 + hash2(gx | 0, row, seed + lz + 3) * .45), R = Math.ceil(rad * (pine ? 1.6 : 1));
+      for (let dy = -R; dy <= Math.ceil(rad); dy++) for (let dx = -Math.ceil(rad); dx <= Math.ceil(rad); dx++) {
+        if (pine) { if (dy < -R || Math.abs(dx) > (dy + R) / (R + rad) * rad * 1.1) continue; }
+        else if (Math.hypot(dx, dy * 1.1) > rad) continue;
+        const px = Math.round(cx + dx), py = Math.round(cy + dy);
+        if (py >= foot) continue;
+        let v = .44 - dx / rad * .32 - dy / rad * .36 + Math.max(-.15, Math.min(.15, -slope * .06)) - gy * .004;
+        if (!pine && Math.hypot(dx, dy) > rad * .82) v -= .12;
+        let col = ramp(pal, v, px, py);
+        if (snowy && dy < -rad * .25 && v > .45 && bayer(px, py) < .55) col = c.atmo(0xe4ebf4, haze);  // snow on the tops of the crowns
+        img.set(px, py, col);
+      }
+    }
+  });
+}
+// Mesas and buttes, painted: flat caprock tops, sheer cliffs in horizontal rock
+// bands, the sunlit face to the left and a cool shadowed face to the right, and a
+// skirt of talus spreading below. ms: [x0, x1 (fractions of the width), top
+// (height above the foot), color, haze], drawn in order (far ones first).
+function habPaintMesas(c, ms) {
+  const { img, W, foot } = c, P = c.P;
+  for (const [f0, f1, h, hc, haze] of ms) {
+    const x0 = f0 * W, x1 = f1 * W, top = foot - h, cliff = h * .62, skirt = 18 + h * .25;
+    const pal = P(hexMix(hc, "#3a2848", .45), hexMix(hc, "#3a2848", .2), hc, hexMix(hc, "#fff0c8", .22), hexMix(hc, "#fff0c8", .45));
+    const tint = pal.map((col) => c.atmo(col, haze));
+    for (let x = Math.floor(x0 - skirt); x < x1 + skirt; x++) {
+      if (x < 0 || x >= Math.min(c.coastEnd, W + 2)) continue;
+      const inner = Math.min(x - x0, x1 - x), wob = (fbm(x / 6, top, 31) - .5) * 3;
+      const t = inner >= 0 ? top + wob * .4 + (inner < 3 ? (3 - inner) * 2.5 : 0)
+        : top + cliff + (-inner) * (h - cliff) / skirt + (-inner) ** 1.6 * .2 + wob;
+      if (t >= foot) continue;
+      const face = x < x0 + 4 ? .2 : x > x1 - 6 ? -.28 : 0;
+      for (let y = Math.round(t); y < foot; y++) {
+        const talus = y > top + cliff;
+        let v = .5 + face + (y - t < 1.5 ? .25 : 0);
+        const band = Math.floor((y - top + fbm(x / 20, 1, 32) * 3) / 5) % 3;
+        v += talus ? -.06 + (hash2(x >> 1, y >> 1, 33) > .88 ? -.2 : 0) : band === 0 ? .1 : band === 2 ? -.1 : 0;
+        if (!talus && hash2(x >> 1, y, 34) > .94) v -= .18;   // streaks of desert varnish down the cliff
+        img.set(x, y, ramp(tint, v, x, y));
+      }
+    }
+  }
+}
 // Far scenery for states with their own: true when it drew something.
 function habFarScene(c) {
   const R = HAB_ROCK, st = c.state;
+  if (st === "CA") {
+    // The Sierra Nevada: pale granite crest with snow in the gullies, above
+    // golden foothills dotted with oaks.
+    habTerrain(c, { n: 56, vs: 1.1, h: habMassifs(c, [[.3, 30, 92, 120, 18, 1.2], [.62, 34, 104, 110, 18, 1.15], [.95, 30, 80, 90, 16],
+      [.12, 10, 40, 70, 8], [.5, 12, 44, 90, 8]], { seed: 507, scale: 30, rough: .5 }),
+      color: habMountainColor(c, { rock: R.granite, snow: 78, tree: 50 }) });
+    return true;
+  }
   if (st === "CO") {
     // The Maroon Bells: two banded maroon pyramids over aspen woods, mirrored in Maroon Lake.
     habTerrain(c, { n: 56, h: habMassifs(c, [[.46, 4, 104, 70, 14, 1.05], [.63, 8, 96, 62, 14, 1.05],
@@ -3531,17 +3635,15 @@ function habFarScene(c) {
     return true;
   }
   if (st === "AZ") {
-    // The Grand Canyon: terraced temples and buttes in red and cream rock bands,
-    // the flat North Rim beyond, the Colorado far below.
-    const temples = habMassifs(c, [[.22, 10, 62, 44, 8, 1.1], [.5, 14, 74, 60, 10, 1.1], [.8, 10, 58, 46, 8, 1.1],
-      [.36, 24, 66, 70, 10], [.68, 26, 70, 80, 10]], { seed: 520, rough: .45, scale: 18 });
-    habTerrain(c, { vs: 1.9, n: 60, h: (x, z) => {
-      const rim = z > 40 ? 52 + (vnoise(x / 40, 0, 521) - .5) * 4 : 0;
-      return Math.max(rim, habTerrace(temples(x, z), 11, .66));
-    }, hazeK: .009, color: habStrataColor(c, { bands: [[0, ["#2e2830", "#3e343c", "#4e444a", "#625658"]],
-      [14, ["#7a3424", "#963f2a", "#b04e34", "#c66444"]], [32, ["#8e4a36", "#a85e44", "#c07656", "#d49070"]],
-      [52, ["#a88e6c", "#c4aa84", "#dcc49e", "#eedcbc"]], [66, ["#9a8a72", "#b4a286", "#cab89a", "#ddcdb0"]]],
-      shrubs: ["#2e3e22", "#3e5230"] }) });
+    // Monument Valley: red sandstone mesas and buttes standing out of the desert
+    // floor, the farther ones softened by the haze.
+    const far = c.P("#b8846c");
+    for (let x = 0; x < Math.min(c.coastEnd, c.W + 2); x++) {
+      const t = Math.round(c.foot - 8 - (fbm(x / 60, 2, 524) - .5) * 6);
+      for (let y = t; y < c.foot; y++) c.img.set(x, y, c.atmo(far, .35));
+    }
+    habPaintMesas(c, [[-.06, .2, 58, "#b0664a", .2], [.46, .62, 76, "#b0664a", .2], [.64, .72, 48, "#b0664a", .2], [.82, 1.08, 64, "#b0664a", .2],
+      [.12, .36, 34, "#a8562e", .06], [.7, .9, 30, "#a8562e", .06], [.31, .4, 52, "#a8562e", .06]]);
     return true;
   }
   if (st === "UT") {
@@ -3608,9 +3710,8 @@ function habFarScene(c) {
   }
   if (st === "TN") {
     // The Great Smoky Mountains: ridge after ridge going blue in the haze, mist in the hollows.
-    habTerrain(c, { n: 44, shrink: .028, haze: .05, hazeK: .016, vs: 1.2,
-      h: habRidgeLine(c, [[4, 44, 50], [10, 62, 70], [17, 76, 90], [25, 90, 110], [34, 100, 140], [42, 104, 170]], 540),
-      color: habForestColor(c, { blue: "#7a96c8", blueFrom: 6, mist: true }) });
+    habPaintRidges(c, [[4, 44, 50], [10, 62, 70], [17, 76, 90], [25, 90, 110], [34, 100, 140], [42, 104, 170]],
+      { vs: 1.2, blue: "#7a96c8", mist: true, pines: .25 });
     return true;
   }
   if (st === "WV" || st === "KY" || st === "AR" || st === "VT") {
@@ -3618,8 +3719,7 @@ function habFarScene(c) {
     // country, rolling bluegrass in Kentucky, the Ozarks and the Green Mountains.
     const cfg = { WV: [[3, 58, 40], [9, 66, 60], [16, 72, 80], [26, 76, 110]], KY: [[6, 22, 60], [14, 30, 90], [24, 38, 120]],
                   AR: [[5, 40, 60], [12, 50, 80], [22, 56, 110], [34, 60, 150]], VT: [[6, 54, 60], [14, 74, 80], [24, 86, 110], [36, 70, 160]] }[st];
-    habTerrain(c, { n: 44, shrink: .026, hazeK: .014, vs: 1.1, h: habRidgeLine(c, cfg, 541 + st.charCodeAt(0)),
-      color: habForestColor(c, { blue: "#8aa2c8", blueFrom: 12, pines: st === "VT" ? .3 : .15, mist: false }) });
+    habPaintRidges(c, cfg, { shrink: .026, hazeK: .014, vs: 1.1, seed: 541 + st.charCodeAt(0), blue: "#8aa2c8", pines: st === "VT" ? .3 : .15, crownMax: 30 });
     if (st === "WV") habGorgeBridge(c);
     if (st === "VT") habSteeple(c, Math.round(c.W * .7), c.foot - 14);
     return true;
@@ -3697,8 +3797,7 @@ function habFarScene(c) {
                   DE: [[6, 8, 60], [16, 10, 90]], MD: [[6, 14, 60], [16, 20, 90], [28, 30, 130]], SC: [[6, 12, 60], [16, 16, 90]],
                   AL: [[6, 12, 60], [16, 16, 90]] }[st];
     const north = st === "ME" || st === "MN";
-    habTerrain(c, { n: 34, hazeK: .016, h: habRidgeLine(c, cfg, 560 + st.charCodeAt(1)),
-      color: habForestColor(c, { pines: north ? .8 : st === "SC" || st === "AL" ? .6 : .3, blue: "#8aa2c8", blueFrom: 14 }) });
+    habPaintRidges(c, cfg, { shrink: .022, hazeK: .016, seed: 560 + st.charCodeAt(1), blue: "#8aa2c8", pines: north ? .8 : st === "SC" || st === "AL" ? .6 : .3, crownMax: 30 });
     if (st === "SC" || st === "AL") habPalmettos(c);
     return true;
   }
