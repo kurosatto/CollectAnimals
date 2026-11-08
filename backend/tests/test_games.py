@@ -97,6 +97,9 @@ def test_newer_games_take_scores(client, fake):
     assert score(client, ana, "harbor_seal", 20, level="slide.0").json()["points"] == 150
     assert score(client, ana, "harbor_seal", 20, level="school.1").status_code == 200
     assert score(client, ana, "harbor_seal", 20, level="nope.0").status_code == 422
+    # Since 0.46.0 each game has one longer level, scored as "<game>.3" on fresh boards.
+    assert score(client, ana, "harbor_seal", 30, level="river.3").json()["points"] == 390
+    assert board(client, ana, level="river.3")["top"][0]["points"] == 390
 
 
 def test_place_table_matches_the_game():
