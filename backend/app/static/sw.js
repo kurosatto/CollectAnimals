@@ -8,7 +8,7 @@
 //   with the last answer as the offline fallback. The page clears it on log out.
 // - Everything else (photos, galleries, the feed, uploads, any POST) goes straight to the network,
 //   so other players' photos never fill up the phone.
-const VERSION = "18";
+const VERSION = "19";
 const SHELL = `shell-v${VERSION}`;
 const ASSETS = "assets-v8";  // v8 drops the 0.40 birds of prey
 const API = "api-v1";
