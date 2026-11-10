@@ -924,10 +924,12 @@ function habPitchFrame(tilt) {
 }
 
 // What a ground animal does while it stands still: just stand, sit up on its
-// haunches, turn its head to look at you, glance back over its shoulder, or put
-// its head down to graze (only the animals whose sheets draw that pose).
+// haunches (a bird settles down), turn its head to look at you, glance back over
+// its shoulder, put its head down to graze, or groom (a dog scratches, a cat or
+// squirrel washes, a bird or duck preens, a lizard does push-ups, a frog calls) --
+// only the animals whose sheets draw that pose.
 function habRestPose() {
-  return ["idle", "idle", "sit", "look", "back", "eat", "eat"][Math.floor(Math.random() * 7)];
+  return ["idle", "idle", "sit", "look", "back", "eat", "eat", "groom", "groom"][Math.floor(Math.random() * 9)];
 }
 
 // Which pose of the animation sheet to show, and which of its frames:
@@ -955,8 +957,10 @@ function habAnim(a, awake, roost) {
       if (a.pause > 0 || !has("walk")) {
         const r = a.rest && has(a.rest) ? a.rest : "idle";
         // sitting up, it nibbles; standing, looking about, it breathes
-        return r === "idle" ? still : [r, r === "sit" || r === "eat" ? cyc(a.phase * 2.5) : habIdleFrame(a.phase * 4 / 3, 1)];
+        return r === "idle" ? still : [r, r === "sit" || r === "eat" || r === "groom" ? cyc(a.phase * 2.5) : habIdleFrame(a.phase * 4 / 3, 1)];
       }
+      // bolting from you, or chasing: the gallop (or the bounding run)
+      if ((a.flee > 0 || a.chaseT > 0) && has("run")) return ["run", cyc(a.odo / 6)];
       return ["walk", a.role === "hop" ? cyc((a.odo % 18) / 18 * 4) : cyc(a.odo / 3)];
     }
     case "fly": case "soar": case "dive": case "skim": case "hover": case "flutter": {

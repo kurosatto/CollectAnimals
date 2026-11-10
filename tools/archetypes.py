@@ -126,11 +126,17 @@ def critter(s: Sprite, fur, light=WHITE, *, build="ground", ears="small", ear_in
         s.can("swim")
         return _floating(s, fur, light, head or fur, muzzle or light, nose, feet or mix(fur, "#1a1420", 0.12),
                          tail_col or fur, eye_col)
-    s.can("walk", "sit", "look", "back", "eat")
+    s.can("walk", "sit", "look", "back", "eat", "run", "groom")
     if build in ("otter", "beaver"):
         s.can("swim")
     b = CRITTERS[build]
     act, f = s.act, s.f
+    # run is the bounding walk at full stretch; groom sits up and washes the face
+    running, grooming = act == "run", act == "groom"
+    if running:
+        act = "walk"
+    elif grooming:
+        act = "sit"
     tail_col = tail_col or fur
     head = head or fur
     muzzle = muzzle or light
@@ -165,6 +171,9 @@ def critter(s: Sprite, fur, light=WHITE, *, build="ground", ears="small", ear_in
         hx += 1
     # Bounding gait: gather, push off, stretch out in the air, land.
     reach, push, lift = s.cyc((0, 0, 0), (0.6, 1.8, 1), (2.4, 2.6, 2), (1.6, 0.4, 1)) if act == "walk" else (0, 0, 0)
+    if running:
+        # a real bound: gathered, hind feet drive, fully stretched in the air, front feet land
+        reach, push, lift = s.cyc((-0.6, -0.4, 0), (1.0, 3.2, 1.5), (3.6, 3.8, 4), (2.6, 0.6, 2), (0.2, -0.6, 0.5))
     if swimming:
         reach, push = 1.2 * s.wave(), -1.2 * s.wave()
     g = dict(b, view=view, build=build, act=act, hx=hx, hy=hy, hrx=hrx, hry=hry, bx=bx, by=by, brx=brx, bry=bry,
@@ -203,10 +212,13 @@ def critter(s: Sprite, fur, light=WHITE, *, build="ground", ears="small", ear_in
     # near legs
     if sitting:
         s.ellipse(px_ - 1.5, ground - 0.6, b["foot"] + 0.6, 1.0, feet)
-        # front paws held up to the mouth, nibbling
-        up = s.cyc(0, 1, 0, 1)
-        s.path([(bx - 2, by - 2.5), (hx + 0.5, hy + hry + 1.2 - up)], 0.9, fur)
-        s.ellipse(hx + 0.2, hy + hry + 1.2 - up, 1.3, 1.1, feet)
+        # front paws held up to the mouth, nibbling (grooming: rubbed up over the face)
+        up = s.cyc(0, 1, 0, 1) if not grooming else s.cyc(0.6, hry + 1.8, 1.4, hry + 2.4, 0.8, hry + 1.4)
+        ox = 0 if not grooming else -hrx * 0.55 + s.cyc(0, -0.8, 0.4, -0.6, 0.2, -0.4)
+        paw_arm = ([(bx - 2, by - 2.5), (hx + 0.5 + ox, hy + hry + 1.2 - up)], (hx + 0.2 + ox, hy + hry + 1.2 - up))
+        if not grooming:
+            s.path(paw_arm[0], 0.9, fur)
+            s.ellipse(*paw_arm[1], 1.3, 1.1, feet)
     elif swimming:
         s.ellipse(b["fx"] - reach, 28.5, 1.8, 1.0, feet)
         s.ellipse(px_ + 1 - push, 29, 2.2, 1.0, feet)
@@ -221,6 +233,12 @@ def critter(s: Sprite, fur, light=WHITE, *, build="ground", ears="small", ear_in
     if not lying:
         s.path([(bx - brx * 0.55, by - bry * 0.35), (hx + 0.8, hy + 0.8)], min(hry, bry) * 0.75, fur)
     _critter_head(s, g, head, muzzle, nose, ears, ear_in, ear_tip, eye_col, eye_size, eye_ring, cheeks, face)
+    if grooming:
+        # both front paws rubbing over the face, in front of it
+        pc = mix(light, feet, 0.35)
+        s.path(paw_arm[0], 0.9, mix(fur, "#1a1420", 0.1), edge=True)
+        s.ellipse(paw_arm[1][0] - 1.0, paw_arm[1][1] + 1.0, 1.1, 1.0, mix(pc, "#1a1420", 0.2), edge=True)
+        s.ellipse(*paw_arm[1], 1.6, 1.4, pc, shade=False)
     if lift:
         s.shift(0, -lift)
 
@@ -459,7 +477,7 @@ BUILDS = {
 }
 
 
-def quad(s: Sprite, fur, light=WHITE, *, build="dog", ears="point", ear_in=PINK, tail="bushy",
+def _quad_old(s: Sprite, fur, light=WHITE, *, build="dog", ears="point", ear_in=PINK, tail="bushy",
          tail_col=None, tail_tip=None, nose=NOSE, muzzle=None, head=None, legs=None, feet=None,
          belly=True, eye_col=EYE, markings=None, behind=None, front=None):
     """Side view of a four-legged animal walking left. `build` sets the proportions;
@@ -819,11 +837,16 @@ def bird(s: Sprite, body, belly, *, head=None, wing=None, tail_col=None, beak="c
     species' own markings use too) and then re-proportioned: a smaller head held up on
     a short neck, a longer body, and longer legs. Pecking at the ground ("eat") it bends
     forward from the hips over its standing legs."""
-    s.can("walk", "fly", "eat")
+    s.can("walk", "fly", "eat", "groom", "sit", "run")
     if s.act == "eat":
         s.bend(48 * s.cyc(0.45, 1, 0.45, 1), 15.5, 25.5, 4)
+    elif s.act == "groom":
+        # preening: the head dips to the breast and works through the feathers,
+        # the wing lifts and shuffles
+        s.bend(34 + 12 * s.cyc(0, 1, 0.4, 1, 0.2, 0.8), 15.5, 22.5, 4)
     flying = s.act == "fly"
-    w = s.wave()
+    sitting = s.act == "sit"
+    w = s.wave() if s.act != "run" else math.sin(4 * math.pi * s.t)
     head = head or body
     wing = wing or mix(body, "#000000", 0.15)
     tail_col = tail_col or wing
@@ -844,16 +867,21 @@ def bird(s: Sprite, body, belly, *, head=None, wing=None, tail_col=None, beak="c
         s.poly([(20, cy), (27, cy - 3 + tb), (28, cy + 1 + tb), (22, cy + 4)], tail_col)
     elif tail == "fan":
         s.poly([(20, cy), (29, cy - 9 + tb), (31, cy - 1 + tb), (23, cy + 4)], tail_col)
-    if not flying:
-        _bird_legs(s, (13, 17), 25, 29, legs, w if s.act == "walk" else 0)
+    if not flying and not sitting:
+        _bird_legs(s, (13, 17), 25, 29, legs, w * (1.5 if s.act == "run" else 1) if s.act in ("walk", "run") else 0)
     rb = 8.5 if big else 8
-    s.ellipse(16.5, cy + 1, rb, 7, body)
+    # resting, it fluffs its feathers up a little and settles onto its belly
+    puff = 0.7 if sitting else 0
+    s.ellipse(16.5, cy + 1, rb + puff, 7 + puff * (0.6 + 0.3 * s.wave()), body)
     s.ellipse(13.5, cy + 3, 5.5, 4.5, belly)
     if belly_mark:
         belly_mark(s, s.last)
     if flying:
         with s.unwarped():
             _flight_wing(s, cy, w, wing)
+    elif s.act == "groom":
+        lift = s.cyc(0, 1, 0.5, 1, 0.2, 0.7)
+        s.ellipse(20 + 0.6 * lift, cy - 1.2 * lift, 5.8, 4.2, wing, rot=-15 - 16 * lift, edge=True)
     else:
         s.ellipse(20, cy, 5.8, 4.2, wing, rot=-15, edge=True)
     if wing_mark:
@@ -876,6 +904,10 @@ def bird(s: Sprite, body, belly, *, head=None, wing=None, tail_col=None, beak="c
         face(s)
     _beak(s, "dove" if re.search(r"dove|pigeon", getattr(s, "slug", "")) else beak, beak_col)
     s.eye(8, 10, color=eye_col, shine=None)
+    if sitting:
+        # settled down on its belly, legs folded out of sight
+        with s.unwarped():
+            s.shift(0, 3)
 
 
 def _lerp_pts(a, b, k):
@@ -1220,7 +1252,7 @@ def wader(s: Sprite, body, *, neck=None, head=None, beak="#e8b830", legs="#3d353
 
 def duck(s: Sprite, body, chest, head, *, bill="#f0c22a", ring=WHITE, speculum="#4a5fd0",
          tail_col=None):
-    s.can("swim", "fly")
+    s.can("swim", "fly", "groom")
     flying = s.act == "fly"
     w = s.wave()
     if flying:  # neck stretched out in front, fast stiff wingbeats
@@ -1250,6 +1282,23 @@ def duck(s: Sprite, body, chest, head, *, bill="#f0c22a", ring=WHITE, speculum="
     else:
         m = s.ellipse(20, 21, 7, 3.5, mix(body, "#000000", 0.12), rot=-8, edge=True)
     s.paint(s.m_poly([(17, 22), (24, 21), (24, 23), (17, 24)]), speculum, within=m)
+    if s.act == "groom":
+        # preening: the head turned back over the shoulder, the bill working through
+        # the wing feathers in little nibbles
+        nib = s.cyc(0, 1, 0.3, 1, 0, 0.6)
+        hx, hy = 14.5 + 0.6 * nib, 13.5 + 0.8 * nib
+        s.path([(11, 19), (hx - 1, hy + 2)], 3.2, head)
+        s.ellipse(hx, hy, 5.2, 4.8, head, edge=True)
+        if ring:
+            s.paint(s.m_ellipse(11.5, 18.2, 3.2, 1), ring)
+        s.ellipse(hx + 5.6, hy + 2.6 + nib * 0.8, 3.2, 1.6, bill, rot=25)
+        s.eye(round(hx + 2), round(hy - 1), shine=None)
+        # Species draw their face markings after this, on the head as it usually sits
+        # (centre 10, 11, facing left): mirror them onto the turned-back head.
+        fwd0, xs0, ys0 = s.fwd, s.xs, s.ys
+        s.fwd = lambda x, y, f=fwd0: f(hx - (x - 10), y + (hy - 11))
+        s.xs, s.ys = 10 + hx - xs0, ys0 - (hy - 11)
+        return
     s.ellipse(10, 11, 6, 5.5, head, edge=True)
     if ring:
         s.paint(s.m_ellipse(10, 16.8, 4, 1), ring)
@@ -1654,55 +1703,191 @@ def _raptor_flight(s, back, front, head, wing, tail, dark, k, wing_k, hrx, hry, 
 # --------------------------------------------------------------------------- reptiles & amphibians
 def lizard(s: Sprite, body, belly, *, head=None, pattern=None, tail_col=None, throat=None,
            horns=False, wide=False, smooth=False, eye_big=False, legs=None, tail_pts=None):
-    """Side view facing left, big head, tail curling up on the right."""
-    s.can("walk")
-    w = s.wave() if s.act == "walk" else 0
+    """A lizard from the side, facing left: low and long, a wedge-shaped head with a
+    brow, ear opening and lipline, a slim neck, sprawling jointed legs with splayed
+    toes and a long tapering tail along the ground.
+
+    Poses: idle (the throat pulses as it breathes, the head tilts), walk (diagonal
+    legs, the body rocking), run (up on its legs, tail raised), eat (a dart forward
+    and a flick of the tongue), groom (the push-up display: front legs straighten
+    and the chest bobs, the throat fan shows), sit (basking flat, legs out) and sleep.
+    pattern(s, mask) paints markings over the body."""
+    s.can("walk", "run", "eat", "groom", "sit")
+    act, t = s.act, s.t
+    s.base, s.fwd, s.xs, s.ys = None, None, _XS, _YS  # every pose drawn, no warp
     head = head or body
     tail_col = tail_col or body
     legs = legs or mix(body, "#000000", 0.15)
-    tp = tail_pts or [(20, 22), (26, 25), (30, 22), (30, 16)]
-    tp = [(x, y + w * 1.2 * i / len(tp)) for i, (x, y) in enumerate(tp)]
-    s.path(tp, (2.4, 0.7), tail_col)
-    far = mix(legs, "#000000", 0.15)
-    s.path([(20, 23), (22 - w * 1.5, 27), (24 - w * 1.5, 27)], 1.1, far)
-    s.path([(10, 23), (9 + w * 1.5, 27), (7 + w * 1.5, 27)], 1.1, far)
-    ry = 4.3 if wide else 3.6
-    body_m = s.ellipse(15, 22, 7.5, ry, body)
-    s.paint(s.m_ellipse(15, 24.8, 6.5, 1.6), belly, within=body_m)
+    far = mix(legs, "#000000", 0.18)
+    ground = 30.5
+    ry = 3.8 if wide else 3.2
+    lift, chest_up, head_dx, head_dy = 0.0, 0.0, 0.0, 0.0
+    gait = 0.0
+    flat = act in ("sit", "sleep")
+    if act == "walk":
+        gait = t
+        lift = 0.3 * abs(math.sin(2 * math.pi * t))
+    elif act == "run":
+        gait = 2 * t
+        lift = 1.4 + 0.4 * abs(math.sin(4 * math.pi * t))
+        chest_up = 0.8
+    elif act == "groom":
+        # push-ups: the chest rises and dips twice, the head nods with it
+        bob = abs(math.sin(2 * math.pi * t))
+        chest_up = 0.6 + 2.0 * bob
+        head_dy = -0.4 * bob
+    elif act == "eat":
+        dart = max(0.0, math.sin(2 * math.pi * t))
+        head_dx, head_dy = -1.2 * dart, 0.6 * dart
+    elif act == "idle":
+        head_dy = -0.5 * max(0.0, math.sin(2 * math.pi * (t - 0.5))) if t > 0.5 else 0.0
+    drop = 1.3 if flat else 0.0  # basking or asleep: belly down on the warm ground
+    by = 23.4 - lift + drop      # the body's centre line
+    cy = by - chest_up * 0.6     # the chest end
+    hy = cy - 2.4 + head_dy + (1.0 if flat else 0.0)
+    hx = 6.0 + head_dx
+
+    # tail: along the ground and tapering, the tip swaying
+    tp = tail_pts or [(20, 22), (26, 25), (31, 25.5), (35, 24.5)]
+    tp = [(x + 1.5, y + 2.2 - lift * 0.6 + drop * 0.6) for x, y in tp]
+    if act == "run":
+        tp = [(x, y - (x - tp[0][0]) * 0.18) for x, y in tp]  # held up off the ground
+    sway = 0.9 * math.sin(2 * math.pi * t) if act in ("walk", "idle", "run") else 0.0
+    tp = [(x, min(ground - 0.5, y + sway * (i / max(1, len(tp) - 1)) ** 2)) for i, (x, y) in enumerate(tp)]
+    tp[0] = (20.5, by - 0.6)
+    s.path(tp, (2.3 if wide else 1.9, 0.45), tail_col)
+    tail_m = s.last
+
+    def leg(x0, y0, fore, phase, col, near):
+        """Shoulder or hip at (x0, y0): upper leg out and down to the elbow/knee, the
+        lower leg down to the foot, toes splayed on the ground."""
+        if flat:
+            # sprawled out to the sides, toes flat
+            fx_ = x0 + (-2.6 if fore else 2.4)
+            s.path([(x0, y0), (fx_, ground - 0.6)], (1.0, 0.7), col, edge=near)
+            toe_y = ground - 0.5
+            s.px([(round(fx_ - 1), round(toe_y)), (round(fx_ + (-2 if fore else 1)), round(toe_y))], col)
+            return
+        p = phase % 1.0
+        stride = 2.4 if act != "run" else 3.4
+        if p < 0.55:  # planted, sliding back as the body goes forward
+            dx, up = -stride / 2 + stride * p / 0.55, 0.0
+        else:
+            u = (p - 0.55) / 0.45
+            dx, up = stride / 2 - stride * u, (1.3 if act != "run" else 2.2) * math.sin(math.pi * u)
+        if act not in ("walk", "run"):
+            dx, up = 0.0, 0.0
+        if act == "groom" and fore:
+            up = 0.0
+        foot = (x0 + (-1.4 if fore else 1.2) + dx, ground - 0.6 - up)
+        elbow = (x0 + (0.9 if fore else -1.2) + dx * 0.4, (y0 + foot[1]) / 2 - 0.6 - (0.6 if fore else 0.9))
+        if act == "groom" and fore:
+            elbow = ((x0 + foot[0]) / 2 + 0.3, (y0 + foot[1]) / 2)  # arms straight for the push-up
+        s.fill(s.m_path([(x0, y0), elbow], (1.15, 0.9)) | s.m_path([elbow, foot], (0.9, 0.65)), col, edge=near)
+        # toes: three splayed, each a pixel line
+        fx_, fy_ = foot
+        d = -1 if fore else 1
+        toes = [(fx_ + d * 2.0, fy_ + 0.4), (fx_ + d * 1.6, fy_ - 0.6), (fx_ - d * 1.4, fy_ + 0.5)]
+        for tx_, ty_ in toes:
+            s.line(fx_, fy_, tx_, ty_, col)
+
+    # far legs, behind the body
+    leg(11.8, cy + 1.0, True, gait + 0.5, far, False)
+    leg(19.5, by + 0.8, False, gait, far, False)
+
+    # body: chest and hips, the belly paler
+    m = s.m_ellipse(12.2, cy + 0.2, 4.6, ry * 0.95) | s.m_ellipse(17.8, by, 5.2, ry)
+    m |= s.m_path([(12.2, cy), (17.8, by)], ry * 0.9)
+    body_m = s.fill(m, body)
+    s.paint(s.m_path([(10.5, cy + ry * 0.75), (19, by + ry * 0.75)], 0.9), belly, within=body_m)
     if pattern:
+        # species markings were drawn for a body centred at y 22: move them along with it
+        dy = by - 22.0
+        saved = s.fwd, s.xs, s.ys
+        s.fwd, s.xs, s.ys = (lambda x, y, dy=dy: (x, y + dy)), _XS, _YS - dy
         pattern(s, body_m)
-    s.path([(17, 24), (17 + w * 1.5, 28), (15 + w * 1.5, 28)], 1.1, legs)
-    s.path([(12, 24), (12 - w * 1.5, 28), (10 - w * 1.5, 28)], 1.1, legs)
-    hm = s.ellipse(7.5, 18.5, 5.5 if smooth else 5.2, 4.3 if smooth else 3.8, head, edge=True)
-    s.paint(s.m_ellipse(6, 21.5, 4.5, 1.3), throat or belly, within=hm)
+        s.fwd, s.xs, s.ys = saved
+    # a fine scale texture: scattered darker and paler scales along the back
+    # (skinks and salamanders are smooth: no scales picked out)
+    if not smooth:
+        rng = np.random.default_rng(len(body) * 7 + len(belly))
+        sc = [(round(rng.uniform(9, 22)), round(rng.uniform(by - ry, by))) for _ in range(9)]
+        s.paint(s.m_px(sc), mix(body, "#000000", 0.18), within=body_m & ~s.m_ellipse(14, by + ry, 9, 1.4))
+
+    # near legs
+    leg(19.2, by + 1.2, False, gait + 0.5, legs, True)
+    leg(11.4, cy + 1.4, True, gait, legs, True)
+
+    # neck and head: a wedge with a rounded snout
+    s.path([(12, cy - 0.2), (hx + 2.4, hy + 0.6)], (ry * 0.95, 2.0), head)
+    hr = 2.9 if smooth else 2.6
+    snout = (hx - 4.2, hy + 1.0)
+    hm = s.fill(s.m_ellipse(hx, hy, 3.8, hr) | s.m_path([(hx - 1.0, hy + 0.2), snout], (hr * 0.85, 1.0)), head,
+                edge=True)
+    # throat and jaw: the throat colour pulses out on the push-ups and as it breathes
+    pulse = (0.35 * (0.5 - 0.5 * math.cos(2 * math.pi * t)) if act in ("idle", "sit") else 0.0)
+    if act == "groom":
+        pulse = 0.6 + 0.8 * abs(math.sin(2 * math.pi * t))
+    tm = s.m_ellipse(hx + 0.6, hy + hr * 0.75 + pulse * 0.6, 3.0, 1.0 + pulse)
+    s.fill(tm & ~hm if pulse > 0.5 else tm & hm, throat or belly, shade=False)
+    if pulse <= 0.5:
+        pass
+    # lipline, nostril, ear opening, brow
+    lip = mix(head, "#000000", 0.4)
+    s.line(round(snout[0]) + 1, round(hy + 1.4), round(hx + 0.5), round(hy + 1.2), lip)
+    s.px([(round(snout[0]) + 1, round(snout[1]) - 1)], lip)
+    if not smooth:
+        s.px([(round(hx + 2.4), round(hy + 0.4))], mix(head, "#000000", 0.5))  # ear opening
     if horns:
-        s.px([(9, 14), (11, 14), (12, 15), (13, 16), (7, 14)], mix(body, "#ffffff", 0.3))
-        s.px([(9, 13), (11, 13), (13, 15), (14, 16)], mix(body, "#ffffff", 0.45))
+        hc, hc2 = mix(body, "#ffffff", 0.3), mix(body, "#ffffff", 0.45)
+        for k, (dx, dy) in enumerate(((0.6, -hr + 0.4), (1.8, -hr + 0.5), (2.8, -hr + 1.0), (3.6, -hr + 1.8))):
+            s.line(round(hx + dx), round(hy + dy), round(hx + dx + 1), round(hy + dy - 1.4), hc if k % 2 else hc2)
+        for x in range(10, 22, 3):
+            s.px([(x, round(by - ry - 0.4))], hc2)
+    ex, ey = round(hx - 0.9), round(hy - 0.9)
     if eye_big:
-        s.eye(5, 16, size=3)
-        s.px([(5, 16)], WHITE)
+        s.eye(ex - 1, ey - 1, size=3)
+        s.px([(ex - 1, ey - 1)], WHITE)
     else:
-        s.eye(5, 17)
-    s.px([(2, 20), (3, 20)], mix(head, "#000000", 0.45))
+        s.eye(ex, ey)
+    if not smooth:
+        s.px([(ex, ey - 1), (ex + 1, ey - 1)], mix(head, "#000000", 0.25))  # the brow ridge over the eye
+    if act == "eat" and 0.15 < t < 0.45:
+        # the tongue flicks out
+        s.px([(round(snout[0]) - 1, round(snout[1]) + 0), (round(snout[0]) - 2, round(snout[1]))], "#e06a7a")
+    # Species add head details after this in the old head's coordinates (eye at 5, 17):
+    # carry them to where the head is now.
+    dx, dy = ex - 5, ey - 17
+    s.fwd, s.xs, s.ys = (lambda x, y, dx=dx, dy=dy: (x + dx, y + dy)), _XS - dx, _YS - dy
 
 
 def snake(s: Sprite, body, *, belly=None, bands=None, band_period=4.0, band_len=2.0,
           stripe=None, blotch=None, rattle=False, head=None, head_w=5.4):
     """Coiled snake looking left, with a big round head and a tongue. Slithering
     ripples the coil and sways the head; asleep, the tongue stays in."""
-    s.can("walk")
-    moving = s.act == "walk"
+    s.can("walk", "run", "eat", "groom")
+    moving = s.act in ("walk", "run")
     w = 0
+    strike = 0.0
     if moving:
         # Stretched out along the ground, slithering: S-bends that travel from the
         # head back to the tail, the head held a little up and steady.
-        ph = s.t * 2 * math.pi
-        pts = [(x, 28.4 - 1.9 * math.sin(x * 0.45 + ph) * min(1.0, (x - 5) / 6)) for x in range(31, 6, -1)]
+        ph = s.t * 2 * math.pi * (2 if s.act == "run" else 1)
+        amp = 1.9 if s.act == "walk" else 2.5
+        pts = [(x, 28.4 - amp * math.sin(x * 0.45 + ph) * min(1.0, (x - 5) / 6)) for x in range(31, 6, -1)]
         pts += [(6, 27.4), (4.5, 26.2)]
         r = 1.7
     else:
         pts = [(25, 28.5), (14, 28.8), (7, 27), (5.5, 23.5), (9, 20.5), (17, 20), (24, 21.5), (25.5, 24.5),
                (21, 26), (16, 25), (14, 21), (15, 17), (13.5, 13)]
+        if s.act == "eat":
+            # a strike: the neck shoots forward from its S-coil and draws back
+            strike = max(0.0, math.sin(2 * math.pi * min(1.0, s.t * 1.6))) if s.t < 0.62 else 0.0
+            pts[-2:] = [(15 - 3 * strike, 17 + 0.5 * strike), (13.5 - 7 * strike, 13 + 3 * strike)]
+        elif s.act == "groom":
+            # raised and watching: the head lifts and sways slowly
+            sw = math.sin(2 * math.pi * s.t)
+            pts[-2:] = [(15 + 0.6 * sw, 16), (13.5 + 1.2 * sw, 10.5)]
         r = 2.6
     if rattle:
         rat = [(31.5, pts[0][1] - 0.5), (33, pts[0][1] - 1)] if moving else [(27, 28), (29, 27), (30.3, 25.3)]
@@ -1749,37 +1934,86 @@ def snake(s: Sprite, body, *, belly=None, bands=None, band_period=4.0, band_len=
             s.px([(-1, 26), (-2, 26), (-3, 25), (-3, 27)], "#e04a5a")
         s.eye(1, 24, size=1)
         return
-    hx = 12.5 - w
-    hm = s.ellipse(hx, 10.5, head_w, 4.2, head or body, edge=True)
+    # the head: a flat wedge on the end of the neck, the eye with a brow scale over it
+    nx, ny = pts[-1]
+    hx, hy = nx - 1.6, ny - 1.2
+    k = head_w / 5.4
+    hm = s.fill(s.m_ellipse(hx, hy, 3.4 * k + 0.4, 2.3) | s.m_path([(hx - 1, hy + 0.3), (hx - 4.4 * k, hy + 0.9)],
+                                                                   (1.9, 1.1)), head or body, edge=True)
     if belly:
-        s.paint(s.m_ellipse(hx - 1.5, 13.6, 4, 1.3), belly, within=hm)
-    if s.act != "sleep" and s.f % 2 == 0:
-        dx = round(hx - 12.5)
-        s.px([(6 + dx, 13), (5 + dx, 13), (4 + dx, 14), (4 + dx, 12)], "#e04a5a")
-    s.eye(round(9 - w), 9)
+        s.paint(s.m_ellipse(hx - 1.4, hy + 2.0, 3.2, 0.9), belly, within=hm)
+    lip = mix(head or body, "#000000", 0.4)
+    s.line(round(hx - 4.0 * k), round(hy + 1.2), round(hx + 1.2), round(hy + 1.0), lip)
+    tip = round(hx - 4.4 * k - 1.2)
+    flick = s.act not in ("sleep", "eat") and (s.frame % 4 in (0, 1))
+    if flick or (s.act == "eat" and strike > 0.6):
+        ty = round(hy + 1)
+        s.px([(tip, ty), (tip - 1, ty), (tip - 2, ty - 1), (tip - 2, ty + 1)], "#e04a5a")
+    ex, ey = round(hx - 0.8), round(hy - 0.8)
+    s.eye(ex, ey)
+    s.px([(ex, ey - 1), (ex + 1, ey - 1)], mix(head or body, "#000000", 0.25))
 
 
 def turtle(s: Sprite, shell, skin, *, dome=False, scutes=None, speckle=None, rim=None):
-    s.can("walk", "swim")
-    w = s.wave() if s.act in ("walk", "swim") else 0
-    tucked = s.act == "sleep"
-    hx = 9 if tucked else 5  # asleep, the head pulls in under the shell
-    s.ellipse(hx + 3, 22, 4.5, 3.5, skin)
-    s.ellipse(hx, 18.5 + (2 if tucked else 0), 4.5, 4, skin, edge=True)
+    """A turtle from the side, facing left: a shell with its plates outlined, a head
+    with a hooked beak and an eye, scaly legs with claws. It walks (diagonal legs),
+    swims, eats (the neck reaches out and the beak snaps), basks (sit: neck stretched
+    up, hind legs out behind) and pulls in its head to sleep."""
+    s.can("walk", "swim", "eat", "sit")
+    act, t = s.act, s.t
+    w = math.sin(2 * math.pi * t) if act in ("walk", "swim") else 0
+    tucked = act == "sleep"
+    dark = mix(skin, "#000000", 0.3)
+    # head and neck: reaching out to bite, stretched up to bask, or drawn in
+    reach = max(0.0, math.sin(2 * math.pi * t)) if act == "eat" else 0.0
+    hx, hy = (9, 21) if tucked else (5 - 2.2 * reach, 18.5 + 2.4 * reach)
+    if act == "sit":
+        hx, hy = 4.6, 16.8
+    s.path([(13, 22.5), (hx + 2.2, hy + 1.2)], 2.6 if not tucked else 2.2, skin)
+    hm = s.fill(s.m_ellipse(hx, hy, 3.4, 2.7) | s.m_path([(hx - 1, hy + 0.2), (hx - 3.6, hy + 1.0)], (2.1, 1.3)),
+                skin, edge=True)
     if speckle and not tucked:
-        s.px([(3, 17), (6, 16), (5, 20), (7, 19)], speckle)
-    s.ellipse(11 - w * 1.5, 27 - max(0, w), 2.4, 3.2, skin)
-    s.ellipse(22 + w * 1.5, 27 - max(0, -w), 2.4, 3.2, skin)
-    s.poly([(26, 23), (30, 25), (26, 26)], skin)
+        s.px([(round(hx - 1), round(hy - 1.5)), (round(hx + 1), round(hy - 2)), (round(hx), round(hy + 1.5)),
+              (round(hx + 2), round(hy + 0.5))], speckle)
+    # the beak: a darker hooked edge, the mouth line opening as it bites
+    s.px([(round(hx - 4.4), round(hy + 1)), (round(hx - 4.4), round(hy + 2))], dark)
+    s.line(round(hx - 3.6), round(hy + 1.6 + (0.8 if 0.2 < reach < 0.9 else 0)), round(hx - 0.5), round(hy + 1.6), dark)
+    # legs: thick and scaly, each foot with a pale claw
+    swim = act == "swim"
+    legs = ((11 - w * 1.5, 27 - max(0.0, w) * (0 if swim else 1)), (23 + w * 1.5, 27 - max(0.0, -w) * (0 if swim else 1)))
+    if act == "sit":
+        legs = ((10, 28), (26, 28.5))
+    for i, (lx, ly) in enumerate(legs):
+        if swim:
+            s.ellipse(lx + (-1.5 if i == 0 else 1.5), ly - 0.5, 3.2, 1.3, skin, rot=-20 if i == 0 else 20)
+            continue
+        s.ellipse(lx, ly, 2.4, 3.2, skin)
+        s.paint(s.m_px([(round(lx), round(ly - 1)), (round(lx - 1), round(ly + 1))]), dark, within=s.last)
+        cx = round(lx - 2.6) if i == 0 else round(lx - 2.2)
+        s.px([(cx, round(ly + 2.6)), (cx + 1, round(ly + 2.6))], "#e8dcc4")
+    s.poly([(26, 23), (30.5, 25.2), (26, 26)], skin)  # the tail
     ry = 10 if dome else 7.5
-    m = s.fill(s.m_ellipse(17, 25, 11, ry) & (s.m_poly([(0, 0), (32, 0), (32, 25.5), (0, 25.5)])), shell, edge=True)
+    m = s.fill(s.m_ellipse(17, 25, 11, ry) & s.m_poly([(0, 0), (32, 0), (32, 25.5), (0, 25.5)]), shell, edge=True)
     s.ellipse(17, 25.5, 11.5, 1.6, rim or mix(shell, "#000000", 0.25))
+    # the plates of the shell: a central row and the marginal plates round the rim
+    top = 25 - ry
+    seam = mix(shell, "#000000", 0.35)
+    for x in (11.5, 17, 22.5):
+        s.paint(s.m_line(x, top + ry * 0.35, x + (0.8 if x > 17 else -0.8 if x < 17 else 0), 24), seam, within=m)
+    s.paint(s.m_ellipse(17, 25, 7.6, ry * 0.62) & ~s.m_ellipse(17, 25, 6.8, ry * 0.62 - 0.9), seam, within=m)
+    for x in range(8, 27, 3):
+        s.paint(s.m_line(x, 23.4, x, 24.6), seam, within=m)
     if scutes:
         cy = 18 if dome else 20
         for cx in (11, 17, 23):
             s.paint(s.m_ellipse(cx, cy + (1 if cx != 17 else -1), 2.4, 2.2), scutes, within=m)
     if not tucked:
-        s.eye(3, 17)
+        s.eye(round(hx - 1.6), round(hy - 0.8))
+    else:
+        s.erase(hm & ~s.m_ellipse(8.5, 21, 3.0, 2.4) & ~m)
+    # species add face details after this where the head used to be (5, 18.5): carry them along
+    dx, dy = hx - 5, hy - 18.5
+    s.fwd, s.xs, s.ys = (lambda x, y, dx=dx, dy=dy: (x + dx, y + dy)), _XS - dx, _YS - dy
 
 
 # Side-view frog builds: body (cx, cy, rx, ry, rot), head (cx, cy, rx, ry), eye bump
@@ -1806,14 +2040,16 @@ def frog(s: Sprite, skin, belly, *, build="frog", head=None, mask=None, side=Non
     ridges (pale folds along the back), lines (dark lines along the back), thigh
     (colour of the hind legs), crown (patch between the eyes), parotoid (the toad's
     swollen gland behind the eye), spots (how many, on the back), warts (pale dots)."""
-    s.can("walk", "swim", "look", "back")
+    s.can("walk", "swim", "look", "back", "run", "eat", "groom")
     b = FROGS[build]
     act, f = s.act, s.f
     view = {"look": "front", "back": "back"}.get(act, "side")
-    hopping = act == "walk"
+    hopping = act in ("walk", "run")
     swimming = act == "swim"
-    leap = (hopping and f == 2) or (swimming and f in (1, 2))
-    crouch = hopping and f == 1
+    # a hop: crouch, spring (hind legs kicked out) through the air, land and settle
+    air_u = (s.t - 0.25) / 0.45 if hopping and 0.25 <= s.t < 0.7 else None
+    leap = air_u is not None or (swimming and f in (1, 2))
+    crouch = hopping and (0.1 < s.t < 0.25 or 0.75 < s.t < 0.9)
     head = head or skin
     legs = thigh or skin
     far = lambda c: mix(c, "#1a1420", 0.3)  # noqa: E731
@@ -1921,10 +2157,20 @@ def frog(s: Sprite, skin, belly, *, build="frog", head=None, mask=None, side=Non
         s.ellipse(hx - 0.6 - lean, ground - 0.5 - (1 if leap else 0), 1.8, 0.8, skin)
         if pads:
             s.px([(round(hx - 2.2 - lean), round(ground - 0.5 - (1 if leap else 0)))], mix(skin, WHITE, 0.4))
-    if leap and hopping:
-        s.shift(0, -3)
-    elif hopping and f == 3:
-        s.shift(0, -1)
+    if act == "groom":
+        # calling: the vocal sac under the chin swells and empties, twice
+        k = abs(math.sin(2 * math.pi * s.t))
+        if k > 0.15:
+            s.ellipse(hx - 0.4, hy + hry * 0.7 + 0.8 * k, 1.4 + 2.4 * k, 1.0 + 2.0 * k,
+                      mix(belly, "#ffffff", 0.35), edge=True)
+    if act == "eat" and 0.15 < s.t < 0.5:
+        # the tongue snaps out at a fly and back
+        u = math.sin(math.pi * (s.t - 0.15) / 0.35)
+        x0, y0 = hx - hrx + 0.6, hy + 1.2
+        s.path([(x0, y0), (x0 - 7 * u, y0 - 2.5 * u)], 0.55, "#e87a8a", shade=False)
+        s.ellipse(x0 - 7 * u, y0 - 2.5 * u, 0.9, 0.9, "#e87a8a", shade=False)
+    if air_u is not None:
+        s.shift(0, -round((3.5 if act == "walk" else 7) * math.sin(math.pi * air_u)))
 
 
 def _frog_eye(s: Sprite, x, y, r, skin, iris, cat, mask):
@@ -1962,8 +2208,10 @@ def _frog_spots(s: Sprite, mask, n, col, big):
 def butterfly(s: Sprite, fore, hind, *, body="#2b2630", pattern=None, tails=False):
     """Top view, wings spread. Flying, the wings fold up and open again; asleep
     they're held closed."""
-    s.can("fly")
-    k = {"fly": s.cyc(1, 0.6, 0.25, 0.6), "sleep": 0.25}.get(s.act, 1)
+    s.can("fly", "eat")
+    # resting, it slowly closes and opens its wings now and then as it basks
+    bask = 1 - 0.3 * max(0.0, math.sin(2 * math.pi * (s.t - 0.5))) if s.act in ("idle", "eat") and s.t > 0.5 else 1
+    k = {"fly": s.cyc(1, 0.6, 0.25, 0.6), "sleep": 0.25}.get(s.act, bask)
     sq = lambda pts: [(16 + (x - 16) * k, y) for x, y in pts]  # noqa: E731
     if tails:
         s.path(sq([(11, 23), (10, 28)]), (1.2, 0.8), hind, mirror=True)
@@ -1971,12 +2219,24 @@ def butterfly(s: Sprite, fore, hind, *, body="#2b2630", pattern=None, tails=Fals
     hm = s.poly(sq([(15, 16), (5, 16), (4, 22), (9, 27), (15, 22)]), hind, mirror=True, edge=True)
     if pattern:
         pattern(s, fm, hm)
-    s.line(15, 8, 11, 2, body)
-    s.line(16, 8, 20, 2, body)
-    s.px([(11, 1), (20, 1)], body)
-    s.ellipse(16, 17, 1.6, 8, body)
-    s.ellipse(16, 9.5, 2.5, 2.2, body)
+    # antennae with clubbed tips, twitching now and then
+    tw = 1 if s.act == "idle" and 0.2 < s.t < 0.35 else 0
+    s.line(15, 8, 11 - tw, 2, body)
+    s.line(16, 8, 20, 2 + tw, body)
+    s.px([(11 - tw, 1), (10 - tw, 1), (20, 1 + tw), (21, 1 + tw)], body)
+    # abdomen with its segments, a furry thorax, the head and big compound eyes
+    am = s.ellipse(16, 18.5, 1.5, 6.5, body)
+    seg = mix(body, "#ffffff", 0.22)
+    s.paint(s.m_px([(16, y) for y in (16, 18, 20, 22)]), seg, within=am)
+    s.ellipse(16, 12.5, 2.0, 2.6, mix(body, "#806040", 0.18))
+    s.ellipse(16, 9.5, 2.3, 1.9, body)
     s.px([(14, 9), (17, 9)], WHITE)
+    if s.act == "eat":
+        # sipping nectar: the coiled tongue unrolls forward and curls back
+        u = math.sin(math.pi * s.t)
+        y1 = round(8 - 4.5 * u)
+        s.line(16, 8, 16, y1, "#3a2a24")
+        s.px([(17, y1)], "#3a2a24")
 
 
 def bee(s: Sprite):
@@ -2068,22 +2328,95 @@ def star(s: Sprite, color, *, arms=0.45, dots=WHITE, rot=-90):
 
 # --------------------------------------------------------------------------- added for North Carolina
 def fish(s: Sprite, body, belly, *, fin=None, pattern=None, slim=False):
-    """Side view facing left."""
-    s.can("swim")
-    w = s.wave() if s.act == "swim" else 0
+    """A fish from the side, facing left: a streamlined body (blunt head, deepest a
+    third of the way back, a narrow wrist before the tail), forked tail, dorsal fin
+    with rays (and the little adipose fin of trout and salmon), pelvic, anal and
+    pectoral fins, the curved edge of the gill cover, a lateral line, mouth and eye.
+
+    Swimming, a wave runs down the body to the tail, every frame drawn along the bent
+    spine; hanging in the water (idle) it fans its pectoral fins and breathes through
+    its gills; eat opens the mouth to gulp; asleep it rests with its fins folded."""
+    s.can("swim", "eat")
+    act, t = s.act, s.t
+    s.base, s.fwd, s.xs, s.ys = None, None, _XS, _YS
+    slug = getattr(s, "slug", "") or ""
+    salmonid = bool(re.search(r"trout|salmon|char\b|charr|grayling|whitefish|dolly|steelhead|kokanee", slug))
     fin = fin or mix(body, "#000000", 0.15)
-    ry = 6 if slim else 7.5
-    _fluke(s, [(24, 16.5), (31, 10), (29.5, 16.5), (31, 23)], fin, w)
-    s.poly([(10, 11 if slim else 9.5), (17, 7 if slim else 6), (22, 11)], fin)
-    s.poly([(12, 22), (16, 26), (19, 22)], fin)
-    m = s.ellipse(15, 16.5, 11, ry, body, edge=True)
-    s.paint(s.m_ellipse(13, 16.5 + ry * 0.6, 9, ry * 0.45), belly, within=m)
+    ry = 5.6 if slim else 7.0
+    amp = {"swim": 1.5, "eat": 0.5, "sleep": 0.0}.get(act, 0.45)
+    x0, x1 = 3.0, 25.0  # snout to the wrist of the tail
+
+    def wave(x):
+        k = max(0.0, (x - 8) / 20)
+        return amp * k * k * math.sin(2 * math.pi * t - x / 5.5)
+
+    def depth(x):
+        u = (x - x0) / (x1 - x0)
+        if u < 0.36:
+            return ry * math.sin(math.pi / 2 * u / 0.36) ** 0.55
+        return 1.5 + (ry - 1.5) * math.cos(math.pi / 2 * (u - 0.36) / 0.64) ** 1.1
+
+    xs = [x0 + i * 0.5 for i in range(int((x1 - x0) / 0.5) + 1)]
+    cy = 16.5
+    top = [(x, cy + wave(x) - depth(x) * 0.95) for x in xs]
+    bot = [(x, cy + wave(x) + depth(x) * 1.05) for x in xs]
+    yt = lambda x: cy + wave(x) - depth(x) * 0.95  # noqa: E731
+    yb = lambda x: cy + wave(x) + depth(x) * 1.05  # noqa: E731
+
+    # tail: forked, the lobes following the swing of the wave
+    tw = wave(x1 + 4) * 1.4
+    pc = (x1, cy + wave(x1))
+    s.poly([(pc[0] - 1.2, pc[1] - 1.6), (x1 + 6.2, cy - 6.4 + tw), (x1 + 5.0, cy - 5.6 + tw), (x1 + 3.4, cy + tw * 0.8),
+            (x1 + 5.0, cy + 5.6 + tw), (x1 + 6.2, cy + 6.4 + tw), (pc[0] - 1.2, pc[1] + 1.6)], fin, edge=True)
+    ray = mix(fin, "#000000", 0.25)
+    for dy in (-3.6, 3.6):
+        s.paint(s.m_line(x1 + 0.5, pc[1] + dy * 0.3, x1 + 4.5, cy + dy + tw), ray, within=s.last)
+    # fins behind the body
+    fold = 0.5 if act == "sleep" else 1.0
+    dfx = 10.5
+    s.poly([(dfx - 0.5, yt(dfx) + 1), (dfx + 1.8, yt(dfx + 1.8) - (3.4 if slim else 4.2) * fold),
+            (dfx + 4.0, yt(dfx + 4) - (2.6 if slim else 3.2) * fold), (dfx + 7.5, yt(dfx + 7.5) + 0.2),
+            (dfx + 7.0, yt(dfx + 7) + 1)], fin, edge=True)
+    dorsal = s.last
+    for k in range(4):
+        x = dfx + 1.0 + k * 1.6
+        s.paint(s.m_line(x, yt(x), x + 0.6, yt(x) - 3.0 * fold), ray, within=dorsal)
+    if salmonid:
+        s.ellipse(21.2, yt(21.2) - 0.4, 1.1, 0.9, fin)
+    s.poly([(17.2, yb(17.2) - 0.6), (19.0, yb(19) + 2.8 * fold), (21.0, yb(21) + 1.6 * fold), (21.4, yb(21.4) - 0.4)],
+           fin, edge=True)
+    s.poly([(11.8, yb(11.8) - 0.6), (13.6, yb(13.6) + 2.6 * fold), (15.0, yb(15) + 0.6)], fin, edge=True)
+
+    # the body
+    m = s.fill(s.m_poly(top + bot[::-1]), body, edge=True)
+    s.fill(s.m_poly([(x, cy + wave(x) + depth(x) * 0.25) for x in xs] + bot[::-1]) & m, belly, shade=False)
+    # species markings were drawn for the old oval body (centre 15, 16.5): they ride the wave
     if pattern:
+        saved = s.fwd, s.xs, s.ys
+        sh = wave(15)
+        s.fwd, s.xs, s.ys = (lambda x, y, sh=sh: (x, y + sh)), _XS, _YS - sh
         pattern(s, m)
-    s.ellipse(15, 18, 2.6, 1.6, mix(fin, "#ffffff", 0.2), rot=25)
-    s.paint(s.m_line(9, 13, 9, 20), mix(body, "#000000", 0.3), within=m)
-    s.eye(6, 14, size=2)
-    s.px([(3, 18), (4, 18)], mix(body, "#000000", 0.45))
+        s.fwd, s.xs, s.ys = saved
+    # lateral line
+    s.paint(s.m_path([(x, cy + wave(x) - depth(x) * 0.15) for x in xs[14::4]], 0.4), mix(body, "#000000", 0.22),
+            within=m)
+    # gill cover: a curved edge behind the head that opens a little as it breathes
+    breathe = 0.5 + 0.5 * math.sin(2 * math.pi * t * 2) if act in ("idle", "eat", "sleep") else 0.4
+    gx = 9.0 + 0.5 * breathe
+    gill = [(gx - 0.8, yt(gx) + 1.4), (gx + 0.2, cy + wave(gx) - 1), (gx, cy + wave(gx) + 2), (gx - 1.2, yb(gx) - 1)]
+    s.paint(s.m_path(gill, 0.45), mix(body, "#000000", 0.32), within=m)
+    # pectoral fin, fanning
+    fan = 25 + 30 * (0.5 + 0.5 * math.sin(2 * math.pi * t * 3)) if act in ("idle", "eat") else 30
+    s.ellipse(gx + 2.6, cy + wave(gx + 2) + 1.8, 2.8, 1.3, mix(fin, "#ffffff", 0.2), rot=fan, edge=True)
+    # mouth and eye
+    gape = max(0.0, math.sin(2 * math.pi * t)) if act == "eat" else 0.0
+    mouth_y = cy + wave(x0) + 1.0
+    s.line(round(x0), round(mouth_y), round(x0 + 2.4), round(mouth_y + 0.4), mix(body, "#000000", 0.5))
+    if gape > 0.3:
+        s.erase(s.m_poly([(x0 - 1, mouth_y - 0.4 * gape), (x0 + 2.0, mouth_y + 0.3), (x0 - 1, mouth_y + 1.4 * gape)]))
+    ex, ey = round(5.8), round(cy + wave(6) - 2.0)
+    s.ellipse(ex + 0.5, ey + 0.5, 1.7, 1.6, mix(belly, "#e8c060", 0.35), shade=False)
+    s.eye(ex, ey, size=2)
 
 
 def dolphin(s: Sprite, body, belly):
@@ -2297,3 +2630,7 @@ def mantis(s: Sprite, c, wing, eyes):
     s.px([(8, 6), (16, 6)], EYE)
     s.line(10, 5, 6, 0, d)
     s.line(14, 5, 18, 0, d)
+
+
+# Four-legged mammals live in mammal.py (imported last: it uses the names above).
+from mammal import quad  # noqa: E402,F401
