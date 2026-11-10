@@ -160,7 +160,16 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
   (0.35.0 preview) and preferred the old look. The apps always draw an animal 40
   units square (`HAB_UNIT`) and pick frames with `habCyc()` / `habIdleFrame()`.
 - Sheet rows are `pixel.ACTS` (idle, walk, fly, swim, sleep, sit, look, back, eat,
-  dive, hide); append new rows at the end so the apps' row indices stay valid.
+  dive, hide, run, groom); append new rows at the end so the apps' row indices stay
+  valid. `run` is the gallop / bound (habitat: fleeing or chasing; Trail Run) and
+  `groom` the animal's own idle behaviour (dog scratches, cat/squirrel washes, bird
+  and duck preen, lizard push-ups, frog calls, snake raises its head).
+- 0.47.0 remake: four-legged mammals are `tools/mammal.py` (`quad`): a skeleton per
+  build with two-bone legs placed by inverse kinematics from the gait, chest/barrel/
+  haunch torso, detailed head, every pose drawn (no warp, breathing swells the chest).
+  `lizard`, `turtle` and `fish` were redrawn too. Species that paint markings in the
+  old fixed coordinates are carried along: these body plans set a translation
+  (`s.fwd`/`s.xs`/`s.ys`) after drawing so later species calls follow the head.
   `eat` is grazing (quad, critter) or pecking (bird, wader, gull, raptor), also
   used for drinking. `dive` (plunge divers, leaping dolphins and whales) is drawn
   pitched from 55 degrees nose up to 75 nose down (`make_sprites.DIVE_DEG`,

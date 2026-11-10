@@ -646,7 +646,8 @@ def test_sprites(client):
 
 def test_sprite_animations(client):
     idx = client.get("/sprites/anim/index.json").json()
-    assert idx["rows"] == ["idle", "walk", "fly", "swim", "sleep", "sit", "look", "back", "eat", "dive", "hide"] and idx["frames"] == 12
+    assert idx["rows"] == ["idle", "walk", "fly", "swim", "sleep", "sit", "look", "back", "eat", "dive", "hide",
+                           "run", "groom"] and idx["frames"] == 12
     assert idx["size"] == 40 and 0 < idx["blink"] < 12  # 1:1 pixel frames; idle has a blink frame
     assert {"walk", "sit", "look", "back", "eat"} <= set(idx["acts"]["western_gray_squirrel"])
     assert {"walk", "swim", "sit", "look", "back"} <= set(idx["acts"]["harbor_seal"])  # sit = banana pose
@@ -655,6 +656,12 @@ def test_sprite_animations(client):
     assert {"fly", "eat"} <= set(idx["acts"]["american_robin"])  # eat = pecking
     assert {"fly", "dive"} <= set(idx["acts"]["brown_pelican"]) and "dive" in idx["acts"]["common_bottlenose_dolphin"]
     assert "hide" in idx["acts"]["giant_green_anemone"]
+    # the remake: every four-legged mammal gallops and grooms, sits, looks round
+    assert {"run", "groom", "sit", "look", "back"} <= set(idx["acts"]["coyote"])
+    assert {"run", "groom"} <= set(idx["acts"]["western_gray_squirrel"])
+    assert {"groom", "sit", "run"} <= set(idx["acts"]["american_robin"])  # preening, settled down
+    assert {"groom", "run", "eat"} <= set(idx["acts"]["western_fence_lizard"])  # push-ups, tongue
+    assert "groom" in idx["acts"]["mallard"] and "groom" in idx["acts"]["american_bullfrog"]
     r = client.get("/sprites/anim/mule_deer.png")
     assert r.status_code == 200 and r.headers["content-type"] == "image/png"
     assert client.get("/sprites/anim/nope.png").status_code == 404

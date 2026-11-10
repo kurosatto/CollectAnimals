@@ -2080,7 +2080,10 @@ function mgPlayer(c, r) {
   let pose = acts.includes(mg.game.pose) ? mg.game.pose : key === "river" && acts.includes("walk") ? "walk" : "idle";
   let frame = 0;
   const moving = r.mode === "play";
+  // Trail Run: running flat out, the animals that draw a gallop or bound use it
+  if (pose === "walk" && key === "trail" && moving && acts.includes("run")) pose = "run";
   if (pose === "fly") frame = !moving ? cyc(r.phase * 4) : r.flap > 0 || r.vy < 20 ? cyc(r.phase * 14) : HAB_GLIDERS.test(s.slug) ? 0 : cyc(r.phase * 6);
+  else if (pose === "run") frame = !r.ground ? cyc(1.5) : cyc(r.dist / 14);
   else if (pose === "walk") frame = key === "trail" && !r.ground ? cyc(1) : cyc((moving ? r.dist : r.phase * 20) / 9);
   else if (pose === "swim") frame = cyc(r.phase * (r.held ? 5 : 2.5));
   else frame = habIdleFrame(r.phase * 4 / 3);
