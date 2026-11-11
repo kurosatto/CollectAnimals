@@ -80,7 +80,7 @@ fun GalleryScreen(species: List<Species>, collection: Map<String, Badge>, onOpen
                                 modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                         }
                     }
-                    Text(s.commonName, style = MaterialTheme.typography.labelSmall, maxLines = 1,
+                    Text(s.commonName, style = MaterialTheme.typography.labelSmall, minLines = 2, maxLines = 2,
                         overflow = TextOverflow.Ellipsis, color = rarityColor(s.rarity),
                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 3.dp))
                 }
