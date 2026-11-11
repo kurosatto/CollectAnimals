@@ -186,6 +186,7 @@
     #viewer .side { max-height:45dvh; }
   }
   .like.on { border-color:#c0392b; color:#c0392b; }
+  .like.heart:not(.on) .pi { filter:grayscale(1); opacity:.55; }
   .seg { display:flex; gap:6px; flex-wrap:wrap; margin-top:12px; }
   .seg button { background:none; color:var(--ink); border:1px solid var(--line); padding:4px 10px; font-size:.85rem; }
   .seg select { padding:4px 8px; font-size:.85rem; }
@@ -1937,7 +1938,7 @@ $("viewer").addEventListener("click", (e) => {
 // The comment list opens inside host.
 function reactions(p, host, onChange) {
   const row = el("div", "reacts");
-  const like = el("button", "like" + (p.liked_by_me ? " on" : ""), `♥ ${p.like_count}`);
+  const like = elIco("button", "like heart" + (p.liked_by_me ? " on" : ""), "heart", String(p.like_count));
   like.type = "button";
   if (p.is_mine) { like.disabled = true; like.title = "Your photo"; }
   else like.onclick = async (e) => {
@@ -1947,7 +1948,7 @@ function reactions(p, host, onChange) {
       await api(`/photos/${p.id}/like`, { method: p.liked_by_me ? "DELETE" : "POST" });
       p.like_count += p.liked_by_me ? -1 : 1;
       p.liked_by_me = !p.liked_by_me;
-      like.textContent = `♥ ${p.like_count}`;
+      icoText(like, "heart", String(p.like_count));
       like.classList.toggle("on", p.liked_by_me);
       if (onChange) onChange();
     } catch {}

@@ -572,7 +572,7 @@ fun PhotoViewer(s: SocialState, social: SocialViewModel, parks: List<Park> = emp
                             }
                         }
                         TextButton(onClick = { social.toggleLike(p) }, enabled = !p.isMine) {
-                            Text((if (p.likedByMe) "♥ " else "♡ ") + p.likeCount)
+                            LikeLabel(p.likedByMe, p.likeCount)
                         }
                     }
                     if (p.isMine && onDelete != null) {
@@ -647,7 +647,7 @@ private fun FeedCard(p: OnlinePhoto, social: SocialViewModel, onOpenDex: (String
                 // Anyone can like or comment, friends or not; animals you haven't unlocked stay hidden.
                 if (p.url != null) {
                     TextButton(onClick = { social.toggleLike(p) }, enabled = !p.isMine) {
-                        Text((if (p.likedByMe) "♥ " else "♡ ") + p.likeCount)
+                        LikeLabel(p.likedByMe, p.likeCount)
                     }
                     TextButton(onClick = { social.openComments(p) }) { IconText("chat", "${p.commentCount}") }
                 }
@@ -1030,4 +1030,14 @@ fun ReportButton(label: String, social: SocialViewModel, offerBlock: String? = n
             else TextButton(onClick = { open = false }) { Text("Close") }
         },
         dismissButton = { if (result == null) TextButton(onClick = { open = false }) { Text("Cancel") } })
+}
+
+/** The like count after a pixel heart (tools/make_ui_icons.py), faded until you like it. */
+@Composable
+private fun LikeLabel(liked: Boolean, count: Int) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        TabIcon("ui_ic_heart", Modifier.size(16.dp).alpha(if (liked) 1f else 0.4f))
+        Spacer(Modifier.size(5.dp))
+        Text("$count")
+    }
 }
