@@ -421,6 +421,9 @@
   dialog { background:var(--card); border:none; border-radius:8px; box-shadow:0 10px 40px rgba(0,0,0,.4);
            background-image:repeating-linear-gradient(0deg, transparent 0 31px, var(--paper-lines) 31px 32px); }
   #dex-name { font-size:2rem; line-height:1.05; }
+  /* Long names ("Red-tailed Hawk", "Northern Elephant Seal") shrink on phones instead of
+     breaking mid-word into three or four lines. */
+  @media (max-width:520px) { #dex-name.mid { font-size:1.5rem; } #dex-name.long { font-size:1.2rem; } }
   #dex-sci { font-style:normal; font-size:.85rem; }
   .dex-sprite { background:#fffaf0; padding:6px; width:96px; height:96px; box-shadow:0 4px 10px rgba(60,40,20,.25); transform:rotate(-2deg); }
   #dex-record { margin-top:6px; font-family:var(--text); font-size:.75rem; }
@@ -1719,6 +1722,9 @@ async function openDex(key, num, caught, stateCode = myState.code) {
     ? `First captured ${fmtDate(d.first_captured)}${d.times_captured > 1 ? ` · ${d.times_captured} times` : ""}` : "";
   $("dex-num").textContent = `#${String(num).padStart(3, "0")}`;
   $("dex-name").textContent = s.revealed ? s.common_name : "???";
+  const words = s.revealed ? s.common_name.split(/[\s-]+/) : [], longest = Math.max(0, ...words.map((w) => w.length));
+  $("dex-name").className = !s.revealed ? "" : longest > 9 || s.common_name.length > 22 ? "long"
+    : longest > 7 || s.common_name.length > 14 ? "mid" : "";
   $("dex-sci").textContent = s.revealed ? s.scientific_name
     : `An unknown ${categoryWord(s.category)}. Capture it, or have a friend capture it, to learn its name.`;
   $("dex-rarity").textContent = s.rarity;
