@@ -8,10 +8,11 @@
      this page is the little bit of glue the website's index.html provides there.
      Habitat.kt loads it and calls setAnimals(); taps come back via AndroidHabitat. -->
 <style>
-  :root { --ink:#1c2a1c; --muted:#5d6b5d; --line:#d9ddd0; --card:#ffffff; --accent:#2f6f4f; }
-  @media (prefers-color-scheme: dark) { :root { --ink:#e6eee6; --muted:#9fb09f; --line:#3a4a3a; --card:#1d261d; --accent:#7fc59a; } }
+  /* Field Journal colours, as on the website and in the app's own screens. */
+  :root { --ink:#3a2c1c; --muted:#7a6448; --line:#d9c9a3; --card:#fbf5e6; --accent:#4d6b3a; }
+  @media (prefers-color-scheme: dark) { :root { --ink:#f0e4c8; --muted:#bba57f; --line:#4a3b28; --card:#2c2318; --accent:#9cbf7c; } }
   html, body { margin:0; padding:0; background:transparent; color:var(--ink);
-               font:14px/1.3 system-ui, sans-serif; -webkit-tap-highlight-color:transparent; }
+               font:14px/1.3 "Space Grotesk", system-ui, sans-serif; -webkit-tap-highlight-color:transparent; }
   .hidden { display:none !important; }
   .habitat { position:relative; }
   /* Edge to edge on the phone, no frame (2026-11-04). */
@@ -34,6 +35,7 @@
            background:transparent; color:var(--accent); white-space:nowrap; display:inline-flex; align-items:center; gap:4px; }
   /* Same pixel font and icons as the website's phone layout (2026-11-04). */
   @font-face { font-family:"Pixelify Sans"; src:url(/vendor/fonts/pixelify.woff2) format("woff2"); font-weight:400 700; }
+  @font-face { font-family:"Space Grotesk"; src:url(/vendor/fonts/spacegrotesk.woff2) format("woff2"); font-weight:300 700; }
   #hab-note, button { font-family:"Pixelify Sans", ui-monospace, monospace; }
   .pi { width:16px; height:16px; image-rendering:pixelated; flex:none; }
   .hab-bar { flex-wrap:wrap; justify-content:flex-end; gap:4px 6px; }

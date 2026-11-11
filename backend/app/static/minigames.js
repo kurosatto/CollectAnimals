@@ -141,7 +141,7 @@ function mgShopGot(d) {
   if (!mg.run) mgList();
 }
 function mgShopDo(path, body) {
-  mgApi("POST", path, body).then(mgShopGot).catch((e) => alert(e.message));
+  mgApi("POST", path, body).then(mgShopGot).catch((e) => mgToast(e.message));
 }
 
 function mgShopBar(list) {
@@ -215,7 +215,7 @@ function mgLooks(slug, onPick) {
       habLookSet(d);
       box.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
       onPick?.();
-      mgApi("POST", "/games/shop/skin", { species: slug, skin }).then((r) => { mg.shop = r; habLookSet(r); }).catch((e) => alert(e.message));
+      mgApi("POST", "/games/shop/skin", { species: slug, skin }).then((r) => { mg.shop = r; habLookSet(r); }).catch((e) => mgToast(e.message));
     };
     box.append(b);
   }
@@ -290,6 +290,13 @@ function mgBoard(box, level, scope) {
 }
 
 const mgEl = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+// A short note at the bottom of the screen (alert() does nothing in the Android app's WebView).
+function mgToast(text) {
+  let t = document.getElementById("mg-toast");
+  if (!t) { t = mgEl("div", "mg-toast"); t.id = "mg-toast"; t.setAttribute("role", "status"); document.body.append(t); }
+  t.textContent = text; t.classList.add("on");
+  clearTimeout(mgToast.timer); mgToast.timer = setTimeout(() => t.classList.remove("on"), 3500);
+}
 // A small pixel icon (tools/make_ui_icons.py: coin, shop, lock, palette, sound_on...), not an emoji.
 const mgIco = (name) => { const i = mgEl("img", "pi"); i.src = `/sprites/ui_ic_${name}.png`; i.alt = ""; return i; };
 // An element with a pixel icon in front of its text.
@@ -403,6 +410,10 @@ function mgBuild() {
     .mg-stage.full .mg-turn { inset:auto; top:0; left:100vw; width:100vh; width:100dvh; height:100vw;
                               transform-origin:top left; transform:rotate(90deg); }
   }
+  .mg-toast { position:fixed; left:50%; bottom:84px; transform:translateX(-50%); max-width:min(90vw, 360px); z-index:50;
+              background:#3a2c1c; color:#fbf5e6; padding:8px 14px; border-radius:8px; font-size:.9rem; text-align:center;
+              opacity:0; pointer-events:none; transition:opacity .2s; }
+  .mg-toast.on { opacity:1; }
   .mg-back { font:inherit; font-size:.85rem; padding:4px 12px; border-radius:999px; border:1px solid var(--line);
              background:transparent; color:var(--accent); cursor:pointer; }`;
   document.head.append(css);
