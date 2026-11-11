@@ -120,13 +120,13 @@ object Online {
     // --- Accounts ---------------------------------------------------------------------
 
     suspend fun register(email: String, username: String, password: String, state: String, birthYear: Int) {
-        val r = call("POST", "/auth/register", JSONObject().put("email", email).put("username", username)
+        val r = call("POST", "/auth/register", JSONObject().put("email", email.trim()).put("username", username.trim())
             .put("password", password).put("state", state).put("birth_year", birthYear))
         setToken(JSONObject(r).getString("access_token"))
     }
 
     suspend fun login(ident: String, password: String) = withContext(Dispatchers.IO) {
-        val form = "username=${q(ident)}&password=${q(password)}".toByteArray()
+        val form = "username=${q(ident.trim())}&password=${q(password)}".toByteArray()
         val r = request("POST", "/auth/login", form, "application/x-www-form-urlencoded", auth = false)
         setToken(JSONObject(r).getString("access_token"))
     }

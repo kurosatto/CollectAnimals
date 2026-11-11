@@ -807,11 +807,11 @@ $("auth-form").onsubmit = async (e) => {
       if (!signupState && states.length > 1) await chooseSignupState();
       if (!signupState && states.length > 1) return;
       r = await api("/auth/register", { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: $("email").value, username: $("ident").value, password: $("password").value,
+        body: JSON.stringify({ email: $("email").value.trim(), username: $("ident").value.trim(), password: $("password").value,
                                state: signupState || undefined, birth_year: Number($("birth-year").value) }) });
     } else {
       r = await api("/auth/login", { method: "POST",
-        body: new URLSearchParams({ username: $("ident").value, password: $("password").value }) });
+        body: new URLSearchParams({ username: $("ident").value.trim(), password: $("password").value }) });
     }
     setToken(r.access_token);
   } catch (err) { $("auth-error").textContent = err.message; }
@@ -1371,7 +1371,7 @@ function fillGuide(grid, entries, owner = null) {
     if (!entries.some((e) => e.caught)) grid.append(el("p", "muted", `${owner.username} hasn't captured any animals yet.`));
   }
   const numbered = entries.map((e, i) => [e, i]);
-  const rank = ([e]) => RARITY_ORDER.indexOf(e.species.rarity) * 2 + (e.in_season === false ? 1 : 0);
+  const rank = ([e]) => RARITY_ORDER.indexOf(e.species.rarity) * 2 + (!e.caught && e.in_season === false ? 1 : 0);
   for (const [title, keep] of GROUPS) {
     const list = numbered.filter(([e]) => keep(e)).sort((a, b) => rank(a) - rank(b));
     if (!list.length) continue;
