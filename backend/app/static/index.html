@@ -425,6 +425,8 @@
   .guide .tile:nth-child(5n+2) { transform:rotate(-1.2deg); } .guide .tile:nth-child(7n+4) { transform:rotate(1deg); }
   .guide .tile .sprite { background:#f1e7cf; }
   .guide .tile .name { font-family:var(--pixel); font-size:.78rem; font-weight:500; line-height:1.1; }
+  .guide .tile .name.long { -webkit-line-clamp:3; line-clamp:3; }
+  @media (max-width:699px) { .guide .tile .name.long { font-size:.62rem; } }
   .guide .tile .num { font-weight:700; color:#7a6448; text-align:left; }
   .guide .tile.locked { background:transparent; border:1.5px dashed var(--muted); box-shadow:none; color:var(--muted); transform:none; }
   .guide .tile.locked .sprite { background:transparent; }
@@ -1460,6 +1462,9 @@ function addTile(grid, e, i, tier, owner = null) {
     <div class="status"></div>`;
   t.querySelector(".name").textContent = s.revealed
     ? s.common_name + (e.capture_count > 1 ? ` ×${e.capture_count}` : "") : "???";
+  // Long names ("California Ground Squirrel ×2") get a smaller size so they fit two lines.
+  if (s.revealed && (s.common_name.length > 14 || s.common_name.split(/[\s-]+/).some((w) => w.length >= 10)))
+    t.querySelector(".name").classList.add("long");
   t.querySelector(".sci").textContent = s.revealed ? s.scientific_name : `Unknown ${categoryWord(s.category)}`;
   const st = t.querySelector(".status");
   if (owner) {
