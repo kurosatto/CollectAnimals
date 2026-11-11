@@ -243,6 +243,10 @@ object Online {
     // --- Photos, feed, likes -----------------------------------------------------------
 
     suspend fun album(): List<OnlinePhoto> = OnlinePhoto.list(JSONObject(call("GET", "/me/album")).getJSONArray("photos"))
+    /** A friend's album, newest first (the server lists it by species). */
+    suspend fun friendAlbum(username: String): List<OnlinePhoto> =
+        OnlinePhoto.list(JSONObject(call("GET", "/users/${q(username)}/album")).getJSONArray("photos"))
+            .sortedByDescending { it.takenOn }
 
     /** scope: "state" (needs [state]), "all" (every state) or "friends". */
     suspend fun feed(scope: String, state: String, before: Int?): Pair<List<OnlinePhoto>, Int?> {

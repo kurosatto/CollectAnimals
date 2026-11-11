@@ -104,6 +104,8 @@ data class SocialState(
     val guideFor: String? = null,
     val guide: FriendGuide? = null,
     val guideError: String? = null,
+    // Their album photos (newest first), shown under their Field Guide.
+    val guideAlbum: List<OnlinePhoto>? = null,
     val loading: Boolean = false,
     val message: String? = null,
 )
@@ -256,7 +258,13 @@ class SocialViewModel(app: Application) : AndroidViewModel(app) {
     /** Opens [username]'s Field Guide on their primary state, or on [state] (one of their places). */
     fun openGuide(username: String, state: String? = null) {
         // Switching places keeps the open guide on screen until the new one arrives.
-        _state.update { it.copy(guideFor = username, guide = if (state != null) it.guide else null, guideError = null) }
+        _state.update { it.copy(guideFor = username, guide = if (state != null) it.guide else null, guideError = null,
+            guideAlbum = if (state != null) it.guideAlbum else null) }
+        // The album covers every state, so it loads once per friend.
+        if (state == null) viewModelScope.launch {
+            runCatching { Online.friendAlbum(username) }
+                .onSuccess { a -> _state.update { if (it.guideFor == username) it.copy(guideAlbum = a) else it } }
+        }
         viewModelScope.launch {
             runCatching { Online.friendGuide(username, state) }
                 .onSuccess { g -> _state.update { if (it.guideFor == username) it.copy(guide = g) else it } }
@@ -264,7 +272,7 @@ class SocialViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun closeGuide() = _state.update { it.copy(guideFor = null, guide = null, guideError = null) }
+    fun closeGuide() = _state.update { it.copy(guideFor = null, guide = null, guideError = null, guideAlbum = null) }
 
     fun loadAlbum() = run {
         val a = Online.album()
@@ -459,9 +467,10 @@ fun SocialScreen(state: UiState, social: SocialViewModel, section: String, onSig
             style = MaterialTheme.typography.bodySmall) }
         if (section == "feed") FeedSection(s, social, state, onOpenDex) else FriendsSection(s, social)
     }
+    // The guide first, so a photo opened from it shows on top.
+    FriendGuideDialog(s, social, state, onOpenDex)
     CommentsDialog(s, social)
     PhotoViewer(s, social, state.fieldGuide?.parks.orEmpty())
-    FriendGuideDialog(s, social, state, onOpenDex)
 }
 
 /** Comments on one photo. Anyone who can see the photo can join in, friends or not. */
@@ -721,6 +730,7 @@ fun FriendGuideDialog(s: SocialState, social: SocialViewModel, game: UiState, on
     val g = s.guide
     // Their live habitat, in their state's scenery, as on the website's profile.
     val habitat = rememberHabitatView()
+    var allPhotos by remember(who) { mutableStateOf(false) }
     // A plain Dialog, not AlertDialog: AlertDialog measures intrinsics, which lazy grids can't do.
     Dialog(onDismissRequest = social::closeGuide) {
         Surface(shape = RoundedCornerShape(20.dp), tonalElevation = 6.dp) {
@@ -765,6 +775,20 @@ fun FriendGuideDialog(s: SocialState, social: SocialViewModel, game: UiState, on
                                 }
                                 items(list, key = { "$title-${it.second.number}" }) { (n, e) -> GuideTile(n, e) }
                             }
+                            // Their album: newest 8, the rest one tap away. Tap a photo for likes and comments.
+                            val album = s.guideAlbum.orEmpty()
+                            if (album.isNotEmpty()) {
+                                item(key = "h-photos", span = { GridItemSpan(maxLineSpan) }) {
+                                    Text("Photos · ${album.size}", style = MaterialTheme.typography.titleSmall,
+                                        modifier = Modifier.padding(top = 8.dp, bottom = 2.dp))
+                                }
+                                items(if (allPhotos) album else album.take(8), key = { "p-${it.id}" }) { p ->
+                                    AlbumThumb(p) { social.openPhoto(p) }
+                                }
+                                if (!allPhotos && album.size > 8) item(key = "more-photos", span = { GridItemSpan(maxLineSpan) }) {
+                                    TextButton(onClick = { allPhotos = true }) { Text("Show all ${album.size}") }
+                                }
+                            }
                         }
                     }
                 }
@@ -799,6 +823,22 @@ private fun GuideTile(n: Int, e: GuideEntry) {
 
 // --- Photos tab when signed in: your album on the server -------------------------------------
 
+/** An album photo, small: the picture, its name and stars. */
+@Composable
+private fun AlbumThumb(p: OnlinePhoto, onClick: () -> Unit) {
+    Card(shape = RoundedCornerShape(8.dp), modifier = Modifier.clickable(onClick = onClick)) {
+        Column {
+            RemoteImage(p.url, p.commonName, Modifier.fillMaxWidth().aspectRatio(1f)
+                .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)), maxSide = 256)
+            Column(Modifier.padding(horizontal = 4.dp, vertical = 3.dp)) {
+                Text(p.commonName ?: "", style = MaterialTheme.typography.labelSmall, maxLines = 1,
+                    overflow = TextOverflow.Ellipsis, color = rarityColor(p.rarity))
+                p.stars?.let { Text(stars(it), style = MaterialTheme.typography.labelSmall, color = Gold, maxLines = 1) }
+            }
+        }
+    }
+}
+
 @Composable
 fun OnlinePhotosScreen(social: SocialViewModel, onOpenDex: (String) -> Unit, onDeleted: () -> Unit,
                        parks: List<Park> = emptyList()) {
@@ -826,19 +866,7 @@ fun OnlinePhotosScreen(social: SocialViewModel, onOpenDex: (String) -> Unit, onD
             Text("${album.size} photo${if (album.size == 1) "" else "s"}",
                 style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.outline)
         }
-        items(album, key = { it.id }) { p ->
-            Card(shape = RoundedCornerShape(8.dp), modifier = Modifier.clickable { social.openPhoto(p) }) {
-                Column {
-                    RemoteImage(p.url, p.commonName, Modifier.fillMaxWidth().aspectRatio(1f)
-                        .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)), maxSide = 256)
-                    Column(Modifier.padding(horizontal = 4.dp, vertical = 3.dp)) {
-                        Text(p.commonName ?: "", style = MaterialTheme.typography.labelSmall, maxLines = 1,
-                            overflow = TextOverflow.Ellipsis, color = rarityColor(p.rarity))
-                        p.stars?.let { Text(stars(it), style = MaterialTheme.typography.labelSmall, color = Gold, maxLines = 1) }
-                    }
-                }
-            }
-        }
+        items(album, key = { it.id }) { p -> AlbumThumb(p) { social.openPhoto(p) } }
     }
     CommentsDialog(s, social)
     PhotoViewer(s, social, parks, onDelete = { confirm = it })
