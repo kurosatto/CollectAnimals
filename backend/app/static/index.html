@@ -564,8 +564,10 @@
       <button type="button" class="photo-btn hidden" id="signup-state"><img class="pi" src="/sprites/ui_ic_pin.png" alt="">Choose your state</button>
       <button type="submit" id="auth-submit">Log in</button>
     </form>
-    <p class="muted"><button class="link" id="toggle">Need an account? Sign up</button>
-      <span id="forgot-sep">·</span> <button class="link" id="forgot">Forgot password?</button></p>
+    <!-- Two links spaced apart; on a narrow phone each gets its own line (no dangling "·"). -->
+    <p class="muted" style="display:flex; flex-wrap:wrap; column-gap:18px; row-gap:4px; align-items:center">
+      <button class="link" id="toggle">Need an account? Sign up</button>
+      <button class="link" id="forgot">Forgot password?</button></p>
     <p id="auth-error" style="color:#c0392b"></p>
     <p class="muted" style="font-size:.85rem">For players 13 and older. By signing up you agree to the <a href="/rules" target="_blank" rel="noopener" style="color:var(--accent)">community rules</a> and <a href="/privacy" target="_blank" rel="noopener" style="color:var(--accent)">privacy policy</a>.</p>
     </div>
@@ -802,7 +804,6 @@ $("toggle").onclick = () => {
   $("birth-year").required = signup;
   $("ident").placeholder = signup ? "Username" : "Email or username";
   $("forgot").classList.toggle("hidden", signup);
-  $("forgot-sep").classList.toggle("hidden", signup);
 };
 
 $("forgot").onclick = async () => {
