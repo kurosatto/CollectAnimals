@@ -140,6 +140,7 @@ object Online {
     suspend fun me(): Account = Account.parse(JSONObject(call("GET", "/me")))
     suspend fun setState(code: String) { call("PATCH", "/me", JSONObject().put("state", code)) }
     suspend fun setAvatar(n: Int) { call("PATCH", "/me/settings", JSONObject().put("avatar", n)) }
+    suspend fun setPrivacy(key: String, on: Boolean) { call("PATCH", "/me/settings", JSONObject().put(key, on)) }
     suspend fun setShareTraining(on: Boolean) { call("PATCH", "/me/settings", JSONObject().put("share_training_photos", on)) }
 
     // --- Captures ---------------------------------------------------------------------
@@ -342,12 +343,12 @@ fun JSONObject.optIntOrNull(key: String): Int? = if (isNull(key) || !has(key)) n
 
 data class Account(val username: String, val email: String, val state: String, val showInFeed: Boolean,
                    val unlockedStates: List<String> = emptyList(), val avatar: Int = 1,
-                   val shareTrainingPhotos: Boolean = false) {
+                   val shareTrainingPhotos: Boolean = false, val isPrivate: Boolean = false) {
     companion object {
         fun parse(o: JSONObject) = Account(o.getString("username"), o.getString("email"), o.getString("state"),
             o.isNull("show_in_feed") || o.optBoolean("show_in_feed", true),
             o.optJSONArray("unlocked_states")?.let { a -> List(a.length()) { a.getString(it) } } ?: emptyList(),
-            o.optInt("avatar", 1), o.optBoolean("share_training_photos", false))
+            o.optInt("avatar", 1), o.optBoolean("share_training_photos", false), o.optBoolean("is_private", false))
     }
 }
 

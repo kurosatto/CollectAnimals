@@ -1258,6 +1258,7 @@ function searchNames(list, q, max = 8) {
   return [...starts, ...groups, ...others].slice(0, max);
 }
 let shareTraining = false;
+let myPrivacy = { show_in_feed: true, is_private: false };
 function namePanel(captureId) {
   const wrap = el("div", "name-panel");
   wrap.append(el("p", "", "What was it? Pick a name to help the game learn animals. It won't count for a badge."));
@@ -2206,6 +2207,23 @@ async function accountSection(box) {
     } catch (err) { cb.checked = !cb.checked; alert(err.message); }
   };
   box.append(share, shareNote);
+  // Privacy switches the server always had but no screen showed.
+  const toggle = (key, label, note) => {
+    const lab = el("label", "share-train");
+    const c = el("input"); c.type = "checkbox"; c.checked = key === "is_private" ? !!myPrivacy[key] : myPrivacy[key] !== false;
+    lab.append(c, " " + label);
+    c.onchange = async () => {
+      try {
+        const r = await api("/me/settings", { method: "PATCH", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ [key]: c.checked }) });
+        myPrivacy[key] = r[key];
+        loadFeed();
+      } catch (err) { c.checked = !c.checked; alert(err.message); }
+    };
+    box.append(lab, el("p", "muted small", note));
+  };
+  toggle("show_in_feed", "Show my captures in the feed", "Turn this off to keep your captures out of everyone's feed.");
+  toggle("is_private", "Private account", "Only your friends can see your photos.");
   const del = el("button", "ghost danger", "Delete account");
   del.onclick = async () => {
     if (!confirm("Delete your account? Your photos, Field Guide, friends, likes and comments are all deleted for good.")) return;
@@ -2815,6 +2833,7 @@ async function render() {
       const me = await api("/me");
       $("username").replaceChildren(avatarImg(me.avatar, "small"), me.username);
       shareTraining = !!me.share_training_photos;
+      myPrivacy = { show_in_feed: me.show_in_feed !== false, is_private: !!me.is_private };
       $("reports-open").classList.toggle("hidden", !me.is_admin);
       if (me.is_admin && openReportsOnStart) openReports();
       openReportsOnStart = false;

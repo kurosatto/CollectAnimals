@@ -228,6 +228,19 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Account privacy switches: keep captures out of the feed, or let only friends see photos. */
+    fun setShowInFeed(on: Boolean) = setPrivacy("show_in_feed", on) { a, v -> a.copy(showInFeed = v) }
+    fun setPrivate(on: Boolean) = setPrivacy("is_private", on) { a, v -> a.copy(isPrivate = v) }
+    private fun setPrivacy(key: String, on: Boolean, put: (Account, Boolean) -> Account) {
+        val acct = _state.value.account ?: return
+        _state.update { it.copy(account = put(acct, on)) }
+        viewModelScope.launch {
+            runCatching { Online.setPrivacy(key, on) }.onFailure { e ->
+                _state.update { s -> s.copy(account = s.account?.let { put(it, !on) }, error = e.message) }
+            }
+        }
+    }
+
     /** The bundled name list for "What was it?" (read once). */
     suspend fun animalNames(): AnimalNames? = names ?: withContext(Dispatchers.IO) {
         runCatching {
