@@ -150,6 +150,8 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
   movement in the habitat is a drawn frame. Bends of a whole drawing are done in
   the sprite generator (`Sprite.pitch` / `Sprite.bend`), drawn pixel by pixel.
   Birds of prey use the `raptor()` body plan.
+- A big collection takes turns in the habitat (0.51): up to 32 animals out on a phone
+  (44 on wide screens), a new mix every 20 minutes (`habOutNow`, `HAB_ROOM`).
 - Habitat interactions live in habitat.js (`habReact` on tap, `habSocial` for
   animals noticing each other, `habTimers`): bolting, looking at you (`?`),
   swooping, pulling in, drinking at the pond, pecking, singing, freezing under a
