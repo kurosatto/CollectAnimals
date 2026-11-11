@@ -842,7 +842,7 @@ private fun AlbumThumb(p: OnlinePhoto, onClick: () -> Unit) {
             RemoteImage(p.url, p.commonName, Modifier.fillMaxWidth().aspectRatio(1f)
                 .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)), maxSide = 256)
             Column(Modifier.padding(horizontal = 4.dp, vertical = 3.dp)) {
-                Text(p.commonName ?: "", style = MaterialTheme.typography.labelSmall, maxLines = 1,
+                Text(p.commonName ?: "", style = MaterialTheme.typography.labelSmall, minLines = 2, maxLines = 2,
                     overflow = TextOverflow.Ellipsis, color = rarityColor(p.rarity))
                 p.stars?.let { Text(stars(it), style = MaterialTheme.typography.labelSmall, color = Gold, maxLines = 1) }
             }

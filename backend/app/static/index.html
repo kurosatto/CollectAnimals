@@ -312,7 +312,9 @@
   .photos.compact { grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; }
   .photos.compact .photo { border-radius:8px; cursor:pointer; }
   .photos.compact .meta { padding:3px 5px; gap:0; }
-  .photos.compact .who { font-size:.72rem; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  /* Names get two lines (phones fit 4 photos a row, so one line cut most names short). */
+  .photos.compact .who { font-size:.72rem; line-height:1.2; min-height:2.4em; display:-webkit-box; -webkit-box-orient:vertical;
+    -webkit-line-clamp:2; overflow:hidden; overflow-wrap:anywhere; hyphens:auto; }
   .photos.compact .pts { font-size:.65rem; white-space:nowrap; overflow:hidden; }
   .auth { display:grid; gap:4px 20px; }
   .auth-scene { position:relative; }
