@@ -2553,7 +2553,10 @@ async function loadFriends() {
   section("Friend requests", f.incoming, [
     ["Accept", "", (u) => api(`/friends/requests/${encodeURIComponent(u)}/accept`, { method: "POST" })],
     ["Decline", "ghost", del]]);
-  section("Your friends", f.friends, [["Field Guide", "ghost", openProfile], ["Remove", "ghost", del]]);
+  // Removing a friend hides the names their captures revealed, so ask first.
+  const unfriend = (u) => confirm(`Remove ${u} from your friends? Animals only they captured go back to "???".`)
+    ? del(u) : null;
+  section("Your friends", f.friends, [["Field Guide", "ghost", openProfile], ["Remove", "ghost", unfriend]]);
   section("Waiting for them to accept", f.outgoing, [["Cancel", "ghost", del]]);
   if (!f.friends.length && !f.incoming.length && !f.outgoing.length)
     box.append(el("p", "muted", "No friends yet. Add someone by their username."));

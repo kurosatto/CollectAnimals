@@ -680,7 +680,12 @@ private fun FriendsSection(s: SocialState, social: SocialViewModel) {
         }
         section("Friends (${f.friends.size})", f.friends, empty = "No friends yet. Add one above, or a bot below.",
             onOpen = social::openGuide) { u ->
-            TextButton(onClick = { social.remove(u.username) }) { Text("Remove") }
+            // Two taps, like Log out: removing a friend hides the names their captures revealed.
+            var sure by remember(u.username) { mutableStateOf(false) }
+            TextButton(onClick = { if (sure) social.remove(u.username) else sure = true }) {
+                Text(if (sure) "Tap again to remove" else "Remove",
+                    color = if (sure) MaterialTheme.colorScheme.error else androidx.compose.ui.graphics.Color.Unspecified)
+            }
         }
         section("Waiting for them to accept", f.outgoing) { u ->
             TextButton(onClick = { social.remove(u.username) }) { Text("Cancel") }
