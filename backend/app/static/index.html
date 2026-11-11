@@ -134,7 +134,7 @@
   .tile.locked.hinted { opacity:.75; }
   .photos { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; margin-top:10px; }
   .photo { border:1px solid var(--line); border-radius:10px; overflow:hidden; font-size:.8rem; background:var(--card); }
-  .photo img:not(.ic) { width:100%; aspect-ratio:1; object-fit:cover; display:block; }
+  .photo img:not(.ic):not(.pi) { width:100%; aspect-ratio:1; object-fit:cover; display:block; }
   .photo .meta { padding:6px 8px; display:grid; gap:2px; }
   .photo .who { font-weight:600; display:flex; justify-content:space-between; gap:6px; }
   .photo .rank { color:var(--legendary); }
@@ -154,7 +154,7 @@
   .comments form input { flex:1 1 120px; width:0; min-width:0; padding:6px 8px; }
   .comments form button { padding:6px 10px; }
   .feed-entry .comments { padding:0 6px 8px 82px; }
-  .photo img:not(.ic), .feed-item img:not(.ic) { cursor:zoom-in; }
+  .photo img:not(.ic):not(.pi), .feed-item img:not(.ic):not(.pi) { cursor:zoom-in; }
   .ww { display:grid; gap:2px; margin-top:8px; font-size:.9rem; }
   .ww button.link { justify-self:start; font-size:.85rem; }
   .ww-edit { display:grid; gap:8px; margin-top:8px; }
@@ -199,7 +199,7 @@
   .feed { display:grid; gap:10px; margin-top:10px; }
   .feed-item { display:flex; gap:12px; align-items:center; cursor:pointer; padding:6px; border-radius:10px; }
   .feed-item:hover { background:var(--bg); }
-  .feed-item img:not(.ic), .feed-item .mystery { width:64px; height:64px; border-radius:8px; object-fit:cover; flex:none; }
+  .feed-item img:not(.ic):not(.pi), .feed-item .mystery { width:64px; height:64px; border-radius:8px; object-fit:cover; flex:none; }
   .feed-item .mystery { display:grid; place-items:center; background:var(--bg); border:1px dashed var(--line);
                         font-size:1.6rem; color:var(--muted); }
   .feed-item .what { line-height:1.35; }
@@ -374,7 +374,7 @@
   header h1 { color:#fff3d6; }
   header .muted, header #state-name { color:var(--brass) !important; font-family:var(--pixel); font-size:1rem !important; font-weight:600; }
   header button.link, header #offline { color:#f3e3bf; }
-  header #offline { background:rgba(0,0,0,.25); }
+  header #offline { background:rgba(0,0,0,.25); font-size:.7rem; padding:1px 7px; margin-left:4px; white-space:nowrap; }
   @media (max-width:719px) { main { padding-top:0; } header { margin:0 -16px 4px; border-radius:0 0 14px 14px; padding-top:max(6px, env(safe-area-inset-top)); } }
   /* Pages: paper cards with a soft shadow instead of website boxes. */
   .card { background:var(--card); border:1px solid var(--line); border-radius:6px; box-shadow:0 2px 0 var(--line), 0 6px 14px rgba(60,40,20,.12); }
@@ -503,6 +503,7 @@
   }
   @media (max-width:420px) {
     #my-state .st-long { display:none; } #my-state .st-short { display:inline; }
+    #my-state.visiting .st-short { background:#e0a100; color:#2b1d0e; border-radius:4px; padding:0 4px; }
   }
 </style>
 </head>
@@ -725,7 +726,15 @@ let signup = false;
 async function api(path, opts = {}) {
   const headers = opts.headers || {};
   if (token) headers.Authorization = `Bearer ${token}`;
-  const res = await fetch(path, { ...opts, headers });
+  let res;
+  try { res = await fetch(path, { ...opts, headers }); }
+  catch (err) {
+    // "Failed to fetch" means nothing to a player: say what's wrong instead.
+    if (err instanceof TypeError) throw new Error(navigator.onLine === false
+      ? "You're offline. This part needs the internet."
+      : "Can't reach the game server. Check your internet and try again.");
+    throw err;
+  }
   const body = await res.json().catch(() => ({}));
   if (res.status === 401 && token) { setToken(null); }
   if (!res.ok) {
@@ -937,7 +946,6 @@ $("upload-form").onsubmit = async (e) => {
     try { r = await api("/captures", { method: "POST", body: fd, signal: stop.signal }); }
     catch (err) {
       if (err.name === "AbortError") throw new Error("The game server didn't answer. Check your internet and try again in a bit.");
-      if (err instanceof TypeError) throw new Error("Can't reach the game server. Check your internet and try again.");
       throw err;
     } finally { clearTimeout(timer); }
     showCapture(r, file, box);
@@ -951,7 +959,7 @@ function showCapture(r, file, box) {
   const h = document.createElement("strong");
   h.textContent = r.message;
   const p = document.createElement("p");
-  p.className = "muted";
+  p.className = "muted guesses";
   p.textContent = "Top guesses: " + r.top_predictions
     .map((x) => `${x.common_name || (x.label === "other" ? "not on the list" : "???")} ${(x.probability * 100).toFixed(0)}%`).join(", ");
   if (r.new_badge && r.species?.slug) box.append(captureReveal(r.species.slug));
@@ -1189,6 +1197,8 @@ function pickPanel(r, box) {
       box.querySelector(".keep")?.remove();
       box.querySelector(".score")?.remove();
       box.querySelector(".reveal")?.remove();
+      // The model's guesses no longer describe the photo once the player has named it.
+      if (res.matched) box.querySelector(".guesses")?.remove();
       if (res.new_badge && res.species?.slug) h.before(captureReveal(res.species.slug));
       box.querySelector(".safety-box")?.remove();
       if (res.score) h.after(scoreCard(res.score));
@@ -1386,7 +1396,7 @@ function addTile(grid, e, i, tier, owner = null) {
     <div class="status"></div>`;
   t.querySelector(".name").textContent = s.revealed
     ? s.common_name + (e.capture_count > 1 ? ` ×${e.capture_count}` : "") : "???";
-  t.querySelector(".sci").textContent = s.revealed ? s.scientific_name : `Unknown ${s.category}`;
+  t.querySelector(".sci").textContent = s.revealed ? s.scientific_name : `Unknown ${categoryWord(s.category)}`;
   const st = t.querySelector(".status");
   if (owner) {
     // A friend's guide: ✓ is theirs; also say when you have one they don't.
@@ -1405,6 +1415,12 @@ function addTile(grid, e, i, tier, owner = null) {
     st.classList.add(e.photo_stars ? "tile-stars" : "mine");
     t.title = "Captured" +
       (e.photo_score != null ? `. Album photo: ${e.photo_score.toLocaleString()} pts` : "");
+  }
+  else if (state === "friend" && !e.friends_caught) {
+    // Known because you captured it in another state; it counts here once you capture it here.
+    st.textContent = "Other state";
+    st.classList.add("friend");
+    t.title = `You captured it in another state. Capture it in ${myState.name} too to add it here.`;
   }
   else if (state === "friend") {
     icoText(st, "tab_friends", String(e.friends_caught));
@@ -1473,7 +1489,11 @@ async function useState(code) {
   const visiting = mainCode && myState.code !== mainCode, pin = el("img", "pi");
   pin.src = "/sprites/ui_ic_pin.png"; pin.alt = "";
   $("my-state").replaceChildren(pin, el("span", "st-long", (myState.name || "") + (visiting ? " (visiting)" : "")),
-    el("span", "st-short", (myState.code || "") + (visiting ? " (visiting)" : "")));
+    el("span", "st-short", myState.code || ""));
+  // On a phone there's no room for "(visiting)": the code turns gold instead.
+  $("my-state").classList.toggle("visiting", !!visiting);
+  $("my-state").title = visiting ? `Visiting ${myState.name}. Tap to change states.`
+    : "Your states: look at any state you have unlocked, or pick your main state";
   $("my-state").classList.toggle("hidden", states.length < 2);
   let o = null;
   try { o = await api(`/map/${myState.code}`); } catch {}
@@ -1586,6 +1606,7 @@ async function viewState(code) {
   hotSelected = null;
   await useState(code);
   loadCollection();
+  loadFeed();  // its state filter names the state you're looking at
 }
 
 $("my-state").onclick = async () => {
@@ -1692,7 +1713,7 @@ async function openDex(key, num, caught, stateCode = myState.code) {
   $("dex-num").textContent = `#${String(num).padStart(3, "0")}`;
   $("dex-name").textContent = s.revealed ? s.common_name : "???";
   $("dex-sci").textContent = s.revealed ? s.scientific_name
-    : `An unknown ${s.category}. Capture it, or have a friend capture it, to learn its name.`;
+    : `An unknown ${categoryWord(s.category)}. Capture it, or have a friend capture it, to learn its name.`;
   $("dex-rarity").textContent = s.rarity;
   $("dex-rarity").style.color = `var(--${s.rarity})`;
   $("dex-map").innerHTML = rangeSvg(d.range, await stateMap(d.state));

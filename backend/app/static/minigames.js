@@ -2140,6 +2140,13 @@ function mgPanel(c, lines, y0) {
   });
 }
 
+// A word popping up over the animal; it replaces one still showing there, so two
+// quick slips read "Missed!" instead of a jumble of overlapping words.
+function mgSay(r, x, y, text) {
+  r.fx = r.fx.filter((f) => !(f.kind === "text" && Math.abs(f.x - x) < 12 && Math.abs(f.y - y) < 16));
+  r.fx.push({ kind: "text", x, y, text, life: .8 });
+}
+
 // "an American Crow", "a Eurasian Wren": a name with "a" or "an" in front.
 const mgA = (name) => (/^[aeiou]/i.test(name || "") && !/^(eu|uin|uni|uta|use|usu)/i.test(name) ? "an " : "a ") + name;
 
@@ -2519,7 +2526,7 @@ MG_MORE.call = {
     // A tap in your bar that isn't in the rhythm is a mistake. Taps between calls are fine.
     const k = MG_SPEED.call * r.lvl.spb;
     const mine = r.things.some((o) => o.good && r.dist >= o.bar * k - win && r.dist <= (o.bar + MG_CALL_BAR) * k);
-    if (mine) { r.missed++; r.wrong.push(r.dist); r.sulk = r.t; r.fx.push({ kind: "text", x: 230 + mgOx(), y: 112, text: "Oops!", life: .8 }); }
+    if (mine) { r.missed++; r.wrong.push(r.dist); r.sulk = r.t; mgSay(r, 230 + mgOx(), 112, "Oops!"); }
   },
   step(r) {
     if (r.missed >= 3) return "missed";
@@ -2529,7 +2536,7 @@ MG_MORE.call = {
       if (o.type === "m_call" && !o.heard && r.dist >= o.wx) { o.heard = true; r.heard = r.t; mgCallSfx(mgCallKind(mg.species.slug), true); }
       if (!o.good || o.gone || o.missed || r.dist - o.wx <= win) continue;
       o.missed = true; r.missed++; r.sulk = r.t;
-      r.fx.push({ kind: "text", x: 230 + mgOx(), y: 112, text: "Missed!", life: .8 });
+      mgSay(r, 230 + mgOx(), 112, "Missed!");
       if (r.missed >= 3) return "missed";
     }
     // A whole song sung back without a slip: your partner dances and a big heart pops up.

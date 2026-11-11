@@ -433,8 +433,8 @@ def news_feed(scope: Literal["near", "state", "all", "friends"] = "all",
               user: User = Depends(current_user), db: Session = Depends(get_db)):
     """Newest catches first: each album photo, ordered by when it was caught.
 
-    scope=all is global. scope=state keeps catches made inside a state (?state=,
-    default the viewer's), or without a location, by players from that state.
+    scope=all is global. scope=state keeps catches that count in a state (?state=,
+    default the viewer's): taken there, or without a location, by players from there.
     scope=near (needs lat/lon, the viewer's position) keeps catches within
     radius_km. Distances use each catch's blurred position, not its exact
     GPS, so the filter can't be used to pinpoint anyone (see places.py).
@@ -456,10 +456,9 @@ def news_feed(scope: Literal["near", "state", "all", "friends"] = "all",
         st = states.get(state or user.state)
         if st is None:
             raise HTTPException(404, f"Unknown state {state!r}")
-        b = st.bounds
-        q = q.where(or_(and_(Capture.latitude.between(b["south"], b["north"]),
-                             Capture.longitude.between(b["west"], b["east"])),
-                        and_(Capture.latitude.is_(None), User.state == st.code)))
+        # The state each capture counts in (where it was taken, else its player's state).
+        # A bounding box let in neighbours: Nevada photos showed up as California ones.
+        q = q.where(Capture.state == st.code)
     if uncaught:
         q = q.where(AlbumPhoto.species_id.not_in(
             select(Badge.species_id).where(Badge.user_id == user.id)))
