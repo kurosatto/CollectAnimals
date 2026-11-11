@@ -28,6 +28,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.background
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -52,7 +58,15 @@ fun StateMenu(states: List<StateInfo>, viewing: String, main: String, tiles: Lis
     val name = states.firstOrNull { it.code == viewing }?.name ?: viewing
     TextButton(onClick = onOpen, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp),
         colors = androidx.compose.material3.ButtonDefaults.textButtonColors(contentColor = Journal.Cream)) {
-        IconText("pin", if (viewing == main) viewing else "$viewing (visiting)", style = MaterialTheme.typography.labelLarge)
+        // Visiting another state: its code turns gold (no room for "(visiting)" next to the title).
+        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            TabIcon("ui_ic_pin", Modifier.size(16.dp))
+            Spacer(Modifier.width(5.dp))
+            val visiting = viewing != main
+            Text(viewing, style = MaterialTheme.typography.labelLarge,
+                color = if (visiting) Color(0xFF2B1D0E) else Color.Unspecified,
+                modifier = if (visiting) Modifier.background(Color(0xFFE0A100), RoundedCornerShape(4.dp)).padding(horizontal = 4.dp) else Modifier)
+        }
     }
     if (tiles == null) return
     AlertDialog(onDismissRequest = onClose, confirmButton = {

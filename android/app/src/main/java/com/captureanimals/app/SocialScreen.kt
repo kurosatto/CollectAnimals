@@ -571,8 +571,9 @@ private fun FeedSection(s: SocialState, social: SocialViewModel, game: UiState, 
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
-            // Your state, or Global: everyone in every state, for when you travel.
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            // Your state, or Global: everyone in every state, for when you travel. Scrolls
+            // sideways if a long state name doesn't leave room on a narrow phone.
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 FilterChip(s.feedScope == "state", { social.loadFeed("state") }, label = { IconText("pin", stateName) })
                 FilterChip(s.feedScope == "all", { social.loadFeed("all") }, label = { Text("Global") })
                 FilterChip(s.feedScope == "friends", { social.loadFeed("friends") }, label = { Text("Friends") })

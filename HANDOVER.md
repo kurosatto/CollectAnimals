@@ -1,9 +1,8 @@
 # Capture Animals: handover for a new agent
 
 Read this first, then `README.md` (setup, API behaviour, Android build). Where
-they disagree, this file is newer: the README's "Current model" section and
-its "CA and NC only" intro predate the all-states work. Written 2026-10-19
-against `main` at b03a48d.
+they disagree, this file is newer. Written 2026-10-19; sections 3, 4, 7 and 8
+brought up to date on 2026-11-11 (release 0.50).
 
 ## 1. What the product is
 
@@ -13,15 +12,15 @@ earn its badge in their **Field Guide**. Each of the 50 US states has its own
 list of ~100 animals (~930 distinct species overall), each with a 40×40
 pixel-art sprite that lives in an animated **habitat** scene.
 
-Around that core: photo scores (1–5 stars),
-sets and weekly challenges, friends and their Field Guides, galleries with
+Around that core: photo scores (1–5 stars), 16 minigames with coins, a shop of
+skins and habitat decorations, sets, friends and their Field Guides, galleries with
 likes and comments, a news feed, parks ("hotspots") maps, live weather and
 seasons in the habitat, states unlocked by where your photos were taken.
 
 - Owner: **kuro** (GitHub `kurosatto`). Solo hobby project that may be
   monetized later. Kid-friendly audience.
 - Name in the app: **Capture Animals**. Repo name stays `CollectAnimals`.
-- Release version: `release.json` (0.10.0). Android package
+- Release version: `release.json`. Android package
   `com.captureanimals.app`, US-only release planned.
 
 ## 2. Repository map
@@ -53,65 +52,38 @@ seasons in the habitat, states unlocked by where your photos were taken.
 
 ## 3. How it all runs today
 
-**Everything runs on kuro's Windows laptop** (RTX 4080 Laptop, 12 GB VRAM).
-kuro: "use my pc until we scale" and won't pay for hosting until real people
-use it.
-
-- **Demo server**: a separate worktree `C:\Users\mesta\Desktop\AnimalCollect-demo`
-  with its own `demo.db` and uploads, `PUBLIC=1`, on 127.0.0.1:8000, exposed
-  with a Cloudflare **quick tunnel** (random `*.trycloudflare.com` URL that
-  changes on every restart). After a restart, `scripts/publish_server_url.py`
-  writes `server.json` to the **`server-url` branch**, which the Android app
-  reads to find the server. Never delete that branch.
-- **APKs**: built on the PC, copied to `ANDROID_APK_DIR=D:\CaptureAnimals` as
-  `CaptureAnimals-<version>.apk`, downloadable from `<demo>/app/android/`.
-- **Training and data downloads** also run on the PC.
-- The PC is reached through a **Remote Control** Claude session (project thread
-  "Better animal identification", folder `~\Desktop\AnimalCollect`). It often
-  sleeps, goes offline or hits usage limits; PC work waits until it's back.
-- **C: is nearly full.** Put datasets, caches, models and backups on **D:**
-  (kuro: "you can use the other drive"). Back up `demo.db` to D: before any
-  demo update.
-- **Keep PC load light.** kuro killed jobs once because the laptop lagged. Run
-  downloads/training at low priority and ask before a big retrain.
-
-**Moving off the PC (planned, $0):** `deploy/server/` sets the server up on an Oracle
-Cloud Always Free VM with a fixed DuckDNS address and Caddy HTTPS; see its README for
-the sign-ups only kuro can do. kuro (2026-10-23): no spending until 100+ daily players.
-
-Updating the demo after a merge: back up `demo.db` → pull `main` in the demo
-worktree → restart server + tunnel → `publish_server_url.py` → rebuild the APK
-if Android changed → post the new link. Cloud threads can't message the PC
-thread directly; they tell the project coordinator, which relays.
+- **Game server**: an Oracle Cloud Always Free VM (Ampere ARM, no GPU, Ubuntu 24.04)
+  at `https://captureanimals.duckdns.org`, Caddy HTTPS. Setup and operations:
+  `deploy/server/README.md`. Nightly server backups; kuro's PC copies them to
+  `D:\AnimalCollect\releases\server-backups`. The APK is served from the server.
+- **kuro's Windows PC** (RTX 4080 Laptop, 12 GB) does what the cloud sandbox can't:
+  iNaturalist/Hugging Face downloads, training, Android builds (APK + signed AAB),
+  and deploying to the server. It's reached through the Remote Control thread
+  "Better animal identification". It often sleeps or goes offline; PC work waits.
+- **Keep PC load light** (kuro killed jobs over lag): lowest priority; on "pause"
+  stop GPU jobs completely, restart on "resume". C: is nearly full: everything lives
+  under `D:\AnimalCollect`.
+- **Release flow**: a cloud thread merges to `main`, the coordinator relays it to the
+  PC thread, which redeploys the server and publishes the APK/AAB. Play Store uploads
+  use the newest `D:\AnimalCollect\releases\CaptureAnimals-<version>.aab`; the
+  upload key never goes in the repo.
 
 ## 4. The identification model
 
-- Shipping: `convnext_nano.in12k_ft_in1k` (timm, Apache-2.0), **last stage
-  fine-tuned** plus a ~925-class head: every state's species + pets/pests +
-  `other`. Trained on small-size iNaturalist photos.
-- Accuracy (2026-10-18): 77.7% top-1 overall; on CA/NC 74% correct badges vs
-  88% for the older CA/NC-only model (kept on the PC as a backup). kuro chose
-  to ship the all-states model.
-- At ID time the backend drops classes outside the player's state and
-  rescales; a capture counts above `MATCH_THRESHOLD`. If the top guess is
-  wrong the player can pick from the top 5 ("Not this animal?").
-- Android runs the same model as ONNX float32 (~60 MB; int8 changed 11% of
-  answers so it isn't used).
-- `ml/train.py` on `main` trains the **head only** on a frozen backbone (the
-  original recipe). The last-stage fine-tune that produced the shipping model
-  was run on the PC; its script may not be on `main` (inferred from `main`'s
-  `train.py`). Check the PC checkout before retraining.
-- The cloud sandbox can't reach `api.inaturalist.org`, `huggingface.co` or
-  `dl.google.com`, so downloads, pretrained weights, training and Android
-  builds happen on the PC; CI is the Android compile check from the cloud.
-- **Pets not recognized yet**: the iNat pet download got throttled; it resumes
-  on the PC into `D:\data\household`, then retrain.
-- **List size**: kuro (2026-10-19): keep 100 per state for now; target ~200 at
-  some future retrain, but it isn't a priority. Small gap fixes (e.g. CA
-  missing Double-crested Cormorant and Wild Turkey) are fine.
-- Ideas if accuracy needs work: full end-to-end fine-tune, or a bigger
-  backbone server-side. BioCLIP-family models scored higher but are
-  research-licensed or likely trained on iNat, so can't ship.
+- **Server (live since 2026-11-03)**: v7, `convnext_base.fb_in22k_ft_in1k` (MIT),
+  val top-1 83.0%, ~80% correct badges. v6 is kept on the server as a one-minute
+  fallback. Swapping the server model needs kuro's own OK in the PC thread.
+- **Phone (offline)**: v6, `convnext_nano.in12k_ft_in1k` (Apache-2.0), last stage
+  fine-tuned (`ml/finetune.py`), 1,696 classes (200 per state + pets/pests + human),
+  ONNX float32. `species/model_extras.json` lists model-only animals that answer
+  "coming soon" with no badge.
+- At ID time the backend drops classes outside the photo's state and rescales; a
+  capture counts above `MATCH_THRESHOLD`. "Not this animal?" offers the top 5.
+- **Licensing**: ~91% of iNaturalist photos are CC-BY-NC, so the shipped model isn't
+  cleared for commercial use. A commercial-photos-only model exists (badges 74% -> 52%);
+  kuro keeps it as an option, not shipped.
+- The cloud sandbox can't reach `api.inaturalist.org` or `huggingface.co`: model work
+  goes through the PC.
 
 ## 5. Running and testing locally
 
@@ -196,7 +168,8 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
   (Natural Earth 1:10m + AWS Terrain Tiles relief, both free for commercial use).
   The same script rewrites `species/<state>_outline.json` (Great Lakes cut out)
   with the `frame` the image covers; web and Android place sightings with it.
-- Bump `release.json` only when kuro asks (major updates).
+- Each release that merges bumps `release.json` (minor version) and `VERSION` in `sw.js`
+  (plus `ASSETS` when sprites change), so phones pick up the update.
 
 **Safety and privacy (kid-friendly)**
 - Danger/caution animals (`safety` column in `details.csv`) get full framing
@@ -221,8 +194,10 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
 - **Work autonomously.** kuro checks in rarely. Pick sensible defaults, do the
   reversible work (branches, PRs, scratch analysis), and report results with
   what you decided. Don't park work on questions.
-- **Merging**: open a PR and wait. kuro approves with "merge" (or "merge all
-  the changes"); then merge it. Don't merge without that word.
+- **Merging** (kuro, 2026-10-31): "from now on just merge things, don't ask me."
+  Merge your own PRs and version bumps once CI is green, then say which release
+  merged so the PC thread deploys it. Still show previews before building a big
+  batch of new content (kuro picks), and server model swaps need kuro's OK.
 - Don't do irreversible or outward-facing things without asking: deleting
   data or branches, spending money, creating cloud accounts, publishing.
 - Reply in short, plain language with screenshots when UI changes. Shared
@@ -239,34 +214,23 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
   R2 (via `storage.py`), optionally Firebase Auth only. Not a full Firebase
   rewrite.
 
-## 8. State of play (2026-10-19)
+## 8. State of play (2026-11-11)
 
-**Recently merged**: all 50 states (data #64 + `all-states-data`), state art
-for TX, FL, NY, VA, weather and seasons in the habitat, local weather, unlock
-states by photo location (#80), photo crop before identify (#81), security
-hardening (#68: login limits, image size cap, headers).
-
-**Open / in flight**
-- PR #82: show an error instead of endless "Identifying…" when the server is
-  offline. Awaiting "merge".
-- Project threads working now: fun facts when tapping animals in the habitat,
-  4-across "My photos" grid, random nature-lover avatars on the friends list;
-  removing a leftover buddy mention.
-- PC: sighting maps/seasons for the remaining states (GBIF), pet photo
-  download, then retrain with pets. The demo still runs pre-50-state code
-  until the PC thread updates it.
-
-**Known gaps / likely next work**
-- 577 new-state animals have no sprite yet (show the "?" egg); art goes one
-  state at a time.
-- Sighting maps (ranges/hotspots) exist for only some states.
-- No account deletion (required by Google Play), no password reset, 7-day
-  JWTs can't be revoked, no backups beyond manual copies to D:.
-- Play Store: needs release signing set up on the PC, a closed test with 12+
-  testers for 14 days, and a commercially licensed model.
-- The quick-tunnel URL changes on every restart, which breaks installed PWAs;
-  a named tunnel on a custom domain (~$10/yr via Cloudflare) fixes it, but
-  kuro postponed that.
+- Release 0.50.0 (review rounds 1-2). Recent work: Field Journal look (0.34), phone fit
+  and pixel icons instead of emojis (0.37), all animals redrawn with drawn-frame
+  animations at 40 px (0.38-0.47), per-state painted habitat scenery (0.43-0.48),
+  one long hard level per minigame with `tools/levelcheck` (0.46).
+- Google Play: developer account verified; listing doc and reviewer account exist;
+  closed test needs 12+ testers for 14 days.
+- **kuro's taste** (keep to it): kid-friendly; realistic field-guide pixel art,
+  animals in profile, no stretched/squashed/rotated sprites; no generic emojis;
+  Geometry-Dash-hard minigames; features that run themselves with little storage.
+  Rejected: seasonal events, weekly streaks/challenges, card duels, buddy system,
+  "first in state" badges, keeping every photo per animal, colour variants on main pages.
+- Android 0.34+ hasn't been checked on a real phone; check layouts at 360 px.
+- Testing the web app without the model: run the backend with a fake classifier
+  (see `backend/tests/test_api.py` `FakeClassifier`) and drive it with Playwright at
+  360x740; that is how review rounds 1-2 found the phone layout bugs.
 
 ## 8b. "What was it?" (player labels for retraining)
 
