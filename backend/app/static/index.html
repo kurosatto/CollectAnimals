@@ -249,7 +249,9 @@
   .guide .tile { padding:5px 4px; font-size:.72rem; text-align:center; line-height:1.2; }
   .guide .tile .sprite { width:100%; height:auto; aspect-ratio:1; max-width:64px; margin:2px auto; display:block; }
   .guide .tile .num { font-size:.62rem; }
-  .guide .tile .name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  /* Two lines: on a phone one line cut most names short ("Mule Dee..."). */
+  .guide .tile .name { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden;
+    overflow-wrap:anywhere; min-height:2.2em; }
   .guide .tile .sci, .guide .tile .rarity { display:none; }
   .guide .tile .status { margin-top:1px; font-size:.65rem; min-height:1em; }
   .guide .tier { grid-column:1 / -1; margin:6px 0 0; font-size:.68rem; }

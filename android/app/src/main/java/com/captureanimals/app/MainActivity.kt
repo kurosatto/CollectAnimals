@@ -627,7 +627,8 @@ fun SpeciesTile(number: Int, s: Species, badge: Badge?, onClick: () -> Unit) {
             .background(if (caught) Color(0xFFF1E7CF) else Color.Transparent), contentAlignment = Alignment.Center) {
             PixelSprite(s.slug, caught, Modifier.fillMaxSize(0.85f))
         }
-        Text(if (caught) s.commonName else "???", fontFamily = PixelFont, fontSize = 11.sp, lineHeight = 13.sp, maxLines = 1,
+        Text(if (caught) s.commonName else "???", fontFamily = PixelFont, fontSize = 11.sp, lineHeight = 13.sp,
+            minLines = 2, maxLines = 2,
             overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 2.dp),
             color = if (caught) Journal.CardInk else outline)
         // The rarity dot, so a slot still hints how hard it is to find.
