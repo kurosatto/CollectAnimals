@@ -151,6 +151,19 @@ function habSpawn(a) {
   if (a.role === "soar") { a.cx = a.x; a.cy = a.y; a.r = rnd(26, 46); }
 }
 
+// A big collection doesn't all fit in the scene at once (85 animals were a heap at
+// night), so the animals take turns: up to HAB_ROOM are out at a time, and a new
+// mix comes out every HAB_TURN_MIN minutes. Everyone gets their turn; nothing to save.
+const HAB_ROOM = { 320: 32, 480: 44 }, HAB_TURN_MIN = 20;
+const habTurn = () => Math.floor(habNow() / (HAB_TURN_MIN * 60000));
+function habOutNow(caught) {
+  const room = HAB_ROOM[hab.w] || 32;
+  hab.turn = habTurn();
+  if (caught.length <= room) return caught;
+  const mix = (slug) => { let h = hab.turn * 2654435761 >>> 0; for (const ch of slug) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0; return h; };
+  return [...caught].sort((x, y) => mix(x.species.slug) - mix(y.species.slug)).slice(0, room);
+}
+
 // Called with the captured entries whenever the collection loads. Animals already
 // in the scene stay where they are.
 function habitatSet(entries) {
@@ -159,7 +172,9 @@ function habitatSet(entries) {
   const relayout = w !== hab.w;
   if (relayout) { hab.w = w; hab.L = habLayout(w); hab.bgKey = ""; }
   const old = new Map(hab.animals.map((a) => [a.s.slug, a]));
-  hab.animals = entries.filter((e) => e.caught && e.species.slug).map((e) => {
+  const caught = entries.filter((e) => e.caught && e.species.slug);
+  hab.entries = entries; hab.total = caught.length;
+  hab.animals = habOutNow(caught).map((e) => {
     const prev = old.get(e.species.slug);
     if (prev && !relayout) { prev.s = e.species; prev.activity = e.activity || "day"; return prev; }
     const a = { s: e.species, activity: e.activity || "day", role: habRole(e.species), num: e.num };
@@ -281,11 +296,12 @@ const habAwake = (a, phase) => !habTuckedIn(a) && (phase === "dawn" || phase ===
 
 function habNote() {
   if (hab.visit?.showcase) return;
-  const phase = habPhase(), n = hab.animals.length;
+  const phase = habPhase(), n = Math.max(hab.total || 0, hab.animals.length);
   const asleep = hab.animals.filter((a) => !habAwake(a, phase)).length;
+  const out = hab.animals.length < n ? `, ${hab.animals.length} out now` : "";
   const who = hab.visit ? `${hab.visit.username}'s habitat` : "here";
   $("hab-note").textContent = !n ? (hab.visit ? `No animals in ${who} yet.` : "Capture animals and they'll move in here.")
-    : `${n} animal${n > 1 ? "s" : ""} live${n > 1 ? "" : "s"} ${hab.visit ? "in " + who : "here"}` + (asleep ? `, ${asleep} asleep` : "")
+    : `${n} animal${n > 1 ? "s" : ""} live${n > 1 ? "" : "s"} ${hab.visit ? "in " + who : "here"}` + out + (asleep ? `, ${asleep} asleep` : "")
       + (hab.wx ? ". " + habWxLine() : ". Tap one to say hi.") + ` ${habSeason()[0].toUpperCase() + habSeason().slice(1)}.`;
   const night = phase === "night";
   if (night) $("hab-note").textContent += ` ${habMoonName()[1]}.`;
@@ -1331,7 +1347,7 @@ function habTap(ev) {
 // Show a friend's animals (their Field Guide entries) in their state's scenery,
 // inside `slot` on their profile.
 function habVisit(username, state, entries, slot) {
-  if (!hab.visit) hab.visit = { home: hab.animals.map((a) => ({ caught: true, species: a.s, activity: a.activity })) };
+  if (!hab.visit) hab.visit = { home: hab.entries || hab.animals.map((a) => ({ caught: true, species: a.s, activity: a.activity })) };
   Object.assign(hab.visit, { username, state });
   slot.append($("habitat"), $("hab-bar"));
   hab.animals = []; hab.w = 0; hab.picked = null; hab.fx = [];
@@ -1384,7 +1400,9 @@ function habLoop(now) {
   const box = $("habitat");
   if (document.hidden || !box || box.closest(".off") || box.closest(".hidden")) { hab.last = 0; return; }
   const w = box.clientWidth < 520 ? 320 : 480;
-  if (!hab.L || w !== hab.w) habitatSet(hab.animals.map((a) => ({ caught: true, species: a.s, activity: a.activity, num: a.num })));
+  // A new size, or the next turn of animals coming out (see habOutNow).
+  if (!hab.L || w !== hab.w || (hab.total > hab.animals.length && habTurn() !== hab.turn))
+    habitatSet(hab.entries || hab.animals.map((a) => ({ caught: true, species: a.s, activity: a.activity, num: a.num })));
   const dt = hab.last ? Math.min((now - hab.last) / 1000, .1) : 0;
   hab.last = now;
   const phase = habPhase();

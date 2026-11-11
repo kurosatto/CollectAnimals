@@ -405,6 +405,17 @@ fun AccountDialog(state: UiState, vm: GameViewModel, onDismiss: () -> Unit) {
                 }
                 Text("When you tell the game what an animal really was, a small copy of that photo (no location) " +
                     "is kept to help it learn. Turning this off deletes those copies.", style = MaterialTheme.typography.bodySmall)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    androidx.compose.material3.Switch(acct.showInFeed, onCheckedChange = vm::setShowInFeed)
+                    Spacer(Modifier.size(10.dp))
+                    Text("Show my captures in the feed", style = MaterialTheme.typography.titleSmall)
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    androidx.compose.material3.Switch(acct.isPrivate, onCheckedChange = vm::setPrivate)
+                    Spacer(Modifier.size(10.dp))
+                    Text("Private account", style = MaterialTheme.typography.titleSmall)
+                }
+                Text("Private: only your friends can see your photos.", style = MaterialTheme.typography.bodySmall)
                 BlockedPlayers()
                 PrivacyLink()
                 DeleteAccount(vm, onDismiss)
