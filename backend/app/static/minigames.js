@@ -312,6 +312,8 @@ function mgBuild() {
   /* One column that never grows past the screen: the animal row scrolls inside it instead. */
   .mg-list { display:grid; grid-template-columns:minmax(0, 1fr); gap:10px; }
   .mg-grid { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:8px; }
+  /* Tablets and computers: more, smaller cards a row instead of four huge ones. */
+  @media (min-width:700px) { .mg-grid { grid-template-columns:repeat(auto-fill, minmax(104px, 1fr)); } }
   .mg-tile { font:inherit; color:inherit; background:transparent; border:1px solid var(--line); border-radius:12px; padding:6px 4px 7px;
              cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:4px; min-width:0; }
   .mg-thumb { width:100%; aspect-ratio:1; border-radius:9px; display:flex; align-items:center; justify-content:center;
