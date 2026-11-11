@@ -112,6 +112,8 @@ class DexOut(BaseModel):
     # {"months": [12 sighting counts], "hours": [24], "night_ratio": float | None}
     season: dict | None = None
     captured: bool = False
+    first_captured: date | None = None  # the day of your first capture of it in this state
+    times_captured: int = 0
 
 
 class HotspotSpecies(BaseModel):

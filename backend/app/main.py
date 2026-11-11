@@ -581,8 +581,15 @@ def get_dex_entry(key: str, state: str | None = Query(None), user: User | None =
             m, code = other, other.state
     d = dex.details(s.slug, code)
     revealed = s.id in revealed_species_ids(db, user)
-    caught = user is not None and db.scalar(select(Capture.id).where(
-        Capture.user_id == user.id, Capture.species_id == s.id, Capture.state == code).limit(1)) is not None
+    # Your own record of it here: when you first captured it, and how many times.
+    # Days are the state's own (a capture's camera time, or its upload time there).
+    mine = db.scalars(select(Capture).where(Capture.user_id == user.id, Capture.species_id == s.id,
+                                            Capture.state == code)).all() if user is not None else []
+    offset = st.get(code).utc_offset
+    first = min(((c.taken_at.replace(tzinfo=None) if c.taken_at else scoring.to_local(c.created_at, offset)).date()
+                 for c in mine), default=None)
+    times = len(mine)
+    caught = times > 0
     def tip(text: str | None) -> str | None:
         return text if revealed else dex.mask_name(text, s.common_name, s.scientific_name)
     return DexOut(species=species_out(s, revealed, m), state=code, size=d.get("size"), weight=d.get("weight"),
@@ -594,7 +601,8 @@ def get_dex_entry(key: str, state: str | None = Query(None), user: User | None =
                   safety=d.get("safety") or "none", safe_distance=d.get("safe_distance") or None,
                   safety_note=d.get("safety_note") or None,
                   hotspots=dex.hotspots_for(s.slug, code), range=dex.range_for(s.slug, code),
-                  season=dex.season_for(s.slug, code), captured=caught)
+                  season=dex.season_for(s.slug, code), captured=caught,
+                  first_captured=first, times_captured=times)
 
 
 @app.get("/hotspots", response_model=list[HotspotOut])

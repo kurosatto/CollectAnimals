@@ -423,6 +423,7 @@
   #dex-name { font-size:2rem; line-height:1.05; }
   #dex-sci { font-style:normal; font-size:.85rem; }
   .dex-sprite { background:#fffaf0; padding:6px; width:96px; height:96px; box-shadow:0 4px 10px rgba(60,40,20,.25); transform:rotate(-2deg); }
+  #dex-record { margin-top:6px; font-family:var(--text); font-size:.75rem; }
   .dex .status.mine { display:inline-block; color:var(--stamp); border:3px double var(--stamp); padding:2px 8px; transform:rotate(-4deg);
                       text-transform:uppercase; letter-spacing:.12em; font-weight:700; font-family:var(--pixel); margin-top:8px; }
   .dex dt { font-weight:700; letter-spacing:.12em; }
@@ -655,7 +656,7 @@
     <img class="sprite dex-sprite" id="dex-sprite" alt="">
     <div style="flex:1"><div class="num muted" id="dex-num"></div><h2 id="dex-name"></h2>
       <div class="muted" id="dex-sci"></div><div class="rarity" id="dex-rarity"></div>
-      <div class="status" id="dex-status"></div></div>
+      <div class="status" id="dex-status"></div><div class="muted small" id="dex-record"></div></div>
     <button class="close" id="dex-close" aria-label="Close">×</button>
   </div>
   <div class="dex-body">
@@ -1713,6 +1714,9 @@ async function openDex(key, num, caught, stateCode = myState.code) {
   st.className = "status " + (d.captured ? "mine" : s.revealed ? "friend" : "");
   st.textContent = d.captured ? "✓ Captured by you"
     : s.revealed ? "Not captured by you yet. A friend has seen it." : "";
+  // Your journal note: the day you first captured it here, and how many times since.
+  $("dex-record").textContent = d.captured && d.first_captured
+    ? `First captured ${fmtDate(d.first_captured)}${d.times_captured > 1 ? ` · ${d.times_captured} times` : ""}` : "";
   $("dex-num").textContent = `#${String(num).padStart(3, "0")}`;
   $("dex-name").textContent = s.revealed ? s.common_name : "???";
   $("dex-sci").textContent = s.revealed ? s.scientific_name
