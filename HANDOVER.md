@@ -2,7 +2,7 @@
 
 Read this first, then `README.md` (setup, API behaviour, Android build). Where
 they disagree, this file is newer. Written 2026-10-19; sections 3, 4, 7 and 8
-brought up to date on 2026-11-11 (release 0.59).
+brought up to date on 2026-11-11 (release 0.60).
 
 ## 1. What the product is
 
@@ -218,7 +218,7 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
 
 ## 8. State of play (2026-11-11)
 
-- Release 0.59.0 (whole-game review rounds 1-11, 0.49-0.59). Recent work: Field Journal look (0.34), phone fit
+- Release 0.60.0 (whole-game review rounds 1-12, 0.49-0.60). Recent work: Field Journal look (0.34), phone fit
   and pixel icons instead of emojis (0.37), all animals redrawn with drawn-frame
   animations at 40 px (0.38-0.47), per-state painted habitat scenery (0.43-0.48),
   one long hard level per minigame with `tools/levelcheck` (0.46; check.js per game, leap.js for Branch Leap, claw.js for Claw Catch).
