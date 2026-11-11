@@ -608,7 +608,7 @@ private fun FeedCard(p: OnlinePhoto, social: SocialViewModel, onOpenDex: (String
             Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     // The photo opens full screen; the name opens the Field Guide entry.
-                    Text(p.commonName ?: "A ${p.rarity} ${p.category}", fontWeight = FontWeight.Bold,
+                    Text(p.commonName ?: aOrAn("${p.rarity} ${categoryWord(p.category)}").replaceFirstChar { it.uppercase() }, fontWeight = FontWeight.Bold,
                         color = rarityColor(p.rarity), maxLines = 1, overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.clickable(enabled = p.slug != null) { p.slug?.let(onOpenDex) })
                     if (p.url != null) p.stars?.let { Stars(it, points = p.score) }

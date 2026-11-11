@@ -94,7 +94,7 @@ object Online {
             }
             c.responseCode
         } catch (e: java.io.IOException) {
-            throw ApiError(0, "Can't reach the game server. Is the PC on?")
+            throw ApiError(0, "Can't reach the game server. Check your internet and try again.")
         }
         val text = (if (code < 400) c.inputStream else c.errorStream)?.bufferedReader()?.use { it.readText() }.orEmpty()
         if (code == 401 && auth && token != null) setToken(null)

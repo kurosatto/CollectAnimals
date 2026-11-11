@@ -117,15 +117,16 @@ def photo_out(p: AlbumPhoto, viewer: User, friends: set[int], likes: int, liked:
     c = p.capture
     loc = places.for_viewer(c.latitude, c.longitude, p.species.rarity, mine, p.user_id in friends)
     st = states.get(c.state or p.user.state)
+    offset = (st or states.get(None)).utc_offset
     return PhotoOut(
         id=p.id, hidden=bool(p.hidden) if mine else False, url=get_storage().url(c.image_path) if show_image else None,
         username=p.user.username, species=species_out(p.species, revealed),
-        taken_on=(c.taken_at or c.created_at).date(), caught_at=c.created_at,
+        # The day in the photo's state, like its time: an evening upload isn't "tomorrow" in UTC.
+        taken_on=(c.taken_at or to_local(c.created_at, offset)).date(), caught_at=c.created_at,
         latitude=loc.latitude, longitude=loc.longitude, location_precise=loc.precise,
         place=loc.place, state=st.name if st else None, like_count=likes, liked_by_me=liked, comment_count=comments, is_mine=mine,
         by_friend=p.user_id in friends, rank=rank, score=c.score, stars=c.score_stars,
-        where_when=where_when_out(c, (states.get(c.state or p.user.state) or states.get(None)).utc_offset)
-        if mine else None)
+        where_when=where_when_out(c, offset) if mine else None)
 
 
 def _like_info(db: Session, photo_ids: list[int], viewer_id: int) -> tuple[dict[int, int], set[int]]:
@@ -282,6 +283,8 @@ def delete_photo(photo_id: int, user: User = Depends(current_user), db: Session 
 # --- profiles -----------------------------------------------------------------
 
 RARITIES = ["common", "uncommon", "rare", "legendary"]
+# How achievements name each group: "Capture every ocean animal on the list".
+CATEGORY_WORDS = {"invertebrate": "bug", "marine": "ocean animal"}
 CATEGORY_TITLES = {"mammal": "Mammal", "bird": "Bird", "reptile": "Reptile", "amphibian": "Amphibian",
                    "invertebrate": "Bug", "marine": "Ocean"}
 
@@ -306,7 +309,7 @@ def _achievements(caught: int, total: int, by_rarity: dict[str, Tally],
     add("all_legendaries", "Living legend", "Capture every legendary animal", legendary.caught, legendary.total)
     for cat, t in by_category.items():
         name = CATEGORY_TITLES.get(cat, cat.title())
-        add(f"all_{cat}", f"{name} master", f"Capture every {cat} on the list", t.caught, t.total)
+        add(f"all_{cat}", f"{name} master", f"Capture every {CATEGORY_WORDS.get(cat, cat)} on the list", t.caught, t.total)
     add("liked_10", "Crowd favorite", "Get 10 likes on your photos", likes, 10)
     return out
 

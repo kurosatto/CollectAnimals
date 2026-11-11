@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 
 from .config import settings
+from .words import a_or_an
 
 
 @dataclass(frozen=True)
@@ -47,5 +48,5 @@ def message(a: HouseholdAnimal) -> str:
     """What the capture screen says for a pet or a pest."""
     name = _in_sentence(a.common_name)
     if a.kind == "pet":
-        return f"That's a {name}! Pets aren't wild animals, so they don't go in the Field Guide. {a.note}"
-    return f"That's a {name}. It's a pest, not one of the wild animals in the Field Guide. {a.note}"
+        return f"That's {a_or_an(name)}! Pets aren't wild animals, so they don't go in the Field Guide. {a.note}"
+    return f"That's {a_or_an(name)}. It's a pest, not one of the wild animals in the Field Guide. {a.note}"
