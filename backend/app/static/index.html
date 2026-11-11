@@ -687,6 +687,7 @@
       <dt>Spotting tip</dt><dd id="dex-tip"></dd>
       <dt>Hotspots</dt><dd id="dex-hotspots"></dd>
       <dt id="dex-sets-dt">Sets</dt><dd id="dex-sets"></dd>
+      <dt id="dex-games-dt">Minigames</dt><dd id="dex-games"></dd>
       <dt>Size</dt><dd id="dex-size"></dd>
       <dt>Weight</dt><dd id="dex-weight"></dd>
       <dt>Fun facts</dt><dd id="dex-fact"></dd>
@@ -1789,6 +1790,11 @@ async function openDex(key, num, caught, stateCode = myState.code) {
   $("dex-hotspots").textContent = d.hotspots.length ? d.hotspots.join(", ") : "—";
   $("dex-sets").textContent = (d.sets || []).join(", ");
   $("dex-sets-dt").hidden = $("dex-sets").hidden = !d.sets?.length;
+  // The minigames this animal can play as, once you know what it is.
+  let games = [];
+  try { if (s.revealed && s.slug && habAnimIdx) games = mgKinds(s).map((k) => MG_GAMES.find((g) => g.key === k)?.title).filter(Boolean); } catch {}
+  $("dex-games").textContent = games.join(", ");
+  $("dex-games-dt").hidden = $("dex-games").hidden = !games.length;
   $("dex-size").textContent = d.size || "Unknown";
   $("dex-weight").textContent = d.weight || "Unknown";
   const facts = d.facts?.length ? d.facts : d.fun_fact ? [d.fun_fact] : [];
