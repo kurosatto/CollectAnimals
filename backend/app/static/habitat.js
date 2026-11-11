@@ -302,9 +302,10 @@ function habNote() {
   const who = hab.visit ? `${hab.visit.username}'s habitat` : "here";
   $("hab-note").textContent = !n ? (hab.visit ? `No animals in ${who} yet.` : "Capture animals and they'll move in here.")
     : `${n} animal${n > 1 ? "s" : ""} live${n > 1 ? "" : "s"} ${hab.visit ? "in " + who : "here"}` + out + (asleep ? `, ${asleep} asleep` : "")
-      + (hab.wx ? ". " + habWxLine() : ". Tap one to say hi.") + ` ${habSeason()[0].toUpperCase() + habSeason().slice(1)}.`;
+      + (hab.wx ? ". " + habWxLine() : ". Tap one to say hi.")
+      // Whole sentences: "It's fall." and at night "It's fall, under a full moon."
+      + ` It's ${habSeason()}${phase === "night" ? ", under a " + habMoonName()[1].toLowerCase() : ""}.`;
   const night = phase === "night";
-  if (night) $("hab-note").textContent += ` ${habMoonName()[1]}.`;
   const here = document.getElementById("hab-wx-here");
   if (here) here.hidden = !(hab.wxAsk && hab.wx && !hab.visit);
   // Pixel sun and moon icons (tools/make_ui_icons.py), not emojis.
