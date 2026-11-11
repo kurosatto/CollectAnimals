@@ -51,7 +51,8 @@ import kotlin.math.roundToInt
 
 /** Full-page Field Guide entry for one species. */
 @Composable
-fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: FieldGuide, onBack: () -> Unit) {
+fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: FieldGuide, sets: List<String> = emptyList(),
+                   onBack: () -> Unit) {
     BackHandler(onBack = onBack)
     val details = dex.details[s.slug]
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -131,6 +132,7 @@ fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: FieldGuide, onBa
         if (dex.parks.isNotEmpty()) {
             LabeledLine("Hotspots", dex.hotspotsFor(s.slug).joinToString(", ").ifEmpty { "—" })
         }
+        if (sets.isNotEmpty()) LabeledLine("Sets", sets.joinToString(", "))
         // A grid step of 0.25° is about 25 km; NC's finer 0.125° grid is about 12 km.
         val km = (dex.ranges.step * 100).roundToInt()
         Text("Each square is about $km km (${(km * 0.62).roundToInt()} mi) across; darker means more of the " +

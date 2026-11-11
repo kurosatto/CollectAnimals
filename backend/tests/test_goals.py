@@ -64,3 +64,12 @@ def test_challenge_progress_counts():
     assert goals.progress(goals.Challenge("n", "", "new", 1), caps, 0) == 2
     assert goals.progress(goals.Challenge("r", "", "rarity", 1), caps, 0) == 1
     assert goals.progress(goals.Challenge("l", "", "likes", 3), caps, 4) == 4
+
+
+def test_dex_entry_lists_its_sets(client):
+    """A Field Guide entry names the state's sets that include the animal."""
+    sets = {s["id"]: s["title"] for s in client.get("/me/sets", headers=signup(client)).json()["sets"]}
+    star = client.get("/species/ochre_sea_star/dex").json()
+    assert sets["tide_pools"] in star["sets"]
+    # A dangerous animal is in no set.
+    assert client.get("/species/american_black_bear/dex").json()["sets"] == []

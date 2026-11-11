@@ -107,6 +107,8 @@ class DexOut(BaseModel):
     safe_distance: str | None = None
     safety_note: str | None = None
     hotspots: list[str] = []
+    # Titles of the Field Guide sets in this state that include it.
+    sets: list[str] = []
     # {"grid": {lon0, lat0, step, cols, rows}, "cells": [[col, row, count], ...]}
     range: dict | None = None
     # {"months": [12 sighting counts], "hours": [24], "night_ratio": float | None}
