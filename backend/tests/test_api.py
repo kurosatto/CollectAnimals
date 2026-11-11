@@ -280,8 +280,11 @@ def test_dex_entry(client, fake):
     assert r["species"]["common_name"] == "Coyote" and r["fun_fact"] and r["where_to_find"]
     # Every fun fact for the habitat's speech bubble: the main one first, then the extras.
     assert r["facts"][0] == r["fun_fact"] and len(r["facts"]) >= 3
+    # Your journal note: when you first captured it here, and how often.
+    assert r["captured"] and r["times_captured"] == 1 and r["first_captured"]
 
     r = client.get("/species/bobcat/dex", headers=h).json()
+    assert not r["captured"] and r["times_captured"] == 0 and r["first_captured"] is None
     assert r["fun_fact"] is None and r["range"] is None and r["size"] and r["facts"] == []
     assert client.get("/species/nope/dex").status_code == 404
 
