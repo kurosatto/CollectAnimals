@@ -2259,7 +2259,9 @@ async function openProfile(username) {
   sec(mine ? `Achievements · ${earned.length}/${u.achievements.length}` : `Achievements · ${earned.length}`);
   const ach = el("div", "achievements");
   if (!mine && !earned.length) ach.append(el("p", "muted", `${u.username} hasn't earned any achievements yet.`));
-  for (const a of mine ? [...u.achievements].sort((x, y) => y.earned - x.earned) : earned) {
+  // Earned first; then the ones closest to done, so the next trophy is near the top.
+  const left = (a) => a.goal - a.progress;
+  for (const a of mine ? [...u.achievements].sort((x, y) => y.earned - x.earned || (!x.earned && left(x) - left(y))) : earned) {
     const d = el("div", "ach" + (a.earned ? " on" : ""));
     d.title = a.description;
     d.append(elIco("strong", "", a.earned ? "trophy" : "lock", a.title),
