@@ -221,7 +221,7 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
 - Release 0.50.0 (review rounds 1-2). Recent work: Field Journal look (0.34), phone fit
   and pixel icons instead of emojis (0.37), all animals redrawn with drawn-frame
   animations at 40 px (0.38-0.47), per-state painted habitat scenery (0.43-0.48),
-  one long hard level per minigame with `tools/levelcheck` (0.46).
+  one long hard level per minigame with `tools/levelcheck` (0.46; check.js per game, leap.js for Branch Leap, claw.js for Claw Catch).
 - Google Play: developer account verified; listing doc and reviewer account exist;
   closed test needs 12+ testers for 14 days.
 - **kuro's taste** (keep to it): kid-friendly; realistic field-guide pixel art,

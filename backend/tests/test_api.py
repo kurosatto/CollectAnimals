@@ -510,6 +510,10 @@ def test_huge_image_dimensions_rejected(client, fake):
     Image.new("1", (11000, 11000)).save(buf, "PNG")  # 121 MP: past our limit, under Pillow's
     r = client.post("/captures", headers=h, files={"photo": ("big.png", buf.getvalue(), "image/png")})
     assert r.status_code == 413
+    buf = io.BytesIO()
+    Image.new("RGB", (4, 4), "green").save(buf, "JPEG")  # nothing to see in a 4x4 picture
+    r = client.post("/captures", headers=h, files={"photo": ("tiny.jpg", buf.getvalue(), "image/jpeg")})
+    assert r.status_code == 400 and "too small" in r.json()["detail"]
 
 
 def test_states_and_signup_state(client):
