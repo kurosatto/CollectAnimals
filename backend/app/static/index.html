@@ -741,7 +741,7 @@ async function api(path, opts = {}) {
   if (res.status === 401 && token) { setToken(null); }
   if (!res.ok) {
     const d = body.detail;
-    throw new Error(Array.isArray(d) ? d.map((e) => e.msg).join("; ") : d || res.statusText);
+    throw new Error(Array.isArray(d) ? d.map((e) => e.msg).join(". ") : d || res.statusText);
   }
   return body;
 }

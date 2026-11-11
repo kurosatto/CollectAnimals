@@ -133,7 +133,7 @@ RESET_HTML = """
 <form id="f">
 <input id="pw" type="password" placeholder="New password (8+ characters)" minlength="8" required
   autocomplete="new-password">
-<button style="background:#2e7d32">Save new password</button>
+<button style="background:#4d6b3a">Save new password</button>
 </form>
 <p id="msg" role="status"></p>
 <script>

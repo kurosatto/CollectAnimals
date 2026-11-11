@@ -59,9 +59,9 @@ ALL = (failed_logins_by_account, failed_logins_by_ip, registrations_by_ip, weath
 
 
 def client_ip(request: Request) -> str:
-    """The player's address. Behind the Cloudflare tunnel every request comes from
-    the local cloudflared process, so the address Cloudflare saw is in
-    CF-Connecting-IP; that header is only trusted on connections from this machine."""
+    """The player's address. Behind the local proxy (Caddy on the server, once the
+    Cloudflare tunnel) every request comes from this machine, so the proxy puts the
+    real address in CF-Connecting-IP; that header is only trusted from this machine."""
     host = request.client.host if request.client else ""
     if host in ("127.0.0.1", "::1") and request.headers.get("cf-connecting-ip"):
         return request.headers["cf-connecting-ip"].strip()
