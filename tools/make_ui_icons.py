@@ -1,5 +1,5 @@
 """Draw the small 16x16 pixel-art UI icons (coin, shop, lock, pin, bell, sun, moon,
-music, log out, palette) that replace generic emojis in the apps, in the same palette
+music, log out, palette, flag) that replace generic emojis in the apps, in the same palette
 and ink outline as the tab icons and animal sprites. Writes species/sprites/ui_ic_<name>.png
 (the web app serves them from /sprites/, the Android app bundles the same files).
 
@@ -289,6 +289,25 @@ GRIDS = {
         ".BbBBBBbB.......",
         ".BbbbbbbB.......",
         ".BBBBBBBB.......",
+        "................",
+    ],
+    # A red flag on a pole: report something.
+    "flag": [
+        "................",
+        "..B.............",
+        "..BrrrrrrrRr....",
+        "..BrrrrrrrrRr...",
+        "..BrrrrrrrrrR...",
+        "..BrrrrrrrrRr...",
+        "..BrrrrrrrRr....",
+        "..BRRRRRRRR.....",
+        "..B.............",
+        "..B.............",
+        "..B.............",
+        "..B.............",
+        "..B.............",
+        ".BBB............",
+        "................",
         "................",
     ],
 }
