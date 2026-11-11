@@ -390,6 +390,7 @@ function mgBuild() {
   .mg-who { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .mg-pts { color:var(--accent); font-variant-numeric:tabular-nums; }
   .mg-row { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:6px; }
+  .mg-btns { display:flex; align-items:center; gap:8px; flex-shrink:0; }
   .mg-name { font-size:.85rem; font-weight:600; }
   .mg-play { font:inherit; font-weight:600; padding:6px 16px; border-radius:999px; border:none; background:var(--accent);
              color:#fff; cursor:pointer; }
@@ -797,7 +798,10 @@ function mgGame(list, g) {
     const practice = mgEl("button", "mg-back", "Practice");
     practice.title = "Learn the hard parts: a bump sends you back a few seconds. No points or coins.";
     practice.onclick = () => mgStart(g, pick, true);
-    foot.append(name, practice, play);
+    // Practice sits beside Play, not stranded in the middle of a wide row.
+    const btns = mgEl("span", "mg-btns");
+    btns.append(practice, play);
+    foot.append(name, btns);
     showStats(); paint();
     const board = mgEl("div", "mg-board");
     mgBoard(board, mgLevelKey(g.key), mgStore.get("board") || "all");
