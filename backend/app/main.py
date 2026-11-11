@@ -623,16 +623,22 @@ def list_hotspots(state: str | None = Query(None), user: User | None = Depends(o
 
 # --- captures & collection --------------------------------------------------
 
+MIN_IMAGE_SIDE = 32
+
+
 def _read_image(data: bytes) -> Image.Image:
     try:
         im = Image.open(io.BytesIO(data))
         # A tiny file can claim huge dimensions and take gigabytes to decode;
         # check the size from the header before decoding anything.
         if im.width * im.height > MAX_IMAGE_PIXELS:
-            raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "Photo has too many pixels")
+            raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "This photo is too big. Try a smaller one.")
+        # A thumbnail-sized picture has too little in it to name an animal.
+        if min(im.width, im.height) < MIN_IMAGE_SIDE:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "This photo is too small to see the animal. Try a bigger one.")
         im.load()
     except Image.DecompressionBombError:  # Pillow's own check, for sizes far past ours
-        raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "Photo has too many pixels")
+        raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "This photo is too big. Try a smaller one.")
     except (UnidentifiedImageError, OSError):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Not a valid image")
     return im

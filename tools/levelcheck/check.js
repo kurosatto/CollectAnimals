@@ -4,8 +4,8 @@
 // means the level was finished, so it can be. "ok": false may still be finishable (the
 // search can miss), but try a wider beam or another seed first.
 //   node tools/levelcheck/check.js <game> [beam width, default 300]
-// Branch Leap needs its own search: node tools/levelcheck/leap.js. Claw Catch (swipes)
-// isn't checked. The search has some randomness, so a miss is worth a second run.
+// Branch Leap needs its own search: node tools/levelcheck/leap.js, and Claw Catch
+// (swipes) its own greedy player: node tools/levelcheck/claw.js. The search has some randomness, so a miss is worth a second run.
 // TMPL=file.js swaps in another minigames.js, with SEEDS='{"SKY": 29}'
 // filling in SKYSEED-style placeholders, to try seeds for a new level.
 const vm = require("vm"), fs = require("fs");
