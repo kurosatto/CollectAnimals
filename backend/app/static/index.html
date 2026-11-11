@@ -2543,9 +2543,10 @@ $("notify-on").onclick = async () => {
   if (p === "granted") pushSubscribe();
 };
 
-// Check every minute; the friends list only redraws when a request arrived.
+// Check every minute while the page is in view (a background tab doesn't need to ask;
+// push notifications cover that); the friends list only redraws when a request arrived.
 setInterval(async () => {
-  if (!token) return;
+  if (!token || document.hidden || navigator.onLine === false) return;
   try {
     const f = await api("/friends");
     const before = knownRequests;
