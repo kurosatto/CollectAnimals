@@ -517,6 +517,9 @@ fun RarityTag(rarity: String) {
 /** Field Guide groups, like the website: captured, then the rest with animals seen this
  *  month before ones not around this time of year (split by a plain line, no label). */
 private val SECTIONS = listOf("Captured", "Not captured yet")
+// Field Guide chip words, the same as the website's buttons.
+private val KIND_LABEL = mapOf("all" to "All", "bird" to "Birds", "mammal" to "Mammals", "reptile" to "Reptiles",
+    "amphibian" to "Amphibians", "invertebrate" to "Bugs", "marine" to "Ocean animals", "fish" to "Fish")
 
 @Composable
 fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, collection: Map<String, Badge>, sets: List<SetDef>,
@@ -545,7 +548,7 @@ fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, collection: Map<String, 
             Row(Modifier.horizontalScrollCompat(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 categories.forEach { c ->
                     FilterChip(selected = category == c, onClick = { category = c },
-                        label = { Text(c.replaceFirstChar { it.uppercase() }) })
+                        label = { Text(KIND_LABEL[c] ?: c.replaceFirstChar { it.uppercase() }) })
                 }
             }
         }

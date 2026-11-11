@@ -8,7 +8,7 @@
 //   with the last answer as the offline fallback. The page clears it on log out.
 // - Everything else (photos, galleries, the feed, uploads, any POST) goes straight to the network,
 //   so other players' photos never fill up the phone.
-const VERSION = "32";
+const VERSION = "33";
 const SHELL = `shell-v${VERSION}`;
 const ASSETS = "assets-v9";  // v9: the 0.47 animation remake (new sheets with run and groom rows)
 const API = "api-v1";
