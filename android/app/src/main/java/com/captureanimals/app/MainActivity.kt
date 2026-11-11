@@ -562,8 +562,10 @@ fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, collection: Map<String, 
                     Text(rarity.uppercase(), style = MaterialTheme.typography.labelMedium, letterSpacing = 2.sp,
                         color = rarityColor(rarity), modifier = Modifier.padding(top = 4.dp))
                 }
-                // Within a rarity, animals around this month come first.
-                items(tier.sortedBy { dex?.inSeason(it.slug, month) == false }, key = { it.slug }) { s ->
+                // Not captured yet: within a rarity, animals around this month come first.
+                // Captured ones keep plain Field Guide order.
+                items(if (i == 0) tier else tier.sortedBy { dex?.inSeason(it.slug, month) == false },
+                      key = { it.slug }) { s ->
                     SpeciesTile(info.dexNumber(s.slug), s, collection[s.slug]) { onOpen(s.slug) }
                 }
             }

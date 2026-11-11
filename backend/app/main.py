@@ -12,6 +12,7 @@ from pathlib import Path
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, Request, UploadFile, status
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.exceptions import RequestValidationError
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
 from PIL import Image, ImageOps, UnidentifiedImageError
@@ -34,7 +35,7 @@ from .schemas import (MyStateOut, StateAtOut, CaptureOut, HouseholdOut, Challeng
                       WhereWhenIn, WhereWhenResult)
 from .social import catches_in, find_species, friend_ids, revealed_species_ids, species_out, user_named
 from .storage import get_storage
-from .words import a_or_an
+from .words import a_or_an, friendly_error
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -161,6 +162,11 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Capture Animals", lifespan=lifespan,
               **({"docs_url": None, "redoc_url": None, "openapi_url": None} if settings.public else {}))
+
+
+@app.exception_handler(RequestValidationError)
+async def readable_validation_errors(request: Request, exc: RequestValidationError):
+    return JSONResponse(status_code=422, content={"detail": [friendly_error(e) for e in exc.errors()]})
 
 
 
