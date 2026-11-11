@@ -644,7 +644,7 @@
       <div id="sets" class="sets"></div>
     </div>
     <div class="card off" data-tab="photos">
-      <h2>My photos</h2>
+      <h2>My photos <span id="album-count" class="muted"></span></h2>
       <p class="muted" style="margin-top:0">Your album: one photo for each animal you captured.</p>
       <div class="seg" id="album-seg" style="margin:0 0 12px"></div>
       <div id="my-photos" class="photos compact"></div>
@@ -2045,6 +2045,8 @@ function drawAlbum() {
     seg.append(b);
   });
   grid.innerHTML = "";
+  const n = albumPhotos.length;
+  $("album-count").textContent = n ? `${n} photo${n > 1 ? "s" : ""}` : "";
   if (!albumPhotos.length) grid.append(el("p", "muted", "No photos yet. Capture an animal to start your album."));
   [...albumPhotos].sort(ALBUM_SORTS[albumSort][1]).forEach((p) => grid.append(photoCard(p, { compact: true })));
 }
