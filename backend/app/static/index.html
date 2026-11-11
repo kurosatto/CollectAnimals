@@ -2197,6 +2197,26 @@ async function openProfile(username) {
     };
     await show(null);
   }
+  // A friend's album: their newest photos, the rest one tap away. (Yours is the Photos tab.)
+  if (u.friendship === "friends") {
+    const head = sec("Photos"), grid = el("div", "photos compact");
+    box.append(grid);
+    try {
+      const photos = (await api(`/users/${name}/album`)).photos
+        .sort((a, b) => new Date(b.caught_at) - new Date(a.caught_at));
+      head.textContent = `Photos · ${photos.length}`;
+      const FIRST = 8;
+      const add = (list) => list.forEach((p) => grid.append(photoCard(p, { compact: true })));
+      if (!photos.length) grid.append(el("p", "muted", `${u.username} hasn't shared any photos yet.`));
+      add(photos.slice(0, FIRST));
+      if (photos.length > FIRST) {
+        const more = el("button", "ghost", `Show all ${photos.length}`);
+        more.type = "button";
+        more.onclick = () => { more.remove(); add(photos.slice(FIRST)); };
+        box.append(more);
+      }
+    } catch (err) { grid.append(el("p", "muted", err.message)); }
+  }
 
   sec("Rarity");
   for (const r of ["common", "uncommon", "rare", "legendary"])
