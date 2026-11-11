@@ -21,8 +21,8 @@ data class HouseholdAnimal(val slug: String, val commonName: String, val kind: S
         val name = commonName.split(" ").joinToString(" ") { w ->
             if (w.lowercase() in setOf("european", "german", "american")) w else w.lowercase()
         }
-        return if (kind == "pet") "That's a $name! Pets aren't wild animals, so they don't go in the Field Guide. $note"
-        else "That's a $name. It's a pest, not one of the wild animals in the Field Guide. $note"
+        return if (kind == "pet") "That's ${aOrAn(name)}! Pets aren't wild animals, so they don't go in the Field Guide. $note"
+        else "That's ${aOrAn(name)}. It's a pest, not one of the wild animals in the Field Guide. $note"
     }
 }
 

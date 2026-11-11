@@ -300,7 +300,8 @@ function mgBuild() {
   mg.built = true;
   const css = mgEl("style");
   css.textContent = `
-  .mg-list { display:grid; gap:10px; }
+  /* One column that never grows past the screen: the animal row scrolls inside it instead. */
+  .mg-list { display:grid; grid-template-columns:minmax(0, 1fr); gap:10px; }
   .mg-grid { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:8px; }
   .mg-tile { font:inherit; color:inherit; background:transparent; border:1px solid var(--line); border-radius:12px; padding:6px 4px 7px;
              cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:4px; min-width:0; }
@@ -314,7 +315,7 @@ function mgBuild() {
   .mg-tile span { font-size:.68rem; color:var(--muted); }
   .mg-tile.mg-locked .mg-thumb { filter:grayscale(.6) brightness(.95); }
   .mg-stat-how { margin-top:2px; font-size:.72rem; color:var(--muted); }
-  .mg-game { border:1px solid var(--line); border-radius:12px; padding:10px 12px; }
+  .mg-game { border:1px solid var(--line); border-radius:12px; padding:10px 12px; min-width:0; }
   .mg-game h3 { margin:0; font-size:1.05rem; display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
   .mg-best { font-size:.8rem; font-weight:400; color:var(--muted); }
   .mg-how { margin:4px 0 8px; font-size:.85rem; color:var(--muted); }
@@ -732,7 +733,7 @@ function mgGame(list, g) {
     if (rec.pct >= 100) h.append(mgEl("span", "mg-best", "Cleared"));
     card.append(h, mgEl("div", "mg-how", g.how));
     if (!players.length) {
-      card.append(mgWith("div", "mg-lock", "lock", `Capture a ${g.kind} to unlock this game.`));
+      card.append(mgWith("div", "mg-lock", "lock", `Capture ${/^[aeiou]/i.test(g.kind) ? "an" : "a"} ${g.kind} to unlock this game.`));
       list.append(card);
       return;
     }
@@ -2139,6 +2140,9 @@ function mgPanel(c, lines, y0) {
   });
 }
 
+// "an American Crow", "a Eurasian Wren": a name with "a" or "an" in front.
+const mgA = (name) => (/^[aeiou]/i.test(name || "") && !/^(eu|uin|uni|uta|use|usu)/i.test(name) ? "an " : "a ") + name;
+
 function mgHud(c, r) {
   const g = mg.game, top = g.key === "trail" ? 34 : 104;  // clear of the animal
   // How far along the course you are, with your best try marked.
@@ -2154,14 +2158,21 @@ function mgHud(c, r) {
     (g.key === "claw" || (P && P.misses) ? `  ${"✕".repeat(Math.min(3, r.missed))}${"·".repeat(Math.max(0, 3 - r.missed))}` : "");
   c.fillStyle = "rgba(0,0,0,.35)"; c.fillRect(4, 18, c.measureText(label).width + 10, 16);
   c.fillStyle = "#fff"; c.fillText(label, 9, 30);
-  c.font = "bold 10px system-ui, sans-serif"; c.textAlign = "right";
-  c.fillStyle = "#fff"; c.fillText(`${Math.floor(p * 100)}%`, MG_W - 8, 15);
+  c.font = "bold 10px system-ui, sans-serif";
+  // "Try 2" and "35%" sit on dark chips like the other labels, readable on any sky.
+  const chip = (text, x, right) => {
+    const w = c.measureText(text).width + 8;
+    c.fillStyle = "rgba(0,0,0,.35)"; c.fillRect(right ? x - w + 4 : x - 4, 4, w, 13);
+    c.fillStyle = "#fff"; c.textAlign = right ? "right" : "left"; c.fillText(text, x, 14);
+  };
+  chip(`${Math.floor(p * 100)}%`, MG_W - 8, true);
+  c.textAlign = "right";
   if (r.p.tempo !== 1) {
     const sp = `Speed ×${r.p.tempo}`;
     c.fillStyle = "rgba(0,0,0,.35)"; c.fillRect(MG_W - 14 - c.measureText(sp).width, 18, c.measureText(sp).width + 10, 16);
     c.fillStyle = r.p.tempo > 1 ? "#ffd28a" : "#cfe"; c.fillText(sp, MG_W - 9, 30);
   }
-  c.textAlign = "left"; c.fillText(`Try ${mg.tries || 1}`, 8, 15);
+  c.font = "bold 10px system-ui, sans-serif"; chip(`Try ${mg.tries || 1}`, 8, false);
   const lvl = r.lvl;
   if (r.mode === "ready") mgPanel(c, [[lvl.name, 14], [g.tip, 11], ["The course is the same every time. Learn it!", 10, "#cfe"], ["Tap to start", 11, "#ffd28a"]], top);
   else if (r.mode === "paused") mgPanel(c, [["Paused", 15], ["Tap to keep going", 11, "#ffd28a"]], top);
@@ -2172,14 +2183,14 @@ function mgHud(c, r) {
     lines.push(["Tap to try again", 10, "#cfe"]);
     mgPanel(c, lines, Math.min(top, MG_H - 8 - (lines.length * 16 + 14)));
   } else if (r.mode === "done") {
-    const lines = [["Level complete!", 15, "#9be59b"], [`${r.points} points as a ${mg.species.common_name}`, 12, "#ffd28a"],
+    const lines = [["Level complete!", 15, "#9be59b"], [`${r.points} points as ${mgA(mg.species.common_name)}`, 12, "#ffd28a"],
                    [`${r.score} of ${r.total} ${g.key === "pool" || g.key === "claw" ? word : g.thing[1]} × ${r.p.tempo} speed bonus`, 10]];
     if (g.key === "river" && r.litter) lines.push([`You cleaned up ${r.litter} piece${r.litter === 1 ? "" : "s"} of litter`, 10]);
     if (r.score >= r.total) lines.push(["You got every one!", 11, "#9be59b"]);
     if (r.coins) lines.push([`+${r.coins} coins`, 11, "#ffd28a"]);
     if (r.newBest) lines.push(["Your best score yet!", 11, "#9be59b"]);
     else if (r.animalBest) lines.push([`Your best with this animal! (Best ever: ${r.rec.points})`, 10, "#9be59b"]);
-    else lines.push([`Best: ${r.rec.points} as a ${r.rec.who}`, 10]);
+    else lines.push([`Best: ${r.rec.points} as ${mgA(r.rec.who)}`, 10]);
     lines.push(["Tap to play again", 10, "#cfe"]);
     mgPanel(c, lines, Math.min(top, MG_H - 8 - (lines.length * 16 + 14)));
   }

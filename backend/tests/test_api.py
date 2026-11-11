@@ -819,7 +819,7 @@ def test_states_unlock_with_photos(client, fake):
     r = client.post("/captures", headers=h, data={"latitude": 35.78, "longitude": -78.64},
                     files={"photo": ("p.jpg", jpeg_bytes(), "image/jpeg")}).json()
     assert r["state"] == "NC" and r["unlocked_state"] == "NC" and r["new_badge"]
-    assert r["message"].startswith("📍 You unlocked North Carolina!")
+    assert r["message"].startswith("You unlocked North Carolina!")
     assert client.get("/me", headers=h).json()["unlocked_states"] == ["CA", "NC"]
     nc = client.get("/me/collection", params={"state": "NC"}, headers=h).json()
     assert [e["species"]["slug"] for e in nc["entries"] if e["caught"]] == ["coyote"]

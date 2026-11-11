@@ -34,6 +34,7 @@ from .schemas import (MyStateOut, StateAtOut, CaptureOut, HouseholdOut, Challeng
                       WhereWhenIn, WhereWhenResult)
 from .social import catches_in, find_species, friend_ids, revealed_species_ids, species_out, user_named
 from .storage import get_storage
+from .words import a_or_an
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -823,12 +824,12 @@ def _identify(db: Session, user: User, model, capture: Capture, image: Image.Ima
     # Don't give away names the player hasn't unlocked yet.
     revealed = revealed_species_ids(db, user)
     if matched:
-        message = (f"You captured a {names[top.label]}! New badge unlocked."
+        message = (f"You captured {a_or_an(names[top.label])}! New badge unlocked."
                    if new_badge else f"Another {names[top.label]} for your collection.")
         if album_photo:
             message += " It's now in your album."
     elif species is not None and species.id in revealed:
-        message = f"Might be a {names[top.label]}, but we're not sure. Try a clearer photo!"
+        message = f"Might be {a_or_an(names[top.label])}, but we're not sure. Try a clearer photo!"
     elif species is not None:
         message = "Might be an animal you haven't discovered yet, but we're not sure. Try a clearer photo!"
     elif pet is not None:
@@ -843,7 +844,7 @@ def _identify(db: Session, user: User, model, capture: Capture, image: Image.Ima
     # A state unlocks with its first captured animal, not with any photo.
     newly_unlocked = newly_unlocked and matched
     if newly_unlocked:
-        message = f"📍 You unlocked {state.name}! " + message
+        message = f"You unlocked {state.name}! " + message
     elif state.code != user.state and matched:
         message += f" It counts in your {state.name} Field Guide."
     if place_outside:
@@ -1084,7 +1085,7 @@ def pick_capture_species(capture_id: int, body: PickIn, user: User = Depends(cur
     _record_feedback(db, capture, user, guesses, species.slug)
     db.commit()
 
-    message = (f"Got it: a {name}! New badge unlocked." if new_badge
+    message = (f"Got it: {a_or_an(name)}! New badge unlocked." if new_badge
                else f"Got it: another {name} for your collection.")
     if album_photo:
         message += " It's now in your album."
@@ -1160,7 +1161,8 @@ def _rescore_picked(db: Session, capture: Capture, species: Species, m: StateSpe
     capture.score = capture.score_stars = capture.score_parts = None
     if model is None or data is None:
         return
-    state = st.get(user.state) or st.get(None)
+    # Scored against the state the photo counts in, like the model's own match.
+    state = st.get(capture.state or user.state) or st.get(None)
     allowed = {mm.species.slug for mm in state_species(db, state.code)}
     image = Image.open(io.BytesIO(data)).convert("RGB")
     _score_capture(model, capture, species.slug, m.rarity if m else species.rarity, image, state.code,

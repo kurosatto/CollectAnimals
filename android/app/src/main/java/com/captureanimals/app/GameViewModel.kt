@@ -173,7 +173,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         _state.update { it.copy(accountBusy = true, accountError = null) }
         viewModelScope.launch {
             try {
-                if (Online.resolve() == null) throw Online.ApiError(0, "Can't find the game server. Is the PC on?")
+                if (Online.resolve() == null) throw Online.ApiError(0, "Can't find the game server. Check your internet and try again.")
                 _state.update { it.copy(server = Online.base) }
                 block()
                 val me = Online.me()
@@ -466,9 +466,9 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         }
         val stateName = ui.states.firstOrNull { it.code == code }?.name ?: regionName()
         var message = when {
-            matched && newBadge -> "You captured a ${species!!.commonName}! New badge unlocked."
+            matched && newBadge -> "You captured ${aOrAn(species!!.commonName)}! New badge unlocked."
             matched -> "Another ${species!!.commonName} for your collection."
-            species != null -> "Might be a ${species.commonName}, but we're not sure. Try a clearer photo!"
+            species != null -> "Might be ${aOrAn(species.commonName)}, but we're not sure. Try a clearer photo!"
             sure && top.label in pets -> pets.getValue(top.label).message()
             sure && top.label == info.personLabel -> "That looks like a person! Only wild animals go in the Field Guide."
             sure && top.label in unlisted ->
@@ -597,7 +597,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                     message = "Okay, this photo doesn't count for any animal.")
             } else {
                 r.copy(matched = true, species = species, newBadge = newBadge, picked = true,
-                    message = if (newBadge) "Got it: a ${species.commonName}! New badge unlocked."
+                    message = if (newBadge) "Got it: ${aOrAn(species.commonName)}! New badge unlocked."
                               else "Got it: another ${species.commonName} for your collection.")
             }
             _state.update { it.copy(collection = collection, result = result) }

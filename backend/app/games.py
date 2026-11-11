@@ -23,8 +23,9 @@ from .db import get_db
 from datetime import date
 
 from .models import AnimalSkin, Badge, GameItem, GameScore, Species, User
+from .avatars import avatar_of
 from .safety import is_admin
-from .social import blocked_ids, friend_ids, revealed_species_ids
+from .social import CATEGORY_WORDS, blocked_ids, friend_ids, revealed_species_ids
 
 router = APIRouter()
 
@@ -250,9 +251,9 @@ def leaderboard(level: str, scope: str = Query("all", pattern="^(all|friends)$")
             continue  # each player once, with their best animal
         seen.add(u.id)
         known = sp.id in revealed
-        entry = {"rank": len(seen), "username": u.username, "avatar": u.avatar, "points": s.points,
+        entry = {"rank": len(seen), "username": u.username, "avatar": avatar_of(u), "points": s.points,
                  "species": {"slug": sp.slug if known else None,
-                             "common_name": sp.common_name if known else f"a mystery {sp.category}"},
+                             "common_name": sp.common_name if known else f"a mystery {CATEGORY_WORDS.get(sp.category, sp.category)}"},
                  "skin": s.skin if known else None, "you": u.id == user.id}
         if len(rows) < 10:
             rows.append(entry)

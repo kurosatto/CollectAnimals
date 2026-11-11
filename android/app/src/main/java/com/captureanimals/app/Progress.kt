@@ -69,6 +69,20 @@ class SetCatalog(private val sets: List<JSONObject>) {
 
 val Gold = Color(0xFFE0A100)
 
+/** "an American Robin", "a Eurasian Wren": the name with "a" or "an", as the server words it. */
+fun aOrAn(name: String): String {
+    val low = name.lowercase()
+    val vowel = low.firstOrNull()?.let { it in "aeiou" } == true && listOf("eu", "uin", "uni", "uta", "use", "usu").none { low.startsWith(it) }
+    return (if (vowel) "an " else "a ") + name
+}
+
+/** How a sentence names an animal group: "bug", "ocean animal", "bird". */
+fun categoryWord(category: String) = when (category) {
+    "invertebrate" -> "bug"
+    "marine" -> "ocean animal"
+    else -> category
+}
+
 fun stars(n: Int) = "★".repeat(n.coerceIn(0, 5)) + "☆".repeat(5 - n.coerceIn(0, 5))
 
 @Composable
