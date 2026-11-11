@@ -426,6 +426,8 @@
   .guide .tile.locked .sprite { background:transparent; }
   .guide .tile.mine { border:1px solid #e0d2ad; }
   .guide .tile:hover { border-color:var(--accent); }
+  /* Wide screens: roomier tiles so two-line names like "Red-shouldered Hawk ×3" fit. */
+  @media (min-width:700px) { .guide { grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); } }
   .grid .tier, .guide .tier { letter-spacing:.18em; font-size:.72rem; }
   .guide .section { font-size:1.1rem; border-bottom:1.5px solid var(--muted); }
   /* Animal page: a journal entry with a "Captured" ink stamp. */
