@@ -576,10 +576,20 @@ fun CollectionScreen(info: ModelInfo, dex: FieldGuide?, collection: Map<String, 
         // Sets, as on the website: themed groups to complete, under the list.
         if (sets.isNotEmpty()) item(span = { GridItemSpan(maxLineSpan) }, key = "sets") {
             Column(Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Sets", style = MaterialTheme.typography.titleMedium)
+                // Closest to done first, sets not started next, finished ones (badges) last.
+                val ordered = sets.sortedWith(compareBy<SetDef>(
+                    { s -> s.slugs.count { it in collection }.let { c -> if (c == s.slugs.size) 2 else if (c > 0) 0 else 1 } },
+                    { s -> -s.slugs.count { it in collection } / s.slugs.size.toFloat() },
+                    { s -> s.slugs.count { it !in collection } }))
+                val done = ordered.count { s -> s.slugs.all { it in collection } }
+                Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Sets", style = MaterialTheme.typography.titleMedium)
+                    Text("$done of ${ordered.size} done", style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.outline)
+                }
                 Text("Themed groups to complete. Each finished set is a badge on your profile.",
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
-                sets.forEach { SetCard(it, collection, onOpen) }
+                ordered.forEach { SetCard(it, collection, onOpen) }
             }
         }
     }
