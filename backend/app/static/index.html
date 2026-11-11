@@ -676,6 +676,7 @@
       <dt>Most active</dt><dd id="dex-active"></dd>
       <dt>Spotting tip</dt><dd id="dex-tip"></dd>
       <dt>Hotspots</dt><dd id="dex-hotspots"></dd>
+      <dt id="dex-sets-dt">Sets</dt><dd id="dex-sets"></dd>
       <dt>Size</dt><dd id="dex-size"></dd>
       <dt>Weight</dt><dd id="dex-weight"></dd>
       <dt>Fun facts</dt><dd id="dex-fact"></dd>
@@ -1777,6 +1778,8 @@ async function openDex(key, num, caught, stateCode = myState.code) {
   $("dex-active").textContent = d.active_time || "Unknown";
   $("dex-tip").textContent = d.spotting_tip || "—";
   $("dex-hotspots").textContent = d.hotspots.length ? d.hotspots.join(", ") : "—";
+  $("dex-sets").textContent = (d.sets || []).join(", ");
+  $("dex-sets-dt").hidden = $("dex-sets").hidden = !d.sets?.length;
   $("dex-size").textContent = d.size || "Unknown";
   $("dex-weight").textContent = d.weight || "Unknown";
   const facts = d.facts?.length ? d.facts : d.fun_fact ? [d.fun_fact] : [];

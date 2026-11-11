@@ -563,6 +563,12 @@ def state_outline(state: str):
     return FileResponse(path, media_type="application/json")
 
 
+def _sets_with(slug: str, code: str, db: Session) -> list[str]:
+    """Titles of the state's sets that include this animal."""
+    members = {m.species.slug for m in state_species(db, code)}
+    return [x.title for x in goals.sets_for(code, members) if slug in x.slugs]
+
+
 @app.get("/species/{key}/dex", response_model=DexOut)
 def get_dex_entry(key: str, state: str | None = Query(None), user: User | None = Depends(optional_user),
                   db: Session = Depends(get_db)):
@@ -600,7 +606,8 @@ def get_dex_entry(key: str, state: str | None = Query(None), user: User | None =
                   spotting_tip=tip(d.get("spotting_tip")),
                   safety=d.get("safety") or "none", safe_distance=d.get("safe_distance") or None,
                   safety_note=d.get("safety_note") or None,
-                  hotspots=dex.hotspots_for(s.slug, code), range=dex.range_for(s.slug, code),
+                  hotspots=dex.hotspots_for(s.slug, code), sets=_sets_with(s.slug, code, db),
+                  range=dex.range_for(s.slug, code),
                   season=dex.season_for(s.slug, code), captured=caught,
                   first_captured=first, times_captured=times)
 

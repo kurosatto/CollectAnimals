@@ -170,7 +170,11 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
                 val entryDex = if (info.species.any { it.slug == entry.slug }) dex
                     else state.states.firstOrNull { st -> st.species.any { it.slug == entry.slug } }?.fieldGuide ?: dex
                 val badge = state.collection[entry.slug]
-                DexEntryScreen(info.dexNumber(entry.slug), entry, badge, entryDex) { dexSlug = null }
+                // The sets in this state that include it (none for an animal from another state's list).
+                val entrySets = if (entryDex !== dex) emptyList() else
+                    state.sets.forState(state.stateCode, info.species.map { it.slug }.toSet()) { dex.details[it]?.safety }
+                        .filter { entry.slug in it.slugs }.map { it.title }
+                DexEntryScreen(info.dexNumber(entry.slug), entry, badge, entryDex, entrySets) { dexSlug = null }
             }
         }
         return
