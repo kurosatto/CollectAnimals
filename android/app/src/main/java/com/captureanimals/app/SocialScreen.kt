@@ -336,6 +336,7 @@ fun AccountDialog(state: UiState, vm: GameViewModel, onDismiss: () -> Unit) {
     var birthYear by rememberSaveable { mutableStateOf("") }
     var editServer by rememberSaveable { mutableStateOf(false) }
     var serverText by rememberSaveable { mutableStateOf(Online.manualUrl ?: "") }
+    var sureOut by remember { mutableStateOf(false) }
     // Close once signed in.
     LaunchedEffect(acct?.username) { if (acct != null && password.isNotEmpty()) onDismiss() }
 
@@ -351,7 +352,12 @@ fun AccountDialog(state: UiState, vm: GameViewModel, onDismiss: () -> Unit) {
         }
     }, dismissButton = {
         if (acct == null) TextButton(onClick = onDismiss) { Text("Cancel") }
-        else TextButton(onClick = { vm.signOut(); onDismiss() }) { Text("Log out") }
+        // "Log out" sits next to "Done": the first tap only asks, the second signs out
+        // (getting back in needs the password).
+        else TextButton(onClick = { if (sureOut) { vm.signOut(); onDismiss() } else sureOut = true }) {
+            Text(if (sureOut) "Tap again to log out" else "Log out",
+                color = if (sureOut) MaterialTheme.colorScheme.error else androidx.compose.ui.graphics.Color.Unspecified)
+        }
     }, title = {
         Row(verticalAlignment = Alignment.CenterVertically) {
             acct?.let { Avatar(it.avatar, Modifier.size(40.dp)); Spacer(Modifier.size(10.dp)) }

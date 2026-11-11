@@ -458,6 +458,8 @@
   header .head-right, #who:not(.hidden) { flex-wrap:nowrap; gap:4px 10px; min-width:0; }
   header button.link { font-family:var(--pixel); font-size:.95rem; font-weight:500; display:inline-flex; align-items:center; gap:5px; white-space:nowrap; }
   header button.link .pi { margin:0; width:20px; height:20px; }
+  /* Finger-sized taps on phones: the icons stay 20 px, the button around them grows. */
+  header button.link { min-height:36px; min-width:32px; justify-content:center; padding:0 4px; }
   #username { min-width:0; max-width:34vw; overflow:hidden; }
   #username .avatar.small { width:22px; height:22px; }
   #my-state .st-short { display:none; }
@@ -824,7 +826,11 @@ $("auth-form").onsubmit = async (e) => {
   } catch (err) { $("auth-error").textContent = err.message; }
 };
 
-$("logout").onclick = async () => { await pushUnsubscribe(); setToken(null); };
+// One stray tap shouldn't sign a kid out (getting back in needs the password).
+$("logout").onclick = async () => {
+  if (!confirm("Log out? You'll need your password to log back in.")) return;
+  await pushUnsubscribe(); setToken(null);
+};
 $("username").onclick = () => openProfile($("username").textContent);
 $("username").title = "Your profile and picture";
 
