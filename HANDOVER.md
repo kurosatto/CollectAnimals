@@ -2,7 +2,7 @@
 
 Read this first, then `README.md` (setup, API behaviour, Android build). Where
 they disagree, this file is newer. Written 2026-10-19; sections 3, 4, 7 and 8
-brought up to date on 2026-11-11 (release 0.63).
+brought up to date on 2026-11-11 (release 0.64).
 
 ## 1. What the product is
 
@@ -43,6 +43,7 @@ seasons in the habitat, states unlocked by where your photos were taken.
 | `ml/` | `fetch_inat.py` (iNaturalist photos), `train.py`, `predict.py`, `export_onnx.py` (Android), `build_ranges/hotspots/seasons/states.py` (map data) |
 | `species/states.json` | The 50 states: code, name, species CSV, optional outline/ranges/hotspots/places/seasons/dex, bounds, grid, `utc_offset`, `inat_place_id` |
 | `species/<state>_100.csv`, `details.csv`, `<state>_dex.csv` | Lists (slug, names, category, rarity), shared facts and safety columns, per-state text |
+| `species/habitats.csv`, `tools/make_where_to_find.py` | One hand-written habitat line per animal; the script joins it with each state's top parks (hotspots) into `<state>_dex.csv` "Where to find it" for every state except CA and NC (hand-written). Re-run after hotspots or species lists change, and add a habitat line for any new animal it reports |
 | `species/household.csv` | Pets and pests (dog, cat, rats...): recognized by name only, no badge |
 | `species/sets.json`, `events.json` | Sets/challenges data |
 | `species/sprites/` | Generated sprites, silhouettes, `anim/` frame sheets, `placeholder*.png` ("?" egg) |
@@ -218,7 +219,7 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
 
 ## 8. State of play (2026-11-11)
 
-- Release 0.63.0 (whole-game review rounds 1-15, 0.49-0.63). Recent work: Field Journal look (0.34), phone fit
+- Release 0.64.0 ("Where to find it" for all states, after review rounds 1-15, 0.49-0.63). Recent work: Field Journal look (0.34), phone fit
   and pixel icons instead of emojis (0.37), all animals redrawn with drawn-frame
   animations at 40 px (0.38-0.47), per-state painted habitat scenery (0.43-0.48),
   one long hard level per minigame with `tools/levelcheck` (0.46; check.js per game, leap.js for Branch Leap, claw.js for Claw Catch).
