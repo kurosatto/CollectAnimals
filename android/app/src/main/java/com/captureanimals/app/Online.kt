@@ -105,7 +105,7 @@ object Online {
     /** FastAPI errors: {"detail": "..."} or {"detail": [{"msg": ...}]} for validation. */
     private fun errorMessage(code: Int, text: String): String = runCatching {
         when (val d = JSONObject(text).get("detail")) {
-            is JSONArray -> (0 until d.length()).joinToString("; ") { d.getJSONObject(it).getString("msg") }
+            is JSONArray -> (0 until d.length()).joinToString(". ") { d.getJSONObject(it).getString("msg") }
             else -> d.toString()
         }
     }.getOrElse { if (code == 502 || code == 530) "The game server is offline right now" else "Server error ($code)" }

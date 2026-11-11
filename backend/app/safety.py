@@ -289,10 +289,15 @@ def resolve(body: ResolveIn, admin: User = Depends(admin_user), db: Session = De
 def _page(title: str, body: str) -> HTMLResponse:
     return HTMLResponse(f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>{title} · Capture Animals</title>
-<style>body{{font:16px/1.55 system-ui,sans-serif;max-width:720px;margin:0 auto;padding:16px;color:#1d2a1f;background:#f6f8f3}}
-h1{{font-size:1.5rem}}h2{{font-size:1.1rem;margin-top:1.6em}}input,button{{font:inherit;padding:8px 10px;margin:4px 0;
-width:100%;box-sizing:border-box}}button{{background:#b33;color:#fff;border:0;border-radius:6px;cursor:pointer}}
-a{{color:#2e7d32}}@media (prefers-color-scheme:dark){{body{{background:#141a15;color:#e3ebe2}}a{{color:#8fd694}}}}</style>
+<style>@font-face{{font-family:"Pixelify Sans";src:url(/vendor/fonts/pixelify.woff2) format("woff2");font-weight:400 700;font-display:swap}}
+@font-face{{font-family:"Space Grotesk";src:url(/vendor/fonts/spacegrotesk.woff2) format("woff2");font-weight:300 700;font-display:swap}}
+body{{font:16px/1.55 "Space Grotesk",system-ui,sans-serif;max-width:720px;margin:0 auto;padding:16px;color:#3a2c1c;background:#efe4c8}}
+h1,h2,button{{font-family:"Pixelify Sans",ui-monospace,monospace}}
+h1{{font-size:1.5rem;color:#5a3d22}}h2{{font-size:1.1rem;margin-top:1.6em}}input,button{{font:inherit;padding:8px 10px;margin:4px 0;
+width:100%;box-sizing:border-box}}input{{background:#fbf5e6;border:1px solid #d9c9a3;border-radius:6px;color:inherit}}
+button{{background:#b33;color:#fff;border:0;border-radius:6px;cursor:pointer;font-family:"Pixelify Sans",ui-monospace,monospace}}
+a{{color:#4d6b3a}}@media (prefers-color-scheme:dark){{body{{background:#211a12;color:#f0e4c8}}h1{{color:#f0e4c8}}
+input{{background:#2c2318;border-color:#4a3b28}}a{{color:#9cbf7c}}}}</style>
 </head><body>{body}</body></html>""")
 
 
