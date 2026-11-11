@@ -2,7 +2,7 @@
 
 Read this first, then `README.md` (setup, API behaviour, Android build). Where
 they disagree, this file is newer. Written 2026-10-19; sections 3, 4, 7 and 8
-brought up to date on 2026-11-11 (release 0.83).
+brought up to date on 2026-11-11 (release 0.84).
 
 ## 1. What the product is
 
@@ -219,7 +219,7 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
 
 ## 8. State of play (2026-11-11)
 
-- Release 0.83.0 (minigame cards 8 a row on computers instead of 4 huge ones; 0.82.0 Field Guide tiles roomier on tablets and computers so names fit; 0.81.0 profile says "N likes" instead of a ♥ glyph, like toasts drop it; 0.80.0 pixel heart icon (ui_ic_heart) on like buttons, web and Android, faded until liked; 0.79.0 pixel flag icon (ui_ic_flag) replaces the ⚑ glyph on Report buttons, flat comment buttons; 0.78.0 web photo album shows how many photos, like Android; 0.77.0 Field Guide entries list the minigames an animal can play, web; 0.76.0 log-in links wrap cleanly on phones; 0.75.0 friendlier photo error messages; 0.74.0 locked achievements list closest-to-done first; 0.73.0 owned shop skins say where to wear them; 0.72.0 Parks list gives park names the room; 0.71.0 Field Guide tiles show names on two lines; 0.70.0 habitat note says "It's fall, under a full moon." in whole sentences; 0.69.0 photo grids show names on two lines; 0.68.0 removing a friend asks first; 0.67.0 Field Guide entries name their sets; 0.66.0 Sets list nearest-to-done first; 0.65.0 more Field Guide sets for every state; 0.64.0 "Where to find it" for all states; review rounds 1-15 were 0.49-0.63). Recent work: Field Journal look (0.34), phone fit
+- Release 0.84.0 (photo grids 7 a row on computers instead of 4 giant photos; 0.83.0 minigame cards 8 a row on computers instead of 4 huge ones; 0.82.0 Field Guide tiles roomier on tablets and computers so names fit; 0.81.0 profile says "N likes" instead of a ♥ glyph, like toasts drop it; 0.80.0 pixel heart icon (ui_ic_heart) on like buttons, web and Android, faded until liked; 0.79.0 pixel flag icon (ui_ic_flag) replaces the ⚑ glyph on Report buttons, flat comment buttons; 0.78.0 web photo album shows how many photos, like Android; 0.77.0 Field Guide entries list the minigames an animal can play, web; 0.76.0 log-in links wrap cleanly on phones; 0.75.0 friendlier photo error messages; 0.74.0 locked achievements list closest-to-done first; 0.73.0 owned shop skins say where to wear them; 0.72.0 Parks list gives park names the room; 0.71.0 Field Guide tiles show names on two lines; 0.70.0 habitat note says "It's fall, under a full moon." in whole sentences; 0.69.0 photo grids show names on two lines; 0.68.0 removing a friend asks first; 0.67.0 Field Guide entries name their sets; 0.66.0 Sets list nearest-to-done first; 0.65.0 more Field Guide sets for every state; 0.64.0 "Where to find it" for all states; review rounds 1-15 were 0.49-0.63). Recent work: Field Journal look (0.34), phone fit
   and pixel icons instead of emojis (0.37), all animals redrawn with drawn-frame
   animations at 40 px (0.38-0.47), per-state painted habitat scenery (0.43-0.48),
   one long hard level per minigame with `tools/levelcheck` (0.46; check.js per game, leap.js for Branch Leap, claw.js for Claw Catch).

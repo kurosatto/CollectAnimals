@@ -318,6 +318,8 @@
   .album-head { display:flex; align-items:center; gap:10px; }
   #username { display:inline-flex; align-items:center; gap:6px; }
   .photos.compact { grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; }
+  /* Tablets and computers: more, smaller photos a row instead of four giant ones. */
+  @media (min-width:700px) { .photos.compact { grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); } }
   .photos.compact .photo { border-radius:8px; cursor:pointer; }
   .photos.compact .meta { padding:3px 5px; gap:0; }
   /* Names get two lines (phones fit 4 photos a row, so one line cut most names short). */
