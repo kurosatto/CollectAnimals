@@ -634,6 +634,7 @@
     <div class="card off" data-tab="photos">
       <h2>My photos</h2>
       <p class="muted" style="margin-top:0">Your album: one photo for each animal you captured.</p>
+      <div class="seg" id="album-seg" style="margin:0 0 12px"></div>
       <div id="my-photos" class="photos compact"></div>
     </div>
     <div class="card off" data-tab="games">
@@ -1989,14 +1990,33 @@ async function deletePhoto(id) {
   loadCollection(); loadFeed(); loadMyPhotos();
 }
 
+// Album order: newest first (like the app's gallery), best photo score, or most liked.
+const ALBUM_SORTS = [
+  ["Newest", (a, b) => new Date(b.caught_at) - new Date(a.caught_at)],
+  ["Best photos", (a, b) => (b.stars ?? 0) - (a.stars ?? 0) || (b.score ?? -1) - (a.score ?? -1)],
+  ["Most liked", (a, b) => b.like_count - a.like_count || new Date(b.caught_at) - new Date(a.caught_at)],
+];
+let albumPhotos = [], albumSort = 0;
 async function loadMyPhotos() {
   const grid = $("my-photos");
   try {
-    const a = await api("/me/album");
-    grid.innerHTML = "";
-    if (!a.photos.length) grid.append(el("p", "muted", "No photos yet. Capture an animal to start your album."));
-    a.photos.forEach((p) => grid.append(photoCard(p, { compact: true })));
+    albumPhotos = (await api("/me/album")).photos;
+    drawAlbum();
   } catch (err) { grid.textContent = err.message; }
+}
+function drawAlbum() {
+  const grid = $("my-photos"), seg = $("album-seg");
+  seg.innerHTML = "";
+  seg.classList.toggle("hidden", albumPhotos.length < 2);
+  ALBUM_SORTS.forEach(([label], i) => {
+    const b = el("button", i === albumSort ? "on" : "", label);
+    b.type = "button";
+    b.onclick = () => { albumSort = i; drawAlbum(); };
+    seg.append(b);
+  });
+  grid.innerHTML = "";
+  if (!albumPhotos.length) grid.append(el("p", "muted", "No photos yet. Capture an animal to start your album."));
+  [...albumPhotos].sort(ALBUM_SORTS[albumSort][1]).forEach((p) => grid.append(photoCard(p, { compact: true })));
 }
 
 // One section at a time, picked from the tab bar (bottom on phones, top on wide screens).
