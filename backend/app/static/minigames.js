@@ -777,7 +777,12 @@ function mgGame(list, g) {
               mgEl("span", null, rec.pct >= 100 ? `✓ Best ${rec.points || rec.got} points` : rec.pct ? `Best ${rec.pct}%${rec.points ? `, ${rec.points} points` : ""}` : "New"));
     level.append(lb);
     play.onclick = () => mgStart(g, pick);
-    foot.append(name, play);
+    // Practice: the same level, but a bump sends you back a few seconds instead of to
+    // the start. No points, coins or bests, like practice mode in Geometry Dash.
+    const practice = mgEl("button", "mg-back", "Practice");
+    practice.title = "Learn the hard parts: a bump sends you back a few seconds. No points or coins.";
+    practice.onclick = () => mgStart(g, pick, true);
+    foot.append(name, practice, play);
     showStats(); paint();
     const board = mgEl("div", "mg-board");
     mgBoard(board, mgLevelKey(g.key), mgStore.get("board") || "all");
@@ -791,13 +796,13 @@ function mgImg(cache, url) {
   return cache[url];
 }
 
-function mgStart(g, s) {
-  mg.game = g; mg.species = s; mg.tries = 0;
+function mgStart(g, s, practice = false) {
+  mg.game = g; mg.species = s; mg.tries = 0; mg.practice = practice;
   mgImg(mg.imgs, `/sprites/${encodeURIComponent(s.slug)}.png`);
   mgImg(mg.sheets, `/sprites/anim/${encodeURIComponent(s.slug)}.png`);
   document.getElementById("mg-list").classList.add("hidden");
   document.getElementById("mg-stage").classList.remove("hidden");
-  document.getElementById("mg-playing").textContent = `Playing as ${s.common_name}`;
+  document.getElementById("mg-playing").textContent = `${practice ? "Practising" : "Playing"} as ${s.common_name}`;
   mgFull(true);
   mgReset("ready");
   mgWake();
@@ -1302,6 +1307,33 @@ function mgReset(mode) {
              ang: -Math.PI / 2 + MG_SIDE / 2, dir: 0, missed: 0, trail: [], why: null };
   const P = MG_MORE[g.key];
   if (P) { mg.taps = []; mg.run.py = MG_H / 2; P.init(mg.run); }
+  mg.flags = [];
+}
+
+// ---- Practice ----------------------------------------------------------------------
+// While practising, the try is copied every couple of seconds (a "flag"). A bump goes
+// back to a flag from at least a second and a half before it, so there's always a
+// run-up and never a flag you can't get out of.
+const MG_FLAG_EVERY = 2, MG_FLAG_RUNUP = 1.5;
+function mgSnap(r) {
+  const { lvl, rec, music, ...rest } = r;
+  rest.fx = [];
+  try { return Object.assign(structuredClone(rest), { lvl, rec, music: null }); } catch { return null; }
+}
+function mgFlag(r) {
+  const last = mg.flags[mg.flags.length - 1];
+  if (last && r.rt - last.rt < MG_FLAG_EVERY) return;
+  const snap = mgSnap(r);
+  if (snap) { mg.flags.push(snap); if (mg.flags.length > 6) mg.flags.shift(); }
+}
+const mgFlagFor = (r) => [...mg.flags].reverse().find((f) => f.rt <= r.rt - MG_FLAG_RUNUP) || mg.flags[0];
+function mgBackToFlag(r) {
+  const flag = mgFlagFor(r), run = flag && mgSnap(flag);
+  if (!run) return false;
+  mg.flags = mg.flags.filter((f) => f.rt <= flag.rt);
+  run.mode = "play"; run.acc = 0; run.held = true; run.fresh = false; run.why = null; run.missed = 0;
+  mg.run = run; mg.taps = []; mg.tries = (mg.tries || 1) + 1;
+  return true;
 }
 
 // A press: flap, jump or start swimming up. Shared by touch, keys and the level checker.
@@ -1319,7 +1351,10 @@ function mgTap() {
   if (!r) return;
   if (r.mode === "ready" || r.mode === "paused") { r.mode = "play"; mg.last = 0; mgMusicStart(r); mgWake(); }
   else if (r.mode === "over" || r.mode === "done") {
-    if (performance.now() - r.overAt > (r.mode === "done" ? 900 : 350)) { mgReset("play"); mgMusicStart(mg.run); mgWake(); }
+    if (performance.now() - r.overAt > (r.mode === "done" ? 900 : 350)) {
+      if (!(mg.practice && r.mode === "over" && mgBackToFlag(r))) mgReset("play");
+      mgMusicStart(mg.run); mgWake();
+    }
   }
 }
 
@@ -1482,6 +1517,7 @@ function mgStep(r, dt) {
   r.acc += dt * r.p.tempo;
   while (r.acc >= MG_DT && r.mode === "play") {
     r.acc -= MG_DT;
+    if (mg.practice) mgFlag(r);
     mgPress(r, key, mg.down);
     r.dir = mg.down ? mg.dir || 0 : 0;
     const P = MG_MORE[key];
@@ -1528,6 +1564,15 @@ function mgEnd(r, cleared) {
   r.mode = cleared ? "done" : "over"; r.overAt = performance.now(); r.pct = pct; mg.down = false;
   mgMusicStop(r);
   mgSfx(cleared ? "done" : "bump");
+  if (mg.practice) {  // nothing is kept or sent: practice is just for learning the level
+    if (!cleared) {
+      const [x0, y0, x1, y1] = mgBox(mg.game.key, r);
+      for (let i = 0; i < 6; i++) r.fx.push({ kind: "star", x: (x0 + x1) / 2, y: (y0 + y1) / 2, vx: (i - 2.5) * 16, vy: -30 - (i % 2) * 20, life: .8 });
+      const flag = mgFlagFor(r);
+      r.flagPct = flag ? Math.floor(flag.dist / flag.len * 100) : 0;
+    }
+    return;
+  }
   const rec = r.rec;
   r.newBest = pct > rec.pct || (cleared && r.score > rec.got);
   if (pct > rec.pct) { rec.pct = pct; mgStore.set(rec.k + ".pct", pct); }
@@ -2157,6 +2202,7 @@ function mgHud(c, r) {
   c.fillStyle = "rgba(0,0,0,.35)"; c.fillRect(60, 7, bw, 6);
   c.fillStyle = "#9be59b"; c.fillRect(60, 7, Math.round(bw * p), 6);
   if (r.rec.pct) { c.fillStyle = "#ffd28a"; c.fillRect(60 + Math.round(bw * r.rec.pct / 100) - 1, 5, 2, 10); }
+  if (mg.practice) for (const f of mg.flags || []) { c.fillStyle = "#8fd3ff"; c.fillRect(60 + Math.round(bw * Math.min(1, f.dist / f.len)), 9, 2, 2); }
   c.textAlign = "left"; c.font = "bold 11px system-ui, sans-serif";
   const food = g.key === "pool" ? mgFood(mg.species.slug)[1] : "";
   const word = g.key === "claw" ? mgPrey(mg.species.slug) : food;
@@ -2179,11 +2225,17 @@ function mgHud(c, r) {
     c.fillStyle = "rgba(0,0,0,.35)"; c.fillRect(MG_W - 14 - c.measureText(sp).width, 18, c.measureText(sp).width + 10, 16);
     c.fillStyle = r.p.tempo > 1 ? "#ffd28a" : "#cfe"; c.fillText(sp, MG_W - 9, 30);
   }
-  c.font = "bold 10px system-ui, sans-serif"; chip(`Try ${mg.tries || 1}`, 8, false);
+  c.font = "bold 10px system-ui, sans-serif"; chip(mg.practice ? "Practice" : `Try ${mg.tries || 1}`, 8, false);
   const lvl = r.lvl;
-  if (r.mode === "ready") mgPanel(c, [[lvl.name, 14], [g.tip, 11], ["The course is the same every time. Learn it!", 10, "#cfe"], ["Tap to start", 11, "#ffd28a"]], top);
+  if (r.mode === "ready" && mg.practice) mgPanel(c, [[`${lvl.name}: practice`, 14], ["A bump sends you back a few seconds, not to the start.", 10, "#cfe"], ["No points or coins while practising.", 10, "#cfe"], ["Tap to start", 11, "#ffd28a"]], top);
+  else if (r.mode === "ready") mgPanel(c, [[lvl.name, 14], [g.tip, 11], ["The course is the same every time. Learn it!", 10, "#cfe"], ["Tap to start", 11, "#ffd28a"]], top);
   else if (r.mode === "paused") mgPanel(c, [["Paused", 15], ["Tap to keep going", 11, "#ffd28a"]], top);
-  else if (r.mode === "over") {
+  else if (r.mode === "over" && mg.practice) {
+    const why = (P && P.why && P.why[r.why]) || (r.why === "bee" ? "Ouch, a bee!" : r.why === "missed" ? "Three got away!" : "Bump!");
+    mgPanel(c, [[why, 15], [`Back to your flag at ${r.flagPct || 0}%`, 12, "#8fd3ff"], ["Tap to keep practising", 10, "#cfe"]], top);
+  } else if (r.mode === "done" && mg.practice) {
+    mgPanel(c, [["Practice complete!", 15, "#9be59b"], ["Now play it for real to earn points.", 11, "#ffd28a"], ["Tap to practise from the start", 10, "#cfe"]], top);
+  } else if (r.mode === "over") {
     const lines = [[(P && P.why && P.why[r.why]) || (r.why === "bee" ? "Ouch, a bee!" : r.why === "missed" ? "Three got away!" : "Bump!"), 15], [`You made it ${r.pct}% of the way`, 12, "#ffd28a"]];
     if (r.points) lines.push([`${r.points} points${r.coins ? `  +${r.coins} coins` : ""}`, 11, "#ffd28a"]);
     lines.push([r.newBest ? "That's your best yet!" : `Best: ${r.rec.pct}%`, 11, r.newBest ? "#9be59b" : "#fff"]);

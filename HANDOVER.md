@@ -222,6 +222,7 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
   and pixel icons instead of emojis (0.37), all animals redrawn with drawn-frame
   animations at 40 px (0.38-0.47), per-state painted habitat scenery (0.43-0.48),
   one long hard level per minigame with `tools/levelcheck` (0.46; check.js per game, leap.js for Branch Leap, claw.js for Claw Catch).
+  Practice mode (0.55): a "Practice" button per game; flags every 2 s, a bump goes back to one at least 1.5 s earlier; no points, coins or bests (mgFlag/mgBackToFlag in minigames.js).
 - Google Play: developer account verified; listing doc and reviewer account exist;
   closed test needs 12+ testers for 14 days.
 - **kuro's taste** (keep to it): kid-friendly; realistic field-guide pixel art,
