@@ -2,7 +2,7 @@
 
 Read this first, then `README.md` (setup, API behaviour, Android build). Where
 they disagree, this file is newer. Written 2026-10-19; sections 3, 4, 7 and 8
-brought up to date on 2026-11-11 (release 0.50).
+brought up to date on 2026-11-11 (release 0.57).
 
 ## 1. What the product is
 
@@ -218,11 +218,18 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
 
 ## 8. State of play (2026-11-11)
 
-- Release 0.50.0 (review rounds 1-2). Recent work: Field Journal look (0.34), phone fit
+- Release 0.57.0 (whole-game review rounds 1-9, 0.49-0.57). Recent work: Field Journal look (0.34), phone fit
   and pixel icons instead of emojis (0.37), all animals redrawn with drawn-frame
   animations at 40 px (0.38-0.47), per-state painted habitat scenery (0.43-0.48),
   one long hard level per minigame with `tools/levelcheck` (0.46; check.js per game, leap.js for Branch Leap, claw.js for Claw Catch).
   Practice mode (0.55): a "Practice" button per game; flags every 2 s, a bump goes back to one at least 1.5 s earlier; no points, coins or bests (mgFlag/mgBackToFlag in minigames.js).
+- Review rounds 1-9 (0.49-0.57), in short: phone layout fixes, a/an grammar
+  (`app/words.py`), plain-word validation errors (`friendly_error`, no input echo),
+  account privacy switches, habitat turn-taking, Field Guide order and "First
+  captured" date, policy pages in the Field Journal look (privacy policy now names
+  Oracle Cloud), photos under 32 px refused, Practice mode, `mgToast` instead of
+  `alert()` in shared JS (alert() does nothing in the Android WebView), and the
+  app's WebView pages (assets/*.html) in Field Journal colours and fonts.
 - Google Play: developer account verified; listing doc and reviewer account exist;
   closed test needs 12+ testers for 14 days.
 - **kuro's taste** (keep to it): kid-friendly; realistic field-guide pixel art,
@@ -233,7 +240,7 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
 - Android 0.34+ hasn't been checked on a real phone; check layouts at 360 px.
 - Testing the web app without the model: run the backend with a fake classifier
   (see `backend/tests/test_api.py` `FakeClassifier`) and drive it with Playwright at
-  360x740; that is how review rounds 1-2 found the phone layout bugs.
+  360x740; that is how the review rounds found the phone layout bugs.
 
 ## 8b. "What was it?" (player labels for retraining)
 
@@ -259,6 +266,9 @@ counts for ranking, common names from the CC BY 4.0 common-species dataset).
 - The cloud sandbox can't delete remote branches (the git proxy blocks ref
   deletes); the PC session can.
 - Android can't be compiled in the cloud. Push and let CI build it.
+- The Android WebViews (Habitat.kt, Minigames.kt, ParksMap.kt) have no
+  WebChromeClient: `alert()`, `confirm()` and `prompt()` silently do nothing there.
+  Shared JS (habitat.js, minigames.js, decor.js) must show messages in the page.
 - The Android photo picker strips GPS, so gallery picks usually have no place
   unless the player sets one.
 - Deleting your album photo un-catches the animal (badge, captures and files
