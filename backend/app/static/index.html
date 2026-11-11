@@ -184,6 +184,7 @@
   .seg { display:flex; gap:6px; flex-wrap:wrap; margin-top:12px; }
   .seg button { background:none; color:var(--ink); border:1px solid var(--line); padding:4px 10px; font-size:.85rem; }
   .seg select { padding:4px 8px; font-size:.85rem; }
+  #guide-seg { margin:0 0 12px; }
   .seg button.on { background:var(--accent); color:#fff; border-color:var(--accent); }
   .dex-photos { padding:0 16px 16px; }
   .dex-photos h3 { margin:16px 0 0; font-size:1rem; }
@@ -622,6 +623,7 @@
     <div class="card off" data-tab="dex">
       <h2>Field Guide <span id="progress" class="muted"></span></h2>
       <button class="parks-open hidden" id="parks-open" type="button"><img class="ic" src="/sprites/ui_tab_parks.png" alt=""> Parks to find animals</button>
+      <div class="seg" id="guide-seg"></div>
       <div id="grid" class="grid guide"></div>
     </div>
     <div class="card off" data-tab="dex">
@@ -1355,12 +1357,35 @@ async function loadCollection() {
   entries.forEach((e, i) => { dexNumbers[e.species.number] = i + 1; });
   loadHotspots();
   $("progress").textContent = `${c.caught} / ${c.total}`;
+  guideEntries = entries;
+  drawGuide();
+}
+
+// Field Guide kind buttons (All, Birds, Mammals, ...), like the app's chips. The
+// numbers stay the full Field Guide order whichever kind is showing.
+const KIND_LABEL = { bird: "Birds", mammal: "Mammals", reptile: "Reptiles", amphibian: "Amphibians",
+  invertebrate: "Bugs", marine: "Ocean animals", fish: "Fish" };
+let guideEntries = [], guideKind = "all";
+function drawGuide() {
+  const kinds = [...new Set(guideEntries.map((e) => e.species.category).filter(Boolean))];
+  if (guideKind !== "all" && !kinds.includes(guideKind)) guideKind = "all";
+  const seg = $("guide-seg");
+  seg.innerHTML = "";
+  seg.classList.toggle("hidden", kinds.length < 2);
+  for (const k of ["all", ...kinds]) {
+    const of = k === "all" ? guideEntries : guideEntries.filter((e) => e.species.category === k);
+    const b = el("button", k === guideKind ? "on" : "",
+      `${k === "all" ? "All" : KIND_LABEL[k] || k[0].toUpperCase() + k.slice(1)} ${of.filter((e) => e.caught).length}/${of.length}`);
+    b.type = "button";
+    b.onclick = () => { guideKind = k; drawGuide(); };
+    seg.append(b);
+  }
   $("grid").innerHTML = "";
-  fillGuide($("grid"), entries);
+  fillGuide($("grid"), guideEntries, null, guideKind);
 }
 
 // The Field Guide grid: yours, or a friend's (`owner`, shown in their own state).
-function fillGuide(grid, entries, owner = null) {
+function fillGuide(grid, entries, owner = null, kind = "all") {
   // Captured first, then the rest. Inside each group, common to legendary with each
   // rarity heading once; among the ones not captured yet, animals seen this month
   // come before ones that aren't around this time of year. The numbers keep the
@@ -1374,7 +1399,7 @@ function fillGuide(grid, entries, owner = null) {
     GROUPS.length = 1;
     if (!entries.some((e) => e.caught)) grid.append(el("p", "muted", `${owner.username} hasn't captured any animals yet.`));
   }
-  const numbered = entries.map((e, i) => [e, i]);
+  const numbered = entries.map((e, i) => [e, i]).filter(([e]) => kind === "all" || e.species.category === kind);
   const rank = ([e]) => RARITY_ORDER.indexOf(e.species.rarity) * 2 + (!e.caught && e.in_season === false ? 1 : 0);
   for (const [title, keep] of GROUPS) {
     const list = numbered.filter(([e]) => keep(e)).sort((a, b) => rank(a) - rank(b));
