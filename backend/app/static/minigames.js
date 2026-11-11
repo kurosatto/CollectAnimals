@@ -182,7 +182,9 @@ function mgShopBar(list) {
   for (const it of d.items.filter((i) => shelfOf(i) === tab)) {
     const card = mgEl("div", "mg-item" + (it.owned ? " owned" : ""));
     const name = mgEl("span", "mg-name");
-    name.append(mgEl("b", null, it.name), mgEl("span", "muted", it.kind === "skin" ? "Recolors your animal in the games" : it.note));
+    name.append(mgEl("b", null, it.name), mgEl("span", "muted", it.kind !== "skin" ? it.note
+      // Owned skins are worn from the look buttons under the animal picker; say where.
+      : it.owned ? "Wear it from a game's animal picker" : "Recolors your animal in the games"));
     card.append(picOf(it), name);
     let b;
     if (!it.owned) {
