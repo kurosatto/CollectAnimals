@@ -147,7 +147,8 @@
   .comments { display:grid; gap:6px; font-size:.85rem; padding:6px 0; min-width:0; }
   .comments .c { line-height:1.35; overflow-wrap:anywhere; }
   .comments .c .when { color:var(--muted); font-size:.75rem; margin-left:4px; }
-  .comments .c .x { background:none; border:none; color:var(--muted); padding:0 4px; font-size:.8rem; }
+  .comments .c .x { background:none; border:none; color:var(--muted); padding:0 4px; font-size:.8rem; box-shadow:none; }
+  .comments .c .x .pi { margin:0; opacity:.6; }
   .flagged { color:#c0392b; font-size:.8rem; }
   #report form label { display:block; margin:4px 0; }
   #report textarea { width:100%; box-sizing:border-box; min-height:60px; font:inherit; }
@@ -534,7 +535,7 @@
     <button class="link hidden" id="install">Install app</button>
     <div id="who" class="hidden"><button class="link" id="username"></button>
       <button class="link" id="my-state" title="Your states: look at any state you have unlocked, or pick your main state"><img class="pi" src="/sprites/ui_ic_pin.png" alt=""></button>
-      <button class="link hidden" id="reports-open" title="Reports from players" aria-label="Reports">⚑<span class="lbl"> Reports</span></button>
+      <button class="link hidden" id="reports-open" title="Reports from players" aria-label="Reports"><img class="pi" src="/sprites/ui_ic_flag.png" alt=""><span class="lbl"> Reports</span></button>
       <button class="link" id="logout" title="Log out" aria-label="Log out"><img class="pi" src="/sprites/ui_ic_logout.png" alt=""><span class="lbl">Log out</span></button></div>
     </div>
   </header>
@@ -1983,7 +1984,7 @@ function commentsPanel(p, onCount) {
       d.append(x);
     }
     if (!c.is_mine) {
-      const f = el("button", "x", "⚑"); f.type = "button"; f.title = "Report comment";
+      const f = el("button", "x"); f.append(ico("flag")); f.setAttribute("aria-label", "Report comment"); f.type = "button"; f.title = "Report comment";
       f.onclick = () => openReport({ comment_id: c.id }, "this comment");
       d.append(f);
     }
@@ -2353,7 +2354,7 @@ async function accountSection(box) {
 
 let reportTarget = null;
 function reportButton(target, label) {
-  const b = el("button", "like ghost", "⚑ Report");
+  const b = elIco("button", "like ghost", "flag", "Report");
   b.type = "button"; b.title = `Report ${label}`;
   b.onclick = (e) => { e.stopPropagation(); openReport(target, label); };
   return b;
