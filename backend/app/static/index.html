@@ -629,7 +629,7 @@
       <div id="grid" class="grid guide"></div>
     </div>
     <div class="card off" data-tab="dex">
-      <h2>Sets</h2>
+      <h2>Sets <span id="sets-done" class="muted"></span></h2>
       <p class="muted" style="margin-top:0">Themed groups to complete. Each finished set is a badge on your profile.</p>
       <div id="sets" class="sets"></div>
     </div>
@@ -1332,7 +1332,13 @@ async function loadSets() {
   try {
     const r = await api(`/me/sets?state=${myState.code}`);
     box.innerHTML = "";
-    for (const st of r.sets) {
+    // Closest to done first, sets not started next, finished ones (badges) last.
+    const rank = (st) => st.complete ? 2 : st.caught ? 0 : 1;
+    const sets = [...r.sets].sort((a, b) => rank(a) - rank(b)
+      || (b.caught / b.total) - (a.caught / a.total) || (a.total - a.caught) - (b.total - b.caught));
+    const done = sets.filter((st) => st.complete).length;
+    $("sets-done").textContent = sets.length ? `${done} of ${sets.length} done` : "";
+    for (const st of sets) {
       const card = el("div", "set" + (st.complete ? " complete" : ""));
       const head = el("div", "set-head");
       head.append(st.complete ? elIco("span", "", "trophy", st.title) : el("span", "", st.title), el("span", "muted", `${st.caught} / ${st.total}`));
