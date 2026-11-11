@@ -655,7 +655,7 @@ def _read_image(data: bytes) -> Image.Image:
     except Image.DecompressionBombError:  # Pillow's own check, for sizes far past ours
         raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "This photo is too big. Try a smaller one.")
     except (UnidentifiedImageError, OSError):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Not a valid image")
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "We couldn't open this photo. Try a JPG or PNG picture.")
     return im
 
 
@@ -717,7 +717,7 @@ def _crop(image: Image.Image, x: float | None, y: float | None,
     left, top = round(x * W), round(y * H)
     right, bottom = min(W, round((x + w) * W)), min(H, round((y + h) * H))
     if right - left < 32 or bottom - top < 32:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Cropped area is too small")
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "The crop box is too small to see the animal. Make it bigger.")
     if (left, top, right, bottom) == (0, 0, W, H):
         return image
     return image.crop((left, top, right, bottom))
