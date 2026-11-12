@@ -129,20 +129,28 @@ def check_place(place_id: int, name: str) -> None:
 
 
 def resolve_taxon(scientific_name: str) -> dict:
-    """Map a scientific name to an iNat taxon (handles synonyms/renames)."""
+    """Map a scientific name to an iNat taxon (handles synonyms/renames).
+
+    Only an exact name, or a search hit whose matched synonym is exactly this
+    name, is accepted. The plain top hit is not: iNaturalist's text search also
+    matches common names in other languages, and once returned white-tailed
+    deer for "Dama dama" and a plant (Chelidonium majus) for "Glis glis"."""
     # A one-word name ("Ariolimax") is a genus: all its species count as one class.
     rank = "genus" if len(scientific_name.split()) == 1 else "species"
-    data = api_get("/taxa", q=scientific_name, rank=rank, is_active="true", per_page=10)
+    want = scientific_name.lower()
+    data = api_get("/taxa", q=scientific_name, rank=rank, is_active="true", per_page=30)
     results = data["results"]
-    if not results:
-        raise LookupError(f"no iNaturalist taxon for {scientific_name!r}")
     for taxon in results:
-        if taxon["name"].lower() == scientific_name.lower():
+        if taxon["name"].lower() == want:
             return taxon
     # The name may have been reclassified (e.g. Accipiter -> Astur); iNat's
-    # search matches synonyms, so the top hit is the current name.
-    print(f"  note: {scientific_name!r} resolved to {results[0]['name']!r}")
-    return results[0]
+    # search matches synonyms and says which term it matched.
+    for taxon in results:
+        if (taxon.get("matched_term") or "").lower() == want:
+            print(f"  note: {scientific_name!r} resolved to {taxon['name']!r}")
+            return taxon
+    raise LookupError(f"no iNaturalist taxon named {scientific_name!r} "
+                      f"(search found {[t['name'] for t in results[:5]]})")
 
 
 def photo_url(photo: dict, size: str) -> str:
