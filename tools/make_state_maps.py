@@ -3,6 +3,7 @@
     pip install shapely numpy pillow playwright
     python tools/make_state_maps.py            # all 50 states
     python tools/make_state_maps.py --only MI CA
+    python tools/make_state_maps.py --europe   # the European countries (species/europe.json)
 
 For every state in species/states.json it writes
 
@@ -61,7 +62,15 @@ SEAS = [("Pacific Ocean", -125.5, 36), ("Pacific Ocean", -158.5, 19.4), ("Gulf o
         ("Bering Sea", -172, 58), ("Arctic Ocean", -155, 72), ("Gulf of Mexico", -89.5, 27.5),
         ("Atlantic Ocean", -72.5, 38), ("Atlantic Ocean", -79, 31), ("Gulf of Maine", -68.6, 43.4), ("Atlantic Ocean", -67.5, 42.4),
         ("Atlantic Ocean", -80, 25.6), ("Chesapeake Bay", -76.2, 37.5), ("Long Island Sound", -72.9, 41.1),
-        ("Puget Sound", -122.45, 47.7)]
+        ("Puget Sound", -122.45, 47.7),
+        # Europe and Turkey (python tools/make_state_maps.py --europe)
+        ("North Sea", 3.5, 56), ("Baltic Sea", 19.5, 56.5), ("Gulf of Bothnia", 20.5, 63), ("Gulf of Finland", 26, 59.8),
+        ("Norwegian Sea", 4, 66), ("Barents Sea", 38, 71), ("White Sea", 38, 65.6), ("Atlantic Ocean", -12, 46),
+        ("Bay of Biscay", -4.5, 45.3), ("Celtic Sea", -7.5, 50.5), ("Irish Sea", -5, 53.8), ("English Channel", -2.5, 50.1),
+        ("Mediterranean Sea", 5, 38.5), ("Mediterranean Sea", 18, 34.6), ("Tyrrhenian Sea", 11.5, 40), ("Adriatic Sea", 15.5, 43),
+        ("Ionian Sea", 18.5, 38), ("Aegean Sea", 25, 38.8), ("Ligurian Sea", 8.8, 43.6), ("Balearic Sea", 2.5, 40.5),
+        ("Alboran Sea", -3.5, 36.1), ("Black Sea", 34, 43.3), ("Sea of Azov", 36.5, 46.2), ("Sea of Marmara", 28.2, 40.7),
+        ("Caspian Sea", 50.5, 43.5), ("Levantine Sea", 31, 34.4), ("Greenland Sea", -15, 70)]
 
 
 def fetch(url: str, path: Path) -> Path:
@@ -316,9 +325,11 @@ def draw_state(code, name, geoms, data, cache: Path):
     pl.take(cx0, cy0, cx1, cy1)
     rose_x, rose_y = (cx0 + cx1) / 2, cy0 + 100
     km = f.km_per_px()
-    target_mi = 170 * km / 1.609
-    nice = min((1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500), key=lambda v: abs(v - target_mi))
-    bar = nice * 1.609 / km
+    unit = data.get("unit", "mi")
+    per = 1.609 if unit == "mi" else 1.0
+    target = 170 * km / per
+    nice = min((1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000), key=lambda v: abs(v - target))
+    bar = nice * per / km
 
     # Towns: the capital plus the biggest few.
     towns = [t for t in data["places"] if t["state"] == name and g.buffer(0.02).contains(t["pt"])]
@@ -395,7 +406,7 @@ def draw_state(code, name, geoms, data, cache: Path):
 <g transform="translate({rose_x - bar / 2:.1f},{rose_y + 90:.0f})" class="scale">
   <rect width="{bar / 2:.1f}" height="9" class="sd"/><rect x="{bar / 2:.1f}" width="{bar / 2:.1f}" height="9" class="sl"/>
   <text x="0" y="32" text-anchor="start" font-size="20">0</text>
-  <text x="{bar:.1f}" y="32" text-anchor="end" font-size="20">{nice} mi</text>
+  <text x="{bar:.1f}" y="32" text-anchor="end" font-size="20">{nice} {unit}</text>
 </g>'''
 
     # Graticule every 1, 2 or 5 degrees.
@@ -473,9 +484,75 @@ def main():
     ap.add_argument("--only", nargs="*")
     ap.add_argument("--cache", default=str(Path.home() / ".cache" / "capture-animals-maps"))
     ap.add_argument("--svg", help="also save the SVGs in this folder")
+    ap.add_argument("--europe", action="store_true", help="the countries in species/europe.json instead of the US states")
     args = ap.parse_args()
     cache = Path(args.cache)
-    sj = json.loads((SPECIES / "states.json").read_text(encoding="utf-8"))["states"]
+    if args.europe:
+        sj, geoms, data = europe(cache)
+    else:
+        sj = json.loads((SPECIES / "states.json").read_text(encoding="utf-8"))["states"]
+        geoms, data = usa(cache)
+    render(sj, geoms, data, args)
+
+
+# ISO alpha-3 codes of the staged countries -> Natural Earth ADM0_A3, where they differ.
+NE_A3 = {"XKX": "KOS"}
+# Europe box (as in ml/build_countries.py): overseas parts and Asian Russia are cut off.
+EUROPE_BOX = (-24.6, 34.0, 60.0, 71.5)
+
+
+def europe(cache: Path):
+    """The countries staged in species/europe.json (plus any already playable),
+    with every other country around them as washed-out neighbours."""
+    sj = json.loads((SPECIES / "europe.json").read_text(encoding="utf-8"))["states"]
+    want = {NE_A3.get(s["code"], s["code"]): s["code"] for s in sj}
+    clip = box(*EUROPE_BOX)
+    feats = ne("ne_10m_admin_0_countries_lakes", cache)
+    # Crimea follows the internationally recognized border (Ukraine's point of view).
+    ukr = {x["properties"]["ADM0_A3"]: x for x in ne("ne_10m_admin_0_countries_ukr", cache)
+           if x["properties"]["ADM0_A3"] in ("UKR", "RUS")}
+    geoms, names, countries, country_names = {}, {}, [], []
+    near = box(-40, 25, 75, 80)
+    for x in feats:
+        a3 = x["properties"]["ADM0_A3"]
+        src = ukr.get(a3, x)
+        g = shape(src["geometry"]).buffer(0)
+        if not g.intersects(near):
+            continue
+        if a3 in want:
+            code = want[a3]
+            g = g.intersection(clip)
+            if code == "NOR":  # Jan Mayen
+                g = g.intersection(box(0, 50, 40, 72))
+            geoms[code] = g
+            names[code] = next(s["name"] for s in sj if s["code"] == code)
+        else:
+            countries.append(g.intersection(near))
+            country_names.append(x["properties"].get("NAME_EN") or x["properties"]["NAME"])
+    lakes = [(x["properties"].get("name") or "", shape(x["geometry"]).buffer(0), x["properties"].get("scalerank", 9))
+             for x in ne("ne_10m_lakes", cache) if x["geometry"]]
+    lakes = [l for l in lakes if l[1].intersects(near)]
+    rivers = [(shape(x["geometry"]), x["properties"].get("scalerank", 9))
+              for x in ne("ne_10m_rivers_lake_centerlines", cache)
+              if x["geometry"] and x["properties"].get("featurecla") != "Lake Centerline"]
+    rivers = [r for r in rivers if r[0].intersects(near)]
+    from shapely.geometry import Point
+    by_a3 = {a3: names[c] for a3, c in want.items() if c in names}
+    places = []
+    for x in ne("ne_10m_populated_places_simple", cache):
+        p = x["properties"]
+        if p.get("adm0_a3") in by_a3:
+            places.append({"name": p["name"], "state": by_a3[p["adm0_a3"]], "pop": p.get("pop_max") or 0,
+                           "capital": p.get("featurecla") == "Admin-0 capital",
+                           "pt": Point(x["geometry"]["coordinates"])})
+    data = {"countries": countries, "country_names": country_names, "lakes": lakes, "rivers": rivers,
+            "places": places, "names": names, "unit": "km",
+            "source": "Natural Earth 1:10m admin-0, clipped to Europe; Ukraine and Russia from the Ukraine "
+                      "point-of-view file (public domain)"}
+    return sj, geoms, data
+
+
+def usa(cache: Path):
 
     feats = [x for x in ne("ne_10m_admin_1_states_provinces_lakes", cache) if x["properties"].get("adm0_a3") == "USA"]
     by_name = {x["properties"]["name"]: x for x in feats}
@@ -511,8 +588,13 @@ def main():
                            "capital": p.get("featurecla") == "Admin-1 capital",
                            "pt": Point(x["geometry"]["coordinates"])})
     data = {"countries": countries, "country_names": country_names, "lakes": lakes, "rivers": rivers,
-            "places": places, "names": names}
+            "places": places, "names": names,
+            "source": "Natural Earth 1:10m admin-1, Great Lakes cut out (public domain)"}
+    return geoms, data
 
+
+def render(sj, geoms, data, args):
+    cache = Path(args.cache)
     from playwright.sync_api import sync_playwright
     OUT.mkdir(parents=True, exist_ok=True)
     with sync_playwright() as pw:
@@ -539,7 +621,7 @@ def main():
             g = geoms[code].simplify(tol, preserve_topology=True)
             outline = SPECIES / s["outline"]
             outline.write_text(json.dumps({
-                "source": "Natural Earth 1:10m admin-1, Great Lakes cut out (public domain)",
+                "source": data["source"],
                 "frame": {"west": round(f.west, 4), "east": round(f.east, 4), "south": round(f.south, 4),
                           "north": round(f.north, 4), "width": f.w, "height": f.h},
                 "rings": rings_of(g, (tol * 3) ** 2)}, separators=(",", ":")), encoding="utf-8")

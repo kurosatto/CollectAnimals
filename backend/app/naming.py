@@ -153,7 +153,7 @@ def name_capture(capture_id: int, body: NameIn, user: User = Depends(current_use
 
 @router.post("/me/named-photos", response_model=NamedOut, status_code=201)
 async def name_offline_photo(label: str = Form(..., max_length=96), predicted_label: str | None = Form(None, max_length=64),
-                             state: str | None = Form(None, max_length=2), photo: UploadFile | None = File(None),
+                             state: str | None = Form(None, max_length=3), photo: UploadFile | None = File(None),
                              user: User = Depends(current_user), db: Session = Depends(get_db)):
     """An answer the phone saved while offline (the photo never reached the
     server). The photo is kept only if the player shares photos to teach the game."""

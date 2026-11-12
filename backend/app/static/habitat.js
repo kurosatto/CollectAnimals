@@ -1418,7 +1418,8 @@ function habLoop(now) {
 }
 
 // ---- Weather: the real sky outside right now (GET /weather/{state}, from the
-// National Weather Service) as clouds, rain, snow, fog, wind and thunderstorms.
+// National Weather Service, or MET Norway in Europe) as clouds, rain, snow, fog,
+// wind and thunderstorms.
 // The animals react: small fliers wait out the rain in the tree, ducks and frogs
 // love it, the others shake it off or shiver, reptiles, amphibians and bugs stay
 // tucked in when it's cold, and everyone jumps at thunder. Add ?weather=rain,windy
@@ -1545,6 +1546,8 @@ function habWxLine() {
   let line = HAB_WX_WORDS[w.sky];
   if (w.wind === "windy") line += " and windy";
   if (w.place) line += ` ${w.near ? "near" : "in"} ${w.place}`;
+  // Europe's (MET Norway, which asks to be credited) is in °C.
+  if (w.temp_c != null) return line + `, ${w.temp_c}°C. Weather: MET Norway.`;
   if (w.temp_f != null) line += `, ${w.temp_f}°F`;
   return line + ".";
 }
