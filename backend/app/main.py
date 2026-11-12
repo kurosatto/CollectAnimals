@@ -299,8 +299,9 @@ def sprite_decor(key: str):
 
 @app.get("/sprites/game/{name}", include_in_schema=False)
 def sprite_game_art(name: str):
-    """The minigames' pixel art: one atlas image and where each piece is in it."""
-    if name not in ("atlas.png", "atlas.json"):
+    """The minigames' pixel art: one atlas image and where each piece is in it, and the
+    recorded how-to-play demos (tools/levelcheck/demo.js)."""
+    if name not in ("atlas.png", "atlas.json", "demos.json"):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "No such picture")
     path = settings.sprites_dir / "game" / name
     if not path.is_file():

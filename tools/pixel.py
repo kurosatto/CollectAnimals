@@ -119,7 +119,7 @@ def _seg_dist(x0, y0, x1, y1):
 
 
 # Animation: every body plan can draw itself in these poses, FRAMES frames each.
-ACTS = ("idle", "walk", "fly", "swim", "sleep", "sit", "look", "back", "eat", "dive", "hide", "run", "groom")
+ACTS = ("idle", "walk", "fly", "swim", "sleep", "sit", "look", "back", "eat", "dive", "hide", "run", "groom", "sad")
 FRAMES = 12
 OLD_FRAMES = 4  # body plans that still pick poses by s.f count in these
 # Still poses breathe (BREATH: how far the body rises, as a share of its height),
@@ -188,6 +188,8 @@ class Sprite:
         self.acts = {"idle", "sleep"}
         self.eye_px = np.zeros((N, N), bool)
         self.eye_boxes: list[tuple[int, int, int, int]] = []
+        # The sad pose (make_sprites): eyes shut, and a tear `tear` units down from them.
+        self.shut, self.tear = False, None
         # Standing still, every animal breathes: the whole drawing rises a touch off
         # its feet and settles again (a base warp under any warp the body plan adds).
         self.base = None
@@ -508,12 +510,31 @@ class Sprite:
             m &= _shift(m, 1, 0) & _shift(m, 0, 1) if SS > 1 else m
             self.fill(m, shine, shade=False, mirror=mirror)
 
+    def _tear(self, xs, ys):
+        """A tear rolling down from the front eye (the one furthest left: sprites face left)."""
+        front = xs <= xs.min() + 2 * SS
+        x = int(np.round(xs[front].mean()))
+        y = int(ys[front].max()) + SS + round(self.tear * SS)
+        m = np.zeros((N, N), bool)
+        m[y:y + 2 * SS, x:x + SS] = True
+        m[y + SS:y + 2 * SS, x - SS + 1 if SS > 1 else x:x + SS] = True
+        if not m.any():
+            return
+        self.n += 1
+        self.col[m] = rgb("#7cc4f0")
+        self.col[y:y + SS, x:x + SS] = rgb("#d6f0ff")  # a glint at the top
+        self.reg[m] = self.n
+        self.shaded[self.n] = False
+
     # -- output ----------------------------------------------------------------
     def render(self):
         if FACELESS.search(getattr(self, "slug", "") or ""):
             self._close_eyes(lid=False)  # no eyes at all
-        elif self.act == "sleep" or (self.act in BLINKS and self.frame == BLINK):
+        elif self.act == "sleep" or self.shut or (self.act in BLINKS and self.frame == BLINK):
+            ys, xs = np.where(self.eye_px)
             self._close_eyes()
+            if self.tear is not None and len(xs):
+                self._tear(xs, ys)
         col = self.col.astype(np.float32)
         filled = self.reg > 0
         for r in range(1, self.n + 1):

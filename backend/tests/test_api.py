@@ -654,7 +654,7 @@ def test_sprites(client):
 def test_sprite_animations(client):
     idx = client.get("/sprites/anim/index.json").json()
     assert idx["rows"] == ["idle", "walk", "fly", "swim", "sleep", "sit", "look", "back", "eat", "dive", "hide",
-                           "run", "groom"] and idx["frames"] == 12
+                           "run", "groom", "sad"] and idx["frames"] == 12
     assert idx["size"] == 40 and 0 < idx["blink"] < 12  # 1:1 pixel frames; idle has a blink frame
     assert {"walk", "sit", "look", "back", "eat"} <= set(idx["acts"]["western_gray_squirrel"])
     assert {"walk", "swim", "sit", "look", "back"} <= set(idx["acts"]["harbor_seal"])  # sit = banana pose
@@ -669,6 +669,8 @@ def test_sprite_animations(client):
     assert {"groom", "sit", "run"} <= set(idx["acts"]["american_robin"])  # preening, settled down
     assert {"groom", "run", "eat"} <= set(idx["acts"]["western_fence_lizard"])  # push-ups, tongue
     assert "groom" in idx["acts"]["mallard"] and "groom" in idx["acts"]["american_bullfrog"]
+    # every animal has the sad pose a lost minigame plays
+    assert all("sad" in idx["acts"][s] for s in ("coyote", "american_robin", "bluegill", "ochre_sea_star", "monarch"))
     r = client.get("/sprites/anim/mule_deer.png")
     assert r.status_code == 200 and r.headers["content-type"] == "image/png"
     assert client.get("/sprites/anim/nope.png").status_code == 404
@@ -680,6 +682,9 @@ def test_game_art(client):
     pieces = client.get("/sprites/game/atlas.json").json()
     assert {"rock", "storm_m", "fish", "feeder", "fox_look", "food_algae"} <= set(pieces)
     assert all(len(v) == 6 for v in pieces.values())
+    # the how-to-play demos (tools/levelcheck/demo.js): every recorded game but Claw Catch
+    demos = client.get("/sprites/game/demos.json").json()
+    assert len(demos["games"]) == 15 and "claw" not in demos["games"] and demos["stats"]["speed"] == 3
     r = client.get("/sprites/game/atlas.png")
     assert r.status_code == 200 and r.headers["content-type"] == "image/png"
     assert client.get("/sprites/game/nope.png").status_code == 404

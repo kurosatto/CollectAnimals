@@ -223,6 +223,9 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
   and pixel icons instead of emojis (0.37), all animals redrawn with drawn-frame
   animations at 40 px (0.38-0.47), per-state painted habitat scenery (0.43-0.48),
   one long hard level per minigame with `tools/levelcheck` (0.46; check.js per game, leap.js for Branch Leap, claw.js for Claw Catch).
+  Opening a game plays a "how to play" demo of the level's first seconds (0.92): `node tools/levelcheck/demo.js`
+  records it into `species/sprites/game/demos.json`; re-run it whenever a level changes. Losing plays the
+  animal's drawn "sad" row (last row of every sheet) before the try-again panel; minigames never tilt sprites.
   Practice mode (0.55): a "Practice" button per game; flags every 2 s, a bump goes back to one at least 1.5 s earlier; no points, coins or bests (mgFlag/mgBackToFlag in minigames.js).
 - Review rounds 1-9 (0.49-0.57), in short: phone layout fixes, a/an grammar
   (`app/words.py`), plain-word validation errors (`friendly_error`, no input echo),
