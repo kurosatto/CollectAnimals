@@ -995,7 +995,7 @@ DIVE_DEG = [-55 + 130 * f / (FRAMES - 1) for f in range(FRAMES)]
 # its sitting pose (or standing, if it doesn't sit), the head bent down at the neck
 # (found from where the eye is); swimmers without legs tip their nose down a little,
 # sea stars and anemones pull in, and the rest (butterflies, bugs) just shut their eyes.
-SAD_IN = 5
+SAD_IN = FRAMES * 5 // 12  # frames of hanging the head; the sigh loops after
 _eyes: dict = {}
 
 
@@ -1029,9 +1029,9 @@ def _sad_pose(slug, f, acts):
     elif HIDERS.search(slug):  # sea stars, anemones: pull in a little, like a sigh
         q = 0.25 * k + 0.08 * sigh
         s.set_base(lambda x, y, q=q: (16 + (x - 16) * (1 + 0.12 * q), 31 - (31 - y) * (1 - 0.5 * q)))
-    s.shut = f >= 3
+    s.shut = f >= FRAMES // 4
     if f > SAD_IN:
-        s.tear = (f - SAD_IN - 1) * 0.8
+        s.tear = 4.0 * (f - SAD_IN - 1) / (FRAMES - SAD_IN - 2)
     return s
 
 
@@ -1130,7 +1130,7 @@ def main():
             save_png(silhouette(img), args.out / f"{slug}_silhouette.png")
             anims[slug], index[slug] = sheet_img, acts
             save_png(sheet_img, anim_dir / f"{slug}.png")
-    index_path.write_text(json.dumps({"frames": FRAMES, "size": N, "blink": BLINK, "rows": list(ACTS),
+    index_path.write_text(json.dumps({"frames": FRAMES, "size": N, "blink": BLINK, "sad_loop": SAD_IN + 1, "rows": list(ACTS),
                                       "acts": dict(sorted(index.items()))},
                                      indent=1) + "\n", encoding="utf-8")
     if args.anim_sheet:

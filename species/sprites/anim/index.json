@@ -1,7 +1,8 @@
 {
- "frames": 12,
+ "frames": 16,
  "size": 40,
- "blink": 6,
+ "blink": 8,
+ "sad_loop": 7,
  "rows": [
   "idle",
   "walk",

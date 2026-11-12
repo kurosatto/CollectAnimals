@@ -120,7 +120,7 @@ def _seg_dist(x0, y0, x1, y1):
 
 # Animation: every body plan can draw itself in these poses, FRAMES frames each.
 ACTS = ("idle", "walk", "fly", "swim", "sleep", "sit", "look", "back", "eat", "dive", "hide", "run", "groom", "sad")
-FRAMES = 12
+FRAMES = 16  # 16 since 0.93 (kuro: "add more frames"); was 12, and 8 and 4 before
 OLD_FRAMES = 4  # body plans that still pick poses by s.f count in these
 # Still poses breathe (BREATH: how far the body rises, as a share of its height),
 # and on frame BLINK of the idle and look rows the eyes close for a blink.
@@ -128,7 +128,7 @@ BREATHE = ("idle", "sit", "look", "back")
 BREATH = 0.035
 GROUND = 31.0
 BLINKS = ("idle", "look")
-BLINK = 6
+BLINK = FRAMES // 2
 # Animals with no eyes to draw (kuro: anemones, sea stars, urchins and the like
 # shouldn't have faces): whatever eyes their drawing has are painted out.
 FACELESS = re.compile(r"anemone|urchin|sea_star|_star$|jelly|sponge|sea_cucumber|limpet|chiton|coral|sand_dollar"
