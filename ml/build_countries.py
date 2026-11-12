@@ -50,10 +50,11 @@ BOX = (-24.6, 34.0, 60.0, 71.5)
 RUSSIA_BOX = {"swlat": 41.0, "swlng": 19.0, "nelat": 70.0, "nelng": 60.0}
 MIN_SPECIES = 60  # fewer research-grade species than this: report, don't stage
 
+# Countries under 100,000 people (Andorra, Liechtenstein, Monaco, San Marino,
+# Vatican City) are left out on purpose.
 # code, name, other names iNaturalist may use, Natural Earth ADM0_A3, UTC offset (winter), daylight time
 COUNTRIES = [
     ("ALB", "Albania", [], "ALB", 1, "eu"),
-    ("AND", "Andorra", [], "AND", 1, "eu"),
     ("AUT", "Austria", [], "AUT", 1, "eu"),
     ("BLR", "Belarus", [], "BLR", 3, "none"),
     ("BEL", "Belgium", [], "BEL", 1, "eu"),
@@ -74,12 +75,10 @@ COUNTRIES = [
     ("ITA", "Italy", [], "ITA", 1, "eu"),
     ("XKX", "Kosovo", [], "KOS", 1, "eu"),
     ("LVA", "Latvia", [], "LVA", 2, "eu"),
-    ("LIE", "Liechtenstein", [], "LIE", 1, "eu"),
     ("LTU", "Lithuania", [], "LTU", 2, "eu"),
     ("LUX", "Luxembourg", [], "LUX", 1, "eu"),
     ("MLT", "Malta", [], "MLT", 1, "eu"),
     ("MDA", "Moldova", ["Republic of Moldova"], "MDA", 2, "eu"),
-    ("MCO", "Monaco", [], "MCO", 1, "eu"),
     ("MNE", "Montenegro", [], "MNE", 1, "eu"),
     ("NLD", "Netherlands", ["The Netherlands"], "NLD", 1, "eu"),
     ("MKD", "North Macedonia", ["Macedonia"], "MKD", 1, "eu"),
@@ -88,7 +87,6 @@ COUNTRIES = [
     ("PRT", "Portugal", [], "PRT", 0, "eu"),
     ("ROU", "Romania", [], "ROU", 2, "eu"),
     ("RUS", "Russia", ["Russian Federation"], "RUS", 3, "none"),
-    ("SMR", "San Marino", [], "SMR", 1, "eu"),
     ("SRB", "Serbia", [], "SRB", 1, "eu"),
     ("SVK", "Slovakia", [], "SVK", 1, "eu"),
     ("SVN", "Slovenia", [], "SVN", 1, "eu"),
@@ -98,7 +96,6 @@ COUNTRIES = [
     ("TUR", "Turkey", ["Türkiye", "Turkiye"], "TUR", 3, "none"),
     ("UKR", "Ukraine", [], "UKR", 2, "eu"),
     ("GBR", "United Kingdom", ["UK", "Great Britain"], "GBR", 0, "eu"),
-    ("VAT", "Vatican City", ["Vatican", "Holy See"], "VAT", 1, "eu"),
 ]
 
 
