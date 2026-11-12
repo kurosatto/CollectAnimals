@@ -13,6 +13,10 @@ much faster, so this writes the same files from there:
 
     python ml/build_maps_gbif.py               # every state missing either file
     python ml/build_maps_gbif.py --only VA NY  # just these
+    python ml/build_maps_gbif.py --only DEU FRA  # staged European countries too
+
+A European country (species/europe.json) is searched by its country code instead
+of a US state name.
 """
 
 from __future__ import annotations
@@ -50,16 +54,33 @@ def get(path, **params):
             time.sleep(5 * (attempt + 1))
 
 
+# GBIF country codes for the staged European countries (ISO alpha-2; Kosovo is XK).
+ISO2 = {"ALB": "AL", "AUT": "AT", "BLR": "BY", "BEL": "BE", "BIH": "BA", "BGR": "BG", "HRV": "HR", "CYP": "CY",
+        "CZE": "CZ", "DNK": "DK", "EST": "EE", "FIN": "FI", "FRA": "FR", "DEU": "DE", "GRC": "GR", "HUN": "HU",
+        "ISL": "IS", "IRL": "IE", "ITA": "IT", "XKX": "XK", "LVA": "LV", "LTU": "LT", "LUX": "LU", "MLT": "MT",
+        "MDA": "MD", "MNE": "ME", "NLD": "NL", "MKD": "MK", "NOR": "NO", "POL": "PL", "PRT": "PT", "ROU": "RO",
+        "RUS": "RU", "SRB": "RS", "SVK": "SK", "SVN": "SI", "ESP": "ES", "SWE": "SE", "CHE": "CH", "TUR": "TR",
+        "UKR": "UA", "GBR": "GB", "AND": "AD", "LIE": "LI", "MCO": "MC", "SMR": "SM", "VAT": "VA"}
+
+
 def taxon_key(sci):
-    m = get("species/match", name=sci, kingdom="Animalia")
-    return m.get("usageKey") if m.get("matchType") != "NONE" else None
+    m = get("species/match", name=sci, kingdom="Animalia", strict="true")
+    # Only an exact name: a fuzzy or higher-rank match would map a different animal.
+    return m.get("usageKey") if m.get("matchType") == "EXACT" else None
 
 
-def species_maps(sci, state_name, grid, per_species):
+def where(st):
+    """GBIF filters for a state, or for a staged country by its code."""
+    if st.get("region") == "europe":
+        return dict(country=ISO2[st["code"]])
+    return dict(country="US", stateProvince=st["name"])
+
+
+def species_maps(sci, place, grid, per_species):
     key = taxon_key(sci)
     if key is None:
         return None, None
-    common = dict(taxonKey=key, country="US", stateProvince=state_name, datasetKey=INAT_DATASET,
+    common = dict(taxonKey=key, **place, datasetKey=INAT_DATASET,
                   occurrenceStatus="PRESENT")
     fac = get("occurrence/search", limit=0, facet="month", facetLimit=12, **common)
     months = [0] * 12
@@ -92,7 +113,10 @@ def main():
     ap.add_argument("--workers", type=int, default=4)
     args = ap.parse_args()
     sj = json.loads((SPECIES / "states.json").read_text(encoding="utf-8"))
-    for st in sj["states"]:
+    staged = SPECIES / "europe.json"
+    states = sj["states"] + (json.loads(staged.read_text(encoding="utf-8"))["states"]
+                             if args.only and staged.exists() else [])
+    for st in states:
         if args.only and st["code"] not in args.only:
             continue
         rpath, spath = SPECIES / st["ranges"], SPECIES / st["seasons"]
@@ -100,7 +124,7 @@ def main():
             continue
         rows = list(csv.DictReader(open(SPECIES / st["species"], encoding="utf-8")))
         with ThreadPoolExecutor(args.workers) as pool:
-            results = list(pool.map(lambda r: species_maps(r["scientific_name"], st["name"], st["grid"],
+            results = list(pool.map(lambda r: species_maps(r["scientific_name"], where(st), st["grid"],
                                                            args.per_species), rows))
         ranges = {r["slug"]: cells for r, (cells, _) in zip(rows, results) if cells}
         seasons = {r["slug"]: s for r, (_, s) in zip(rows, results) if s}
