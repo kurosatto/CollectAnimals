@@ -18,7 +18,7 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(40), unique=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(100))
     # Two-letter code from species/states.json; picks the Dex, Hotspots and maps.
-    state: Mapped[str] = mapped_column(String(2), default="CA", server_default="CA")
+    state: Mapped[str] = mapped_column(String(3), default="CA", server_default="CA")
     # Other states the player chose to unlock, comma-separated ("NC,CA"). Their
     # home state and any state they've captured in count as unlocked too.
     extra_states: Mapped[str | None] = mapped_column(String(64), nullable=True)
@@ -59,7 +59,7 @@ class StateSpecies(Base):
     __table_args__ = (UniqueConstraint("state", "species_id"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    state: Mapped[str] = mapped_column(String(2), index=True)
+    state: Mapped[str] = mapped_column(String(3), index=True)
     species_id: Mapped[int] = mapped_column(ForeignKey("species.id"))
     position: Mapped[int] = mapped_column(Integer)  # order in the state's CSV = Dex number
     common_name: Mapped[str] = mapped_column(String(128))
@@ -93,7 +93,7 @@ class Capture(Base):
     # The state the player was playing in: a capture counts only in that state's
     # Field Guide (a coyote captured in California must be captured again in
     # North Carolina).
-    state: Mapped[str | None] = mapped_column(String(2), nullable=True, index=True)
+    state: Mapped[str | None] = mapped_column(String(3), nullable=True, index=True)
     # The model's top guesses (comma-separated slugs, best first): the animals a
     # player may pick from when they say the model got it wrong.
     top_labels: Mapped[str | None] = mapped_column(String(400), nullable=True)
@@ -120,7 +120,7 @@ class IdFeedback(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     capture_id: Mapped[int] = mapped_column(ForeignKey("captures.id"), unique=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
-    state: Mapped[str] = mapped_column(String(2))
+    state: Mapped[str] = mapped_column(String(3))
     # The model's best guess and every guess the player was shown (comma-separated slugs).
     predicted_label: Mapped[str] = mapped_column(String(64))
     rejected_labels: Mapped[str] = mapped_column(String(400))
@@ -148,7 +148,7 @@ class NamedPhoto(Base):
     label: Mapped[str] = mapped_column(String(96))
     # What the model said (a class slug), and the state the photo was played in.
     predicted_label: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    state: Mapped[str | None] = mapped_column(String(2), nullable=True)
+    state: Mapped[str | None] = mapped_column(String(3), nullable=True)
     image_path: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
