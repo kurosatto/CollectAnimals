@@ -1,0 +1,101 @@
+slug,common_name,scientific_name,category,rarity
+common_eider,Common Eider,Somateria mollissima,bird,common
+atlantic_puffin,Atlantic Puffin,Fratercula arctica,bird,common
+northern_fulmar,Northern Fulmar,Fulmarus glacialis,bird,common
+arctic_tern,Arctic Tern,Sterna paradisaea,bird,common
+redwing,Redwing,Turdus iliacus,bird,common
+whooper_swan,Whooper Swan,Cygnus cygnus,bird,common
+greylag_goose,Greylag Goose,Anser anser,bird,common
+eurasian_oystercatcher,Eurasian Oystercatcher,Haematopus ostralegus,bird,common
+black_headed_gull,Black-headed Gull,Chroicocephalus ridibundus,bird,common
+black_legged_kittiwake,Black-legged Kittiwake,Rissa tridactyla,bird,common
+common_redshank,Common Redshank,Tringa totanus,bird,common
+european_golden_plover,European Golden-Plover,Pluvialis apricaria,bird,common
+tufted_duck,Tufted Duck,Aythya fuligula,bird,common
+white_wagtail,White Wagtail,Motacilla alba,bird,common
+red_necked_phalarope,Red-necked Phalarope,Phalaropus lobatus,bird,common
+mallard,Mallard,Anas platyrhynchos,bird,common
+black_guillemot,Black Guillemot,Cepphus grylle,bird,common
+lesser_black_backed_gull,Lesser Black-backed Gull,Larus fuscus,bird,common
+eurasian_whimbrel,Eurasian Whimbrel,Numenius phaeopus,bird,common
+snow_bunting,Snow Bunting,Plectrophenax nivalis,bird,common
+black_tailed_godwit,Black-tailed Godwit,Limosa limosa,bird,common
+meadow_pipit,Meadow Pipit,Anthus pratensis,bird,common
+common_snipe,Common Snipe,Gallinago gallinago,bird,common
+harlequin_duck,Harlequin Duck,Histrionicus histrionicus,bird,common
+harbor_seal,Harbor Seal,Phoca vitulina,mammal,common
+common_ringed_plover,Common Ringed Plover,Charadrius hiaticula,bird,common
+european_starling,European Starling,Sturnus vulgaris,bird,common
+parasitic_jaeger,Parasitic Jaeger,Stercorarius parasiticus,bird,common
+eurasian_wigeon,Eurasian Wigeon,Mareca penelope,bird,common
+common_murre,Common Murre,Uria aalge,bird,common
+cross_orbweaver,Cross Orbweaver,Araneus diadematus,invertebrate,common
+glaucous_gull,Glaucous Gull,Larus hyperboreus,bird,common
+red_throated_loon,Red-throated Loon,Gavia stellata,bird,common
+red_breasted_merganser,Red-breasted Merganser,Mergus serrator,bird,common
+razorbill,Razorbill,Alca torda,bird,common
+common_raven,Common Raven,Corvus corax,bird,common
+arctic_fox,Arctic Fox,Vulpes lagopus,mammal,common
+great_black_backed_gull,Great Black-backed Gull,Larus marinus,bird,common
+purple_sandpiper,Purple Sandpiper,Calidris maritima,bird,common
+european_herring_gull,European Herring Gull,Larus argentatus,bird,common
+dunlin,Dunlin,Calidris alpina,bird,common
+eurasian_blackbird,Eurasian Blackbird,Turdus merula,bird,common
+common_loon,Common Loon,Gavia immer,bird,common
+horned_grebe,Horned Grebe,Podiceps auritus,bird,common
+ruddy_turnstone,Ruddy Turnstone,Arenaria interpres,bird,common
+northern_wheatear,Northern Wheatear,Oenanthe oenanthe,bird,common
+broom_moth,Broom Moth,Ceramica pisi,invertebrate,common
+humpback_whale,Humpback Whale,Megaptera novaeangliae,mammal,common
+long_tailed_duck,Long-tailed Duck,Clangula hyemalis,bird,common
+great_skua,Great Skua,Stercorarius skua,bird,common
+european_shag,European Shag,Gulosus aristotelis,bird,uncommon
+saddleback_harvestman,Saddleback Harvestman,Mitopus morio,invertebrate,uncommon
+barrows_goldeneye,Barrow's Goldeneye,Bucephala islandica,bird,uncommon
+northern_gannet,Northern Gannet,Morus bassanus,bird,uncommon
+redpoll,Redpoll,Acanthis flammea,bird,uncommon
+greater_scaup,Greater Scaup,Aythya marila,bird,uncommon
+caribou,Caribou,Rangifer tarandus,mammal,uncommon
+great_cormorant,Great Cormorant,Phalacrocorax carbo,bird,uncommon
+tree_bumble_bee,Tree Bumble Bee,Bombus hypnorum,invertebrate,uncommon
+white_tailed_bumble_bee,White-tailed Bumble Bee,Bombus lucorum,invertebrate,uncommon
+pink_footed_goose,Pink-footed Goose,Anser brachyrhynchus,bird,uncommon
+barnacle_goose,Barnacle Goose,Branta leucopsis,bird,uncommon
+atlantic_dogwhelk,Atlantic Dogwhelk,Nucella lapillus,invertebrate,uncommon
+european_green_crab,European Green Crab,Carcinus maenas,marine,uncommon
+iceland_gull,Iceland Gull,Larus glaucoides,bird,uncommon
+rock_ptarmigan,Rock Ptarmigan,Lagopus muta,bird,uncommon
+common_whelk,Common Whelk,Buccinum undatum,invertebrate,uncommon
+thick_billed_murre,Thick-billed Murre,Uria lomvia,bird,uncommon
+atlantic_rock_crab,Atlantic Rock Crab,Cancer irroratus,marine,uncommon
+sanderling,Sanderling,Calidris alba,bird,uncommon
+grey_seal,Grey Seal,Halichoerus grypus,mammal,uncommon
+copse_snail,Copse Snail,Arianta arbustorum,invertebrate,uncommon
+norwegian_wasp,Norwegian Wasp,Dolichovespula norwegica,invertebrate,uncommon
+gadwall,Gadwall,Mareca strepera,bird,uncommon
+white_beaked_dolphin,White-beaked Dolphin,Lagenorhynchus albirostris,mammal,uncommon
+common_sea_star,Common Sea Star,Asterias rubens,marine,uncommon
+red_knot,Red Knot,Calidris canutus,bird,uncommon
+lions_mane_jelly,Lion's Mane Jelly,Cyanea capillata,marine,rare
+common_moon_jelly,Common Moon Jelly,Aurelia aurita,marine,rare
+common_minke_whale,Common Minke Whale,Balaenoptera acutorostrata,mammal,rare
+common_shiny_woodlouse,Common Shiny Woodlouse,Oniscus asellus,marine,rare
+great_spider_crab,Great Spider Crab,Hyas araneus,marine,rare
+ocean_quahog,Ocean Quahog,Arctica islandica,invertebrate,rare
+orca,Orca,Orcinus orca,mammal,rare
+arctic_green_sea_urchin,Arctic Green Sea Urchin,Strongylocentrotus droebachiensis,marine,rare
+heath_bumble_bee,Heath Bumble Bee,Bombus jonellus,invertebrate,rare
+rough_periwinkle,Rough Periwinkle,Littorina saxatilis,invertebrate,rare
+brown_trout,Brown Trout,Salmo trutta,marine,rare
+atlantic_cod,Atlantic Cod,Gadus morhua,marine,rare
+american_mink,American Mink,Neogale vison,mammal,rare
+north_atlantic_bottlenose_whale,North Atlantic Bottlenose Whale,Hyperoodon ampullatus,mammal,rare
+european_wood_mouse,European Wood Mouse,Apodemus sylvaticus,mammal,rare
+long_finned_pilot_whale,Long-finned Pilot Whale,Globicephala melas,mammal,rare
+harbour_porpoise,Harbour Porpoise,Phocoena phocoena,mammal,rare
+blue_whale,Blue Whale,Balaenoptera musculus,mammal,rare
+ringed_seal,Ringed Seal,Pusa hispida,mammal,legendary
+fin_whale,Fin Whale,Balaenoptera physalus,mammal,legendary
+bearded_seal,Bearded Seal,Erignathus barbatus,mammal,legendary
+sei_whale,Sei Whale,Balaenoptera borealis,mammal,legendary
+common_bottlenose_dolphin,Common Bottlenose Dolphin,Tursiops truncatus,mammal,legendary

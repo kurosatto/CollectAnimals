@@ -1,0 +1,1321 @@
+{
+ "note": "Countries drafted by ml/build_countries.py. Not playable until moved into states.json.",
+ "states": [
+  {
+   "code": "ALB",
+   "name": "Albania",
+   "region": "europe",
+   "species": "albania_100.csv",
+   "dex": null,
+   "outline": "albania_outline.json",
+   "ranges": "albania_ranges.json",
+   "hotspots": "albania_hotspots.json",
+   "places": "albania_places.json",
+   "seasons": "albania_seasons.json",
+   "utc_offset": 1,
+   "dst": "eu",
+   "inat_place_id": 8505,
+   "bounds": {
+    "west": 19.2,
+    "east": 21.1,
+    "south": 39.5,
+    "north": 42.8
+   },
+   "grid": {
+    "lon0": 19.1875,
+    "lat0": 39.5,
+    "step": 0.0625,
+    "cols": 31,
+    "rows": 53
+   }
+  },
+  {
+   "code": "AND",
+   "name": "Andorra",
+   "region": "europe",
+   "species": "andorra_100.csv",
+   "dex": null,
+   "outline": "andorra_outline.json",
+   "ranges": "andorra_ranges.json",
+   "hotspots": "andorra_hotspots.json",
+   "places": "andorra_places.json",
+   "seasons": "andorra_seasons.json",
+   "utc_offset": 1,
+   "dst": "eu",
+   "inat_place_id": 8226,
+   "bounds": {
+    "west": 1.3,
+    "east": 1.9,
+    "south": 42.3,
+    "north": 42.7
+   },
+   "grid": {
+    "lon0": 1.25,
+    "lat0": 42.25,
+    "step": 0.0625,
+    "cols": 11,
+    "rows": 8
+   }
+  },
+  {
+   "code": "AUT",
+   "name": "Austria",
+   "region": "europe",
+   "species": "austria_100.csv",
+   "dex": null,
+   "outline": "austria_outline.json",
+   "ranges": "austria_ranges.json",
+   "hotspots": "austria_hotspots.json",
+   "places": "austria_places.json",
+   "seasons": "austria_seasons.json",
+   "utc_offset": 1,
+   "dst": "eu",
+   "inat_place_id": 8057,
+   "bounds": {
+    "west": 9.4,
+    "east": 17.2,
+    "south": 46.3,
+    "north": 49.1
+   },
+   "grid": {
+    "lon0": 9.375,
+    "lat0": 46.25,
+    "step": 0.125,
+    "cols": 63,
+    "rows": 23
+   }
+  },
+  {
+   "code": "BLR",
+   "name": "Belarus",
+   "region": "europe",
+   "species": "belarus_100.csv",
+   "dex": null,
+   "outline": "belarus_outline.json",
+   "ranges": "belarus_ranges.json",
+   "hotspots": "belarus_hotspots.json",
+   "places": "belarus_places.json",
+   "seasons": "belarus_seasons.json",
+   "utc_offset": 3,
+   "dst": "none",
+   "inat_place_id": 7578,
+   "bounds": {
+    "west": 23.1,
+    "east": 32.8,
+    "south": 51.1,
+    "north": 56.3
+   },
+   "grid": {
+    "lon0": 23.0,
+    "lat0": 51.0,
+    "step": 0.125,
+    "cols": 79,
+    "rows": 43
+   }
+  },
+  {
+   "code": "BEL",
+   "name": "Belgium",
+   "region": "europe",
+   "species": "belgium_100.csv",
+   "dex": null,
+   "outline": "belgium_outline.json",
+   "ranges": "belgium_ranges.json",
+   "hotspots": "belgium_hotspots.json",
+   "places": "belgium_places.json",
+   "seasons": "belgium_seasons.json",
+   "utc_offset": 1,
+   "dst": "eu",
+   "inat_place_id": 7008,
+   "bounds": {
+    "west": 2.4,
+    "east": 6.5,
+    "south": 49.4,
+    "north": 51.6
+   },
+   "grid": {
+    "lon0": 2.375,
+    "lat0": 49.375,
+    "step": 0.0625,
+    "cols": 66,
+    "rows": 36
+   }
+  },
+  {
+   "code": "BIH",
+   "name": "Bosnia and Herzegovina",
+   "region": "europe",
+   "species": "bosnia_and_herzegovina_100.csv",
+   "dex": null,
+   "outline": "bosnia_and_herzegovina_outline.json",
+   "ranges": "bosnia_and_herzegovina_ranges.json",
+   "hotspots": "bosnia_and_herzegovina_hotspots.json",
+   "places": "bosnia_and_herzegovina_places.json",
+   "seasons": "bosnia_and_herzegovina_seasons.json",
+   "utc_offset": 1,
+   "dst": "eu",
+   "inat_place_id": 8268,
+   "bounds": {
+    "west": 15.6,
+    "east": 19.7,
+    "south": 42.5,
+    "north": 45.4
+   },
+   "grid": {
+    "lon0": 15.5625,
+    "lat0": 42.5,
+    "step": 0.0625,
+    "cols": 67,
+    "rows": 47
+   }
+  },
+  {
+   "code": "BGR",
+   "name": "Bulgaria",
+   "region": "europe",
+   "species": "bulgaria_100.csv",
+   "dex": null,
+   "outline": "bulgaria_outline.json",
+   "ranges": "bulgaria_ranges.json",
+   "hotspots": "bulgaria_hotspots.json",
+   "places": "bulgaria_places.json",
+   "seasons": "bulgaria_seasons.json",
+   "utc_offset": 2,
+   "dst": "eu",
+   "inat_place_id": 8241,
+   "bounds": {
+    "west": 22.2,
+    "east": 28.7,
+    "south": 41.1,
+    "north": 44.3
+   },
+   "grid": {
+    "lon0": 22.125,
+    "lat0": 41.0,
+    "step": 0.125,
+    "cols": 53,
+    "rows": 27
+   }
+  },
+  {
+   "code": "HRV",
+   "name": "Croatia",
+   "region": "europe",
+   "species": "croatia_100.csv",
+   "dex": null,
+   "outline": "croatia_outline.json",
+   "ranges": "croatia_ranges.json",
+   "hotspots": "croatia_hotspots.json",
+   "places": "croatia_places.json",
+   "seasons": "croatia_seasons.json",
+   "utc_offset": 1,
+   "dst": "eu",
+   "inat_place_id": 8196,
+   "bounds": {
+    "west": 13.4,
+    "east": 19.5,
+    "south": 42.3,
+    "north": 46.6
+   },
+   "grid": {
+    "lon0": 13.375,
+    "lat0": 42.25,
+    "step": 0.125,
+    "cols": 49,
+    "rows": 35
+   }
+  },
+  {
+   "code": "CYP",
+   "name": "Cyprus",
+   "region": "europe",
+   "species": "cyprus_100.csv",
+   "dex": null,
+   "outline": "cyprus_outline.json",
+   "ranges": "cyprus_ranges.json",
+   "hotspots": "cyprus_hotspots.json",
+   "places": "cyprus_places.json",
+   "seasons": "cyprus_seasons.json",
+   "utc_offset": 2,
+   "dst": "eu",
+   "inat_place_id": 10289,
+   "bounds": {
+    "west": 32.2,
+    "east": 34.2,
+    "south": 34.5,
+    "north": 35.3
+   },
+   "grid": {
+    "lon0": 32.1875,
+    "lat0": 34.5,
+    "step": 0.0625,
+    "cols": 33,
+    "rows": 13
+   }
+  },
+  {
+   "code": "CZE",
+   "name": "Czechia",
+   "region": "europe",
+   "species": "czechia_100.csv",
+   "dex": null,
+   "outline": "czechia_outline.json",
+   "ranges": "czechia_ranges.json",
+   "hotspots": "czechia_hotspots.json",
+   "places": "czechia_places.json",
+   "seasons": "czechia_seasons.json",
+   "utc_offset": 1,
+   "dst": "eu",
+   "inat_place_id": 8264,
+   "bounds": {
+    "west": 12.0,
+    "east": 18.9,
+    "south": 48.5,
+    "north": 51.1
+   },
+   "grid": {
+    "lon0": 12.0,
+    "lat0": 48.5,
+    "step": 0.125,
+    "cols": 56,
+    "rows": 21
+   }
+  },
+  {
+   "code": "DNK",
+   "name": "Denmark",
+   "region": "europe",
+   "species": "denmark_100.csv",
+   "dex": null,
+   "outline": "denmark_outline.json",
+   "ranges": "denmark_ranges.json",
+   "hotspots": "denmark_hotspots.json",
+   "places": "denmark_places.json",
+   "seasons": "denmark_seasons.json",
+   "utc_offset": 1,
+   "dst": "eu",
+   "inat_place_id": 8051,
+   "bounds": {
+    "west": 8.0,
+    "east": 15.3,
+    "south": 54.5,
+    "north": 57.9
+   },
+   "grid": {
+    "lon0": 8.0,
+    "lat0": 54.5,
+    "step": 0.125,
+    "cols": 59,
+    "rows": 28
+   }
+  },
+  {
+   "code": "EST",
+   "name": "Estonia",
+   "region": "europe",
+   "species": "estonia_100.csv",
+   "dex": null,
+   "outline": "estonia_outline.json",
+   "ranges": "estonia_ranges.json",
+   "hotspots": "estonia_hotspots.json",
+   "places": "estonia_places.json",
+   "seasons": "estonia_seasons.json",
+   "utc_offset": 2,
+   "dst": "eu",
+   "inat_place_id": 8265,
+   "bounds": {
+    "west": 21.7,
+    "east": 28.3,
+    "south": 57.4,
+    "north": 59.8
+   },
+   "grid": {
+    "lon0": 21.625,
+    "lat0": 57.375,
+    "step": 0.125,
+    "cols": 54,
+    "rows": 20
+   }
+  },
+  {
+   "code": "FIN",
+   "name": "Finland",
+   "region": "europe",
+   "species": "finland_100.csv",
+   "dex": null,
+   "outline": "finland_outline.json",
+   "ranges": "finland_ranges.json",
+   "hotspots": "finland_hotspots.json",
+   "places": "finland_places.json",
+   "seasons": "finland_seasons.json",
+   "utc_offset": 2,
+   "dst": "eu",
+   "inat_place_id": 7020,
+   "bounds": {
+    "west": 20.5,
+    "east": 31.7,
+    "south": 59.7,
+    "north": 70.2
+   },
+   "grid": {
+    "lon0": 20.5,
+    "lat0": 59.5,
+    "step": 0.25,
+    "cols": 45,
+    "rows": 43
+   }
+  },
+  {
+   "code": "FRA",
+   "name": "France",
+   "region": "europe",
+   "species": "france_100.csv",
+   "dex": null,
+   "outline": "france_outline.json",
+   "ranges": "france_ranges.json",
+   "hotspots": "france_hotspots.json",
+   "places": "france_places.json",
+   "seasons": "france_seasons.json",
+   "utc_offset": 1,
+   "dst": "eu",
+   "inat_place_id": 6753,
+   "bounds": {
+    "west": -4.9,
+    "east": 9.7,
+    "south": 41.3,
+    "north": 51.2
+   },
+   "grid": {
+    "lon0": -5.0,
+    "lat0": 41.25,
+    "step": 0.25,
+    "cols": 59,
+    "rows": 40
+   }
+  },
+  {
+   "code": "DEU",
+   "name": "Germany",
+   "region": "europe",
+   "species": "germany_100.csv",
+   "dex": null,
+   "outline": "germany_outline.json",
+   "ranges": "germany_ranges.json",
+   "hotspots": "germany_hotspots.json",
+   "places": "germany_places.json",
+   "seasons": "germany_seasons.json",
+   "utc_offset": 1,
+   "dst": "eu",
+   "inat_place_id": 7207,
+   "bounds": {
+    "west": 5.8,
+    "east": 15.1,
+    "south": 47.2,
+    "north": 55.0
+   },
+   "grid": {
+    "lon0": 5.75,
+    "lat0": 47.125,
+    "step": 0.125,
+    "cols": 75,
+    "rows": 63
+   }
+  },
+  {
+   "code": "GRC",
+   "name": "Greece",
+   "region": "europe",
+   "species": "greece_100.csv",
+   "dex": null,
+   "outline": "greece_outline.json",
+   "ranges": "greece_ranges.json",
+   "hotspots": "greece_hotspots.json",
+   "places": "greece_places.json",
+   "seasons": "greece_seasons.json",
+   "utc_offset": 2,
+   "dst": "eu",
+   "inat_place_id": 7094,
+   "bounds": {
+    "west": 19.5,
+    "east": 28.3,
+    "south": 34.8,
+    "north": 41.9
+   },
+   "grid": {
+    "lon0": 19.5,
+    "lat0": 34.75,
+    "step": 0.125,
+    "cols": 71,
+    "rows": 58
+   }
+  },
+  {
+   "code": "HUN",
+   "name": "Hungary",
+   "region": "europe",
+   "species": "hungary_100.csv",
+   "dex": null,
+   "outline": "hungary_outline.json",
+   "ranges": "hungary_ranges.json",
+   "hotspots": "hungary_hotspots.json",
+   "places": "hungary_places.json",
+   "seasons": "hungary_seasons.json",
+   "utc_offset": 1,
+   "dst": "eu",
+   "inat_place_id": 7399,
+   "bounds": {
+    "west": 16.0,
+    "east": 23.0,
+    "south": 45.6,
+    "north": 48.7
+   },
+   "grid": {
+    "lon0": 16.0,
+    "lat0": 45.5,
+    "step": 0.125,
+    "cols": 56,
+    "rows": 26
+   }
+  },
+  {
+   "code": "ISL",
+   "name": "Iceland",
+   "region": "europe",
+   "species": "iceland_100.csv",
+   "dex": null,
+   "outline": "iceland_outline.json",
+   "ranges": "iceland_ranges.json",
+   "hotspots": "iceland_hotspots.json",
+   "places": "iceland_places.json",
+   "seasons": "iceland_seasons.json",
+   "utc_offset": 0,
+   "dst": "none",
+   "inat_place_id": 7278,
+   "bounds": {
+    "west": -24.6,
+    "east": -13.4,
+    "south": 63.3,
+    "north": 66.6
+   },
+   "grid": {
+    "lon0": -24.75,
+    "lat0": 63.25,
+    "step": 0.25,
+    "cols": 46,
+    "rows": 14
+   }
+  },
+  {
+   "code": "IRL",
+   "name": "Ireland",
+   "region": "europe",
+   "species": "ireland_100.csv",
+   "dex": null,
+   "outline": "ireland_outline.json",
+   "ranges": "ireland_ranges.json",
+   "hotspots": "ireland_hotspots.json",
+   "places": "ireland_places.json",
+   "seasons": "ireland_seasons.json",
+   "utc_offset": 0,
+   "dst": "eu",
+   "inat_place_id": 6718,
+   "bounds": {
+    "west": -10.6,
+    "east": -5.9,
+    "south": 51.3,
+    "north": 55.5
+   },
+   "grid": {
+    "lon0": -10.625,
+    "lat0": 51.25,
+    "step": 0.0625,
+    "cols": 76,
+    "rows": 68
+   }
+  },
+  {
+   "code": "ITA",
+   "name": "Italy",
+   "region": "europe",
+   "species": "italy_100.csv",
+   "dex": null,
+   "outline": "italy_outline.json",
+   "ranges": "italy_ranges.json",
+   "hotspots": "italy_hotspots.json",
+   "places": "italy_places.json",
+   "seasons": "italy_seasons.json",
+   "utc_offset": 1,
+   "dst": "eu",
+   "inat_place_id": 6973,
+   "bounds": {
+    "west": 6.5,
+    "east": 18.6,
+    "south": 36.6,
+    "north": 47.2
+   },
+   "grid": {
+    "lon0": 6.5,
+    "lat0": 36.5,
+    "step": 0.25,
+    "cols": 49,
+    "rows": 43
+   }
+  },
+  {
+   "code": "XKX",
+   "name": "Kosovo",
+   "region": "europe",
+   "species": "kosovo_100.csv",
+   "dex": null,
+   "outline": "kosovo_outline.json",
+   "ranges": "kosovo_ranges.json",
+   "hotspots": "kosovo_hotspots.json",
+   "places": "kosovo_places.json",
+   "seasons": "kosovo_seasons.json",
+   "utc_offset": 1,
+   "dst": "eu",
+   "inat_place_id": 10298,
+   "bounds": {
+    "west": 19.9,
+    "east": 21.9,
+    "south": 41.7,
+    "north": 43.4
+   },
+   "grid": {
+    "lon0": 19.875,
+    "lat0": 41.6875,
+    "step": 0.0625,
+    "cols": 33,
+    "rows": 28
+   }
+  },
+  {
+   "code": "LVA",
+   "name": "Latvia",
+   "region": "europe",
+   "species": "latvia_100.csv",
+   "dex": null,
+   "outline": "latvia_outline.json",
+   "ranges": "latvia_ranges.json",
+   "hotspots": "latvia_hotspots.json",
+   "places": "latvia_places.json",
+   "seasons": "latvia_seasons.json",
+   "utc_offset": 2,
+   "dst": "eu",
+   "inat_place_id": 8050,
+   "bounds": {
+    "west": 20.9,
+    "east": 28.3,
+    "south": 55.6,
+    "north": 58.2
+   },
+   "grid": {
+    "lon0": 20.875,
+    "lat0": 55.5,
+    "step": 0.125,
+    "cols": 60,
+    "rows": 22
+   }
+  },
+  {
+   "code": "LIE",
+   "name": "Liechtenstein",
+   "region": "europe",
+   "species": "liechtenstein_100.csv",
+   "dex": null,
+   "outline": "liechtenstein_outline.json",
+   "ranges": "liechtenstein_ranges.json",
+   "hotspots": "liechtenstein_hotspots.json",
+   "places": "liechtenstein_places.json",
+   "seasons": "liechtenstein_seasons.json",
+   "utc_offset": 1,
+   "dst": "eu",
+   "inat_place_id": 8263,
+   "bounds": {
+    "west": 9.4,
+    "east": 9.7,
+    "south": 47.0,
+    "north": 47.4
+   },
+   "grid": {
+    "lon0": 9.375,
+    "lat0": 47.0,
+    "step": 0.0625,
+    "cols": 6,
+    "rows": 7
+   }
+  },
+  {
+   "code": "LTU",
+   "name": "Lithuania",
+   "region": "europe",
+   "species": "lithuania_100.csv",
+   "dex": null,
+   "outline": "lithuania_outline.json",
+   "ranges": "lithuania_ranges.json",
+   "hotspots": "lithuania_hotspots.json",
+   "places": "lithuania_places.json",
+   "seasons": "lithuania_seasons.json",
+   "utc_offset": 2,
+   "dst": "eu",
+   "inat_place_id": 8266,
+   "bounds": {
+    "west": 20.8,
+    "east": 26.9,
+    "south": 53.8,
+    "north": 56.5
+   },
+   "grid": {
+    "lon0": 20.75,
+    "lat0": 53.75,
+    "step": 0.125,
+    "cols": 50,
+    "rows": 22
+   }
+  },
+  {
+   "code": "LUX",
+   "name": "Luxembourg",
+   "region": "europe",
+   "species": "luxembourg_100.csv",
+   "dex": null,
+   "outline": "luxembourg_outline.json",
+   "ranges": "luxembourg_ranges.json",
+   "hotspots": "luxembourg_hotspots.json",
+   "places": "luxembourg_places.json",
+   "seasons": "luxembourg_seasons.json",
+   "utc_offset": 1,
+   "dst": "eu",
+   "inat_place_id": 8147,
+   "bounds": {
+    "west": 5.6,
+    "east": 6.6,
+    "south": 49.3,
+    "north": 50.3
+   },
+   "grid": {
+    "lon0": 5.5625,
+    "lat0": 49.25,
+    "step": 0.0625,
+    "cols": 17,
+    "rows": 17
+   }
+  },
+  {
+   "code": "MLT",
+   "name": "Malta",
+   "region": "europe",
+   "species": "malta_100.csv",
+   "dex": null,
+   "outline": "malta_outline.json",
+   "ranges": "malta_ranges.json",
+   "hotspots": "malta_hotspots.json",
+   "places": "malta_places.json",
+   "seasons": "malta_seasons.json",
+   "utc_offset": 1,
+   "dst": "eu",
+   "inat_place_id": 8240,
+   "bounds": {
+    "west": 14.1,
+    "east": 14.7,
+    "south": 35.7,
+    "north": 36.2
+   },
+   "grid": {
+    "lon0": 14.0625,
+    "lat0": 35.6875,
+    "step": 0.0625,
+    "cols": 11,
+    "rows": 9
+   }
+  },
+  {
+   "code": "MDA",
+   "name": "Moldova",
+   "region": "europe",
+   "species": "moldova_100.csv",
+   "dex": null,
+   "outline": "moldova_outline.json",
+   "ranges": "moldova_ranges.json",
+   "hotspots": "moldova_hotspots.json",
+   "places": "moldova_places.json",
+   "seasons": "moldova_seasons.json",
+   "utc_offset": 2,
+   "dst": "eu",
+   "inat_place_id": 10302,
+   "bounds": {
+    "west": 26.5,
+    "east": 30.2,
+    "south": 45.4,
+    "north": 48.6
+   },
+   "grid": {
+    "lon0": 26.5,
+    "lat0": 45.375,
+    "step": 0.0625,
+    "cols": 60,
+    "rows": 52
+   }
+  },
+  {
+   "code": "MCO",
+   "name": "Monaco",
+   "region": "europe",
+   "species": "monaco_100.csv",
+   "dex": null,
+   "outline": "monaco_outline.json",
+   "ranges": "monaco_ranges.json",
+   "hotspots": "monaco_hotspots.json",
+   "places": "monaco_places.json",
+   "seasons": "monaco_seasons.json",
+   "utc_offset": 1,
+   "dst": "eu",
+   "inat_place_id": 8227,
+   "bounds": {
+    "west": 7.3,
+    "east": 7.5,
+    "south": 43.6,
+    "north": 43.9
+   },
+   "grid": {
+    "lon0": 7.25,
+    "lat0": 43.5625,
+    "step": 0.0625,
+    "cols": 4,
+    "rows": 6
+   }
+  },
+  {
+   "code": "MNE",
+   "name": "Montenegro",
+   "region": "europe",
+   "species": "montenegro_100.csv",
+   "dex": null,
+   "outline": "montenegro_outline.json",
+   "ranges": "montenegro_ranges.json",
+   "hotspots": "montenegro_hotspots.json",
+   "places": "montenegro_places.json",
+   "seasons": "montenegro_seasons.json",
+   "utc_offset": 1,
+   "dst": "eu",
+   "inat_place_id": 8859,
+   "bounds": {
+    "west": 18.3,
+    "east": 20.5,
+    "south": 41.8,
+    "north": 43.6
+   },
+   "grid": {
+    "lon0": 18.25,
+    "lat0": 41.75,
+    "step": 0.0625,
+    "cols": 36,
+    "rows": 30
+   }
+  },
+  {
+   "code": "NLD",
+   "name": "Netherlands",
+   "region": "europe",
+   "species": "netherlands_100.csv",
+   "dex": null,
+   "outline": "netherlands_outline.json",
+   "ranges": "netherlands_ranges.json",
+   "hotspots": "netherlands_hotspots.json",
+   "places": "netherlands_places.json",
+   "seasons": "netherlands_seasons.json",
+   "utc_offset": 1,
+   "dst": "eu",
+   "inat_place_id": 7506,
+   "bounds": {
+    "west": 3.2,
+    "east": 7.3,
+    "south": 50.6,
+    "north": 53.6
+   },
+   "grid": {
+    "lon0": 3.1875,
+    "lat0": 50.5625,
+    "step": 0.0625,
+    "cols": 66,
+    "rows": 49
+   }
+  },
+  {
+   "code": "MKD",
+   "name": "North Macedonia",
+   "region": "europe",
+   "species": "north_macedonia_100.csv",
+   "dex": null,
+   "outline": "north_macedonia_outline.json",
+   "ranges": "north_macedonia_ranges.json",
+   "hotspots": "north_macedonia_hotspots.json",
+   "places": "north_macedonia_places.json",
+   "seasons": "north_macedonia_seasons.json",
+   "utc_offset": 1,
+   "dst": "eu",
+   "inat_place_id": 10303,
+   "bounds": {
+    "west": 20.3,
+    "east": 23.1,
+    "south": 40.7,
+    "north": 42.5
+   },
+   "grid": {
+    "lon0": 20.25,
+    "lat0": 40.6875,
+    "step": 0.0625,
+    "cols": 46,
+    "rows": 29
+   }
+  },
+  {
+   "code": "NOR",
+   "name": "Norway",
+   "region": "europe",
+   "species": "norway_100.csv",
+   "dex": null,
+   "outline": "norway_outline.json",
+   "ranges": "norway_ranges.json",
+   "hotspots": "norway_hotspots.json",
+   "places": "norway_places.json",
+   "seasons": "norway_seasons.json",
+   "utc_offset": 1,
+   "dst": "eu",
+   "inat_place_id": 7016,
+   "bounds": {
+    "west": 4.8,
+    "east": 31.2,
+    "south": 57.9,
+    "north": 71.3
+   },
+   "grid": {
+    "lon0": 4.5,
+    "lat0": 57.5,
+    "step": 0.5,
+    "cols": 54,
+    "rows": 28
+   }
+  },
+  {
+   "code": "POL",
+   "name": "Poland",
+   "region": "europe",
+   "species": "poland_100.csv",
+   "dex": null,
+   "outline": "poland_outline.json",
+   "ranges": "poland_ranges.json",
+   "hotspots": "poland_hotspots.json",
+   "places": "poland_places.json",
+   "seasons": "poland_seasons.json",
+   "utc_offset": 1,
+   "dst": "eu",
+   "inat_place_id": 7800,
+   "bounds": {
+    "west": 14.0,
+    "east": 24.2,
+    "south": 48.9,
+    "north": 54.9
+   },
+   "grid": {
+    "lon0": 14.0,
+    "lat0": 48.75,
+    "step": 0.25,
+    "cols": 41,
+    "rows": 25
+   }
+  },
+  {
+   "code": "PRT",
+   "name": "Portugal",
+   "region": "europe",
+   "species": "portugal_100.csv",
+   "dex": null,
+   "outline": "portugal_outline.json",
+   "ranges": "portugal_ranges.json",
+   "hotspots": "portugal_hotspots.json",
+   "places": "portugal_places.json",
+   "seasons": "portugal_seasons.json",
+   "utc_offset": 0,
+   "dst": "eu",
+   "inat_place_id": 7122,
+   "bounds": {
+    "west": -9.6,
+    "east": -6.1,
+    "south": 36.9,
+    "north": 42.3
+   },
+   "grid": {
+    "lon0": -9.625,
+    "lat0": 36.875,
+    "step": 0.0625,
+    "cols": 57,
+    "rows": 87
+   }
+  },
+  {
+   "code": "ROU",
+   "name": "Romania",
+   "region": "europe",
+   "species": "romania_100.csv",
+   "dex": null,
+   "outline": "romania_outline.json",
+   "ranges": "romania_ranges.json",
+   "hotspots": "romania_hotspots.json",
+   "places": "romania_places.json",
+   "seasons": "romania_seasons.json",
+   "utc_offset": 2,
+   "dst": "eu",
+   "inat_place_id": 8858,
+   "bounds": {
+    "west": 20.1,
+    "east": 29.8,
+    "south": 43.6,
+    "north": 48.4
+   },
+   "grid": {
+    "lon0": 20.0,
+    "lat0": 43.5,
+    "step": 0.125,
+    "cols": 79,
+    "rows": 40
+   }
+  },
+  {
+   "code": "RUS",
+   "name": "Russia",
+   "region": "europe",
+   "species": "russia_100.csv",
+   "dex": null,
+   "outline": "russia_outline.json",
+   "ranges": "russia_ranges.json",
+   "hotspots": "russia_hotspots.json",
+   "places": "russia_places.json",
+   "seasons": "russia_seasons.json",
+   "utc_offset": 3,
+   "dst": "none",
+   "inat_place_id": 7161,
+   "bounds": {
+    "west": 19.5,
+    "east": 60.1,
+    "south": 41.1,
+    "north": 71.6
+   },
+   "grid": {
+    "lon0": 19.0,
+    "lat0": 41.0,
+    "step": 1.0,
+    "cols": 42,
+    "rows": 31
+   }
+  },
+  {
+   "code": "SMR",
+   "name": "San Marino",
+   "region": "europe",
+   "species": "san_marino_100.csv",
+   "dex": null,
+   "outline": "san_marino_outline.json",
+   "ranges": "san_marino_ranges.json",
+   "hotspots": "san_marino_hotspots.json",
+   "places": "san_marino_places.json",
+   "seasons": "san_marino_seasons.json",
+   "utc_offset": 1,
+   "dst": "eu",
+   "inat_place_id": 10310,
+   "bounds": {
+    "west": 12.3,
+    "east": 12.6,
+    "south": 43.8,
+    "north": 44.1
+   },
+   "grid": {
+    "lon0": 12.25,
+    "lat0": 43.75,
+    "step": 0.0625,
+    "cols": 6,
+    "rows": 6
+   }
+  },
+  {
+   "code": "SRB",
+   "name": "Serbia",
+   "region": "europe",
+   "species": "serbia_100.csv",
+   "dex": null,
+   "outline": "serbia_outline.json",
+   "ranges": "serbia_ranges.json",
+   "hotspots": "serbia_hotspots.json",
+   "places": "serbia_places.json",
+   "seasons": "serbia_seasons.json",
+   "utc_offset": 1,
+   "dst": "eu",
+   "inat_place_id": 7147,
+   "bounds": {
+    "west": 18.7,
+    "east": 23.1,
+    "south": 42.1,
+    "north": 46.3
+   },
+   "grid": {
+    "lon0": 18.6875,
+    "lat0": 42.0625,
+    "step": 0.0625,
+    "cols": 71,
+    "rows": 68
+   }
+  },
+  {
+   "code": "SVK",
+   "name": "Slovakia",
+   "region": "europe",
+   "species": "slovakia_100.csv",
+   "dex": null,
+   "outline": "slovakia_outline.json",
+   "ranges": "slovakia_ranges.json",
+   "hotspots": "slovakia_hotspots.json",
+   "places": "slovakia_places.json",
+   "seasons": "slovakia_seasons.json",
+   "utc_offset": 1,
+   "dst": "eu",
+   "inat_place_id": 8267,
+   "bounds": {
+    "west": 16.7,
+    "east": 22.6,
+    "south": 47.6,
+    "north": 49.7
+   },
+   "grid": {
+    "lon0": 16.625,
+    "lat0": 47.5,
+    "step": 0.125,
+    "cols": 48,
+    "rows": 18
+   }
+  },
+  {
+   "code": "SVN",
+   "name": "Slovenia",
+   "region": "europe",
+   "species": "slovenia_100.csv",
+   "dex": null,
+   "outline": "slovenia_outline.json",
+   "ranges": "slovenia_ranges.json",
+   "hotspots": "slovenia_hotspots.json",
+   "places": "slovenia_places.json",
+   "seasons": "slovenia_seasons.json",
+   "utc_offset": 1,
+   "dst": "eu",
+   "inat_place_id": 8228,
+   "bounds": {
+    "west": 13.3,
+    "east": 16.6,
+    "south": 45.3,
+    "north": 47.0
+   },
+   "grid": {
+    "lon0": 13.25,
+    "lat0": 45.25,
+    "step": 0.0625,
+    "cols": 54,
+    "rows": 28
+   }
+  },
+  {
+   "code": "ESP",
+   "name": "Spain",
+   "region": "europe",
+   "species": "spain_100.csv",
+   "dex": null,
+   "outline": "spain_outline.json",
+   "ranges": "spain_ranges.json",
+   "hotspots": "spain_hotspots.json",
+   "places": "spain_places.json",
+   "seasons": "spain_seasons.json",
+   "utc_offset": 1,
+   "dst": "eu",
+   "inat_place_id": 6774,
+   "bounds": {
+    "west": -9.4,
+    "east": 4.4,
+    "south": 35.9,
+    "north": 43.9
+   },
+   "grid": {
+    "lon0": -9.5,
+    "lat0": 35.75,
+    "step": 0.25,
+    "cols": 56,
+    "rows": 33
+   }
+  },
+  {
+   "code": "SWE",
+   "name": "Sweden",
+   "region": "europe",
+   "species": "sweden_100.csv",
+   "dex": null,
+   "outline": "sweden_outline.json",
+   "ranges": "sweden_ranges.json",
+   "hotspots": "sweden_hotspots.json",
+   "places": "sweden_places.json",
+   "seasons": "sweden_seasons.json",
+   "utc_offset": 1,
+   "dst": "eu",
+   "inat_place_id": 7599,
+   "bounds": {
+    "west": 11.0,
+    "east": 24.3,
+    "south": 55.2,
+    "north": 69.1
+   },
+   "grid": {
+    "lon0": 11.0,
+    "lat0": 55.0,
+    "step": 0.25,
+    "cols": 54,
+    "rows": 57
+   }
+  },
+  {
+   "code": "CHE",
+   "name": "Switzerland",
+   "region": "europe",
+   "species": "switzerland_100.csv",
+   "dex": null,
+   "outline": "switzerland_outline.json",
+   "ranges": "switzerland_ranges.json",
+   "hotspots": "switzerland_hotspots.json",
+   "places": "switzerland_places.json",
+   "seasons": "switzerland_seasons.json",
+   "utc_offset": 1,
+   "dst": "eu",
+   "inat_place_id": 7236,
+   "bounds": {
+    "west": 5.9,
+    "east": 10.6,
+    "south": 45.7,
+    "north": 47.9
+   },
+   "grid": {
+    "lon0": 5.875,
+    "lat0": 45.6875,
+    "step": 0.0625,
+    "cols": 76,
+    "rows": 36
+   }
+  },
+  {
+   "code": "TUR",
+   "name": "Turkey",
+   "region": "europe",
+   "species": "turkey_100.csv",
+   "dex": null,
+   "outline": "turkey_outline.json",
+   "ranges": "turkey_ranges.json",
+   "hotspots": "turkey_hotspots.json",
+   "places": "turkey_places.json",
+   "seasons": "turkey_seasons.json",
+   "utc_offset": 3,
+   "dst": "none",
+   "inat_place_id": 7183,
+   "bounds": {
+    "west": 25.9,
+    "east": 44.9,
+    "south": 35.7,
+    "north": 42.2
+   },
+   "grid": {
+    "lon0": 25.75,
+    "lat0": 35.5,
+    "step": 0.25,
+    "cols": 77,
+    "rows": 27
+   }
+  },
+  {
+   "code": "UKR",
+   "name": "Ukraine",
+   "region": "europe",
+   "species": "ukraine_100.csv",
+   "dex": null,
+   "outline": "ukraine_outline.json",
+   "ranges": "ukraine_ranges.json",
+   "hotspots": "ukraine_hotspots.json",
+   "places": "ukraine_places.json",
+   "seasons": "ukraine_seasons.json",
+   "utc_offset": 2,
+   "dst": "eu",
+   "inat_place_id": 8860,
+   "bounds": {
+    "west": 22.0,
+    "east": 40.3,
+    "south": 44.3,
+    "north": 52.5
+   },
+   "grid": {
+    "lon0": 22.0,
+    "lat0": 44.25,
+    "step": 0.25,
+    "cols": 74,
+    "rows": 33
+   }
+  },
+  {
+   "code": "GBR",
+   "name": "United Kingdom",
+   "region": "europe",
+   "species": "united_kingdom_100.csv",
+   "dex": null,
+   "outline": "united_kingdom_outline.json",
+   "ranges": "united_kingdom_ranges.json",
+   "hotspots": "united_kingdom_hotspots.json",
+   "places": "united_kingdom_places.json",
+   "seasons": "united_kingdom_seasons.json",
+   "utc_offset": 0,
+   "dst": "eu",
+   "inat_place_id": 6857,
+   "bounds": {
+    "west": -8.3,
+    "east": 1.9,
+    "south": 49.9,
+    "north": 60.9
+   },
+   "grid": {
+    "lon0": -8.5,
+    "lat0": 49.75,
+    "step": 0.25,
+    "cols": 42,
+    "rows": 45
+   }
+  },
+  {
+   "code": "VAT",
+   "name": "Vatican City",
+   "region": "europe",
+   "species": "vatican_city_100.csv",
+   "dex": null,
+   "outline": "vatican_city_outline.json",
+   "ranges": "vatican_city_ranges.json",
+   "hotspots": "vatican_city_hotspots.json",
+   "places": "vatican_city_places.json",
+   "seasons": "vatican_city_seasons.json",
+   "utc_offset": 1,
+   "dst": "eu",
+   "inat_place_id": 9213,
+   "bounds": {
+    "west": 12.4,
+    "east": 12.6,
+    "south": 41.8,
+    "north": 42.0
+   },
+   "grid": {
+    "lon0": 12.375,
+    "lat0": 41.75,
+    "step": 0.0625,
+    "cols": 4,
+    "rows": 4
+   }
+  }
+ ]
+}
