@@ -1,0 +1,101 @@
+slug,common_name,scientific_name,category,rarity
+common_wall_lizard,Common Wall Lizard,Podarcis muralis,reptile,common
+turkish_snail,Turkish Snail,Helix lucorum,invertebrate,common
+red_backed_shrike,Red-backed Shrike,Lanius collurio,bird,common
+common_buzzard,Common Buzzard,Buteo buteo,bird,common
+hermanns_tortoise,Hermann's Tortoise,Testudo hermanni,reptile,common
+green_lizard,Green Lizard,Lacerta viridis,reptile,common
+white_stork,White Stork,Ciconia ciconia,bird,common
+eurasian_jay,Eurasian Jay,Garrulus glandarius,bird,common
+hooded_crow,Hooded Crow,Corvus cornix,bird,common
+european_mantis,European Mantis,Mantis religiosa,invertebrate,common
+fire_salamander,Fire Salamander,Salamandra salamandra,amphibian,common
+asian_lady_beetle,Asian Lady Beetle,Harmonia axyridis,invertebrate,common
+european_stag_beetle,European Stag Beetle,Lucanus cervus,invertebrate,common
+alpine_newt,Alpine Newt,Mesotriton alpestris,amphibian,common
+great_tit,Great Tit,Parus major,bird,common
+greek_frog,Greek frog,Rana graeca,amphibian,common
+meadow_brown,Meadow Brown,Maniola jurtina,invertebrate,common
+eurasian_kestrel,Eurasian Kestrel,Falco tinnunculus,bird,common
+european_rose_chafer,European Rose Chafer,Cetonia aurata,invertebrate,common
+queen_of_spain_fritillary,Queen of Spain Fritillary,Issoria lathonia,invertebrate,common
+marbled_white,Marbled White,Melanargia galathea,invertebrate,common
+grey_heron,Grey Heron,Ardea cinerea,bird,common
+white_wagtail,White Wagtail,Motacilla alba,bird,common
+painted_lady,Painted Lady,Vanessa cardui,invertebrate,common
+yellow_bellied_toad,Yellow-bellied Toad,Bombina variegata,amphibian,common
+marsh_frog,Marsh Frog,Pelophylax ridibundus,amphibian,common
+common_chaffinch,Common Chaffinch,Fringilla coelebs,bird,common
+house_sparrow,House Sparrow,Passer domesticus,bird,common
+scarce_swallowtail,Scarce Swallowtail,Iphiclides podalirius,invertebrate,common
+seven_spotted_lady_beetle,Seven-spotted Lady Beetle,Coccinella septempunctata,invertebrate,common
+aesculapian_snake,Aesculapian Snake,Zamenis longissimus,reptile,common
+western_honey_bee,Western Honey Bee,Apis mellifera,invertebrate,common
+long_nosed_viper,Long-nosed Viper,Vipera ammodytes,reptile,common
+smooth_snake,Smooth Snake,Coronella austriaca,reptile,common
+mallard,Mallard,Anas platyrhynchos,bird,common
+european_goldfinch,European Goldfinch,Carduelis carduelis,bird,common
+european_turtle_dove,European Turtle-Dove,Streptopelia turtur,bird,common
+european_starling,European Starling,Sturnus vulgaris,bird,common
+common_slowworm,Common Slowworm,Anguis fragilis,reptile,common
+red_fox,Red Fox,Vulpes vulpes,mammal,common
+northern_white_breasted_hedgehog,Northern White-breasted Hedgehog,Erinaceus roumanicus,mammal,common
+long_tailed_tit,Long-tailed Tit,Aegithalos caudatus,bird,common
+northern_wheatear,Northern Wheatear,Oenanthe oenanthe,bird,common
+eurasian_green_woodpecker,Eurasian Green Woodpecker,Picus viridis,bird,common
+european_toad,European Toad,Bufo bufo,amphibian,common
+eurasian_blackbird,Eurasian Blackbird,Turdus merula,bird,common
+common_hoopoe,Common Hoopoe,Upupa epops,bird,common
+eurasian_jackdaw,Eurasian Jackdaw,Coloeus monedula,bird,common
+cirl_bunting,Cirl Bunting,Emberiza cirlus,bird,common
+yellowhammer,Yellowhammer,Emberiza citrinella,bird,common
+mistle_thrush,Mistle Thrush,Turdus viscivorus,bird,uncommon
+european_robin,European Robin,Erithacus rubecula,bird,uncommon
+eurasian_collared_dove,Eurasian Collared-Dove,Streptopelia decaocto,bird,uncommon
+barn_swallow,Barn Swallow,Hirundo rustica,bird,uncommon
+whinchat,Whinchat,Saxicola rubetra,bird,uncommon
+eurasian_nuthatch,Eurasian Nuthatch,Sitta europaea,bird,uncommon
+eurasian_red_squirrel,Eurasian Red Squirrel,Sciurus vulgaris,mammal,uncommon
+balkan_wall_lizard,Balkan Wall Lizard,Podarcis tauricus,reptile,uncommon
+spotted_flycatcher,Spotted Flycatcher,Muscicapa striata,bird,uncommon
+black_redstart,Black Redstart,Phoenicurus ochruros,bird,uncommon
+syrian_woodpecker,Syrian Woodpecker,Dendrocopos syriacus,bird,uncommon
+coal_tit,Coal Tit,Periparus ater,bird,uncommon
+corn_bunting,Corn Bunting,Emberiza calandra,bird,uncommon
+european_copper_skink,European Copper Skink,Ablepharus kitaibelii,reptile,uncommon
+gray_partridge,Gray Partridge,Perdix perdix,bird,uncommon
+european_bee_eater,European Bee-eater,Merops apiaster,bird,uncommon
+rook,Rook,Corvus frugilegus,bird,uncommon
+eurasian_tree_sparrow,Eurasian Tree Sparrow,Passer montanus,bird,uncommon
+wild_boar,Wild Boar,Sus scrofa,mammal,uncommon
+grass_snake,Grass snake,Natrix natrix,reptile,uncommon
+hungarian_pachyiulus,Hungarian Pachyiulus,Pachyiulus hungaricus,marine,uncommon
+brown_hare,Brown Hare,Lepus europaeus,mammal,uncommon
+european_crayfish,European Crayfish,Astacus astacus,marine,uncommon
+collared_flat_backed_millipede,Collared flat-backed millipede,Polydesmus collaris,marine,uncommon
+viviparous_lizard,Viviparous Lizard,Zootoca vivipara,reptile,uncommon
+macedonian_crested_newt,Macedonian Crested Newt,Triturus macedonicus,amphibian,uncommon
+european_mole,European Mole,Talpa europaea,mammal,uncommon
+agile_frog,Agile Frog,Rana dalmatina,amphibian,rare
+european_chub,European Chub,Squalius cephalus,marine,rare
+brown_bear,Brown Bear,Ursus arctos,mammal,rare
+sand_lizard,Sand Lizard,Lacerta agilis,reptile,rare
+pumpkinseed,Pumpkinseed,Lepomis gibbosus,marine,rare
+danubian_minnow,Danubian Minnow,Phoxinus csikii,marine,rare
+stone_crayfish,Stone Crayfish,Austropotamobius torrentium,marine,rare
+european_fallow_deer,European Fallow Deer,Dama dama,mammal,rare
+european_perch,European Perch,Perca fluviatilis,marine,rare
+mediterranean_banded_centipede,Mediterranean Banded Centipede,Scolopendra cingulata,marine,rare
+greater_horseshoe_bat,Greater Horseshoe Bat,Rhinolophus ferrumequinum,mammal,rare
+gray_wolf,Gray Wolf,Canis lupus,mammal,rare
+european_fat_dormouse,European Fat Dormouse,Glis glis,mammal,rare
+red_deer,Red Deer,Cervus elaphus,mammal,rare
+common_roach,Common Roach,Rutilus rutilus,marine,rare
+eurasian_otter,Eurasian Otter,Lutra lutra,mammal,rare
+western_roe_deer,Western Roe Deer,Capreolus capreolus,mammal,rare
+striped_field_mouse,Striped Field Mouse,Apodemus agrarius,mammal,rare
+lesser_horseshoe_bat,Lesser Horseshoe Bat,Rhinolophus hipposideros,mammal,legendary
+stone_marten,Stone Marten,Martes foina,mammal,legendary
+northern_chamois,Northern Chamois,Rupicapra rupicapra,mammal,legendary
+muskrat,Muskrat,Ondatra zibethicus,mammal,legendary
+schreibers_long_fingered_bat,Schreibers' Long-fingered Bat,Miniopterus schreibersii,mammal,legendary

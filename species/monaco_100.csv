@@ -1,0 +1,101 @@
+slug,common_name,scientific_name,category,rarity
+yellow_legged_gull,Yellow-legged Gull,Larus michahellis,bird,common
+eurasian_collared_dove,Eurasian Collared-Dove,Streptopelia decaocto,bird,common
+mallard,Mallard,Anas platyrhynchos,bird,common
+eurasian_blackbird,Eurasian Blackbird,Turdus merula,bird,common
+common_wall_lizard,Common Wall Lizard,Podarcis muralis,reptile,common
+house_sparrow,House Sparrow,Passer domesticus,bird,common
+white_sea_bream,White Sea Bream,Diplodus sargus,marine,common
+mediterranean_damselfish,Mediterranean Damselfish,Chromis chromis,marine,common
+black_faced_blenny,Black-faced Blenny,Tripterygion delaisi,marine,common
+cratena_slug,Cratena Slug,Cratena peregrina,invertebrate,common
+mediterranean_acrobat_ant,Mediterranean Acrobat Ant,Crematogaster scutellaris,invertebrate,common
+cushion_coral,Cushion Coral,Cladocora caespitosa,marine,common
+european_robin,European Robin,Erithacus rubecula,bird,common
+egyptian_goose,Egyptian Goose,Alopochen aegyptiaca,bird,common
+saddled_seabream,Saddled Seabream,Oblada melanurus,marine,common
+carrion_crow,Carrion Crow,Corvus corone,bird,common
+salema_porgy,Salema Porgy,Sarpa salpa,marine,common
+painted_comber,Painted Comber,Serranus scriba,marine,common
+brown_meagre,Brown Meagre,Sciaena umbra,marine,common
+eurasian_blackcap,Eurasian Blackcap,Sylvia atricapilla,bird,common
+moorish_gecko,Moorish Gecko,Tarentola mauritanica,reptile,common
+red_scorpionfish,Red Scorpionfish,Scorpaena scrofa,marine,common
+incognito_goby,Incognito Goby,Gobius incognitus,marine,common
+dusky_grouper,Dusky Grouper,Epinephelus marginatus,marine,common
+zvonimirs_blenny,Zvonimir's Blenny,Parablennius zvonimiri,marine,common
+mediterranean_red_sea_star,Mediterranean Red Sea Star,Echinaster sepositus,marine,common
+eurasian_hummingbird_hawkmoth,Eurasian Hummingbird Hawkmoth,Macroglossum stellatarum,invertebrate,common
+small_triplefin_blenny,Small Triplefin Blenny,Tripterygion melanurus,marine,common
+western_honey_bee,Western Honey Bee,Apis mellifera,invertebrate,common
+red_mouthed_goby,Red-mouthed Goby,Gobius cruentatus,marine,common
+buff_tailed_bumble_bee,Buff-tailed Bumble Bee,Bombus terrestris,invertebrate,common
+saratos_goby,Sarato's Goby,Gobius fallax,marine,common
+mauve_stinger,Mauve Stinger,Pelagia noctiluca,marine,common
+oyster_sponge,Oyster Sponge,Crambe crambe,marine,common
+white_wagtail,White Wagtail,Motacilla alba,bird,common
+yellow_legged_hornet,Yellow-legged Hornet,Vespa velutina,invertebrate,common
+mediterranean_rainbow_wrasse,Mediterranean Rainbow Wrasse,Coris julis,marine,common
+picarel,Picarel,Spicara smaris,marine,common
+pallid_swift,Pallid Swift,Apus pallidus,bird,common
+nomad,Nomad,Sympetrum fonscolombii,invertebrate,common
+longstriped_blenny,Longstriped Blenny,Parablennius rouxi,marine,common
+common_two_banded_seabream,Common Two-banded Seabream,Diplodus vulgaris,marine,common
+mediterranean_fairy_basslet,Mediterranean Fairy Basslet,Anthias anthias,marine,common
+comber,Comber,Serranus cabrilla,marine,common
+tompot_blenny,Tompot Blenny,Parablennius gattorugine,marine,common
+madeira_scorpionfish,Madeira Scorpionfish,Scorpaena maderensis,marine,common
+mediterranean_house_gecko,Mediterranean House Gecko,Hemidactylus turcicus,reptile,common
+broad_scarlet,Broad Scarlet,Crocothemis erythraea,invertebrate,common
+mediterranean_violet_aeolid,Mediterranean Violet Aeolid,Flabellina affinis,invertebrate,common
+tricolored_felimare,Tricolored Felimare,Felimare tricolor,invertebrate,common
+yellowmouth_barracuda,Yellowmouth Barracuda,Sphyraena viridensis,marine,uncommon
+ornate_wrasse,Ornate Wrasse,Thalassoma pavo,marine,uncommon
+sharpsnout_seabream,Sharpsnout Seabream,Diplodus puntazzo,marine,uncommon
+slender_goby,Slender Goby,Gobius geniporus,marine,uncommon
+atlantic_bluefin_tuna,Atlantic Bluefin Tuna,Thunnus thynnus,marine,uncommon
+mediterranean_moray,Mediterranean Moray,Muraena helena,marine,uncommon
+black_scorpionfish,Black Scorpionfish,Scorpaena porcus,marine,uncommon
+gilthead_seabream,Gilthead Seabream,Sparus aurata,marine,uncommon
+red_sea_squirt,Red sea squirt,Halocynthia papillosa,marine,uncommon
+striped_hermit_crab,Striped Hermit Crab,Pagurus anachoretus,marine,uncommon
+common_wood_pigeon,Common Wood-Pigeon,Columba palumbus,bird,uncommon
+peregrine_falcon,Peregrine Falcon,Falco peregrinus,bird,uncommon
+common_swift,Common Swift,Apus apus,bird,uncommon
+common_pochard,Common Pochard,Aythya ferina,bird,uncommon
+langs_short_tailed_blue,Lang's Short-tailed Blue,Leptotes pirithous,invertebrate,uncommon
+striped_red_mullet,Striped Red Mullet,Mullus surmuletus,marine,uncommon
+small_red_scorpionfish,Small Red Scorpionfish,Scorpaena notata,marine,uncommon
+sphinx_blenny,Sphinx Blenny,Aidablennius sphynx,marine,uncommon
+red_black_triplefin,Red-black Triplefin,Tripterygion tripteronotum,marine,uncommon
+ringneck_blenny,Ringneck Blenny,Parablennius pilicornis,marine,uncommon
+yellow_cluster_anemone,Yellow Cluster Anemone,Parazoanthus axinellae,marine,uncommon
+ross_coral,Ross Coral,Pentapora fascialis,marine,uncommon
+zebra_isopod,Zebra Isopod,Armadillidium maculatum,marine,uncommon
+grey_heron,Grey Heron,Ardea cinerea,bird,uncommon
+indian_silverbill,Indian Silverbill,Euodice malabarica,bird,uncommon
+pond_slider,Pond Slider,Trachemys scripta,reptile,uncommon
+mealybug_destroyer,Mealybug Destroyer,Cryptolaemus montrouzieri,invertebrate,uncommon
+razorbill,Razorbill,Alca torda,bird,rare
+common_shelduck,Common Shelduck,Tadorna tadorna,bird,rare
+european_starling,European Starling,Sturnus vulgaris,bird,rare
+common_firecrest,Common Firecrest,Regulus ignicapilla,bird,rare
+black_headed_gull,Black-headed Gull,Chroicocephalus ridibundus,bird,rare
+eurasian_crag_martin,Eurasian Crag-Martin,Ptyonoprogne rupestris,bird,rare
+sardinian_warbler,Sardinian Warbler,Curruca melanocephala,bird,rare
+european_shag,European Shag,Gulosus aristotelis,bird,rare
+black_redstart,Black Redstart,Phoenicurus ochruros,bird,rare
+european_free_tailed_bat,European Free-tailed Bat,Tadarida teniotis,mammal,rare
+red_legged_partridge,Red-legged Partridge,Alectoris rufa,bird,rare
+common_kingfisher,Common Kingfisher,Alcedo atthis,bird,rare
+lesser_black_backed_gull,Lesser Black-backed Gull,Larus fuscus,bird,rare
+eurasian_sparrowhawk,Eurasian Sparrowhawk,Accipiter nisus,bird,rare
+european_goldfinch,European Goldfinch,Carduelis carduelis,bird,rare
+crested_tit,Crested Tit,Lophophanes cristatus,bird,rare
+eurasian_blue_tit,Eurasian Blue Tit,Cyanistes caeruleus,bird,rare
+italian_sparrow,Italian Sparrow,Passer italiae,bird,rare
+great_tit,Great Tit,Parus major,bird,legendary
+scopolis_shearwater,Scopoli's Shearwater,Calonectris diomedea,bird,legendary
+italian_wall_lizard,Italian Wall Lizard,Podarcis siculus,reptile,legendary
+mediterranean_tree_frog,Mediterranean Tree Frog,Hyla meridionalis,amphibian,legendary
+spiny_toad,Spiny Toad,Bufo spinosus,amphibian,legendary
