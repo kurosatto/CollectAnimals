@@ -8,9 +8,9 @@
 //   with the last answer as the offline fallback. The page clears it on log out.
 // - Everything else (photos, galleries, the feed, uploads, any POST) goes straight to the network,
 //   so other players' photos never fill up the phone.
-const VERSION = "67";
+const VERSION = "68";
 const SHELL = `shell-v${VERSION}`;
-const ASSETS = "assets-v11";  // v11: 16 frames per pose (was 12)
+const ASSETS = "assets-v12";  // v12: sprites for the European animals
 const API = "api-v1";
 const SHELL_URLS = ["/", "/habitat.js", "/decor.js", "/decor.json", "/minigames.js", "/manifest.webmanifest", "/vendor/leaflet/leaflet.js",
   "/vendor/leaflet/leaflet.css", "/vendor/fonts/pixelify.woff2", "/vendor/fonts/spacegrotesk.woff2", "/icons/hummingbird/icon-192.png", "/icons/hummingbird/favicon-32.png",
