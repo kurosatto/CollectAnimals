@@ -18,7 +18,9 @@ const HAB_H = 270;
 // animals in their state's scenery (`visit`); closing the profile brings yours back.
 const hab = { w: 0, L: null, animals: [], peek: false, picked: null, pickedUntil: 0, factIdx: 0, last: 0, bg: null, bgKey: "", t: 0,
               fx: [], visit: null };
-const habState = () => (hab.visit ? hab.visit.state : myState.code);
+const habRealState = () => (hab.visit ? hab.visit.state : myState.code);
+// The state whose scenery the habitat is drawn with (HAB_TWIN for countries).
+const habState = () => { const st = habRealState(); return HAB_TWIN[st] || st; };
 const habImgs = {};
 // Animation sheets (species/sprites/anim): a row of frames for each pose (8 now, 4 in
 // older sheets), and an index of the poses each species really draws. Without them
@@ -209,6 +211,32 @@ const HAB_CITY = {
   SD: [43.54, -96.73], TN: [36.16, -86.78], TX: [29.76, -95.37], UT: [40.76, -111.89],
   VT: [44.48, -73.21], VA: [37.54, -77.44], WA: [47.61, -122.33], WV: [38.35, -81.63],
   WI: [43.04, -87.91], WY: [41.14, -104.82],
+  // European countries (ISO alpha-3 codes): their capitals.
+  ALB: [41.33, 19.82], AUT: [48.20, 16.36], BLR: [53.90, 27.56], BEL: [50.84, 4.33],
+  BIH: [43.85, 18.38], BGR: [42.69, 23.31], HRV: [45.80, 16.00], CYP: [35.17, 33.37],
+  CZE: [50.09, 14.46], DNK: [55.68, 12.56], EST: [59.43, 24.73], FIN: [60.18, 24.93],
+  FRA: [48.87, 2.33], DEU: [52.52, 13.40], GRC: [37.99, 23.73], HUN: [47.50, 19.08],
+  ISL: [64.15, -21.95], IRL: [53.34, -6.25], ITA: [41.90, 12.48], XKX: [42.67, 21.17],
+  LVA: [56.95, 24.10], LTU: [54.68, 25.32], LUX: [49.61, 6.13], MLT: [35.90, 14.51],
+  MDA: [47.01, 28.86], MNE: [42.47, 19.27], NLD: [52.35, 4.91], MKD: [42.00, 21.43],
+  NOR: [59.92, 10.75], POL: [52.25, 21.00], PRT: [38.72, -9.15], ROU: [44.44, 26.10],
+  RUS: [55.75, 37.61], SRB: [44.82, 20.47], SVK: [48.15, 17.12], SVN: [46.06, 14.51],
+  ESP: [40.40, -3.69], SWE: [59.35, 18.10], CHE: [46.92, 7.47], TUR: [39.93, 32.86],
+  UKR: [50.44, 30.51], GBR: [51.50, -0.12],
+};
+// A European country's habitat borrows the scenery of a US state with a similar
+// landscape and no US landmark: the Mediterranean coast is California's golden
+// hills and sea, the Alps are Colorado's peaks, the Balkan and Carpathian hills
+// the Smokies, the Baltic and Nordic woods Minnesota's and Maine's, Iceland and
+// Norway Alaska's, Ukraine Kansas's wheat. The sun, moon and weather still use the
+// country's own capital (habRealState).
+const HAB_TWIN = {
+  ALB: "CA", AUT: "CO", BLR: "MN", BEL: "DE", BIH: "TN", BGR: "TN", HRV: "CA", CYP: "CA",
+  CZE: "KY", DNK: "RI", EST: "ME", FIN: "MN", FRA: "MD", DEU: "KY", GRC: "CA", HUN: "IA",
+  ISL: "AK", IRL: "RI", ITA: "CA", XKX: "TN", LVA: "ME", LTU: "MN", LUX: "KY", MLT: "CA",
+  MDA: "IA", MNE: "CA", NLD: "DE", MKD: "TN", NOR: "AK", POL: "WI", PRT: "CA", ROU: "TN",
+  RUS: "MN", SRB: "KY", SVK: "TN", SVN: "CO", ESP: "CA", SWE: "MN", CHE: "CO", TUR: "CA",
+  UKR: "KS", GBR: "RI",
 };
 // The water on the right of the scene is the Pacific in these states, so the sun
 // sets over it there; everywhere else it rises on the water side.
@@ -244,7 +272,7 @@ function habSkyAt(ms, lat, lon) {
            elong, waxing: gap < 180, lit: (1 - Math.cos(elong * r)) / 2 } };
 }
 function habSkyNow() {
-  const state = habState(), here = !hab.visit && hab.here && hab.here.state === state && hab.here;
+  const state = habRealState(), here = !hab.visit && hab.here && hab.here.state === state && hab.here;
   const [lat, lon] = here ? [here.lat, here.lon] : HAB_CITY[state] || HAB_CITY.CA;
   const at = Math.floor(habNow() / 15e3), key = `${state}/${lat}/${lon}/${at}`;
   if (hab.skyKey !== key) { hab.sky = habSkyAt(at * 15e3, lat, lon); hab.skyKey = key; }
@@ -1443,7 +1471,7 @@ function habWeather() {
     }
     return;
   }
-  const state = habState(), now = Date.now();
+  const state = habRealState(), now = Date.now();
   if (state === hab.wxKey && now - hab.wxAt < 15 * 60e3) return;
   if (state !== hab.wxKey) { hab.wx = null; hab.drops = []; }
   hab.wxKey = state; hab.wxAt = now;
