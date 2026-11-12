@@ -80,7 +80,7 @@ spinycheek_crayfish,Spinycheek Crayfish,Faxonius limosus,marine,rare
 european_mole,European Mole,Talpa europaea,mammal,rare
 red_deer,Red Deer,Cervus elaphus,mammal,rare
 balkan_wall_lizard,Balkan Wall Lizard,Podarcis tauricus,reptile,rare
-hungarian_pachyiulus,Hungarian Pachyiulus,Pachyiulus hungaricus,marine,rare
+hungarian_pachyiulus,Hungarian Pachyiulus,Pachyiulus hungaricus,invertebrate,rare
 common_pill_woodlouse,Common Pill Woodlouse,Armadillidium vulgare,marine,rare
 barrel_jelly,Barrel Jelly,Rhizostoma pulmo,marine,rare
 house_centipede,House Centipede,Scutigera coleoptrata,marine,rare
@@ -89,8 +89,8 @@ eurasian_otter,Eurasian Otter,Lutra lutra,mammal,rare
 golden_jackal,Golden Jackal,Canis aureus,mammal,rare
 european_chub,European Chub,Squalius cephalus,marine,rare
 eurasian_beaver,Eurasian Beaver,Castor fiber,mammal,rare
-mediterranean_banded_centipede,Mediterranean Banded Centipede,Scolopendra cingulata,marine,rare
-versicolored_pill_woodlouse,Versicolored Pill Woodlouse,Armadillidium versicolor,marine,rare
+mediterranean_banded_centipede,Mediterranean Banded Centipede,Scolopendra cingulata,invertebrate,rare
+versicolored_pill_woodlouse,Versicolored Pill Woodlouse,Armadillidium versicolor,invertebrate,rare
 muskrat,Muskrat,Ondatra zibethicus,mammal,rare
 pumpkinseed,Pumpkinseed,Lepomis gibbosus,marine,rare
 prussian_carp,Prussian Carp,Carassius gibelio,marine,rare

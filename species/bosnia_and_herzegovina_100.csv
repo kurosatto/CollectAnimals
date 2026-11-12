@@ -75,11 +75,11 @@ long_tailed_tit,Long-tailed Tit,Aegithalos caudatus,bird,uncommon
 eurasian_beaver,Eurasian Beaver,Castor fiber,mammal,uncommon
 song_thrush,Song Thrush,Turdus philomelos,bird,uncommon
 rainbow_trout,Rainbow Trout,Oncorhynchus mykiss,marine,uncommon
-hungarian_pachyiulus,Hungarian Pachyiulus,Pachyiulus hungaricus,marine,uncommon
+hungarian_pachyiulus,Hungarian Pachyiulus,Pachyiulus hungaricus,invertebrate,uncommon
 red_fox,Red Fox,Vulpes vulpes,mammal,rare
 common_pill_woodlouse,Common Pill Woodlouse,Armadillidium vulgare,marine,rare
-clown_isopod,Clown Isopod,Armadillidium klugii,marine,rare
-collared_flat_backed_millipede,Collared flat-backed millipede,Polydesmus collaris,marine,rare
+clown_isopod,Clown Isopod,Armadillidium klugii,invertebrate,rare
+collared_flat_backed_millipede,Collared flat-backed millipede,Polydesmus collaris,invertebrate,rare
 brown_bear,Brown Bear,Ursus arctos,mammal,rare
 brown_trout,Brown Trout,Salmo trutta,marine,rare
 european_fat_dormouse,European Fat Dormouse,Glis glis,mammal,rare

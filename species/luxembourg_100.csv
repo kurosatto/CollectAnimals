@@ -74,7 +74,7 @@ muskrat,Muskrat,Ondatra zibethicus,mammal,uncommon
 sand_lizard,Sand Lizard,Lacerta agilis,reptile,uncommon
 palmate_newt,Palmate Newt,Lissotriton helveticus,amphibian,uncommon
 signal_crayfish,Signal Crayfish,Pacifastacus leniusculus,marine,uncommon
-common_pill_millipede,Common Pill Millipede,Glomeris marginata,marine,uncommon
+common_pill_millipede,Common Pill Millipede,Glomeris marginata,invertebrate,uncommon
 smooth_snake,Smooth Snake,Coronella austriaca,reptile,uncommon
 coypu,Coypu,Myocastor coypus,mammal,rare
 pond_slider,Pond Slider,Trachemys scripta,reptile,rare
@@ -86,7 +86,7 @@ bank_vole,Bank Vole,Clethrionomys glareolus,mammal,rare
 common_striped_woodlouse,Common Striped Woodlouse,Philoscia muscorum,marine,rare
 red_deer,Red Deer,Cervus elaphus,mammal,rare
 european_tree_frog,European Tree Frog,Hyla arborea,amphibian,rare
-belted_springtail,Belted Springtail,Orchesella cincta,marine,rare
+belted_springtail,Belted Springtail,Orchesella cincta,invertebrate,rare
 european_garden_dormouse,European Garden Dormouse,Eliomys quercinus,mammal,rare
 european_wildcat,European Wildcat,Felis silvestris,mammal,rare
 european_wood_mouse,European Wood Mouse,Apodemus sylvaticus,mammal,rare

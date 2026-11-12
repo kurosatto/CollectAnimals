@@ -63,7 +63,7 @@ grass_snake,Grass snake,Natrix natrix,reptile,uncommon
 eurasian_kestrel,Eurasian Kestrel,Falco tinnunculus,bird,uncommon
 western_marsh_harrier,Western Marsh Harrier,Circus aeruginosus,bird,uncommon
 song_thrush,Song Thrush,Turdus philomelos,bird,uncommon
-mediterranean_banded_centipede,Mediterranean Banded Centipede,Scolopendra cingulata,marine,uncommon
+mediterranean_banded_centipede,Mediterranean Banded Centipede,Scolopendra cingulata,invertebrate,uncommon
 kotschys_gecko,Kotschy's Gecko,Mediodactylus kotschyi,reptile,uncommon
 caspian_whipsnake,Caspian Whipsnake,Dolichophis caspius,reptile,uncommon
 european_common_frog,European Common Frog,Rana temporaria,amphibian,uncommon
@@ -79,7 +79,7 @@ western_roe_deer,Western Roe Deer,Capreolus capreolus,mammal,uncommon
 marbled_crab,Marbled Crab,Pachygrapsus marmoratus,marine,rare
 european_badger,European Badger,Meles meles,mammal,rare
 european_ground_squirrel,European Ground Squirrel,Spermophilus citellus,mammal,rare
-hungarian_pachyiulus,Hungarian Pachyiulus,Pachyiulus hungaricus,marine,rare
+hungarian_pachyiulus,Hungarian Pachyiulus,Pachyiulus hungaricus,invertebrate,rare
 eastern_mosquitofish,Eastern Mosquitofish,Gambusia holbrooki,marine,rare
 red_fox,Red Fox,Vulpes vulpes,mammal,rare
 eurasian_otter,Eurasian Otter,Lutra lutra,mammal,rare
