@@ -1,0 +1,902 @@
+{
+ "source": "iNaturalist research-grade observations (species_counts by radius)",
+ "min_observations": 3,
+ "parks": [
+  {
+   "id": "troodos",
+   "name": "Troodos National Forest Park",
+   "lat": 34.93,
+   "lon": 32.87,
+   "radius_km": 12,
+   "blurb": "Pine-covered mountains with mouflon, jays, lizards and butterflies.",
+   "species": [
+    {
+     "slug": "seven_spotted_lady_beetle",
+     "observations": 93
+    },
+    {
+     "slug": "troodos_rock_lizard",
+     "observations": 76
+    },
+    {
+     "slug": "sloe_bug",
+     "observations": 74
+    },
+    {
+     "slug": "common_chaffinch",
+     "observations": 72
+    },
+    {
+     "slug": "cyprus_wheatear",
+     "observations": 61
+    },
+    {
+     "slug": "sling_tailed_agama",
+     "observations": 45
+    },
+    {
+     "slug": "cyprus_processionary_moth",
+     "observations": 32
+    },
+    {
+     "slug": "snake_eyed_lizard",
+     "observations": 27
+    },
+    {
+     "slug": "large_white",
+     "observations": 25
+    },
+    {
+     "slug": "masked_shrike",
+     "observations": 24
+    },
+    {
+     "slug": "house_sparrow",
+     "observations": 22
+    },
+    {
+     "slug": "marsh_frog",
+     "observations": 22
+    },
+    {
+     "slug": "clouded_yellow",
+     "observations": 20
+    },
+    {
+     "slug": "painted_lady",
+     "observations": 17
+    },
+    {
+     "slug": "paphos_blue",
+     "observations": 17
+    },
+    {
+     "slug": "barn_swallow",
+     "observations": 16
+    },
+    {
+     "slug": "old_world_swallowtail",
+     "observations": 15
+    },
+    {
+     "slug": "great_tit",
+     "observations": 15
+    },
+    {
+     "slug": "budaks_snake_eyed_skink",
+     "observations": 14
+    },
+    {
+     "slug": "european_greenfinch",
+     "observations": 14
+    },
+    {
+     "slug": "common_hoopoe",
+     "observations": 13
+    },
+    {
+     "slug": "eastern_mediterranean_thin_toed_gecko",
+     "observations": 12
+    },
+    {
+     "slug": "long_legged_buzzard",
+     "observations": 8
+    },
+    {
+     "slug": "oriental_hornet",
+     "observations": 8
+    },
+    {
+     "slug": "egyptian_bird_grasshopper",
+     "observations": 8
+    },
+    {
+     "slug": "sardinian_warbler",
+     "observations": 8
+    },
+    {
+     "slug": "european_bee_eater",
+     "observations": 7
+    },
+    {
+     "slug": "hooded_crow",
+     "observations": 7
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 6
+    },
+    {
+     "slug": "large_whip_snake",
+     "observations": 6
+    },
+    {
+     "slug": "middle_east_black_tarantula",
+     "observations": 6
+    },
+    {
+     "slug": "common_wood_pigeon",
+     "observations": 5
+    },
+    {
+     "slug": "mallard",
+     "observations": 5
+    },
+    {
+     "slug": "european_goldfinch",
+     "observations": 5
+    },
+    {
+     "slug": "common_chameleon",
+     "observations": 5
+    },
+    {
+     "slug": "eurasian_magpie",
+     "observations": 5
+    },
+    {
+     "slug": "eurasian_coot",
+     "observations": 4
+    },
+    {
+     "slug": "bridled_skink",
+     "observations": 4
+    },
+    {
+     "slug": "laughing_dove",
+     "observations": 4
+    },
+    {
+     "slug": "grey_heron",
+     "observations": 3
+    },
+    {
+     "slug": "mediterranean_house_gecko",
+     "observations": 3
+    },
+    {
+     "slug": "red_fox",
+     "observations": 3
+    },
+    {
+     "slug": "common_chiffchaff",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "akamas",
+   "name": "Akamas Peninsula",
+   "lat": 35.03,
+   "lon": 32.33,
+   "radius_km": 10,
+   "blurb": "Wild coast where sea turtles nest, with lizards and migrating birds.",
+   "species": [
+    {
+     "slug": "sling_tailed_agama",
+     "observations": 170
+    },
+    {
+     "slug": "snake_eyed_lizard",
+     "observations": 90
+    },
+    {
+     "slug": "troodos_rock_lizard",
+     "observations": 53
+    },
+    {
+     "slug": "cyprus_wheatear",
+     "observations": 33
+    },
+    {
+     "slug": "schreibers_fringe_fingered_lizard",
+     "observations": 32
+    },
+    {
+     "slug": "eastern_mediterranean_thin_toed_gecko",
+     "observations": 32
+    },
+    {
+     "slug": "budaks_snake_eyed_skink",
+     "observations": 31
+    },
+    {
+     "slug": "paphos_blue",
+     "observations": 29
+    },
+    {
+     "slug": "ornate_wrasse",
+     "observations": 28
+    },
+    {
+     "slug": "nomad",
+     "observations": 28
+    },
+    {
+     "slug": "rivulated_rabbitfish",
+     "observations": 26
+    },
+    {
+     "slug": "sardinian_warbler",
+     "observations": 26
+    },
+    {
+     "slug": "painted_lady",
+     "observations": 22
+    },
+    {
+     "slug": "red_sea_goatfish",
+     "observations": 21
+    },
+    {
+     "slug": "blue_spotted_cornetfish",
+     "observations": 20
+    },
+    {
+     "slug": "barn_swallow",
+     "observations": 19
+    },
+    {
+     "slug": "black_longspine_urchin",
+     "observations": 19
+    },
+    {
+     "slug": "house_sparrow",
+     "observations": 18
+    },
+    {
+     "slug": "cyprian_green_toad",
+     "observations": 18
+    },
+    {
+     "slug": "european_goldfinch",
+     "observations": 17
+    },
+    {
+     "slug": "common_wood_pigeon",
+     "observations": 16
+    },
+    {
+     "slug": "chocolate_band_snail",
+     "observations": 16
+    },
+    {
+     "slug": "eurasian_kestrel",
+     "observations": 16
+    },
+    {
+     "slug": "masked_shrike",
+     "observations": 15
+    },
+    {
+     "slug": "giant_african_mantis",
+     "observations": 15
+    },
+    {
+     "slug": "flavimaculosus_puffer",
+     "observations": 15
+    },
+    {
+     "slug": "mediterranean_house_gecko",
+     "observations": 14
+    },
+    {
+     "slug": "yellow_legged_pachyiulus",
+     "observations": 14
+    },
+    {
+     "slug": "marsh_frog",
+     "observations": 14
+    },
+    {
+     "slug": "lemon_yellow_tree_frog",
+     "observations": 13
+    },
+    {
+     "slug": "egyptian_bird_grasshopper",
+     "observations": 12
+    },
+    {
+     "slug": "cyprus_processionary_moth",
+     "observations": 12
+    },
+    {
+     "slug": "chukar",
+     "observations": 11
+    },
+    {
+     "slug": "violet_dropwing",
+     "observations": 11
+    },
+    {
+     "slug": "common_chameleon",
+     "observations": 10
+    },
+    {
+     "slug": "large_white",
+     "observations": 10
+    },
+    {
+     "slug": "large_whip_snake",
+     "observations": 10
+    },
+    {
+     "slug": "european_stonechat",
+     "observations": 10
+    },
+    {
+     "slug": "crimson_speckled_flunkey",
+     "observations": 10
+    },
+    {
+     "slug": "old_world_swallowtail",
+     "observations": 9
+    },
+    {
+     "slug": "yellow_legged_gull",
+     "observations": 9
+    },
+    {
+     "slug": "marbled_crab",
+     "observations": 9
+    },
+    {
+     "slug": "egyptian_rousette",
+     "observations": 9
+    },
+    {
+     "slug": "bridled_skink",
+     "observations": 9
+    },
+    {
+     "slug": "middle_east_black_tarantula",
+     "observations": 8
+    },
+    {
+     "slug": "long_legged_buzzard",
+     "observations": 7
+    },
+    {
+     "slug": "ocellated_bronze_skink",
+     "observations": 7
+    },
+    {
+     "slug": "indian_lionfish",
+     "observations": 7
+    },
+    {
+     "slug": "clouded_yellow",
+     "observations": 7
+    },
+    {
+     "slug": "crested_lark",
+     "observations": 7
+    },
+    {
+     "slug": "black_redstart",
+     "observations": 6
+    },
+    {
+     "slug": "great_tit",
+     "observations": 6
+    },
+    {
+     "slug": "little_egret",
+     "observations": 5
+    },
+    {
+     "slug": "green_sea_turtle",
+     "observations": 5
+    },
+    {
+     "slug": "long_eared_hedgehog",
+     "observations": 5
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 5
+    },
+    {
+     "slug": "oriental_hornet",
+     "observations": 5
+    },
+    {
+     "slug": "european_greenfinch",
+     "observations": 5
+    },
+    {
+     "slug": "garden_snail",
+     "observations": 5
+    },
+    {
+     "slug": "eurasian_magpie",
+     "observations": 5
+    },
+    {
+     "slug": "european_roller",
+     "observations": 4
+    },
+    {
+     "slug": "eurasian_collared_dove",
+     "observations": 4
+    },
+    {
+     "slug": "common_hoopoe",
+     "observations": 4
+    },
+    {
+     "slug": "seven_spotted_lady_beetle",
+     "observations": 4
+    },
+    {
+     "slug": "jasmine_moth",
+     "observations": 3
+    },
+    {
+     "slug": "italian_sea_slater",
+     "observations": 3
+    },
+    {
+     "slug": "laughing_dove",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "larnaca_salt_lake",
+   "name": "Larnaca Salt Lake",
+   "lat": 34.9,
+   "lon": 33.62,
+   "radius_km": 5,
+   "blurb": "Winter flamingos, waders and gulls beside the airport.",
+   "species": [
+    {
+     "slug": "greater_flamingo",
+     "observations": 132
+    },
+    {
+     "slug": "spur_winged_lapwing",
+     "observations": 67
+    },
+    {
+     "slug": "hooded_crow",
+     "observations": 59
+    },
+    {
+     "slug": "european_stonechat",
+     "observations": 59
+    },
+    {
+     "slug": "black_winged_stilt",
+     "observations": 47
+    },
+    {
+     "slug": "sling_tailed_agama",
+     "observations": 45
+    },
+    {
+     "slug": "laughing_dove",
+     "observations": 39
+    },
+    {
+     "slug": "house_sparrow",
+     "observations": 31
+    },
+    {
+     "slug": "snake_eyed_lizard",
+     "observations": 29
+    },
+    {
+     "slug": "garden_snail",
+     "observations": 24
+    },
+    {
+     "slug": "painted_lady",
+     "observations": 21
+    },
+    {
+     "slug": "crimson_speckled_flunkey",
+     "observations": 21
+    },
+    {
+     "slug": "barn_swallow",
+     "observations": 20
+    },
+    {
+     "slug": "seven_spotted_lady_beetle",
+     "observations": 20
+    },
+    {
+     "slug": "eurasian_kestrel",
+     "observations": 20
+    },
+    {
+     "slug": "crested_lark",
+     "observations": 20
+    },
+    {
+     "slug": "chocolate_band_snail",
+     "observations": 16
+    },
+    {
+     "slug": "nomad",
+     "observations": 15
+    },
+    {
+     "slug": "white_wagtail",
+     "observations": 14
+    },
+    {
+     "slug": "eastern_mediterranean_thin_toed_gecko",
+     "observations": 14
+    },
+    {
+     "slug": "sardinian_warbler",
+     "observations": 14
+    },
+    {
+     "slug": "little_egret",
+     "observations": 13
+    },
+    {
+     "slug": "pantropical_jumping_spider",
+     "observations": 13
+    },
+    {
+     "slug": "giant_african_mantis",
+     "observations": 13
+    },
+    {
+     "slug": "eurasian_jackdaw",
+     "observations": 13
+    },
+    {
+     "slug": "mediterranean_house_gecko",
+     "observations": 12
+    },
+    {
+     "slug": "troodos_rock_lizard",
+     "observations": 12
+    },
+    {
+     "slug": "indian_lionfish",
+     "observations": 12
+    },
+    {
+     "slug": "european_firebug",
+     "observations": 11
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 10
+    },
+    {
+     "slug": "western_cattle_egret",
+     "observations": 10
+    },
+    {
+     "slug": "common_wood_pigeon",
+     "observations": 9
+    },
+    {
+     "slug": "long_eared_hedgehog",
+     "observations": 9
+    },
+    {
+     "slug": "schreibers_fringe_fingered_lizard",
+     "observations": 8
+    },
+    {
+     "slug": "ocellated_bronze_skink",
+     "observations": 8
+    },
+    {
+     "slug": "old_world_swallowtail",
+     "observations": 8
+    },
+    {
+     "slug": "oriental_hornet",
+     "observations": 8
+    },
+    {
+     "slug": "common_chiffchaff",
+     "observations": 8
+    },
+    {
+     "slug": "clouded_yellow",
+     "observations": 8
+    },
+    {
+     "slug": "eurasian_moorhen",
+     "observations": 8
+    },
+    {
+     "slug": "great_tit",
+     "observations": 8
+    },
+    {
+     "slug": "great_cormorant",
+     "observations": 7
+    },
+    {
+     "slug": "egyptian_bird_grasshopper",
+     "observations": 7
+    },
+    {
+     "slug": "northern_shoveler",
+     "observations": 7
+    },
+    {
+     "slug": "eurasian_collared_dove",
+     "observations": 6
+    },
+    {
+     "slug": "european_bee_eater",
+     "observations": 5
+    },
+    {
+     "slug": "european_goldfinch",
+     "observations": 5
+    },
+    {
+     "slug": "lemon_yellow_tree_frog",
+     "observations": 5
+    },
+    {
+     "slug": "mallard",
+     "observations": 4
+    },
+    {
+     "slug": "large_whip_snake",
+     "observations": 4
+    },
+    {
+     "slug": "european_greenfinch",
+     "observations": 4
+    },
+    {
+     "slug": "red_sea_goatfish",
+     "observations": 4
+    },
+    {
+     "slug": "bridled_skink",
+     "observations": 4
+    },
+    {
+     "slug": "cyprian_green_toad",
+     "observations": 4
+    },
+    {
+     "slug": "common_hoopoe",
+     "observations": 3
+    },
+    {
+     "slug": "budaks_snake_eyed_skink",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "cape_greco",
+   "name": "Cape Greco",
+   "lat": 34.96,
+   "lon": 34.08,
+   "radius_km": 5,
+   "blurb": "Sea cliffs and caves with migrating birds, lizards and clear water fish.",
+   "species": [
+    {
+     "slug": "sling_tailed_agama",
+     "observations": 175
+    },
+    {
+     "slug": "snake_eyed_lizard",
+     "observations": 77
+    },
+    {
+     "slug": "chukar",
+     "observations": 48
+    },
+    {
+     "slug": "schreibers_fringe_fingered_lizard",
+     "observations": 48
+    },
+    {
+     "slug": "sardinian_warbler",
+     "observations": 33
+    },
+    {
+     "slug": "indian_lionfish",
+     "observations": 30
+    },
+    {
+     "slug": "house_sparrow",
+     "observations": 28
+    },
+    {
+     "slug": "blue_spotted_cornetfish",
+     "observations": 27
+    },
+    {
+     "slug": "ornate_wrasse",
+     "observations": 26
+    },
+    {
+     "slug": "european_stonechat",
+     "observations": 26
+    },
+    {
+     "slug": "eurasian_kestrel",
+     "observations": 25
+    },
+    {
+     "slug": "cyprus_wheatear",
+     "observations": 24
+    },
+    {
+     "slug": "eastern_mediterranean_thin_toed_gecko",
+     "observations": 23
+    },
+    {
+     "slug": "red_sea_goatfish",
+     "observations": 21
+    },
+    {
+     "slug": "crested_lark",
+     "observations": 21
+    },
+    {
+     "slug": "chocolate_band_snail",
+     "observations": 20
+    },
+    {
+     "slug": "crimson_speckled_flunkey",
+     "observations": 20
+    },
+    {
+     "slug": "black_longspine_urchin",
+     "observations": 19
+    },
+    {
+     "slug": "painted_lady",
+     "observations": 17
+    },
+    {
+     "slug": "common_chameleon",
+     "observations": 15
+    },
+    {
+     "slug": "rivulated_rabbitfish",
+     "observations": 14
+    },
+    {
+     "slug": "nomad",
+     "observations": 13
+    },
+    {
+     "slug": "laughing_dove",
+     "observations": 12
+    },
+    {
+     "slug": "oriental_hornet",
+     "observations": 11
+    },
+    {
+     "slug": "european_greenfinch",
+     "observations": 11
+    },
+    {
+     "slug": "flavimaculosus_puffer",
+     "observations": 11
+    },
+    {
+     "slug": "ocellated_bronze_skink",
+     "observations": 10
+    },
+    {
+     "slug": "old_world_swallowtail",
+     "observations": 10
+    },
+    {
+     "slug": "large_whip_snake",
+     "observations": 10
+    },
+    {
+     "slug": "giant_african_mantis",
+     "observations": 10
+    },
+    {
+     "slug": "long_eared_hedgehog",
+     "observations": 9
+    },
+    {
+     "slug": "marbled_crab",
+     "observations": 9
+    },
+    {
+     "slug": "black_redstart",
+     "observations": 8
+    },
+    {
+     "slug": "italian_sea_slater",
+     "observations": 8
+    },
+    {
+     "slug": "european_goldfinch",
+     "observations": 7
+    },
+    {
+     "slug": "mediterranean_house_gecko",
+     "observations": 7
+    },
+    {
+     "slug": "seven_spotted_lady_beetle",
+     "observations": 7
+    },
+    {
+     "slug": "garden_snail",
+     "observations": 7
+    },
+    {
+     "slug": "green_sea_turtle",
+     "observations": 6
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 6
+    },
+    {
+     "slug": "cyprus_processionary_moth",
+     "observations": 6
+    },
+    {
+     "slug": "bridled_skink",
+     "observations": 5
+    },
+    {
+     "slug": "lemon_yellow_tree_frog",
+     "observations": 4
+    },
+    {
+     "slug": "european_firebug",
+     "observations": 4
+    },
+    {
+     "slug": "pantropical_jumping_spider",
+     "observations": 4
+    },
+    {
+     "slug": "clouded_yellow",
+     "observations": 4
+    },
+    {
+     "slug": "little_egret",
+     "observations": 3
+    },
+    {
+     "slug": "barn_swallow",
+     "observations": 3
+    }
+   ]
+  }
+ ]
+}
