@@ -1910,8 +1910,10 @@ function openViewer(p, onClose, onDeleted) {
   if (p.species.rarity) name.style.color = `var(--${p.species.rarity})`;
   const by = el("div");
   const when = p.taken_on ? fmtDate(p.taken_on) : p.caught_at ? ago(p.caught_at) : null;
+  // Your own photos list the full time and place just below (with Edit), so the byline skips them.
+  const meta = p.is_mine && p.where_when ? [] : [p.place, when].filter(Boolean);
   by.append(p.is_mine ? el("strong", "", "You") : userLink(p.username),
-            el("span", "muted", [""].concat([p.place, when].filter(Boolean)).join(" · ")));
+            el("span", "muted", [""].concat(meta).join(" · ")));
   side.append(name, by);
   if (p.score != null) side.append(el("div", "pts", `${stars(p.stars)} ${p.score.toLocaleString()} pts`));
   if (p.is_mine && p.where_when) side.append(whereWhen(p.where_when, (res) => {
