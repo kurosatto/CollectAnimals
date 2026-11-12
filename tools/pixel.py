@@ -133,7 +133,7 @@ BLINK = FRAMES // 2
 # shouldn't have faces): whatever eyes their drawing has are painted out.
 FACELESS = re.compile(r"anemone|urchin|sea_star|_star$|jelly|sponge|sea_cucumber|limpet|chiton|coral|sand_dollar"
                       r"|barnacle|mussel|clam|oyster(?!catcher)|scallop|by_the_wind|sea_pen|sea_squirt|tunicate|nudibranch"
-                      r"|dorid|sea_lemon|hydroid|bryozoan")
+                      r"|dorid|sea_lemon|hydroid|bryozoan|starfish|quahog|polycera|coryphella|sea_slug|mauve_stinger")
 
 
 def _invert(fwd, inv=None):
