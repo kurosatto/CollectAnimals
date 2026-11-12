@@ -120,11 +120,14 @@ def known_slugs():
     return out
 
 
-def draft_list(pid, slugs, used):
-    """Most-observed species per group, filled to QUOTA, then topped up by count."""
+def draft_list(pid, slugs, used, where=None):
+    """Most-observed species per group, filled to QUOTA, then topped up by count.
+
+    `where` replaces the place filter (for example a bounding box
+    {"swlat":..., "swlng":..., "nelat":..., "nelng":...} for European Russia)."""
     pools = {}
     for group, cat in GROUPS:
-        res = api("observations/species_counts", place_id=pid, iconic_taxa=group, quality_grade="research",
+        res = api("observations/species_counts", **(where or {"place_id": pid}), iconic_taxa=group, quality_grade="research",
                   rank="species", captive="false", per_page=60)["results"]
         pools.setdefault(cat, []).extend(r for r in res if r["taxon"].get("preferred_common_name")
                                          and r["taxon"]["name"] not in EXCLUDE)

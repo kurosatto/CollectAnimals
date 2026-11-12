@@ -39,17 +39,30 @@ def histogram(taxon_id: int, place_id: int, interval: str, size: int, first: int
     return [int(counts.get(str(i), 0)) for i in range(first, first + size)]
 
 
-def local_hour(utc: datetime, offset: int) -> int:
-    """Local hour for a UTC time in a US time zone `offset` hours from UTC in
-    winter, with daylight time from 2 a.m. on the 2nd Sunday of March to 2 a.m.
-    on the 1st Sunday of November. No tz database needed (Windows lacks one)."""
+def local_hour(utc: datetime, offset: int, dst: str = "us") -> int:
+    """Local hour for a UTC time in a zone `offset` hours from UTC in winter.
+
+    dst "us": daylight time from 2 a.m. on the 2nd Sunday of March to 2 a.m. on
+    the 1st Sunday of November. "eu": from 01:00 UTC on the last Sunday of March
+    to 01:00 UTC on the last Sunday of October (all of the EU, UK, Norway,
+    Switzerland, Ukraine, the Balkans). "none": no daylight time (Iceland,
+    Turkey, Belarus, Russia). No tz database needed (Windows lacks one)."""
     y = utc.year
+    if dst == "none":
+        return (utc + timedelta(hours=offset)).hour
+    if dst == "eu":
+        def last_sunday(month):
+            d = datetime(y, month, 31)
+            return datetime(y, month, 31 - (d.weekday() + 1) % 7, 1, tzinfo=timezone.utc)
+        on = last_sunday(3) <= utc < last_sunday(10)
+        return (utc + timedelta(hours=offset + 1 if on else offset)).hour
     march = datetime(y, 3, 8 + (6 - datetime(y, 3, 8).weekday()) % 7, 2 - offset, tzinfo=timezone.utc)
     nov = datetime(y, 11, 1 + (6 - datetime(y, 11, 1).weekday()) % 7, 1 - offset, tzinfo=timezone.utc)
     return (utc + timedelta(hours=offset + 1 if march <= utc < nov else offset)).hour
 
 
-def hours_of_day(taxon_id: int, place_id: int, offset: int, today: date, min_total: int = 30) -> list[int]:
+def hours_of_day(taxon_id: int, place_id: int, offset: int, today: date, min_total: int = 30,
+                 dst: str = "us") -> list[int]:
     """Sightings per local hour of day. iNaturalist's "hour" histogram is a time
     series keyed by UTC timestamp, so fetch a recent window and fold it into 24
     bins; widen the window for rarely seen species."""
@@ -60,7 +73,7 @@ def hours_of_day(taxon_id: int, place_id: int, offset: int, today: date, min_tot
         bins = [0] * 24
         for stamp, n in data["results"]["hour"].items():
             if n:
-                bins[local_hour(datetime.fromisoformat(stamp.replace("Z", "+00:00")), offset)] += int(n)
+                bins[local_hour(datetime.fromisoformat(stamp.replace("Z", "+00:00")), offset, dst)] += int(n)
         if sum(bins) >= min_total:
             break
     return bins
@@ -94,7 +107,7 @@ def main():
         tid = taxa[s["slug"]]["taxon_id"] if s["slug"] in taxa else resolve_taxon(s["scientific_name"])["id"]
         old = out["species"].get(s["slug"], {})
         months = old["months"] if args.hours_only and old.get("months") else histogram(tid, place, "month_of_year", 12, 1)
-        hours = hours_of_day(tid, place, offset, date.today())
+        hours = hours_of_day(tid, place, offset, date.today(), dst=state.get("dst", "us"))
         out["species"][s["slug"]] = {"months": months, "hours": hours}
         print(f"{s['slug']}: {sum(months)} sightings, {sum(hours)} with a time")
     out_path.write_text(json.dumps(out), encoding="utf-8")

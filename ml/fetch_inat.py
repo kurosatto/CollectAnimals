@@ -98,11 +98,20 @@ def api_get(path: str, **params) -> dict:
     raise RuntimeError(f"giving up on {path}")
 
 
-def load_states(path: Path = STATES_JSON, only: list[str] | None = None) -> list[dict]:
-    """states.json entries with file names made into paths; `only` filters by code."""
+def load_states(path: Path = STATES_JSON, only: list[str] | None = None,
+                staged: bool | None = None) -> list[dict]:
+    """states.json entries with file names made into paths; `only` filters by code.
+
+    Countries drafted by ml/build_countries.py wait in species/europe.json until
+    they go live. They are included when `staged` is true, or when `only` names
+    codes (so build_ranges.py --state DEU works), but not in a plain run."""
     data = json.loads(Path(path).read_text(encoding="utf-8"))
+    entries = list(data["states"])
+    staging = Path(path).parent / "europe.json"
+    if (staged or (staged is None and only)) and staging.exists():
+        entries += json.loads(staging.read_text(encoding="utf-8"))["states"]
     out = []
-    for s in data["states"]:
+    for s in entries:
         if only and s["code"] not in {c.upper() for c in only}:
             continue
         for k in ("species", "dex", "outline", "ranges", "hotspots", "seasons"):
