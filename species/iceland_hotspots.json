@@ -1,0 +1,1146 @@
+{
+ "source": "iNaturalist research-grade observations (species_counts by radius)",
+ "min_observations": 3,
+ "parks": [
+  {
+   "id": "thingvellir",
+   "name": "\u00deingvellir National Park",
+   "lat": 64.26,
+   "lon": -21.1,
+   "radius_km": 10,
+   "blurb": "Rift valley lake with great northern divers, harlequin ducks and Arctic char.",
+   "species": [
+    {
+     "slug": "greylag_goose",
+     "observations": 497
+    },
+    {
+     "slug": "redwing",
+     "observations": 302
+    },
+    {
+     "slug": "harlequin_duck",
+     "observations": 117
+    },
+    {
+     "slug": "red_throated_loon",
+     "observations": 102
+    },
+    {
+     "slug": "white_wagtail",
+     "observations": 102
+    },
+    {
+     "slug": "european_golden_plover",
+     "observations": 95
+    },
+    {
+     "slug": "red_necked_phalarope",
+     "observations": 88
+    },
+    {
+     "slug": "red_breasted_merganser",
+     "observations": 85
+    },
+    {
+     "slug": "rock_ptarmigan",
+     "observations": 80
+    },
+    {
+     "slug": "common_snipe",
+     "observations": 77
+    },
+    {
+     "slug": "black_headed_gull",
+     "observations": 76
+    },
+    {
+     "slug": "eurasian_whimbrel",
+     "observations": 67
+    },
+    {
+     "slug": "black_tailed_godwit",
+     "observations": 53
+    },
+    {
+     "slug": "arctic_tern",
+     "observations": 52
+    },
+    {
+     "slug": "mallard",
+     "observations": 52
+    },
+    {
+     "slug": "tufted_duck",
+     "observations": 46
+    },
+    {
+     "slug": "lesser_black_backed_gull",
+     "observations": 45
+    },
+    {
+     "slug": "brown_trout",
+     "observations": 39
+    },
+    {
+     "slug": "common_raven",
+     "observations": 37
+    },
+    {
+     "slug": "meadow_pipit",
+     "observations": 37
+    },
+    {
+     "slug": "common_redshank",
+     "observations": 26
+    },
+    {
+     "slug": "norwegian_wasp",
+     "observations": 25
+    },
+    {
+     "slug": "whooper_swan",
+     "observations": 21
+    },
+    {
+     "slug": "cross_orbweaver",
+     "observations": 19
+    },
+    {
+     "slug": "saddleback_harvestman",
+     "observations": 17
+    },
+    {
+     "slug": "eurasian_blackbird",
+     "observations": 16
+    },
+    {
+     "slug": "eurasian_oystercatcher",
+     "observations": 15
+    },
+    {
+     "slug": "white_tailed_bumble_bee",
+     "observations": 15
+    },
+    {
+     "slug": "broom_moth",
+     "observations": 13
+    },
+    {
+     "slug": "heath_bumble_bee",
+     "observations": 10
+    },
+    {
+     "slug": "common_loon",
+     "observations": 9
+    },
+    {
+     "slug": "arctic_fox",
+     "observations": 5
+    },
+    {
+     "slug": "great_black_backed_gull",
+     "observations": 4
+    },
+    {
+     "slug": "european_wood_mouse",
+     "observations": 4
+    },
+    {
+     "slug": "tree_bumble_bee",
+     "observations": 4
+    },
+    {
+     "slug": "redpoll",
+     "observations": 4
+    },
+    {
+     "slug": "parasitic_jaeger",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "myvatn",
+   "name": "Lake M\u00fdvatn",
+   "lat": 65.6,
+   "lon": -17.0,
+   "radius_km": 12,
+   "blurb": "Duck lake with Barrow's goldeneyes, harlequin ducks and gyrfalcons.",
+   "species": [
+    {
+     "slug": "horned_grebe",
+     "observations": 275
+    },
+    {
+     "slug": "eurasian_wigeon",
+     "observations": 251
+    },
+    {
+     "slug": "barrows_goldeneye",
+     "observations": 244
+    },
+    {
+     "slug": "tufted_duck",
+     "observations": 244
+    },
+    {
+     "slug": "red_necked_phalarope",
+     "observations": 194
+    },
+    {
+     "slug": "redwing",
+     "observations": 128
+    },
+    {
+     "slug": "long_tailed_duck",
+     "observations": 125
+    },
+    {
+     "slug": "common_loon",
+     "observations": 102
+    },
+    {
+     "slug": "whooper_swan",
+     "observations": 100
+    },
+    {
+     "slug": "rock_ptarmigan",
+     "observations": 88
+    },
+    {
+     "slug": "harlequin_duck",
+     "observations": 83
+    },
+    {
+     "slug": "greater_scaup",
+     "observations": 75
+    },
+    {
+     "slug": "european_golden_plover",
+     "observations": 74
+    },
+    {
+     "slug": "gadwall",
+     "observations": 62
+    },
+    {
+     "slug": "meadow_pipit",
+     "observations": 60
+    },
+    {
+     "slug": "common_snipe",
+     "observations": 60
+    },
+    {
+     "slug": "mallard",
+     "observations": 59
+    },
+    {
+     "slug": "common_redshank",
+     "observations": 54
+    },
+    {
+     "slug": "white_wagtail",
+     "observations": 48
+    },
+    {
+     "slug": "black_headed_gull",
+     "observations": 48
+    },
+    {
+     "slug": "red_breasted_merganser",
+     "observations": 45
+    },
+    {
+     "slug": "black_tailed_godwit",
+     "observations": 43
+    },
+    {
+     "slug": "arctic_tern",
+     "observations": 43
+    },
+    {
+     "slug": "redpoll",
+     "observations": 33
+    },
+    {
+     "slug": "eurasian_whimbrel",
+     "observations": 31
+    },
+    {
+     "slug": "greylag_goose",
+     "observations": 29
+    },
+    {
+     "slug": "dunlin",
+     "observations": 17
+    },
+    {
+     "slug": "red_throated_loon",
+     "observations": 17
+    },
+    {
+     "slug": "common_raven",
+     "observations": 14
+    },
+    {
+     "slug": "pink_footed_goose",
+     "observations": 13
+    },
+    {
+     "slug": "common_ringed_plover",
+     "observations": 12
+    },
+    {
+     "slug": "snow_bunting",
+     "observations": 11
+    },
+    {
+     "slug": "parasitic_jaeger",
+     "observations": 9
+    },
+    {
+     "slug": "heath_bumble_bee",
+     "observations": 9
+    },
+    {
+     "slug": "saddleback_harvestman",
+     "observations": 8
+    },
+    {
+     "slug": "white_tailed_bumble_bee",
+     "observations": 6
+    },
+    {
+     "slug": "norwegian_wasp",
+     "observations": 6
+    },
+    {
+     "slug": "common_eider",
+     "observations": 4
+    },
+    {
+     "slug": "brown_trout",
+     "observations": 4
+    },
+    {
+     "slug": "northern_wheatear",
+     "observations": 3
+    },
+    {
+     "slug": "cross_orbweaver",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "latrabjarg",
+   "name": "L\u00e1trabjarg cliffs",
+   "lat": 65.5,
+   "lon": -24.5,
+   "radius_km": 6,
+   "blurb": "Huge seabird cliffs with puffins, razorbills and guillemots.",
+   "species": [
+    {
+     "slug": "atlantic_puffin",
+     "observations": 366
+    },
+    {
+     "slug": "razorbill",
+     "observations": 220
+    },
+    {
+     "slug": "black_legged_kittiwake",
+     "observations": 187
+    },
+    {
+     "slug": "common_murre",
+     "observations": 131
+    },
+    {
+     "slug": "northern_fulmar",
+     "observations": 116
+    },
+    {
+     "slug": "thick_billed_murre",
+     "observations": 71
+    },
+    {
+     "slug": "grey_seal",
+     "observations": 26
+    },
+    {
+     "slug": "glaucous_gull",
+     "observations": 16
+    },
+    {
+     "slug": "parasitic_jaeger",
+     "observations": 15
+    },
+    {
+     "slug": "european_shag",
+     "observations": 15
+    },
+    {
+     "slug": "common_raven",
+     "observations": 13
+    },
+    {
+     "slug": "white_wagtail",
+     "observations": 12
+    },
+    {
+     "slug": "arctic_fox",
+     "observations": 10
+    },
+    {
+     "slug": "meadow_pipit",
+     "observations": 9
+    },
+    {
+     "slug": "arctic_tern",
+     "observations": 8
+    },
+    {
+     "slug": "common_eider",
+     "observations": 8
+    },
+    {
+     "slug": "purple_sandpiper",
+     "observations": 7
+    },
+    {
+     "slug": "common_ringed_plover",
+     "observations": 6
+    },
+    {
+     "slug": "northern_wheatear",
+     "observations": 6
+    },
+    {
+     "slug": "common_redshank",
+     "observations": 5
+    },
+    {
+     "slug": "snow_bunting",
+     "observations": 5
+    },
+    {
+     "slug": "northern_gannet",
+     "observations": 4
+    },
+    {
+     "slug": "whooper_swan",
+     "observations": 4
+    },
+    {
+     "slug": "harlequin_duck",
+     "observations": 4
+    },
+    {
+     "slug": "harbor_seal",
+     "observations": 4
+    }
+   ]
+  },
+  {
+   "id": "vatnajokull",
+   "name": "Vatnaj\u00f6kull and J\u00f6kuls\u00e1rl\u00f3n",
+   "lat": 64.05,
+   "lon": -16.2,
+   "radius_km": 25,
+   "blurb": "Glacier lagoon with seals, Arctic terns and great skuas.",
+   "species": [
+    {
+     "slug": "common_eider",
+     "observations": 441
+    },
+    {
+     "slug": "snow_bunting",
+     "observations": 402
+    },
+    {
+     "slug": "harbor_seal",
+     "observations": 389
+    },
+    {
+     "slug": "arctic_tern",
+     "observations": 225
+    },
+    {
+     "slug": "parasitic_jaeger",
+     "observations": 160
+    },
+    {
+     "slug": "barnacle_goose",
+     "observations": 136
+    },
+    {
+     "slug": "great_skua",
+     "observations": 134
+    },
+    {
+     "slug": "black_legged_kittiwake",
+     "observations": 124
+    },
+    {
+     "slug": "lesser_black_backed_gull",
+     "observations": 41
+    },
+    {
+     "slug": "northern_fulmar",
+     "observations": 36
+    },
+    {
+     "slug": "harlequin_duck",
+     "observations": 36
+    },
+    {
+     "slug": "white_wagtail",
+     "observations": 36
+    },
+    {
+     "slug": "black_headed_gull",
+     "observations": 33
+    },
+    {
+     "slug": "rock_ptarmigan",
+     "observations": 28
+    },
+    {
+     "slug": "iceland_gull",
+     "observations": 28
+    },
+    {
+     "slug": "caribou",
+     "observations": 27
+    },
+    {
+     "slug": "common_raven",
+     "observations": 24
+    },
+    {
+     "slug": "purple_sandpiper",
+     "observations": 21
+    },
+    {
+     "slug": "common_ringed_plover",
+     "observations": 21
+    },
+    {
+     "slug": "whooper_swan",
+     "observations": 20
+    },
+    {
+     "slug": "red_throated_loon",
+     "observations": 19
+    },
+    {
+     "slug": "grey_seal",
+     "observations": 17
+    },
+    {
+     "slug": "great_black_backed_gull",
+     "observations": 14
+    },
+    {
+     "slug": "razorbill",
+     "observations": 14
+    },
+    {
+     "slug": "redwing",
+     "observations": 13
+    },
+    {
+     "slug": "european_golden_plover",
+     "observations": 12
+    },
+    {
+     "slug": "great_cormorant",
+     "observations": 10
+    },
+    {
+     "slug": "long_tailed_duck",
+     "observations": 10
+    },
+    {
+     "slug": "european_herring_gull",
+     "observations": 10
+    },
+    {
+     "slug": "common_snipe",
+     "observations": 10
+    },
+    {
+     "slug": "glaucous_gull",
+     "observations": 9
+    },
+    {
+     "slug": "eurasian_oystercatcher",
+     "observations": 9
+    },
+    {
+     "slug": "common_sea_star",
+     "observations": 9
+    },
+    {
+     "slug": "arctic_fox",
+     "observations": 9
+    },
+    {
+     "slug": "atlantic_puffin",
+     "observations": 6
+    },
+    {
+     "slug": "greylag_goose",
+     "observations": 6
+    },
+    {
+     "slug": "lions_mane_jelly",
+     "observations": 6
+    },
+    {
+     "slug": "northern_gannet",
+     "observations": 5
+    },
+    {
+     "slug": "sanderling",
+     "observations": 5
+    },
+    {
+     "slug": "eurasian_whimbrel",
+     "observations": 5
+    },
+    {
+     "slug": "northern_wheatear",
+     "observations": 5
+    },
+    {
+     "slug": "common_redshank",
+     "observations": 4
+    },
+    {
+     "slug": "black_tailed_godwit",
+     "observations": 4
+    },
+    {
+     "slug": "meadow_pipit",
+     "observations": 4
+    },
+    {
+     "slug": "atlantic_cod",
+     "observations": 4
+    },
+    {
+     "slug": "black_guillemot",
+     "observations": 3
+    },
+    {
+     "slug": "common_murre",
+     "observations": 3
+    },
+    {
+     "slug": "common_minke_whale",
+     "observations": 3
+    },
+    {
+     "slug": "humpback_whale",
+     "observations": 3
+    },
+    {
+     "slug": "broom_moth",
+     "observations": 3
+    },
+    {
+     "slug": "eurasian_wigeon",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "snaefellsnes",
+   "name": "Sn\u00e6fellsnes Peninsula",
+   "lat": 64.85,
+   "lon": -23.5,
+   "radius_km": 20,
+   "blurb": "Coast with seals, orcas offshore, Arctic foxes and seabirds.",
+   "species": [
+    {
+     "slug": "black_legged_kittiwake",
+     "observations": 390
+    },
+    {
+     "slug": "arctic_tern",
+     "observations": 250
+    },
+    {
+     "slug": "common_eider",
+     "observations": 226
+    },
+    {
+     "slug": "northern_fulmar",
+     "observations": 205
+    },
+    {
+     "slug": "european_shag",
+     "observations": 179
+    },
+    {
+     "slug": "glaucous_gull",
+     "observations": 153
+    },
+    {
+     "slug": "eurasian_oystercatcher",
+     "observations": 122
+    },
+    {
+     "slug": "great_black_backed_gull",
+     "observations": 116
+    },
+    {
+     "slug": "eurasian_whimbrel",
+     "observations": 100
+    },
+    {
+     "slug": "common_redshank",
+     "observations": 96
+    },
+    {
+     "slug": "arctic_fox",
+     "observations": 88
+    },
+    {
+     "slug": "red_necked_phalarope",
+     "observations": 81
+    },
+    {
+     "slug": "common_murre",
+     "observations": 81
+    },
+    {
+     "slug": "white_wagtail",
+     "observations": 73
+    },
+    {
+     "slug": "redwing",
+     "observations": 69
+    },
+    {
+     "slug": "harlequin_duck",
+     "observations": 68
+    },
+    {
+     "slug": "common_raven",
+     "observations": 65
+    },
+    {
+     "slug": "black_tailed_godwit",
+     "observations": 55
+    },
+    {
+     "slug": "meadow_pipit",
+     "observations": 55
+    },
+    {
+     "slug": "tufted_duck",
+     "observations": 53
+    },
+    {
+     "slug": "black_guillemot",
+     "observations": 47
+    },
+    {
+     "slug": "red_throated_loon",
+     "observations": 46
+    },
+    {
+     "slug": "european_golden_plover",
+     "observations": 46
+    },
+    {
+     "slug": "black_headed_gull",
+     "observations": 46
+    },
+    {
+     "slug": "razorbill",
+     "observations": 43
+    },
+    {
+     "slug": "whooper_swan",
+     "observations": 43
+    },
+    {
+     "slug": "harbor_seal",
+     "observations": 43
+    },
+    {
+     "slug": "common_ringed_plover",
+     "observations": 42
+    },
+    {
+     "slug": "parasitic_jaeger",
+     "observations": 41
+    },
+    {
+     "slug": "orca",
+     "observations": 36
+    },
+    {
+     "slug": "northern_gannet",
+     "observations": 34
+    },
+    {
+     "slug": "ruddy_turnstone",
+     "observations": 34
+    },
+    {
+     "slug": "purple_sandpiper",
+     "observations": 32
+    },
+    {
+     "slug": "atlantic_puffin",
+     "observations": 32
+    },
+    {
+     "slug": "mallard",
+     "observations": 32
+    },
+    {
+     "slug": "humpback_whale",
+     "observations": 29
+    },
+    {
+     "slug": "rock_ptarmigan",
+     "observations": 28
+    },
+    {
+     "slug": "northern_wheatear",
+     "observations": 28
+    },
+    {
+     "slug": "white_beaked_dolphin",
+     "observations": 28
+    },
+    {
+     "slug": "great_cormorant",
+     "observations": 27
+    },
+    {
+     "slug": "common_snipe",
+     "observations": 26
+    },
+    {
+     "slug": "dunlin",
+     "observations": 25
+    },
+    {
+     "slug": "red_breasted_merganser",
+     "observations": 24
+    },
+    {
+     "slug": "european_starling",
+     "observations": 22
+    },
+    {
+     "slug": "red_knot",
+     "observations": 20
+    },
+    {
+     "slug": "lesser_black_backed_gull",
+     "observations": 20
+    },
+    {
+     "slug": "grey_seal",
+     "observations": 19
+    },
+    {
+     "slug": "european_green_crab",
+     "observations": 17
+    },
+    {
+     "slug": "common_loon",
+     "observations": 14
+    },
+    {
+     "slug": "common_minke_whale",
+     "observations": 13
+    },
+    {
+     "slug": "snow_bunting",
+     "observations": 13
+    },
+    {
+     "slug": "atlantic_dogwhelk",
+     "observations": 12
+    },
+    {
+     "slug": "saddleback_harvestman",
+     "observations": 12
+    },
+    {
+     "slug": "thick_billed_murre",
+     "observations": 11
+    },
+    {
+     "slug": "eurasian_wigeon",
+     "observations": 11
+    },
+    {
+     "slug": "arctic_green_sea_urchin",
+     "observations": 10
+    },
+    {
+     "slug": "common_whelk",
+     "observations": 10
+    },
+    {
+     "slug": "horned_grebe",
+     "observations": 9
+    },
+    {
+     "slug": "iceland_gull",
+     "observations": 9
+    },
+    {
+     "slug": "cross_orbweaver",
+     "observations": 8
+    },
+    {
+     "slug": "atlantic_rock_crab",
+     "observations": 8
+    },
+    {
+     "slug": "greater_scaup",
+     "observations": 7
+    },
+    {
+     "slug": "broom_moth",
+     "observations": 7
+    },
+    {
+     "slug": "redpoll",
+     "observations": 6
+    },
+    {
+     "slug": "european_herring_gull",
+     "observations": 6
+    },
+    {
+     "slug": "sanderling",
+     "observations": 5
+    },
+    {
+     "slug": "pink_footed_goose",
+     "observations": 5
+    },
+    {
+     "slug": "white_tailed_bumble_bee",
+     "observations": 5
+    },
+    {
+     "slug": "greylag_goose",
+     "observations": 4
+    },
+    {
+     "slug": "long_tailed_duck",
+     "observations": 4
+    },
+    {
+     "slug": "common_moon_jelly",
+     "observations": 4
+    },
+    {
+     "slug": "atlantic_cod",
+     "observations": 4
+    },
+    {
+     "slug": "rough_periwinkle",
+     "observations": 4
+    },
+    {
+     "slug": "common_sea_star",
+     "observations": 4
+    },
+    {
+     "slug": "ocean_quahog",
+     "observations": 4
+    },
+    {
+     "slug": "norwegian_wasp",
+     "observations": 4
+    },
+    {
+     "slug": "american_mink",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "westman_islands",
+   "name": "Westman Islands",
+   "lat": 63.43,
+   "lon": -20.27,
+   "radius_km": 6,
+   "blurb": "The world's biggest puffin colony, with seabirds everywhere.",
+   "species": [
+    {
+     "slug": "atlantic_puffin",
+     "observations": 457
+    },
+    {
+     "slug": "northern_fulmar",
+     "observations": 133
+    },
+    {
+     "slug": "eurasian_oystercatcher",
+     "observations": 113
+    },
+    {
+     "slug": "black_legged_kittiwake",
+     "observations": 105
+    },
+    {
+     "slug": "common_murre",
+     "observations": 100
+    },
+    {
+     "slug": "common_eider",
+     "observations": 81
+    },
+    {
+     "slug": "black_guillemot",
+     "observations": 58
+    },
+    {
+     "slug": "common_redshank",
+     "observations": 57
+    },
+    {
+     "slug": "european_golden_plover",
+     "observations": 50
+    },
+    {
+     "slug": "razorbill",
+     "observations": 45
+    },
+    {
+     "slug": "northern_gannet",
+     "observations": 37
+    },
+    {
+     "slug": "european_herring_gull",
+     "observations": 37
+    },
+    {
+     "slug": "white_wagtail",
+     "observations": 33
+    },
+    {
+     "slug": "common_ringed_plover",
+     "observations": 31
+    },
+    {
+     "slug": "meadow_pipit",
+     "observations": 31
+    },
+    {
+     "slug": "northern_wheatear",
+     "observations": 29
+    },
+    {
+     "slug": "great_skua",
+     "observations": 23
+    },
+    {
+     "slug": "broom_moth",
+     "observations": 22
+    },
+    {
+     "slug": "ruddy_turnstone",
+     "observations": 19
+    },
+    {
+     "slug": "grey_seal",
+     "observations": 18
+    },
+    {
+     "slug": "black_tailed_godwit",
+     "observations": 15
+    },
+    {
+     "slug": "great_black_backed_gull",
+     "observations": 14
+    },
+    {
+     "slug": "orca",
+     "observations": 13
+    },
+    {
+     "slug": "eurasian_whimbrel",
+     "observations": 12
+    },
+    {
+     "slug": "lesser_black_backed_gull",
+     "observations": 12
+    },
+    {
+     "slug": "european_starling",
+     "observations": 9
+    },
+    {
+     "slug": "redwing",
+     "observations": 8
+    },
+    {
+     "slug": "purple_sandpiper",
+     "observations": 7
+    },
+    {
+     "slug": "glaucous_gull",
+     "observations": 7
+    },
+    {
+     "slug": "greylag_goose",
+     "observations": 7
+    },
+    {
+     "slug": "common_raven",
+     "observations": 7
+    },
+    {
+     "slug": "european_green_crab",
+     "observations": 7
+    },
+    {
+     "slug": "great_cormorant",
+     "observations": 6
+    },
+    {
+     "slug": "parasitic_jaeger",
+     "observations": 4
+    },
+    {
+     "slug": "common_loon",
+     "observations": 4
+    },
+    {
+     "slug": "common_snipe",
+     "observations": 4
+    },
+    {
+     "slug": "red_necked_phalarope",
+     "observations": 3
+    },
+    {
+     "slug": "harbor_seal",
+     "observations": 3
+    },
+    {
+     "slug": "european_shag",
+     "observations": 3
+    }
+   ]
+  }
+ ]
+}
