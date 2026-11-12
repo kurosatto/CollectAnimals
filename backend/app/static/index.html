@@ -327,6 +327,8 @@
   /* Names get two lines (phones fit 4 photos a row, so one line cut most names short). */
   .photos.compact .who { font-size:.72rem; line-height:1.2; min-height:2.4em; display:-webkit-box; -webkit-box-orient:vertical;
     -webkit-line-clamp:2; overflow:hidden; overflow-wrap:anywhere; hyphens:auto; }
+  /* Long names get a smaller size and a third line on phones so the whole name shows. */
+  @media (max-width:699px) { .photos.compact .who.long { font-size:.62rem; -webkit-line-clamp:3; line-clamp:3; } }
   .photos.compact .pts { font-size:.65rem; white-space:nowrap; overflow:hidden; }
   .auth { display:grid; gap:4px 20px; }
   .auth-scene { position:relative; }
@@ -1465,7 +1467,7 @@ function addTile(grid, e, i, tier, owner = null) {
   t.querySelector(".name").textContent = s.revealed
     ? s.common_name + (e.capture_count > 1 ? ` ×${e.capture_count}` : "") : "???";
   // Long names ("California Ground Squirrel ×2") get a smaller size so they fit two lines.
-  if (s.revealed && (s.common_name.length > 14 || s.common_name.split(/[\s-]+/).some((w) => w.length >= 10)))
+  if (s.revealed && isLongName(s.common_name))
     t.querySelector(".name").classList.add("long");
   t.querySelector(".sci").textContent = s.revealed ? s.scientific_name : `Unknown ${categoryWord(s.category)}`;
   const st = t.querySelector(".status");
@@ -1849,13 +1851,16 @@ const elIco = (tag, cls, name, text) => icoText(el(tag, cls), name, text);
 const fmtDate = (d) => new Date(d + "T12:00:00").toLocaleDateString(undefined,
   { year: "numeric", month: "short", day: "numeric" });
 
+// Names that would be cut off in a small tile ("Black Oystercatcher", "Northern Elephant Seal").
+function isLongName(n) { return !!n && (n.length > 14 || n.split(/[\s-]+/).some((w) => w.length >= 10)); }
+
 function photoCard(p, { showSpecies = false, onChange, compact = false } = {}) {
   const card = el("div", "photo");
   const img = el("img"); img.src = p.url; img.alt = p.species.common_name || "Animal photo"; img.loading = "lazy";
   if (compact) {
     // Four to a row (My photos): the photo, its name and stars; the rest is one tap away.
     const meta = el("div", "meta");
-    meta.append(el("div", "who", p.species.common_name || "???"));
+    meta.append(el("div", "who" + (isLongName(p.species.common_name) ? " long" : ""), p.species.common_name || "???"));
     if (p.stars != null) meta.append(el("span", "pts", stars(p.stars)));
     card.onclick = () => openViewer(p, null, () => card.remove());
     card.append(img, meta);
