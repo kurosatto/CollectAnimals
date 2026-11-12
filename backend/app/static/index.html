@@ -378,7 +378,9 @@
             --common:#b6a888; --uncommon:#9cbf7c; --rare:#8fbde0; --legendary:#e4b75a; } }
   body { font-family:var(--text); font-variant-ligatures:none; background-color:var(--bg);
          background-image:radial-gradient(ellipse at 20% 0%, rgba(255,255,255,.35), transparent 55%),
-           repeating-linear-gradient(0deg, transparent 0 31px, var(--paper-lines) 31px 32px); }
+           repeating-linear-gradient(0deg, transparent 0 31px, var(--paper-lines) 31px 32px);
+         /* Glow once at the top: on short pages the page background repeats, which drew a second glow lower down. */
+         background-repeat:no-repeat, repeat; }
   input, select, textarea { font-family:inherit; background:var(--card); border-color:var(--line); }
   h1, h2, h3 { font-family:var(--pixel); font-weight:700; letter-spacing:.3px; }
   .card h2 { font-size:1.35rem; margin:0 0 10px; }
