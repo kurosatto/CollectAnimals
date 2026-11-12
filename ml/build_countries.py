@@ -23,7 +23,7 @@ species list uses that box instead of the whole-country place.
 
 Then, per country (or with --state for each code):
     python ml/build_ranges.py --state DEU
-    python ml/build_hotspots.py --state DEU      # needs DEU in species/parks.json
+    python ml/build_hotspots.py --state DEU      # parks per country are in species/parks.json
     python ml/build_seasons.py --state DEU
 """
 
