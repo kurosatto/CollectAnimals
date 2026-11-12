@@ -1930,7 +1930,7 @@ def snake(s: Sprite, body, *, belly=None, bands=None, band_period=4.0, band_len=
         hm = s.ellipse(3.2, 25.6, head_w * 0.62, 2.3, head or body, rot=-8, edge=True)
         if belly:
             s.paint(s.m_ellipse(2.5, 27, 2.6, 0.8), belly, within=hm)
-        if s.frame % 3 == 0:  # the tongue flicks out now and then
+        if s.frame % 4 == 0:  # the tongue flicks out now and then
             s.px([(-1, 26), (-2, 26), (-3, 25), (-3, 27)], "#e04a5a")
         s.eye(1, 24, size=1)
         return

@@ -2293,11 +2293,13 @@ function mgSmooth(r, f, id = "me") {
 const mgSub = (v) => Math.round(v * MG_RES) / MG_RES;
 // Lost: the sad row (head hangs, eyes shut, then a slow sigh with a tear) plays once
 // and then sighs on. False when the animal's sheet has no sad row.
-const MG_SAD_IN = 6, MG_SAD_FPS = 11, MG_SAD_HOLD = 1400;  // ms of sad face before the "try again" panel
+// The sheet's sad row: frames 0 to sad_loop - 1 hang the head (once, in about a second),
+// the rest sigh with a tear and loop.
+const MG_SAD_HOLD = 1400;  // ms of sad face before the "try again" panel
 function mgSadFrame(r) {
-  const n = habNF(), t = Math.max(0, (performance.now() - r.overAt) / 1000);
-  const u = Math.floor(t * MG_SAD_FPS);
-  return u < n ? u : MG_SAD_IN + (Math.floor(u * .6) % (n - MG_SAD_IN));
+  const n = habNF(), loop = (habAnimIdx && habAnimIdx.sad_loop) || Math.round(n / 2), t = Math.max(0, (performance.now() - r.overAt) / 1000);
+  const u = Math.floor(t * n * .92);
+  return u < n ? u : loop + (Math.floor(u * .6) % (n - loop));
 }
 // How far a flier sinks once it's lost (eased over half a second), to `floor` at most.
 function mgSadDrop(r, y, floor) {
