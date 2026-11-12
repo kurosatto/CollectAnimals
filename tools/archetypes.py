@@ -818,6 +818,13 @@ BIRD_FORMS = [
     (r"swallow|martin|swift", 0.7, 10, -6, 1.25, 0.6, 0.0, 0.7, 2.2),
     (r"kingfisher", 0.9, 10, -7, 0.98, 0.76, 0.2, 1.5, 2.6),
     (r"anhinga", 0.55, 8, -9, 1.2, 0.62, 0.0, 1.5, 1.4),
+    # European additions (2026-11): Old World shorebirds, small crows, skuas, auks, wagtails
+    (r"lapwing|godwit|redshank|curlew|whimbrel|stint|red_knot|snipe|common_sandpiper|wood_sandpiper|purple_sandpiper",
+     0.64, 10, -6, 1.1, 0.66, -0.05, 1.5, 1.9),
+    (r"jackdaw|rook|chough", 0.76, 9.5, -6.5, 1.1, 0.74, 0.1, 1.3, 2.3),
+    (r"skua|jaeger|fulmar", 0.72, 9.5, -6.5, 1.18, 0.72, 0.0, 1.4, 2.4),
+    (r"razorbill", 0.84, 10.5, -8, 0.95, 0.88, 0.5, 1.35, 2.6),
+    (r"wagtail|pipit", 0.66, 10, -6, 1.2, 0.64, 0.0, 1.0, 2.0),
 ]
 SONGBIRD = (0.72, 10, -7, 1.08, 0.74, 0.0, 1.0, 2.2)
 

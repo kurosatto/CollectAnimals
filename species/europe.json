@@ -30,34 +30,6 @@
    }
   },
   {
-   "code": "AND",
-   "name": "Andorra",
-   "region": "europe",
-   "species": "andorra_100.csv",
-   "dex": null,
-   "outline": "andorra_outline.json",
-   "ranges": "andorra_ranges.json",
-   "hotspots": "andorra_hotspots.json",
-   "places": "andorra_places.json",
-   "seasons": "andorra_seasons.json",
-   "utc_offset": 1,
-   "dst": "eu",
-   "inat_place_id": 8226,
-   "bounds": {
-    "west": 1.3,
-    "east": 1.9,
-    "south": 42.3,
-    "north": 42.7
-   },
-   "grid": {
-    "lon0": 1.25,
-    "lat0": 42.25,
-    "step": 0.0625,
-    "cols": 11,
-    "rows": 8
-   }
-  },
-  {
    "code": "AUT",
    "name": "Austria",
    "region": "europe",
@@ -618,34 +590,6 @@
    }
   },
   {
-   "code": "LIE",
-   "name": "Liechtenstein",
-   "region": "europe",
-   "species": "liechtenstein_100.csv",
-   "dex": null,
-   "outline": "liechtenstein_outline.json",
-   "ranges": "liechtenstein_ranges.json",
-   "hotspots": "liechtenstein_hotspots.json",
-   "places": "liechtenstein_places.json",
-   "seasons": "liechtenstein_seasons.json",
-   "utc_offset": 1,
-   "dst": "eu",
-   "inat_place_id": 8263,
-   "bounds": {
-    "west": 9.4,
-    "east": 9.7,
-    "south": 47.0,
-    "north": 47.4
-   },
-   "grid": {
-    "lon0": 9.375,
-    "lat0": 47.0,
-    "step": 0.0625,
-    "cols": 6,
-    "rows": 7
-   }
-  },
-  {
    "code": "LTU",
    "name": "Lithuania",
    "region": "europe",
@@ -755,34 +699,6 @@
     "step": 0.0625,
     "cols": 60,
     "rows": 52
-   }
-  },
-  {
-   "code": "MCO",
-   "name": "Monaco",
-   "region": "europe",
-   "species": "monaco_100.csv",
-   "dex": null,
-   "outline": "monaco_outline.json",
-   "ranges": "monaco_ranges.json",
-   "hotspots": "monaco_hotspots.json",
-   "places": "monaco_places.json",
-   "seasons": "monaco_seasons.json",
-   "utc_offset": 1,
-   "dst": "eu",
-   "inat_place_id": 8227,
-   "bounds": {
-    "west": 7.3,
-    "east": 7.5,
-    "south": 43.6,
-    "north": 43.9
-   },
-   "grid": {
-    "lon0": 7.25,
-    "lat0": 43.5625,
-    "step": 0.0625,
-    "cols": 4,
-    "rows": 6
    }
   },
   {
@@ -1007,34 +923,6 @@
     "step": 1.0,
     "cols": 42,
     "rows": 31
-   }
-  },
-  {
-   "code": "SMR",
-   "name": "San Marino",
-   "region": "europe",
-   "species": "san_marino_100.csv",
-   "dex": null,
-   "outline": "san_marino_outline.json",
-   "ranges": "san_marino_ranges.json",
-   "hotspots": "san_marino_hotspots.json",
-   "places": "san_marino_places.json",
-   "seasons": "san_marino_seasons.json",
-   "utc_offset": 1,
-   "dst": "eu",
-   "inat_place_id": 10310,
-   "bounds": {
-    "west": 12.3,
-    "east": 12.6,
-    "south": 43.8,
-    "north": 44.1
-   },
-   "grid": {
-    "lon0": 12.25,
-    "lat0": 43.75,
-    "step": 0.0625,
-    "cols": 6,
-    "rows": 6
    }
   },
   {
@@ -1287,34 +1175,6 @@
     "step": 0.25,
     "cols": 42,
     "rows": 45
-   }
-  },
-  {
-   "code": "VAT",
-   "name": "Vatican City",
-   "region": "europe",
-   "species": "vatican_city_100.csv",
-   "dex": null,
-   "outline": "vatican_city_outline.json",
-   "ranges": "vatican_city_ranges.json",
-   "hotspots": "vatican_city_hotspots.json",
-   "places": "vatican_city_places.json",
-   "seasons": "vatican_city_seasons.json",
-   "utc_offset": 1,
-   "dst": "eu",
-   "inat_place_id": 9213,
-   "bounds": {
-    "west": 12.4,
-    "east": 12.6,
-    "south": 41.8,
-    "north": 42.0
-   },
-   "grid": {
-    "lon0": 12.375,
-    "lat0": 41.75,
-    "step": 0.0625,
-    "cols": 4,
-    "rows": 4
    }
   }
  ]

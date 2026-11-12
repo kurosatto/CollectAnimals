@@ -54,6 +54,40 @@
    "groom",
    "sad"
   ],
+  "adder": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "adriatic_trout": [
+   "idle",
+   "swim",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "aesculapian_snake": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "afghan_tortoise": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "sit",
+   "eat",
+   "sad"
+  ],
   "african_giant_snail": [
    "idle",
    "walk",
@@ -66,7 +100,85 @@
    "hide",
    "sad"
   ],
+  "agile_frog": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "albanian_minnow": [
+   "idle",
+   "swim",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "alder_leaf_beetle": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "algerian_whip_snake": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "allegheny_mountain_dusky_salamander": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "alpine_ibex": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "alpine_marmot": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "alpine_newt": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "alpine_salamander": [
    "idle",
    "walk",
    "sleep",
@@ -392,6 +504,18 @@
    "groom",
    "sad"
   ],
+  "arctic_fox": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "arctic_green_sea_urchin": [
    "idle",
    "sleep",
@@ -456,6 +580,37 @@
    "sleep",
    "sad"
   ],
+  "arran_brown": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "ash_black_slug": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "ash_cicada": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
+  "asia_minor_ground_squirrel": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "asian_house_gecko": [
    "idle",
    "walk",
@@ -484,7 +639,35 @@
    "sleep",
    "sad"
   ],
+  "asp": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "atlantic_beadlet_anemone": [
+   "idle",
+   "sleep",
+   "hide",
+   "sad"
+  ],
   "atlantic_blue_crab": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "atlantic_cod": [
+   "idle",
+   "swim",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "atlantic_dogwhelk": [
    "idle",
    "walk",
    "sleep",
@@ -508,6 +691,13 @@
    "hide",
    "sad"
   ],
+  "atlantic_pollock": [
+   "idle",
+   "swim",
+   "sleep",
+   "eat",
+   "sad"
+  ],
   "atlantic_puffin": [
    "idle",
    "walk",
@@ -517,6 +707,12 @@
    "eat",
    "run",
    "groom",
+   "sad"
+  ],
+  "atlantic_purple_sea_urchin": [
+   "idle",
+   "sleep",
+   "hide",
    "sad"
   ],
   "atlantic_rock_crab": [
@@ -537,7 +733,26 @@
    "sleep",
    "sad"
   ],
+  "atlantic_spotted_dolphin": [
+   "idle",
+   "swim",
+   "sleep",
+   "dive",
+   "sad"
+  ],
   "autumn_meadowhawk": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
+  "azores_noctule": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
+  "azure_damselfly": [
    "idle",
    "fly",
    "sleep",
@@ -551,6 +766,42 @@
    "eat",
    "sad"
   ],
+  "balkan_green_lizard": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "balkan_wall_lizard": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "balkan_whip_snake": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "baltic_isopod": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "sad"
+  ],
   "baltimore_oriole": [
    "idle",
    "walk",
@@ -560,6 +811,12 @@
    "eat",
    "run",
    "groom",
+   "sad"
+  ],
+  "banded_dye_murex": [
+   "idle",
+   "walk",
+   "sleep",
    "sad"
   ],
   "banded_tussock_moth": [
@@ -572,6 +829,30 @@
    "idle",
    "walk",
    "sleep",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "bank_vole": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "barbary_ground_squirrel": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
    "eat",
    "run",
    "groom",
@@ -596,12 +877,35 @@
    "groom",
    "sad"
   ],
+  "barnacle_goose": [
+   "idle",
+   "fly",
+   "swim",
+   "sleep",
+   "sad"
+  ],
+  "barred_grass_snake": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "barred_owl": [
    "idle",
    "fly",
    "sleep",
    "look",
    "back",
+   "sad"
+  ],
+  "barrel_jelly": [
+   "idle",
+   "swim",
+   "sleep",
+   "hide",
    "sad"
   ],
   "barrows_goldeneye": [
@@ -618,11 +922,45 @@
    "hide",
    "sad"
   ],
+  "bay_barnacle": [
+   "idle",
+   "sleep",
+   "eat",
+   "sad"
+  ],
   "bay_nettle": [
    "idle",
    "swim",
    "sleep",
    "hide",
+   "sad"
+  ],
+  "beaded_chestnut": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
+  "bearded_fireworm": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "bearded_seal": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "sad"
+  ],
+  "beautiful_demoiselle": [
+   "idle",
+   "fly",
+   "sleep",
    "sad"
   ],
   "beldings_ground_squirrel": [
@@ -647,6 +985,19 @@
    "dive",
    "run",
    "groom",
+   "sad"
+  ],
+  "belted_springtail": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "bicoloured_shrew": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
    "sad"
   ],
   "big_brown_bat": [
@@ -759,6 +1110,14 @@
    "groom",
    "sad"
   ],
+  "black_headed_gull": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
   "black_kingsnake": [
    "idle",
    "walk",
@@ -766,6 +1125,14 @@
    "eat",
    "run",
    "groom",
+   "sad"
+  ],
+  "black_kite": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "eat",
    "sad"
   ],
   "black_leather_chiton": [
@@ -780,6 +1147,12 @@
    "fly",
    "sleep",
    "eat",
+   "sad"
+  ],
+  "black_longspine_urchin": [
+   "idle",
+   "sleep",
+   "hide",
    "sad"
   ],
   "black_necked_stilt": [
@@ -817,6 +1190,17 @@
    "walk",
    "sleep"
   ],
+  "black_redstart": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "black_skimmer": [
    "idle",
    "walk",
@@ -844,6 +1228,17 @@
    "idle",
    "fly",
    "sleep",
+   "sad"
+  ],
+  "black_tailed_godwit": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
    "sad"
   ],
   "black_tailed_jackrabbit": [
@@ -892,11 +1287,26 @@
    "sleep",
    "sad"
   ],
+  "black_veined_white": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
   "black_vulture": [
    "idle",
    "walk",
    "fly",
    "sleep",
+   "sad"
+  ],
+  "black_winged_stilt": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "eat",
    "sad"
   ],
   "black_witch": [
@@ -944,6 +1354,19 @@
    "swim",
    "sleep",
    "sit",
+   "eat",
+   "sad"
+  ],
+  "blasiuss_horseshoe_bat": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
+  "bleak": [
+   "idle",
+   "swim",
+   "sleep",
    "eat",
    "sad"
   ],
@@ -998,6 +1421,30 @@
    "groom",
    "sad"
   ],
+  "blue_jelly": [
+   "idle",
+   "swim",
+   "sleep",
+   "hide",
+   "sad"
+  ],
+  "blue_rock_thrush": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "blue_spotted_cornetfish": [
+   "idle",
+   "swim",
+   "sleep",
+   "sad"
+  ],
   "blue_spotted_salamander": [
    "idle",
    "walk",
@@ -1006,6 +1453,23 @@
    "eat",
    "run",
    "groom",
+   "sad"
+  ],
+  "blue_throated_keeled_lizard": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "blue_whale": [
+   "idle",
+   "swim",
+   "sleep",
+   "dive",
    "sad"
   ],
   "blue_winged_teal": [
@@ -1034,6 +1498,18 @@
    "groom",
    "sad"
   ],
+  "bobak_marmot": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "bobcat": [
    "idle",
    "walk",
@@ -1050,6 +1526,16 @@
    "idle",
    "walk",
    "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "bocages_wall_lizard": [
+   "idle",
+   "walk",
    "sleep",
    "sit",
    "eat",
@@ -1090,10 +1576,31 @@
    "groom",
    "sad"
   ],
+  "boscas_newt": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "brahminy_blindsnake": [
    "idle",
    "walk",
    "sleep",
+   "sad"
+  ],
+  "brambling": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
    "sad"
   ],
   "brant": [
@@ -1120,6 +1627,16 @@
    "sleep",
    "sad"
   ],
+  "bridled_skink": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "broad_billed_hummingbird": [
    "idle",
    "fly",
@@ -1134,6 +1651,12 @@
    "eat",
    "run",
    "groom",
+   "sad"
+  ],
+  "broad_scarlet": [
+   "idle",
+   "fly",
+   "sleep",
    "sad"
   ],
   "broad_tailed_hummingbird": [
@@ -1164,6 +1687,12 @@
    "eat",
    "sad"
   ],
+  "broom_moth": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
   "brown_anole": [
    "idle",
    "walk",
@@ -1192,6 +1721,24 @@
    "sleep",
    "sad"
   ],
+  "brown_centipede": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "brown_hare": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "brown_headed_cowbird": [
    "idle",
    "walk",
@@ -1215,6 +1762,18 @@
    "sad"
   ],
   "brown_lipped_snail": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "brown_long_eared_bat": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
+  "brown_marmorated_stink_bug": [
    "idle",
    "walk",
    "sleep",
@@ -1265,6 +1824,16 @@
    "sit",
    "look",
    "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "budaks_snake_eyed_skink": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
    "eat",
    "run",
    "groom",
@@ -1537,6 +2106,18 @@
    "groom",
    "sad"
   ],
+  "cape_hare": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "caribou": [
    "idle",
    "walk",
@@ -1576,7 +2157,58 @@
    "groom",
    "sad"
   ],
+  "carrion_crow": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "cascade_golden_mantled_ground_squirrel": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "caspian_whipsnake": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "cat_snake": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "catalonian_wall_lizard": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "caucasian_squirrel": [
    "idle",
    "walk",
    "sleep",
@@ -1596,6 +2228,13 @@
    "eat",
    "run",
    "groom",
+   "sad"
+  ],
+  "cavedano_chub": [
+   "idle",
+   "swim",
+   "sleep",
+   "eat",
    "sad"
   ],
   "cedar_waxwing": [
@@ -1673,6 +2312,24 @@
    "groom",
    "sad"
   ],
+  "chinese_pond_turtle": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "sit",
+   "eat",
+   "sad"
+  ],
+  "chinese_stripe_necked_turtle": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "sit",
+   "eat",
+   "sad"
+  ],
   "chipping_sparrow": [
    "idle",
    "walk",
@@ -1708,11 +2365,46 @@
    "groom",
    "sad"
   ],
+  "chocolate_band_snail": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "chukar": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "cinnabar_moth": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
   "cinnamon_teal": [
    "idle",
    "fly",
    "swim",
    "sleep",
+   "groom",
+   "sad"
+  ],
+  "cirl_bunting": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
    "groom",
    "sad"
   ],
@@ -1777,11 +2469,35 @@
    "groom",
    "sad"
   ],
+  "clouded_yellow": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
   "cloudless_sulphur": [
    "idle",
    "fly",
    "sleep",
    "eat",
+   "sad"
+  ],
+  "clown_isopod": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "coal_tit": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
    "sad"
   ],
   "coast_horned_lizard": [
@@ -1792,6 +2508,12 @@
    "eat",
    "run",
    "groom",
+   "sad"
+  ],
+  "collared_flat_backed_millipede": [
+   "idle",
+   "walk",
+   "sleep",
    "sad"
   ],
   "collared_peccary": [
@@ -1845,6 +2567,19 @@
    "sleep",
    "sad"
   ],
+  "common_blue": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "common_blue_damselfly": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
   "common_bottlenose_dolphin": [
    "idle",
    "swim",
@@ -1852,11 +2587,70 @@
    "dive",
    "sad"
   ],
+  "common_bream": [
+   "idle",
+   "swim",
+   "sleep",
+   "sad"
+  ],
+  "common_brimstone": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
   "common_buckeye": [
    "idle",
    "fly",
    "sleep",
    "eat",
+   "sad"
+  ],
+  "common_buzzard": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "common_carder_bumble_bee": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
+  "common_chaffinch": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "common_chameleon": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "common_chiffchaff": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
    "sad"
   ],
   "common_chuckwalla": [
@@ -1881,9 +2675,36 @@
    "groom",
    "sad"
   ],
+  "common_crane": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "common_darter": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
   "common_desert_centipede": [
    "idle",
    "walk",
+   "sleep",
+   "sad"
+  ],
+  "common_dolphin": [
+   "idle",
+   "swim",
+   "sleep",
+   "dive",
+   "sad"
+  ],
+  "common_drone_fly": [
+   "idle",
+   "fly",
    "sleep",
    "sad"
   ],
@@ -1971,6 +2792,45 @@
    "sleep",
    "sad"
   ],
+  "common_gull": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "common_hedgehog": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
+   "run",
+   "sad"
+  ],
+  "common_hoopoe": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "common_kingfisher": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "dive",
+   "run",
+   "groom",
+   "sad"
+  ],
   "common_loon": [
    "idle",
    "fly",
@@ -1985,6 +2845,20 @@
    "swim",
    "sleep",
    "groom",
+   "sad"
+  ],
+  "common_minke_whale": [
+   "idle",
+   "swim",
+   "sleep",
+   "dive",
+   "sad"
+  ],
+  "common_moon_jelly": [
+   "idle",
+   "swim",
+   "sleep",
+   "hide",
    "sad"
   ],
   "common_murre": [
@@ -2009,7 +2883,24 @@
    "groom",
    "sad"
   ],
+  "common_noctule": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
+  "common_octopus": [
+   "idle",
+   "swim",
+   "sleep",
+   "sad"
+  ],
   "common_periwinkle": [
+   "idle",
+   "sleep",
+   "sad"
+  ],
+  "common_pill_millipede": [
    "idle",
    "sleep",
    "sad"
@@ -2020,7 +2911,43 @@
    "sleep",
    "sad"
   ],
+  "common_pipistrelle": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
+  "common_pochard": [
+   "idle",
+   "fly",
+   "swim",
+   "sleep",
+   "groom",
+   "sad"
+  ],
   "common_raven": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "common_redshank": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "common_redstart": [
    "idle",
    "walk",
    "fly",
@@ -2040,9 +2967,27 @@
    "groom",
    "sad"
   ],
+  "common_ringed_plover": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "common_ringlet": [
    "idle",
    "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "common_roach": [
+   "idle",
+   "swim",
    "sleep",
    "eat",
    "sad"
@@ -2051,6 +2996,13 @@
    "idle",
    "walk",
    "sleep",
+   "sad"
+  ],
+  "common_rudd": [
+   "idle",
+   "swim",
+   "sleep",
+   "eat",
    "sad"
   ],
   "common_sagebrush_lizard": [
@@ -2063,10 +3015,29 @@
    "groom",
    "sad"
   ],
+  "common_sandpiper": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "common_sea_star": [
    "idle",
    "sleep",
    "hide",
+   "sad"
+  ],
+  "common_shelduck": [
+   "idle",
+   "fly",
+   "swim",
+   "sleep",
+   "groom",
    "sad"
   ],
   "common_shiner": [
@@ -2082,6 +3053,22 @@
    "sleep",
    "sad"
   ],
+  "common_shrew": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "common_slowworm": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "common_snapping_turtle": [
    "idle",
    "walk",
@@ -2089,6 +3076,29 @@
    "sleep",
    "sit",
    "eat",
+   "sad"
+  ],
+  "common_snipe": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "common_spadefoot": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
    "sad"
   ],
   "common_spotted_whiptail": [
@@ -2118,6 +3128,24 @@
    "groom",
    "sad"
   ],
+  "common_two_banded_seabream": [
+   "idle",
+   "swim",
+   "sleep",
+   "sad"
+  ],
+  "common_vole": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "common_wall_lizard": [
    "idle",
    "walk",
@@ -2139,10 +3167,27 @@
    "groom",
    "sad"
   ],
+  "common_whelk": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
   "common_whitetail": [
    "idle",
    "fly",
    "sleep",
+   "sad"
+  ],
+  "common_wood_pigeon": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
    "sad"
   ],
   "common_yellowthroat": [
@@ -2154,6 +3199,13 @@
    "eat",
    "run",
    "groom",
+   "sad"
+  ],
+  "compass_jelly": [
+   "idle",
+   "swim",
+   "sleep",
+   "hide",
    "sad"
   ],
   "convergent_lady_beetle": [
@@ -2182,10 +3234,40 @@
    "groom",
    "sad"
   ],
+  "copse_snail": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "corn_bunting": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "cosmopolitan_springtail": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
   "costas_hummingbird": [
    "idle",
    "fly",
    "sleep",
+   "sad"
+  ],
+  "cotton_bollworm_moth": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
    "sad"
   ],
   "couchs_spadefoot": [
@@ -2232,6 +3314,40 @@
    "eat",
    "sad"
   ],
+  "crested_lark": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "crested_porcupine": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "crimean_rock_lizard": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "crimson_speckled_flunkey": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
   "cross_orbweaver": [
    "idle",
    "walk",
@@ -2261,6 +3377,74 @@
    "groom",
    "sad"
   ],
+  "cyprian_green_toad": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "cyprus_processionary_moth": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "cyprus_wheatear": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "dalmatian_pelican": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "dive",
+   "sad"
+  ],
+  "dalmatian_roach": [
+   "idle",
+   "swim",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "dalmatian_wall_lizard": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "danubian_minnow": [
+   "idle",
+   "swim",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "dark_bush_cricket": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
   "dark_eyed_junco": [
    "idle",
    "walk",
@@ -2282,9 +3466,21 @@
    "groom",
    "sad"
   ],
+  "daubentons_bat": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
   "day_octopus": [
    "idle",
    "swim",
+   "sleep",
+   "sad"
+  ],
+  "decollate_snail": [
+   "idle",
+   "walk",
    "sleep",
    "sad"
   ],
@@ -2461,6 +3657,13 @@
    "dive",
    "sad"
   ],
+  "double_striped_pug": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
   "douglass_ground_squirrel": [
    "idle",
    "walk",
@@ -2513,6 +3716,17 @@
    "groom",
    "sad"
   ],
+  "dunnock": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "dunns_salamander": [
    "idle",
    "walk",
@@ -2521,6 +3735,12 @@
    "eat",
    "run",
    "groom",
+   "sad"
+  ],
+  "dusky_grouper": [
+   "idle",
+   "swim",
+   "sleep",
    "sad"
   ],
   "dusky_grouse": [
@@ -2534,9 +3754,34 @@
    "groom",
    "sad"
   ],
+  "dusky_spinefoot": [
+   "idle",
+   "swim",
+   "sleep",
+   "sad"
+  ],
   "dusky_surgeonfish": [
    "idle",
    "swim",
+   "sleep",
+   "sad"
+  ],
+  "dustbin_lid_jelly": [
+   "idle",
+   "swim",
+   "sleep",
+   "hide",
+   "sad"
+  ],
+  "east_atlantic_peacock_wrasse": [
+   "idle",
+   "swim",
+   "sleep",
+   "sad"
+  ],
+  "east_atlantic_sally_lightfoot_crab": [
+   "idle",
+   "walk",
    "sleep",
    "sad"
   ],
@@ -2544,6 +3789,17 @@
    "idle",
    "fly",
    "sleep",
+   "sad"
+  ],
+  "eastern_black_eared_wheatear": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
    "sad"
   ],
   "eastern_blacknose_dace": [
@@ -2685,6 +3941,14 @@
    "groom",
    "sad"
   ],
+  "eastern_imperial_eagle": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
   "eastern_kingbird": [
    "idle",
    "walk",
@@ -2718,6 +3982,16 @@
    "sit",
    "look",
    "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "eastern_mediterranean_thin_toed_gecko": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
    "eat",
    "run",
    "groom",
@@ -2830,6 +4104,15 @@
    "sleep",
    "sad"
   ],
+  "eastern_slowworm": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "eastern_spadefoot": [
    "idle",
    "walk",
@@ -2883,7 +4166,68 @@
    "groom",
    "sad"
   ],
+  "eastern_tree_frog": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "ebony_jewelwing": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
+  "edible_crab": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "edible_frog": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "egyptian_bird_grasshopper": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "egyptian_goose": [
+   "idle",
+   "fly",
+   "swim",
+   "sleep",
+   "sad"
+  ],
+  "egyptian_mongoose": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "egyptian_rousette": [
    "idle",
    "fly",
    "sleep",
@@ -2918,7 +4262,389 @@
    "groom",
    "sad"
   ],
+  "erhards_wall_lizard": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "eurasian_beaver": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "eurasian_blackbird": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "eurasian_blackcap": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "eurasian_blue_tit": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "eurasian_bullfinch": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "eurasian_collared_dove": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "eurasian_coot": [
+   "idle",
+   "fly",
+   "swim",
+   "sleep",
+   "groom",
+   "sad"
+  ],
+  "eurasian_curlew": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "eurasian_forest_dormouse": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "eurasian_green_woodpecker": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "eurasian_griffon": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sad"
+  ],
+  "eurasian_hamster": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "eurasian_hummingbird_hawkmoth": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "eurasian_jackdaw": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "eurasian_jay": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "eurasian_kestrel": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "eurasian_linnet": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "eurasian_lynx": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "eurasian_magpie": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "eurasian_moorhen": [
+   "idle",
+   "fly",
+   "swim",
+   "sleep",
+   "groom",
+   "sad"
+  ],
+  "eurasian_nuthatch": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "eurasian_otter": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "eurasian_oystercatcher": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "eurasian_pine_marten": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "eurasian_pygmy_shrew": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "eurasian_red_squirrel": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "eurasian_scops_owl": [
+   "idle",
+   "fly",
+   "sleep",
+   "look",
+   "back",
+   "sad"
+  ],
+  "eurasian_serotine": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
+  "eurasian_siskin": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "eurasian_spoonbill": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "eurasian_stoat": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "eurasian_tree_sparrow": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "eurasian_whimbrel": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "eurasian_wigeon": [
+   "idle",
+   "fly",
+   "swim",
+   "sleep",
+   "groom",
+   "sad"
+  ],
+  "eurasian_wren": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "european_badger": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "european_bee_eater": [
    "idle",
    "walk",
    "fly",
@@ -2936,10 +4662,131 @@
    "eat",
    "sad"
   ],
+  "european_chub": [
+   "idle",
+   "swim",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "european_comma": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "european_common_frog": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "european_copper_skink": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "european_crayfish": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "european_fallow_deer": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "european_fat_dormouse": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "european_fire_bellied_toad": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "european_firebug": [
    "idle",
    "walk",
    "sleep",
+   "sad"
+  ],
+  "european_garden_dormouse": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "european_glass_lizard": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "european_golden_plover": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "european_goldfinch": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
    "sad"
   ],
   "european_green_crab": [
@@ -2948,14 +4795,216 @@
    "sleep",
    "sad"
   ],
+  "european_greenfinch": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "european_ground_squirrel": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "european_herring_gull": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "european_honey_buzzard": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "european_hornet": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
   "european_mantis": [
    "idle",
+   "sleep",
+   "sad"
+  ],
+  "european_mole": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "european_nursery_web_spider": [
+   "idle",
+   "walk",
    "sleep",
    "sad"
   ],
   "european_paper_wasp": [
    "idle",
    "fly",
+   "sleep",
+   "sad"
+  ],
+  "european_parrotfish": [
+   "idle",
+   "swim",
+   "sleep",
+   "sad"
+  ],
+  "european_peacock_butterfly": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "european_perch": [
+   "idle",
+   "swim",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "european_pied_flycatcher": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "european_polecat": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "european_pond_turtle": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "sit",
+   "eat",
+   "sad"
+  ],
+  "european_ratsnake": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "european_red_rumped_swallow": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "european_robin": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "european_roller": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "european_rose_chafer": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "european_seabass": [
+   "idle",
+   "swim",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "european_serin": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "european_shag": [
+   "idle",
+   "walk",
+   "fly",
+   "swim",
+   "sleep",
+   "dive",
+   "sad"
+  ],
+  "european_snow_vole": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "european_stag_beetle": [
+   "idle",
+   "walk",
    "sleep",
    "sad"
   ],
@@ -2970,10 +5019,101 @@
    "groom",
    "sad"
   ],
+  "european_stonechat": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "european_toad": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "european_tree_frog": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "european_turtle_dove": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "european_water_vole": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "european_wildcat": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "european_wood_mouse": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "fall_webworm_moth": [
    "idle",
    "fly",
    "sleep",
+   "eat",
+   "sad"
+  ],
+  "false_map_turtle": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "sit",
    "eat",
    "sad"
   ],
@@ -2996,11 +5136,71 @@
    "sleep",
    "sad"
   ],
+  "fazilas_salamander": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "field_vole": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "fieldfare": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "fiery_skipper": [
    "idle",
    "fly",
    "sleep",
    "eat",
+   "sad"
+  ],
+  "filfola_lizard": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "fin_whale": [
+   "idle",
+   "swim",
+   "sleep",
+   "dive",
+   "sad"
+  ],
+  "fire_salamander": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
    "sad"
   ],
   "fisher": [
@@ -3028,6 +5228,12 @@
   "flame_skimmer": [
    "idle",
    "fly",
+   "sleep",
+   "sad"
+  ],
+  "flavimaculosus_puffer": [
+   "idle",
+   "swim",
    "sleep",
    "sad"
   ],
@@ -3081,6 +5287,20 @@
    "eat",
    "run",
    "groom",
+   "sad"
+  ],
+  "four_lined_polycera": [
+   "idle",
+   "walk",
+   "sleep",
+   "hide",
+   "sad"
+  ],
+  "four_spotted_moth": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
    "sad"
   ],
   "fowlers_toad": [
@@ -3161,6 +5381,24 @@
    "groom",
    "sad"
   ],
+  "gaislers_long_eared_bat": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
+  "galician_common_frog": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "gambels_quail": [
    "idle",
    "walk",
@@ -3183,9 +5421,27 @@
    "sleep",
    "sad"
   ],
+  "gatekeeper": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "geoffroys_bat": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
   "german_cockroach": [
    "idle",
    "walk",
+   "sleep",
+   "sad"
+  ],
+  "giant_african_mantis": [
+   "idle",
    "sleep",
    "sad"
   ],
@@ -3221,6 +5477,12 @@
    "eat",
    "run",
    "groom",
+   "sad"
+  ],
+  "gilthead_seabream": [
+   "idle",
+   "swim",
+   "sleep",
    "sad"
   ],
   "glaucous_gull": [
@@ -3286,6 +5548,18 @@
    "groom",
    "sad"
   ],
+  "golden_jackal": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "golden_silk_spider": [
    "idle",
    "walk",
@@ -3335,6 +5609,27 @@
    "eat",
    "sad"
   ],
+  "granada_hare": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "grass_snake": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "gray_catbird": [
    "idle",
    "walk",
@@ -3363,6 +5658,17 @@
    "fly",
    "sleep",
    "eat",
+   "sad"
+  ],
+  "gray_partridge": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
    "sad"
   ],
   "gray_sea_star": [
@@ -3430,6 +5736,33 @@
    "eat",
    "sad"
   ],
+  "great_cormorant": [
+   "idle",
+   "walk",
+   "fly",
+   "swim",
+   "sleep",
+   "dive",
+   "sad"
+  ],
+  "great_crested_grebe": [
+   "idle",
+   "fly",
+   "swim",
+   "sleep",
+   "groom",
+   "sad"
+  ],
+  "great_crested_newt": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "great_egret": [
    "idle",
    "walk",
@@ -3447,6 +5780,12 @@
    "eat",
    "run",
    "groom",
+   "sad"
+  ],
+  "great_green_bush_cricket": [
+   "idle",
+   "walk",
+   "sleep",
    "sad"
   ],
   "great_horned_owl": [
@@ -3479,11 +5818,39 @@
    "groom",
    "sad"
   ],
+  "great_skua": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "great_spangled_fritillary": [
    "idle",
    "fly",
    "sleep",
    "eat",
+   "sad"
+  ],
+  "great_spider_crab": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "great_spotted_woodpecker": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
    "sad"
   ],
   "great_tailed_grackle": [
@@ -3497,6 +5864,25 @@
    "groom",
    "sad"
   ],
+  "great_tit": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "great_white_pelican": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "dive",
+   "sad"
+  ],
   "greater_earless_lizard": [
    "idle",
    "walk",
@@ -3505,6 +5891,20 @@
    "eat",
    "run",
    "groom",
+   "sad"
+  ],
+  "greater_flamingo": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "greater_horseshoe_bat": [
+   "idle",
+   "fly",
+   "sleep",
    "sad"
   ],
   "greater_roadrunner": [
@@ -3518,9 +5918,42 @@
    "groom",
    "sad"
   ],
+  "greater_scaup": [
+   "idle",
+   "fly",
+   "swim",
+   "sleep",
+   "groom",
+   "sad"
+  ],
   "greater_short_horned_lizard": [
    "idle",
    "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "greater_white_fronted_goose": [
+   "idle",
+   "fly",
+   "swim",
+   "sleep",
+   "sad"
+  ],
+  "greater_white_toothed_shrew": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "greater_whitethroat": [
+   "idle",
+   "walk",
+   "fly",
    "sleep",
    "sit",
    "eat",
@@ -3533,6 +5966,46 @@
    "walk",
    "fly",
    "sleep",
+   "eat",
+   "sad"
+  ],
+  "greek_frog": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "greek_newt": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "greek_slowworm": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "greek_tortoise": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "sit",
    "eat",
    "sad"
   ],
@@ -3570,6 +6043,13 @@
    "groom",
    "sad"
   ],
+  "green_hairstreak": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
   "green_heron": [
    "idle",
    "walk",
@@ -3578,7 +6058,27 @@
    "eat",
    "sad"
   ],
+  "green_iberian_wall_lizard": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "green_iguana": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "green_lizard": [
    "idle",
    "walk",
    "sleep",
@@ -3594,11 +6094,29 @@
    "sleep",
    "sad"
   ],
+  "green_shield_bug": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
   "green_sunfish": [
    "idle",
    "swim",
    "sleep",
    "eat",
+   "sad"
+  ],
+  "green_toad": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
    "sad"
   ],
   "green_treefrog": [
@@ -3608,6 +6126,22 @@
    "sleep",
    "look",
    "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "green_veined_white": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "green_whip_snake": [
+   "idle",
+   "walk",
+   "sleep",
    "eat",
    "run",
    "groom",
@@ -3657,6 +6191,25 @@
    "groom",
    "sad"
   ],
+  "grey_headed_woodpecker": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "grey_heron": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
   "grey_seal": [
    "idle",
    "walk",
@@ -3665,6 +6218,24 @@
    "sit",
    "look",
    "back",
+   "sad"
+  ],
+  "grey_wagtail": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "greylag_goose": [
+   "idle",
+   "fly",
+   "swim",
+   "sleep",
    "sad"
   ],
   "groundhog": [
@@ -3740,6 +6311,12 @@
    "eat",
    "run",
    "groom",
+   "sad"
+  ],
+  "half_edged_wall_jumping_spider": [
+   "idle",
+   "walk",
+   "sleep",
    "sad"
   ],
   "halloween_pennant": [
@@ -3867,6 +6444,39 @@
    "sleep",
    "sad"
   ],
+  "hazel_dormouse": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "heart_and_dart": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
+  "heath_bumble_bee": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
+  "hermanns_tortoise": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "sit",
+   "eat",
+   "sad"
+  ],
   "hermit_thrush": [
    "idle",
    "walk",
@@ -3915,6 +6525,17 @@
    "groom",
    "sad"
   ],
+  "hooded_crow": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "hooded_merganser": [
    "idle",
    "fly",
@@ -3938,6 +6559,14 @@
   "hopkins_rose": [
    "idle",
    "sleep",
+   "sad"
+  ],
+  "horned_grebe": [
+   "idle",
+   "fly",
+   "swim",
+   "sleep",
+   "groom",
    "sad"
   ],
   "horned_nudibranch": [
@@ -3965,6 +6594,15 @@
    "sit",
    "look",
    "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "horseshoe_whip_snake": [
+   "idle",
+   "walk",
+   "sleep",
    "eat",
    "run",
    "groom",
@@ -4016,11 +6654,23 @@
    "groom",
    "sad"
   ],
+  "hovels_myotis": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
   "humpback_whale": [
    "idle",
    "swim",
    "sleep",
    "dive",
+   "sad"
+  ],
+  "hungarian_pachyiulus": [
+   "idle",
+   "walk",
+   "sleep",
    "sad"
   ],
   "hunts_bumble_bee": [
@@ -4047,6 +6697,108 @@
    "groom",
    "sad"
   ],
+  "iberian_emerald_lizard": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "iberian_frog": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "iberian_green_frog": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "iberian_ibex": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "iberian_lynx": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "iberian_mole": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "iberian_painted_frog": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "iceland_gull": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "indian_crested_porcupine": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "indian_lionfish": [
+   "idle",
+   "swim",
+   "sleep",
+   "sad"
+  ],
+  "indian_milkweed_bug": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
   "indigo_bunting": [
    "idle",
    "walk",
@@ -4068,6 +6820,72 @@
    "idle",
    "walk",
    "sleep",
+   "sad"
+  ],
+  "italian_crested_newt": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "italian_locust": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "italian_sea_slater": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "italian_slowworm": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "italian_sparrow": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "italian_stream_frog": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "italian_tree_frog": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
    "sad"
   ],
   "italian_wall_lizard": [
@@ -4096,6 +6914,20 @@
    "sleep",
    "sad"
   ],
+  "japanese_silk_moth": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "jasmine_moth": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
   "java_sparrow": [
    "idle",
    "walk",
@@ -4105,6 +6937,13 @@
    "eat",
    "run",
    "groom",
+   "sad"
+  ],
+  "jelly_blubber": [
+   "idle",
+   "swim",
+   "sleep",
+   "hide",
    "sad"
   ],
   "johnny_darter": [
@@ -4148,6 +6987,34 @@
    "groom",
    "sad"
   ],
+  "kolombatovics_long_eared_bat": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
+  "kotor_pachyiulus": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "kotschys_gecko": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "kuhls_pipistrelle": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
   "ladder_backed_woodpecker": [
    "idle",
    "walk",
@@ -4159,11 +7026,43 @@
    "groom",
    "sad"
   ],
+  "ladder_snake": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "lake_trout": [
    "idle",
    "swim",
    "sleep",
    "eat",
+   "sad"
+  ],
+  "lamenting_grasshopper": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "langs_short_tailed_blue": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "lanzas_alpine_salamander": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
    "sad"
   ],
   "lapland_longspur": [
@@ -4181,6 +7080,32 @@
    "idle",
    "fly",
    "sleep",
+   "sad"
+  ],
+  "large_psammodromus": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "large_whip_snake": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "large_white": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
    "sad"
   ],
   "large_yellow_underwing": [
@@ -4205,6 +7130,17 @@
    "sad"
   ],
   "lark_sparrow": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "laughing_dove": [
    "idle",
    "walk",
    "fly",
@@ -4263,15 +7199,64 @@
    "groom",
    "sad"
   ],
+  "least_weasel": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "leather_star": [
    "idle",
    "sleep",
    "hide",
    "sad"
   ],
+  "leatherback_sea_turtle": [
+   "idle",
+   "swim",
+   "sleep",
+   "sad"
+  ],
+  "lebanon_lizard": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "lemon_yellow_tree_frog": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "leopard_shark": [
    "idle",
    "sleep",
+   "sad"
+  ],
+  "lesser_black_backed_gull": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "eat",
    "sad"
   ],
   "lesser_goldfinch": [
@@ -4283,6 +7268,31 @@
    "eat",
    "run",
    "groom",
+   "sad"
+  ],
+  "lesser_horseshoe_bat": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
+  "lesser_noctule": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
+  "lesser_stag_beetle": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "lesser_white_toothed_shrew": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
    "sad"
   ],
   "ligated_furrow_bee": [
@@ -4310,6 +7320,13 @@
    "sleep",
    "sad"
   ],
+  "lions_mane_jelly": [
+   "idle",
+   "swim",
+   "sleep",
+   "hide",
+   "sad"
+  ],
   "little_blue_heron": [
    "idle",
    "walk",
@@ -4328,6 +7345,52 @@
    "groom",
    "sad"
   ],
+  "little_egret": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "little_grebe": [
+   "idle",
+   "fly",
+   "swim",
+   "sleep",
+   "groom",
+   "sad"
+  ],
+  "little_owl": [
+   "idle",
+   "fly",
+   "sleep",
+   "look",
+   "back",
+   "sad"
+  ],
+  "little_ringed_plover": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "little_stint": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "loggerhead_sea_turtle": [
    "idle",
    "swim",
@@ -4339,9 +7402,68 @@
    "sleep",
    "sad"
   ],
+  "long_eared_hedgehog": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
+   "run",
+   "sad"
+  ],
+  "long_eared_owl": [
+   "idle",
+   "fly",
+   "sleep",
+   "look",
+   "back",
+   "sad"
+  ],
+  "long_finned_pilot_whale": [
+   "idle",
+   "swim",
+   "sleep",
+   "dive",
+   "sad"
+  ],
+  "long_legged_buzzard": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
   "long_nosed_leopard_lizard": [
    "idle",
    "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "long_nosed_viper": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "long_tailed_duck": [
+   "idle",
+   "fly",
+   "swim",
+   "sleep",
+   "groom",
+   "sad"
+  ],
+  "long_tailed_tit": [
+   "idle",
+   "walk",
+   "fly",
    "sleep",
    "sit",
    "eat",
@@ -4373,6 +7495,12 @@
    "eat",
    "sad"
   ],
+  "longleaf_wattle_gall_wasp": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
   "lorquins_admiral": [
    "idle",
    "fly",
@@ -4387,9 +7515,57 @@
    "eat",
    "sad"
   ],
+  "lycian_rock_lizard": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "macedonian_crested_newt": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "madeira_lizard": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "madeira_scorpionfish": [
+   "idle",
+   "swim",
+   "sleep",
+   "sad"
+  ],
   "magnificent_bryozoan": [
    "idle",
    "sleep",
+   "sad"
+  ],
+  "mainland_raccoon_dog": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
    "sad"
   ],
   "mallard": [
@@ -4400,8 +7576,30 @@
    "groom",
    "sad"
   ],
+  "manchurian_black_ratsnake": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "map": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
   "mapleleaf": [
    "idle",
+   "sleep",
+   "sad"
+  ],
+  "marbled_crab": [
+   "idle",
+   "walk",
    "sleep",
    "sad"
   ],
@@ -4409,6 +7607,16 @@
    "idle",
    "walk",
    "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "marbled_newt": [
+   "idle",
+   "walk",
    "sleep",
    "sit",
    "eat",
@@ -4426,6 +7634,22 @@
    "groom",
    "sad"
   ],
+  "marbled_white": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "marginated_tortoise": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "sit",
+   "eat",
+   "sad"
+  ],
   "margined_calligrapher": [
    "idle",
    "fly",
@@ -4437,6 +7661,24 @@
    "fly",
    "sleep",
    "eat",
+   "sad"
+  ],
+  "marmalade_hover_fly": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
+  "marsh_frog": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
    "sad"
   ],
   "marsh_rabbit": [
@@ -4451,11 +7693,90 @@
    "groom",
    "sad"
   ],
+  "marsh_tit": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "masked_shrike": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "mauve_stinger": [
+   "idle",
+   "swim",
+   "sleep",
+   "hide",
+   "sad"
+  ],
   "mayan_cichlid": [
    "idle",
    "swim",
    "sleep",
    "eat",
+   "sad"
+  ],
+  "meadow_brown": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "meadow_pipit": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "mediterranean_banded_centipede": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "mediterranean_damselfish": [
+   "idle",
+   "swim",
+   "sleep",
+   "sad"
+  ],
+  "mediterranean_freshwater_crab": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "mediterranean_gull": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "mediterranean_horseshoe_bat": [
+   "idle",
+   "fly",
+   "sleep",
    "sad"
   ],
   "mediterranean_house_gecko": [
@@ -4468,10 +7789,102 @@
    "groom",
    "sad"
   ],
+  "mediterranean_monk_seal": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "sad"
+  ],
+  "mediterranean_moray": [
+   "idle",
+   "swim",
+   "sleep",
+   "sad"
+  ],
+  "mediterranean_painted_frog": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "mediterranean_rainbow_wrasse": [
+   "idle",
+   "swim",
+   "sleep",
+   "sad"
+  ],
+  "mediterranean_red_bug": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "mediterranean_spiny_false_wolf_spider": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "mediterranean_spotted_chafer": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "mediterranean_thin_toed_gecko": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "mediterranean_tree_frog": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "mediterranean_turtle": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "sit",
+   "eat",
+   "sad"
+  ],
   "melissa_blue": [
    "idle",
    "fly",
    "sleep",
+   "eat",
+   "sad"
+  ],
+  "mesoamerican_slider": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "sit",
    "eat",
    "sad"
   ],
@@ -4510,6 +7923,12 @@
    "groom",
    "sad"
   ],
+  "middle_east_black_tarantula": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
   "milberts_tortoiseshell": [
    "idle",
    "fly",
@@ -4541,6 +7960,17 @@
    "groom",
    "sad"
   ],
+  "mistle_thrush": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "monarch": [
    "idle",
    "fly",
@@ -4548,10 +7978,43 @@
    "eat",
    "sad"
   ],
+  "monk_parakeet": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "moonglow_anemone": [
    "idle",
    "sleep",
    "hide",
+   "sad"
+  ],
+  "moor_frog": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "moorish_gecko": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
    "sad"
   ],
   "moorish_idol": [
@@ -4601,6 +8064,18 @@
    "hide",
    "sad"
   ],
+  "mound_building_mouse": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "mountain_bluebird": [
    "idle",
    "walk",
@@ -4636,6 +8111,18 @@
    "sad"
   ],
   "mountain_goat": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "mountain_hare": [
    "idle",
    "walk",
    "sleep",
@@ -4694,6 +8181,12 @@
    "groom",
    "sad"
   ],
+  "mouse_eared_bat": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
   "mud_fiddler_crab": [
    "idle",
    "walk",
@@ -4744,6 +8237,36 @@
    "sleep",
    "sad"
   ],
+  "narrow_clawed_crayfish": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "nathusius_pipistrelle": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
+  "natterers_bat": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
+  "natterjack_toad": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "neotropic_cormorant": [
    "idle",
    "walk",
@@ -4751,6 +8274,41 @@
    "swim",
    "sleep",
    "dive",
+   "sad"
+  ],
+  "nikolskys_viper": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "nimble_spray_crab": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "nodal_desert_ant": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "nomad": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
+  "north_african_hedgehog": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
+   "run",
    "sad"
   ],
   "north_american_porcupine": [
@@ -4787,6 +8345,13 @@
    "sleep",
    "sad"
   ],
+  "north_atlantic_bottlenose_whale": [
+   "idle",
+   "swim",
+   "sleep",
+   "dive",
+   "sad"
+  ],
   "northern_acorn_barnacle": [
    "idle",
    "sleep",
@@ -4813,6 +8378,18 @@
    "fly",
    "sleep",
    "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "northern_chamois": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
    "eat",
    "run",
    "groom",
@@ -4880,6 +8457,29 @@
    "groom",
    "sad"
   ],
+  "northern_fulmar": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "northern_gannet": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "dive",
+   "run",
+   "groom",
+   "sad"
+  ],
   "northern_harrier": [
    "idle",
    "walk",
@@ -4903,6 +8503,17 @@
    "idle",
    "walk",
    "sleep",
+   "sad"
+  ],
+  "northern_lapwing": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
    "sad"
   ],
   "northern_leopard_frog": [
@@ -4957,6 +8568,18 @@
    "groom",
    "sad"
   ],
+  "northern_red_backed_vole": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "northern_red_bellied_cooter": [
    "idle",
    "walk",
@@ -4987,6 +8610,12 @@
    "groom",
    "sad"
   ],
+  "northern_serotine": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
   "northern_short_tailed_shrew": [
    "idle",
    "walk",
@@ -5011,6 +8640,18 @@
    "groom",
    "sad"
   ],
+  "northern_small_spotted_genet": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "northern_two_lined_salamander": [
    "idle",
    "walk",
@@ -5028,6 +8669,25 @@
    "eat",
    "run",
    "groom",
+   "sad"
+  ],
+  "northern_wheatear": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "northern_white_breasted_hedgehog": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
+   "run",
    "sad"
   ],
   "northern_yellow_warbler": [
@@ -5070,9 +8730,38 @@
    "groom",
    "sad"
   ],
+  "norway_brown_lemming": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "norwegian_wasp": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
   "nosy_pill_woodlouse": [
    "idle",
    "walk",
+   "sleep",
+   "sad"
+  ],
+  "nutmeg_moth": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
+  "ocean_quahog": [
+   "idle",
    "sleep",
    "sad"
   ],
@@ -5082,8 +8771,63 @@
    "sleep",
    "sad"
   ],
+  "ocellated_bronze_skink": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "ocellated_lizard": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "ochre_sea_star": [
    "idle",
+   "sleep",
+   "hide",
+   "sad"
+  ],
+  "ohrid_spirlin": [
+   "idle",
+   "swim",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "old_world_swallowtail": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "old_world_webworm": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "oleander_hawkmoth": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "orange_clubbed_sea_slug": [
+   "idle",
+   "walk",
    "sleep",
    "hide",
    "sad"
@@ -5132,6 +8876,12 @@
    "sleep",
    "sad"
   ],
+  "oriental_hornet": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
   "ornate_box_turtle": [
    "idle",
    "walk",
@@ -5149,6 +8899,12 @@
    "eat",
    "run",
    "groom",
+   "sad"
+  ],
+  "ornate_wrasse": [
+   "idle",
+   "swim",
+   "sleep",
    "sad"
   ],
   "osprey": [
@@ -5276,6 +9032,12 @@
    "groom",
    "sad"
   ],
+  "painted_comber": [
+   "idle",
+   "swim",
+   "sleep",
+   "sad"
+  ],
   "painted_lady": [
    "idle",
    "fly",
@@ -5289,6 +9051,13 @@
    "swim",
    "sleep",
    "sit",
+   "eat",
+   "sad"
+  ],
+  "pale_shoulder": [
+   "idle",
+   "fly",
+   "sleep",
    "eat",
    "sad"
   ],
@@ -5309,6 +9078,16 @@
    "groom",
    "sad"
   ],
+  "palmate_newt": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "palmers_chipmunk": [
    "idle",
    "walk",
@@ -5321,11 +9100,47 @@
    "groom",
    "sad"
   ],
+  "pantropical_jumping_spider": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
   "pantropical_spotted_dolphin": [
    "idle",
    "swim",
    "sleep",
    "dive",
+   "sad"
+  ],
+  "paphos_blue": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "parasitic_jaeger": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "particoloured_bat": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
+  "peacock_blenny": [
+   "idle",
+   "swim",
+   "sleep",
    "sad"
   ],
   "pearl_crescent": [
@@ -5342,6 +9157,16 @@
    "swim",
    "sleep",
    "dive",
+   "sad"
+  ],
+  "peloponnese_wall_lizard": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
    "sad"
   ],
   "peterss_rock_agama": [
@@ -5441,6 +9266,13 @@
    "groom",
    "sad"
   ],
+  "pink_footed_goose": [
+   "idle",
+   "fly",
+   "swim",
+   "sleep",
+   "sad"
+  ],
   "pink_salmon": [
    "idle",
    "swim",
@@ -5538,6 +9370,13 @@
    "groom",
    "sad"
   ],
+  "pollock": [
+   "idle",
+   "swim",
+   "sleep",
+   "eat",
+   "sad"
+  ],
   "polynesian_rat": [
    "idle",
    "walk",
@@ -5557,6 +9396,18 @@
    "sleep",
    "sit",
    "eat",
+   "sad"
+  ],
+  "pool_frog": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
    "sad"
   ],
   "portuguese_man_o_war": [
@@ -5618,6 +9469,13 @@
    "groom",
    "sad"
   ],
+  "prussian_carp": [
+   "idle",
+   "swim",
+   "sleep",
+   "eat",
+   "sad"
+  ],
   "pumpkinseed": [
    "idle",
    "swim",
@@ -5633,6 +9491,17 @@
    "groom",
    "sad"
   ],
+  "purple_sandpiper": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "purple_sea_urchin": [
    "idle",
    "sleep",
@@ -5645,6 +9514,15 @@
    "sleep",
    "sad"
   ],
+  "pygmy_cormorant": [
+   "idle",
+   "walk",
+   "fly",
+   "swim",
+   "sleep",
+   "dive",
+   "sad"
+  ],
   "pygmy_short_horned_lizard": [
    "idle",
    "walk",
@@ -5655,7 +9533,21 @@
    "groom",
    "sad"
   ],
+  "pygmy_white_toothed_shrew": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
+   "sad"
+  ],
   "queen": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "queen_of_spain_fritillary": [
    "idle",
    "fly",
    "sleep",
@@ -5700,6 +9592,23 @@
    "sleep",
    "sad"
   ],
+  "ratzeburgs_woodlouse": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "razorbill": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "red_admiral": [
    "idle",
    "fly",
@@ -5707,8 +9616,25 @@
    "eat",
    "sad"
   ],
+  "red_backed_shrike": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "red_beard_sponge": [
    "idle",
+   "sleep",
+   "sad"
+  ],
+  "red_bellied_jumping_spider": [
+   "idle",
+   "walk",
    "sleep",
    "sad"
   ],
@@ -5809,11 +9735,38 @@
    "groom",
    "sad"
   ],
+  "red_crested_pochard": [
+   "idle",
+   "fly",
+   "swim",
+   "sleep",
+   "groom",
+   "sad"
+  ],
+  "red_deer": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "red_drum": [
    "idle",
    "swim",
    "sleep",
    "eat",
+   "sad"
+  ],
+  "red_fingered_coryphella": [
+   "idle",
+   "walk",
+   "sleep",
+   "hide",
    "sad"
   ],
   "red_footed_booby": [
@@ -5851,6 +9804,25 @@
    "groom",
    "sad"
   ],
+  "red_kite": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "red_knot": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "red_necked_grebe": [
    "idle",
    "fly",
@@ -5870,16 +9842,38 @@
    "groom",
    "sad"
   ],
+  "red_necked_pond_turtle": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "sit",
+   "eat",
+   "sad"
+  ],
   "red_pencil_urchin": [
    "idle",
    "sleep",
    "hide",
    "sad"
   ],
+  "red_pine_longhorn_beetle": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
   "red_rock_crab": [
    "idle",
    "walk",
    "sleep",
+   "sad"
+  ],
+  "red_sea_goatfish": [
+   "idle",
+   "swim",
+   "sleep",
+   "eat",
    "sad"
   ],
   "red_shiner": [
@@ -5931,6 +9925,14 @@
    "sit",
    "eat",
    "run",
+   "groom",
+   "sad"
+  ],
+  "red_throated_loon": [
+   "idle",
+   "fly",
+   "swim",
+   "sleep",
    "groom",
    "sad"
   ],
@@ -6006,6 +10008,40 @@
    "eat",
    "sad"
   ],
+  "redwing": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "reed_bunting": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "reevess_muntjac": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "relict_leopard_frog": [
    "idle",
    "walk",
@@ -6066,6 +10102,29 @@
    "groom",
    "sad"
   ],
+  "ringed_seal": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "sad"
+  ],
+  "ringlet": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "ringneck_blenny": [
+   "idle",
+   "swim",
+   "sleep",
+   "sad"
+  ],
   "ringtail": [
    "idle",
    "walk",
@@ -6105,6 +10164,12 @@
    "sleep",
    "sad"
   ],
+  "rivulated_rabbitfish": [
+   "idle",
+   "swim",
+   "sleep",
+   "sad"
+  ],
   "rock_bass": [
    "idle",
    "swim",
@@ -6113,6 +10178,28 @@
    "sad"
   ],
   "rock_pigeon": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "rock_pipit": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "rock_ptarmigan": [
    "idle",
    "walk",
    "fly",
@@ -6156,6 +10243,23 @@
    "sleep",
    "look",
    "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "roman_snail": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "rook": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
    "eat",
    "run",
    "groom",
@@ -6222,7 +10326,22 @@
    "sleep",
    "sad"
   ],
+  "rough_periwinkle": [
+   "idle",
+   "sleep",
+   "sad"
+  ],
   "rough_skinned_newt": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "roughtail_rock_agama": [
    "idle",
    "walk",
    "sleep",
@@ -6290,7 +10409,21 @@
    "sleep",
    "sad"
   ],
+  "ruddy_darter": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
   "ruddy_duck": [
+   "idle",
+   "fly",
+   "swim",
+   "sleep",
+   "groom",
+   "sad"
+  ],
+  "ruddy_shelduck": [
    "idle",
    "fly",
    "swim",
@@ -6332,6 +10465,18 @@
    "sleep",
    "sad"
   ],
+  "saddleback_harvestman": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "saddled_seabream": [
+   "idle",
+   "swim",
+   "sleep",
+   "sad"
+  ],
   "saffron_finch": [
    "idle",
    "walk",
@@ -6350,11 +10495,27 @@
    "eat",
    "sad"
   ],
+  "salema_porgy": [
+   "idle",
+   "swim",
+   "sleep",
+   "sad"
+  ],
   "salt_marsh_moth": [
    "idle",
    "fly",
    "sleep",
    "eat",
+   "sad"
+  ],
+  "sand_lizard": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
    "sad"
   ],
   "sanderling": [
@@ -6376,6 +10537,17 @@
    "eat",
    "sad"
   ],
+  "sardinian_warbler": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "savannah_sparrow": [
    "idle",
    "walk",
@@ -6385,6 +10557,12 @@
    "eat",
    "run",
    "groom",
+   "sad"
+  ],
+  "savis_pipistrelle": [
+   "idle",
+   "fly",
+   "sleep",
    "sad"
   ],
   "says_phoebe": [
@@ -6407,6 +10585,35 @@
    "eat",
    "run",
    "groom",
+   "sad"
+  ],
+  "scarce_swallowtail": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "schmidts_marbled_bush_cricket": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "schreibers_fringe_fingered_lizard": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "schreibers_long_fingered_bat": [
+   "idle",
+   "fly",
+   "sleep",
    "sad"
   ],
   "scissor_tailed_flycatcher": [
@@ -6438,6 +10645,13 @@
    "sleep",
    "sad"
   ],
+  "sei_whale": [
+   "idle",
+   "swim",
+   "sleep",
+   "dive",
+   "sad"
+  ],
   "seven_spotted_lady_beetle": [
    "idle",
    "walk",
@@ -6450,6 +10664,16 @@
    "sleep",
    "sad"
   ],
+  "sharp_snouted_rock_lizard": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "shingle_urchin": [
    "idle",
    "sleep",
@@ -6460,6 +10684,45 @@
    "idle",
    "walk",
    "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "short_toed_snake_eagle": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "siberian_chipmunk": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "siberian_flying_squirrel": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "sicilian_shrew": [
+   "idle",
+   "walk",
    "sleep",
    "eat",
    "sad"
@@ -6504,6 +10767,13 @@
    "groom",
    "sad"
   ],
+  "silver_carp": [
+   "idle",
+   "swim",
+   "sleep",
+   "eat",
+   "sad"
+  ],
   "silver_haired_bat": [
    "idle",
    "fly",
@@ -6511,6 +10781,13 @@
    "sad"
   ],
   "silver_spotted_skipper": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "silver_washed_fritillary": [
    "idle",
    "fly",
    "sleep",
@@ -6527,6 +10804,51 @@
    "groom",
    "sad"
   ],
+  "six_spot_burnet": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "slender_billed_gull": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "sling_tailed_agama": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "sloe_bug": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "small_copper": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "small_heath": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
   "small_indian_mongoose": [
    "idle",
    "walk",
@@ -6537,6 +10859,25 @@
    "eat",
    "run",
    "groom",
+   "sad"
+  ],
+  "small_pincertail": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
+  "small_spotted_catshark": [
+   "idle",
+   "swim",
+   "sleep",
+   "sad"
+  ],
+  "small_tortoiseshell": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
    "sad"
   ],
   "small_white": [
@@ -6564,6 +10905,52 @@
    "idle",
    "walk",
    "sleep",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "smooth_newt": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "smooth_snake": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "snake_eyed_lizard": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "snakelocks_anemone": [
+   "idle",
+   "sleep",
+   "hide",
+   "sad"
+  ],
+  "snow_bunting": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
    "eat",
    "run",
    "groom",
@@ -6604,6 +10991,17 @@
    "sad"
   ],
   "song_sparrow": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "song_thrush": [
    "idle",
    "walk",
    "fly",
@@ -6670,6 +11068,12 @@
    "groom",
    "sad"
   ],
+  "southern_green_stink_bug": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
   "southern_leopard_frog": [
    "idle",
    "walk",
@@ -6704,9 +11108,47 @@
    "groom",
    "sad"
   ],
+  "southern_white_admiral": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "southern_white_breasted_hedgehog": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
+   "run",
+   "sad"
+  ],
+  "southwest_asian_badger": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "southwestern_fence_lizard": [
    "idle",
    "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "spanish_sparrow": [
+   "idle",
+   "walk",
+   "fly",
    "sleep",
    "sit",
    "eat",
@@ -6727,6 +11169,13 @@
    "idle",
    "walk",
    "sleep",
+   "sad"
+  ],
+  "speckled_wood": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
    "sad"
   ],
   "spicebush_swallowtail": [
@@ -6752,7 +11201,37 @@
    "eat",
    "sad"
   ],
+  "spiny_spider_crab": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "spiny_starfish": [
+   "idle",
+   "sleep",
+   "hide",
+   "sad"
+  ],
+  "spiny_toad": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "spinybacked_orbweaver": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "spinycheek_crayfish": [
    "idle",
    "walk",
    "sleep",
@@ -6765,6 +11244,17 @@
    "eat",
    "sad"
   ],
+  "spotless_starling": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "spotted_boxfish": [
    "idle",
    "swim",
@@ -6772,6 +11262,17 @@
    "sad"
   ],
   "spotted_dove": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "spotted_flycatcher": [
    "idle",
    "walk",
    "fly",
@@ -6814,6 +11315,13 @@
    "eat",
    "run",
    "groom",
+   "sad"
+  ],
+  "spotted_sulphur": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
    "sad"
   ],
   "spotted_towhee": [
@@ -6865,6 +11373,25 @@
    "groom",
    "sad"
   ],
+  "spur_winged_lapwing": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "squacco_heron": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
   "squareback_marsh_crab": [
    "idle",
    "walk",
@@ -6903,7 +11430,50 @@
    "groom",
    "sad"
   ],
+  "stone_crayfish": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "stone_marten": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "stripe_tailed_scorpion": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "striped_dolphin": [
+   "idle",
+   "swim",
+   "sleep",
+   "dive",
+   "sad"
+  ],
+  "striped_field_mouse": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "striped_millipede": [
    "idle",
    "walk",
    "sleep",
@@ -6964,6 +11534,17 @@
    "sleep",
    "sad"
   ],
+  "syrian_woodpecker": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "tamanends_bottlenose_dolphin": [
    "idle",
    "swim",
@@ -6977,10 +11558,41 @@
    "sleep",
    "sad"
   ],
+  "taurus_frog": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "ten_lined_june_beetle": [
    "idle",
    "walk",
    "sleep",
+   "sad"
+  ],
+  "tenerife_lizard": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "tessellated_water_snake": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
+   "run",
+   "groom",
    "sad"
   ],
   "texas_cichlid": [
@@ -7017,6 +11629,17 @@
    "sleep",
    "look",
    "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "thick_billed_murre": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
    "eat",
    "run",
    "groom",
@@ -7077,6 +11700,13 @@
    "eat",
    "sad"
   ],
+  "threespine_stickleback": [
+   "idle",
+   "swim",
+   "sleep",
+   "eat",
+   "sad"
+  ],
   "tidepool_sculpin": [
    "idle",
    "swim",
@@ -7093,6 +11723,13 @@
    "groom",
    "sad"
   ],
+  "topmouth_gudgeon": [
+   "idle",
+   "swim",
+   "sleep",
+   "eat",
+   "sad"
+  ],
   "townsends_chipmunk": [
    "idle",
    "walk",
@@ -7103,6 +11740,17 @@
    "eat",
    "run",
    "groom",
+   "sad"
+  ],
+  "transcaucasian_giant_mantis": [
+   "idle",
+   "sleep",
+   "sad"
+  ],
+  "tree_bumble_bee": [
+   "idle",
+   "fly",
+   "sleep",
    "sad"
   ],
   "tree_swallow": [
@@ -7136,6 +11784,16 @@
    "eat",
    "sad"
   ],
+  "troodos_rock_lizard": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "tropical_house_gecko": [
    "idle",
    "walk",
@@ -7151,6 +11809,14 @@
    "fly",
    "swim",
    "sleep",
+   "sad"
+  ],
+  "tufted_duck": [
+   "idle",
+   "fly",
+   "swim",
+   "sleep",
+   "groom",
    "sad"
   ],
   "tufted_puffin": [
@@ -7182,10 +11848,22 @@
    "sleep",
    "sad"
   ],
+  "turbinate_monodont": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
   "turkey_vulture": [
    "idle",
    "walk",
    "fly",
+   "sleep",
+   "sad"
+  ],
+  "turkish_snail": [
+   "idle",
+   "walk",
    "sleep",
    "sad"
   ],
@@ -7206,6 +11884,16 @@
    "fly",
    "sleep",
    "eat",
+   "sad"
+  ],
+  "tyrrhenian_wall_lizard": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
    "sad"
   ],
   "uinta_chipmunk": [
@@ -7247,6 +11935,12 @@
    "eat",
    "sad"
   ],
+  "vagrant_darter": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
   "valley_carpenter_bee": [
    "idle",
    "fly",
@@ -7284,6 +11978,19 @@
    "sleep",
    "sad"
   ],
+  "velvet_dorid": [
+   "idle",
+   "walk",
+   "sleep",
+   "hide",
+   "sad"
+  ],
+  "velvet_swimming_crab": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
   "verdin": [
    "idle",
    "walk",
@@ -7306,6 +12013,12 @@
    "groom",
    "sad"
   ],
+  "versicolored_pill_woodlouse": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
   "vesper_sparrow": [
    "idle",
    "walk",
@@ -7317,12 +12030,33 @@
    "groom",
    "sad"
   ],
+  "vineyard_snail": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "violet_dropwing": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
   "violet_green_swallow": [
    "idle",
    "walk",
    "fly",
    "sleep",
    "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "viperine_snake": [
+   "idle",
+   "walk",
+   "sleep",
    "eat",
    "run",
    "groom",
@@ -7351,6 +12085,23 @@
    "idle",
    "walk",
    "sleep",
+   "sad"
+  ],
+  "viviparous_lizard": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "wall_brown": [
+   "idle",
+   "fly",
+   "sleep",
+   "eat",
    "sad"
   ],
   "walleye": [
@@ -7389,6 +12140,12 @@
    "eat",
    "sad"
   ],
+  "warty_crab": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
   "wedge_tailed_shearwater": [
    "idle",
    "walk",
@@ -7411,6 +12168,12 @@
    "fly",
    "sleep",
    "eat",
+   "sad"
+  ],
+  "west_african_fiddler_crab": [
+   "idle",
+   "walk",
+   "sleep",
    "sad"
   ],
   "west_indian_manatee": [
@@ -7439,6 +12202,15 @@
    "idle",
    "walk",
    "sleep",
+   "sad"
+  ],
+  "western_caspian_turtle": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "sit",
+   "eat",
    "sad"
   ],
   "western_cattle_egret": [
@@ -7512,6 +12284,16 @@
    "sleep",
    "sad"
   ],
+  "western_green_lizard": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "western_gull": [
    "idle",
    "walk",
@@ -7526,6 +12308,17 @@
    "sleep",
    "sad"
   ],
+  "western_house_martin": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "western_kingbird": [
    "idle",
    "walk",
@@ -7535,6 +12328,14 @@
    "eat",
    "run",
    "groom",
+   "sad"
+  ],
+  "western_marsh_harrier": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "eat",
    "sad"
   ],
   "western_meadowlark": [
@@ -7549,6 +12350,15 @@
    "sad"
   ],
   "western_milksnake": [
+   "idle",
+   "walk",
+   "sleep",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "western_montpellier_snake": [
    "idle",
    "walk",
    "sleep",
@@ -7618,6 +12428,18 @@
    "idle",
    "walk",
    "sleep",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "western_roe_deer": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
    "eat",
    "run",
    "groom",
@@ -7708,11 +12530,51 @@
    "groom",
    "sad"
   ],
+  "western_yellow_wagtail": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "westslope_cutthroat_trout": [
    "idle",
    "swim",
    "sleep",
    "eat",
+   "sad"
+  ],
+  "whinchat": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "whiskered_tern": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "white_beaked_dolphin": [
+   "idle",
+   "swim",
+   "sleep",
+   "dive",
    "sad"
   ],
   "white_breasted_nuthatch": [
@@ -7765,6 +12627,12 @@
    "eat",
    "sad"
   ],
+  "white_italian_snail": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
   "white_lined_sphinx": [
    "idle",
    "fly",
@@ -7802,10 +12670,35 @@
    "groom",
    "sad"
   ],
+  "white_sea_bream": [
+   "idle",
+   "swim",
+   "sleep",
+   "sad"
+  ],
+  "white_spectacled_bulbul": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "white_spotted_sawyer": [
    "idle",
    "walk",
    "sleep",
+   "sad"
+  ],
+  "white_stork": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "eat",
    "sad"
   ],
   "white_sucker": [
@@ -7827,6 +12720,12 @@
    "groom",
    "sad"
   ],
+  "white_tailed_bumble_bee": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
   "white_tailed_deer": [
    "idle",
    "walk",
@@ -7837,6 +12736,14 @@
    "eat",
    "run",
    "groom",
+   "sad"
+  ],
+  "white_tailed_eagle": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "eat",
    "sad"
   ],
   "white_tailed_jackrabbit": [
@@ -7874,7 +12781,35 @@
    "groom",
    "sad"
   ],
+  "white_throated_dipper": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "white_throated_sparrow": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "white_tipped_mud_crab": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "white_wagtail": [
    "idle",
    "walk",
    "fly",
@@ -7902,6 +12837,13 @@
    "sleep",
    "sad"
   ],
+  "whooper_swan": [
+   "idle",
+   "fly",
+   "swim",
+   "sleep",
+   "sad"
+  ],
   "widow_skimmer": [
    "idle",
    "fly",
@@ -7909,6 +12851,18 @@
    "sad"
   ],
   "wild_boar": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "wild_goat": [
    "idle",
    "walk",
    "sleep",
@@ -7954,6 +12908,18 @@
    "sleep",
    "sad"
   ],
+  "wisent": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "wood_duck": [
    "idle",
    "fly",
@@ -7974,6 +12940,17 @@
    "groom",
    "sad"
   ],
+  "wood_sandpiper": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "wood_stork": [
    "idle",
    "walk",
@@ -7989,6 +12966,28 @@
    "sleep",
    "sit",
    "eat",
+   "sad"
+  ],
+  "wood_warbler": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "woodchat_shrike": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
    "sad"
   ],
   "woodhouses_scrub_jay": [
@@ -8012,6 +13011,12 @@
    "eat",
    "run",
    "groom",
+   "sad"
+  ],
+  "woodland_dor_beetle": [
+   "idle",
+   "walk",
+   "sleep",
    "sad"
   ],
   "woodland_skipper": [
@@ -8078,7 +13083,30 @@
    "groom",
    "sad"
   ],
+  "yellow_bellied_toad": [
+   "idle",
+   "walk",
+   "swim",
+   "sleep",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "yellow_billed_cardinal": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "yellow_billed_chough": [
    "idle",
    "walk",
    "fly",
@@ -8142,6 +13170,38 @@
    "groom",
    "sad"
   ],
+  "yellow_legged_gull": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "eat",
+   "sad"
+  ],
+  "yellow_legged_hornet": [
+   "idle",
+   "fly",
+   "sleep",
+   "sad"
+  ],
+  "yellow_legged_pachyiulus": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
+  "yellow_necked_field_mouse": [
+   "idle",
+   "walk",
+   "sleep",
+   "sit",
+   "look",
+   "back",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
   "yellow_perch": [
    "idle",
    "swim",
@@ -8184,10 +13244,27 @@
    "sleep",
    "sad"
   ],
+  "yellow_spotted_stink_bug": [
+   "idle",
+   "walk",
+   "sleep",
+   "sad"
+  ],
   "yellow_tang": [
    "idle",
    "swim",
    "sleep",
+   "sad"
+  ],
+  "yellowhammer": [
+   "idle",
+   "walk",
+   "fly",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
    "sad"
   ],
   "yellowstripe_goatfish": [
@@ -8243,6 +13320,17 @@
   "zebra_tailed_lizard": [
    "idle",
    "walk",
+   "sleep",
+   "sit",
+   "eat",
+   "run",
+   "groom",
+   "sad"
+  ],
+  "zitting_cisticola": [
+   "idle",
+   "walk",
+   "fly",
    "sleep",
    "sit",
    "eat",

@@ -54,6 +54,11 @@ import species_sw  # noqa: E402,F401
 import species_mtn  # noqa: E402,F401
 import species_nw  # noqa: E402,F401
 import species_east  # noqa: E402,F401
+import species_eu_mammals  # noqa: E402,F401
+import species_eu_birds  # noqa: E402,F401
+import species_eu_herps  # noqa: E402,F401
+import species_eu_bugs  # noqa: E402,F401
+import species_eu_water  # noqa: E402,F401
 from archetypes import (gull, raptor, BLACK, NOSE, PINK, S, WHITE, bee, beetle_top, bird, butterfly, critter,  # noqa: E402
                         dragonfly, duck, flecks, frog, goose, hummingbird, lizard, mantis, owl, pelican, pinniped, quad, snake,
                         sprite, star, turtle, vulture, wader, whale)
@@ -944,6 +949,9 @@ def _(s):
 def load_species(state=None):
     """Rows from each state's species list (or just `state`), first occurrence of a slug wins."""
     states = json.loads(STATES_JSON.read_text(encoding="utf-8"))["states"]
+    europe = STATES_JSON.parent / "europe.json"  # the European countries (plus Turkey), staged apart
+    if europe.exists():
+        states += json.loads(europe.read_text(encoding="utf-8"))["states"]
     rows, seen = [], set()
     for st in states:
         if state and st["code"] != state.upper():
@@ -984,11 +992,11 @@ def draw(slug) -> Image.Image:
 # down (frame f is DIVE_DEG[f] degrees, -55 to 75; the habitat picks the frame from the angle),
 # reef animals and jellies a "hide" row (pulling in and opening up again), and
 # jellies drawn without a swim pose a pulsing bell.
-DIVERS = re.compile(r"pelican|royal_tern|kingfisher|osprey|cormorant|anhinga|booby|gannet")
+DIVERS = re.compile(r"pelican|royal_tern|kingfisher|osprey|cormorant|anhinga|booby|gannet|european_shag")
 LEAPERS = re.compile(r"dolphin|whale|orca|porpoise")
 HIDERS = re.compile(r"anemone|urchin|sea_star|_star$|sea_cucumber|nudibranch|dorid|sea_lemon|jelly|nettle|man_o_war"
-                    r"|tube_worm|feather_duster|coral|sea_pen|hydroid")
-JELLIES = re.compile(r"jelly|nettle|man_o_war")
+                    r"|tube_worm|feather_duster|coral|sea_pen|hydroid|starfish|polycera|coryphella|sea_slug|mauve_stinger")
+JELLIES = re.compile(r"jelly|nettle|man_o_war|mauve_stinger")
 DIVE_DEG = [-55 + 130 * f / (FRAMES - 1) for f in range(FRAMES)]
 # The sad pose (a minigame lost): every animal hangs its head over the first SAD_IN
 # frames, shuts its eyes and lets out a slow sigh while a tear rolls down. Drawn from
