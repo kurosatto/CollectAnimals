@@ -57,7 +57,7 @@ import species_east  # noqa: E402,F401
 from archetypes import (gull, raptor, BLACK, NOSE, PINK, S, WHITE, bee, beetle_top, bird, butterfly, critter,  # noqa: E402
                         dragonfly, duck, flecks, frog, goose, hummingbird, lizard, mantis, owl, pelican, pinniped, quad, snake,
                         sprite, star, turtle, vulture, wader, whale)
-from pixel import ACTS, BLINK, FRAMES, N, Sprite, mix, silhouette  # noqa: E402
+from pixel import ACTS, BLINK, FRAMES, N, PAD_TOP, PAD_X, SS, Sprite, mix, silhouette  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 STATES_JSON = ROOT / "species" / "states.json"
@@ -990,6 +990,49 @@ HIDERS = re.compile(r"anemone|urchin|sea_star|_star$|sea_cucumber|nudibranch|dor
                     r"|tube_worm|feather_duster|coral|sea_pen|hydroid")
 JELLIES = re.compile(r"jelly|nettle|man_o_war")
 DIVE_DEG = [-55 + 130 * f / (FRAMES - 1) for f in range(FRAMES)]
+# The sad pose (a minigame lost): every animal hangs its head over the first SAD_IN
+# frames, shuts its eyes and lets out a slow sigh while a tear rolls down. Drawn from
+# its sitting pose (or standing, if it doesn't sit), the head bent down at the neck
+# (found from where the eye is); swimmers without legs tip their nose down a little,
+# sea stars and anemones pull in, and the rest (butterflies, bugs) just shut their eyes.
+SAD_IN = 5
+_eyes: dict = {}
+
+
+def _sad_eye(slug, base):
+    """Where the front eye is in the base pose, in drawing units (or None)."""
+    if (slug, base) not in _eyes:
+        s = Sprite(base, 0)
+        S[slug](s)
+        ys, xs = np.where(s.eye_px)
+        if not len(xs):
+            _eyes[slug, base] = None
+        else:
+            front = xs <= xs.min() + 2
+            _eyes[slug, base] = (xs[front].mean() / SS - PAD_X, ys[front].mean() / SS - PAD_TOP)
+    return _eyes[slug, base]
+
+
+def _sad_pose(slug, f, acts):
+    base = "sit" if "sit" in acts else "idle"
+    s = Sprite(base, 0)
+    u = min(1.0, f / SAD_IN)
+    k = u * u * (3 - 2 * u)
+    sigh = 0.5 - 0.5 * math.cos(2 * math.pi * (f - SAD_IN - 1) / (FRAMES - SAD_IN - 1)) if f > SAD_IN else 0.0
+    eye = _sad_eye(slug, base)
+    legged = bool({"walk", "run", "sit"} & set(acts))
+    if eye and legged:
+        ex, ey = eye
+        s.bend(28 * k + 6 * sigh, ex + 3.5, ey + 3.5, 4, 7)
+    elif "swim" in acts and not HIDERS.search(slug):
+        s.pitch(7 * k + 2 * sigh, 16, 26)
+    elif HIDERS.search(slug):  # sea stars, anemones: pull in a little, like a sigh
+        q = 0.25 * k + 0.08 * sigh
+        s.set_base(lambda x, y, q=q: (16 + (x - 16) * (1 + 0.12 * q), 31 - (31 - y) * (1 - 0.5 * q)))
+    s.shut = f >= 3
+    if f > SAD_IN:
+        s.tear = (f - SAD_IN - 1) * 0.8
+    return s
 
 
 def _made_pose(slug, act, f, acts):
@@ -1008,6 +1051,8 @@ def _made_pose(slug, act, f, acts):
         s = Sprite("idle", 0)
         s.set_base(lambda x, y, k=k: (16 + (x - 16) * (1 + 0.12 * k), 31 - (31 - y) * (1 - 0.5 * k)))
         return s
+    if act == "sad":
+        return _sad_pose(slug, f, acts)
     if act == "swim" and JELLIES.search(slug) and "swim" not in acts:
         w = math.sin(2 * math.pi * f / FRAMES)  # the bell squeezes and relaxes
         s = Sprite("idle", 0)

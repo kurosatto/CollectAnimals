@@ -823,7 +823,7 @@ function mgStart(g, s, practice = false) {
   document.getElementById("mg-stage").classList.remove("hidden");
   document.getElementById("mg-playing").textContent = `${practice ? "Practising" : "Playing"} as ${s.common_name}`;
   mgFull(true);
-  mgReset("ready");
+  mgDemoBegin();
   mgWake();
 }
 
@@ -1238,10 +1238,12 @@ function mgMusicTick(r) {
 // A short sound for a bump, a treat and a cleared level.
 function mgSfx(kind) {
   const ctx = mgAudio.ctx;
-  if (!ctx || mgAudio.muted) return;
+  if (!ctx || mgAudio.muted || (mg.run && mg.run.demo)) return;
   const out = ctx.destination, at = ctx.currentTime;
   if (kind === "bump") mgNote(ctx, out, "square", 300, at, .25, .12, 60);
   else if (kind === "treat") mgNote(ctx, out, "square", 1320, at, .07, .05);
+  // Lost: a soft "aww", two notes sliding down, after the bump.
+  else if (kind === "sad") { mgNote(ctx, out, "triangle", mgHz(67), at + .3, .3, .07, mgHz(65)); mgNote(ctx, out, "triangle", mgHz(64), at + .62, .55, .07, mgHz(59)); }
   else if (kind === "done") [0, 4, 7, 12].forEach((n, i) => mgNote(ctx, out, "square", mgHz(72 + n), at + i * .1, .2, .07));
 }
 
@@ -1314,19 +1316,153 @@ const mgPoints = (treats, p) => Math.round(treats * 10 * p.tempo);
 
 // ---- Playing --------------------------------------------------------------------
 
-function mgReset(mode) {
+function mgReset(mode, demo = null) {
   const g = mg.game, lvl = mgLevelOf(g.key);
   const rec = mgRec(g.key);
-  mg.tries = mode === "play" ? (mg.tries || 0) + 1 : mg.tries || 0;
-  const st = mgStats(mg.species.slug, g.key);
+  mg.tries = mode === "play" && !demo ? (mg.tries || 0) + 1 : mg.tries || 0;
+  // The how-to-play demo plays at the stats it was recorded at, whoever you picked.
+  const st = demo ? Object.assign({}, (mgDemos && mgDemos.stats) || { speed: 3, jump: 3, agility: 3, size: 3 }) : mgStats(mg.species.slug, g.key);
   mg.run = { mode, t: 0, rt: 0, acc: 0, st, p: mgPhysOf(st), score: 0, litter: 0, fx: [], dist: 0, phase: 0, len: lvl.len, lvl,
              things: lvl.things.map((o) => Object.assign({ x: MG_W + 99 }, o)),
              x: g.key === "trail" ? 70 : 72, y: g.key === "trail" ? MG_GROUND : g.key === "sky" ? 90 : 110, vy: 0,
              flap: 0, ground: true, held: false, overAt: 0, rec, newBest: false, total: mgTreats(lvl),
              ang: -Math.PI / 2 + MG_SIDE / 2, dir: 0, missed: 0, trail: [], why: null };
+  if (demo) mg.run.demo = demo;
   const P = MG_MORE[g.key];
   if (P) { mg.taps = []; mg.run.py = MG_H / 2; P.init(mg.run); }
   mg.flags = [];
+}
+
+// ---- How to play ------------------------------------------------------------------
+// Opening a game shows how it's played: the first seconds of its level play by
+// themselves (presses recorded by tools/levelcheck/demo.js into demos.json) with a
+// ghost finger making each press, and the tip on top. It loops until you tap, and the
+// tap starts your own try. Claw Catch's demo swipes live (mgClawBot). Without the demo
+// file (offline, first load) the plain start panel shows instead.
+let mgDemos = null;
+fetch("/sprites/game/demos.json").then((r) => (r.ok ? r.json() : null)).then((j) => { mgDemos = j; }).catch(() => {});
+// Where a recorded tap lands on this screen: a lane, a flower or a perch.
+function mgDemoTap(key, a) {
+  if (key === "slide") return [MG_W / 2, a === "up" ? 20 : 180];
+  if (key === "nectar") return [mgFlower(a), 100];
+  if (key === "feeder") return [mgPerchX(a), 100];
+  return [MG_W / 2, 100];
+}
+function mgDemoBegin() {
+  const key = mg.game.key, d = mgDemos && mgDemos.games && mgDemos.games[key];
+  if (!d && key !== "claw") { mgReset("ready"); return; }
+  // One action per decision, from the run-length list.
+  const plan = d ? d.runs.flatMap(([n, a]) => Array(n).fill(a)) : null;
+  mgReset("play", { d, plan, i: 0, acc: 0, wait: 0, finger: null, taps: [] });
+}
+function mgDemoStep(r, dt) {
+  const D = r.demo, key = mg.game.key;
+  D.acc += dt;
+  for (let n = 0; D.acc >= MG_DT && n < 40; n++) {
+    D.acc -= MG_DT;
+    const end = D.plan ? D.i >= D.plan.length * D.d.every : r.rt > 7;
+    if (r.mode !== "play" || end) {
+      // Hold the last moment a second (or the sad face, if it went wrong), then again.
+      if ((D.wait += MG_DT) > 1.2) { const ph = r.phase; mgDemoBegin(); mg.run.phase = ph; }
+      return;
+    }
+    if (D.plan) {
+      const a = D.d.acts[D.plan[Math.floor(D.i / D.d.every)]], first = D.i % D.d.every === 0;
+      mg.down = !!a[0]; mg.dir = key === "pool" && a[0] ? a[1] : 0;
+      if (key === "dig" && a[0]) mg.py = a[1];
+      mg.taps = [];
+      if (first && !a[0] && a.length > 1) {
+        const at = mgDemoTap(key, a[1]);
+        mg.taps.push(at);
+        D.taps.push({ x: at[0], y: at[1], t: r.phase });
+      }
+    } else mgClawBot(r);
+    D.i++;
+    r.acc = 0;
+    mgStep(r, MG_DT / r.p.tempo + 1e-9);
+  }
+  D.taps = D.taps.filter((p) => r.phase - p.t < .45);
+}
+// Claw Catch's demo: swipe the food closest to getting away, never near a bee.
+function mgClawBot(r) {
+  let best = null;
+  for (const o of r.things) {
+    if (o.gone || !o.good) continue;
+    const p = mgClawAt(o, r);
+    if (!p || p[1] > 150 || p[2] > .6) continue;
+    if (r.things.some((b) => !b.good && !b.gone && (() => { const q = mgClawAt(b, r); return q && Math.hypot(q[0] - p[0], q[1] - p[1]) < 12; })())) continue;
+    const u = -p[2] * 100 + p[1];
+    if (!best || u > best.u) best = { p, u };
+  }
+  const D = r.demo;
+  if (best && (!D.swipe || r.phase - D.swipe.t > .25)) {
+    // A short stroke across the food, drawn as a finger sweep.
+    const [x, y] = best.p;
+    D.swipe = { t: r.phase, x0: x - 14, y0: y + 8, x1: x + 14, y1: y - 8 };
+  }
+  const S = D.swipe, u = S ? (r.phase - S.t) / .18 : 2;
+  if (u <= 1) {
+    const x = S.x0 + (S.x1 - S.x0) * u, y = S.y0 + (S.y1 - S.y0) * u;
+    mg.down = true; mg.swipe = (mg.swipe && mg.down ? mg.swipe : []).concat([[x, y]]).slice(-4);
+    D.finger = [x, y];
+  } else { mg.down = false; mg.swipe = null; D.finger = null; }
+}
+const MG_DEMO_WORDS = { sky: ["Tap!", ""], trail: ["Jump!", ""], leap: ["Wind up", "Leap!"], echo: ["Rise", "Drop"], freeze: ["Sneak", "Freeze!"],
+                        school: ["Squeeze", "Spread"], plunge: ["Dive", "Fly up"], splash: ["Dive", "Leap!"], river: ["Swim up", "Dive"],
+                        pool: ["Turn", ""], dig: ["Dig here", ""] };
+// A pointing hand in pixels, fingertip at (x, y); pressed draws it a touch lower.
+const MG_HAND = ["...##.....", "..#oo#....", "..#oo#....", "..#oo###..", "..#oo#oo##.", "###oo#oo#o#", "#oo#oooooo#", "#oooooooooo#", ".#ooooooooo#", "..#oooooooo#", "...#ooooooo#", "....#oooooo#", ".....######."];
+function mgHand(c, x, y, pressed) {
+  x = Math.round(x) - 4; y = Math.round(y) + (pressed ? 1 : 0) - 1;
+  MG_HAND.forEach((row, j) => [...row].forEach((ch, i) => {
+    if (ch === ".") return;
+    c.fillStyle = ch === "#" ? "#3a2a2e" : j > 9 ? "#e8c6a4" : "#fbe3c8";
+    c.fillRect(x + i, y + j, 1, 1);
+  }));
+}
+function mgRipple(c, x, y, u) {
+  c.strokeStyle = `rgba(255,255,255,${(1 - u) * .9})`; c.lineWidth = 1.2;
+  c.beginPath(); c.arc(x, y, 3 + u * 9, 0, Math.PI * 2); c.stroke();
+}
+// The demo's overlay: what to do on top, the finger making the presses, and how to start.
+function mgIntroDraw(c, r) {
+  const g = mg.game, D = r.demo, key = g.key;
+  // Top, clear of the action: the level, the tip, and how to start.
+  const tip = g.tip, start = mg.practice ? "Tap to start practising" : "Tap to play";
+  const head = `HOW TO PLAY  ·  ${r.lvl.name.toUpperCase()}`;
+  c.font = "bold 12px system-ui, sans-serif";
+  const w = Math.max(c.measureText(tip).width, (c.font = "bold 8px system-ui, sans-serif", c.measureText(head).width)) + 22;
+  // Top right: the animals start on the left, so it stays out of their way.
+  const cx = MG_W - 6 - w / 2;
+  c.fillStyle = "rgba(20,30,24,.72)"; c.fillRect(cx - w / 2, 5, w, 45);
+  c.textAlign = "center";
+  c.font = "bold 8px system-ui, sans-serif"; c.fillStyle = "#cfe"; c.fillText(head, cx, 15);
+  c.font = "bold 12px system-ui, sans-serif"; c.fillStyle = "#fff"; c.fillText(tip, cx, 30);
+  // "Tap to play" pulses gently.
+  c.font = "bold 9px system-ui, sans-serif"; c.fillStyle = `rgba(255,210,138,${.7 + .3 * Math.sin(r.phase * 4)})`; c.fillText(start, cx, 44);
+  // The finger: where it taps, on the side it turns, or holding down near the corner.
+  const tapGame = ["slide", "nectar", "feeder", "call"].includes(key);
+  if (key === "claw") { if (D.finger) mgHand(c, D.finger[0], D.finger[1], true); }
+  else if (tapGame) {
+    for (const p of D.taps) { const u = (r.phase - p.t) / .45; mgRipple(c, p.x, p.y, u); }
+    const last = D.taps[D.taps.length - 1];
+    if (last) mgHand(c, last.x, last.y, r.phase - last.t < .15);
+  } else {
+    const down = mg.down, side = key === "pool" ? (mg.dir < 0 ? 40 : MG_W - 40) : MG_W - 46;
+    const y = key === "dig" ? mgClamp(mg.py, 50, 150) : MG_H - 58;
+    if (down) mgRipple(c, side, y, (r.phase * 2.2) % 1);
+    mgHand(c, side, y + (down ? 0 : 6), down);
+    c.font = "bold 8px system-ui, sans-serif"; c.textAlign = "center";
+    // What the finger is doing, in the game's own words.
+    // (The let-go word shows only just after letting go.)
+    if (down) D.heldAt = r.phase;
+    const [on, off] = MG_DEMO_WORDS[key] || ["Hold", "Let go"], word = down ? on : D.heldAt != null && r.phase - D.heldAt < .6 ? off : "";
+    if (word) {
+      const ww = c.measureText(word).width + 8;
+      c.fillStyle = "rgba(0,0,0,.45)"; c.fillRect(side - ww / 2, y + 16, ww, 11);
+      c.fillStyle = down ? "#ffd28a" : "#cfe"; c.fillText(word, side, y + 24);
+    }
+  }
 }
 
 // ---- Practice ----------------------------------------------------------------------
@@ -1368,6 +1504,8 @@ function mgPress(r, key, on) {
 function mgTap() {
   const r = mg.run;
   if (!r) return;
+  // The how-to-play demo: a tap starts your own try.
+  if (r.demo) { mgReset("play"); mg.last = 0; mgMusicStart(mg.run); mgWake(); return; }
   if (r.mode === "ready" || r.mode === "paused") { r.mode = "play"; mg.last = 0; mgMusicStart(r); mgWake(); }
   else if (r.mode === "over" || r.mode === "done") {
     if (performance.now() - r.overAt > (r.mode === "done" ? 900 : 350)) {
@@ -1392,7 +1530,8 @@ function mgLoop(now) {
   mg.last = now;
   const r = mg.run;
   r.phase += dt;
-  if (r.mode === "play") { mgStep(r, dt); mgMusicTick(r); }
+  if (r.demo) mgDemoStep(r, dt);
+  else if (r.mode === "play") { mgStep(r, dt); mgMusicTick(r); }
   mgFxStep(r, dt);
   mgDraw();
   mg.raf = requestAnimationFrame(mgLoop);
@@ -1579,10 +1718,12 @@ function mgStep(r, dt) {
 }
 
 function mgEnd(r, cleared) {
+  if (r.demo) { r.mode = cleared ? "done" : "over"; r.overAt = performance.now(); return; }
   const pct = cleared ? 100 : Math.min(99, Math.floor(r.dist / r.len * 100));
   r.mode = cleared ? "done" : "over"; r.overAt = performance.now(); r.pct = pct; mg.down = false;
   mgMusicStop(r);
   mgSfx(cleared ? "done" : "bump");
+  if (!cleared) mgSfx("sad");
   if (mg.practice) {  // nothing is kept or sent: practice is just for learning the level
     if (!cleared) {
       const [x0, y0, x1, y1] = mgBox(mg.game.key, r);
@@ -2039,12 +2180,9 @@ function mgClawDraw(c, r) {
     }
   }
   // You, on the bank, watching the stream.
-  const s = mg.species, raw = habSkin(mg.imgs[`/sprites/${encodeURIComponent(s.slug)}.png`], habLook.skins[s.slug]);
-  if (raw && raw.complete && raw.naturalWidth && !(r.mode === "over" && Math.floor(r.phase * 12) % 3 === 0)) {
-    if (mgArt(c, "bank", 16, 193)) { mgArt(c, "bank", 48, 193); c.fillStyle = "#7a5232"; c.fillRect(0, 192, 68, 8); }
-    else { c.fillStyle = "#7a9a50"; c.fillRect(0, 168, 60, 32); }
-    c.save(); c.translate(30, 182); c.scale(-1, 1); c.drawImage(raw, -HAB_UNIT / 2, -HAB_UNIT, HAB_UNIT, HAB_UNIT); c.restore();
-  }
+  if (mgArt(c, "bank", 16, 193)) { mgArt(c, "bank", 48, 193); c.fillStyle = "#7a5232"; c.fillRect(0, 192, 68, 8); }
+  else { c.fillStyle = "#7a9a50"; c.fillRect(0, 168, 60, 32); }
+  mgAnimal(c, r, 30, 182, ["idle"], { still: true });
 }
 
 // The rock's lumpy outline: how far each of its 16 points sticks out.
@@ -2114,11 +2252,10 @@ function mgPoolDraw(c, r) {
   c.fillStyle = "#8f8a7c";
   for (const [a, d] of [[5.3, rock - 5], [5.6, rock - 7], [.4, rock - 5], [3.9, rock - 6]]) { const [x, y] = at(a, d); c.fillRect(Math.round(x), Math.round(y), 1, 1); }
   // You, clinging to the rock with your back to the waves.
-  const s = mg.species, raw = habSkin(mg.imgs[`/sprites/${encodeURIComponent(s.slug)}.png`], habLook.skins[s.slug]);
-  if (!raw || !raw.complete || !raw.naturalWidth || (r.mode === "over" && Math.floor(r.phase * 12) % 3 === 0)) return;
-  const [x, y] = at(r.ang, MG_POOL.r - 9), F = raw.naturalWidth, k = 26 / F;
-  c.save(); c.translate(x, y); c.rotate(r.ang + Math.PI / 2); c.scale(k, k);
-  c.drawImage(raw, -F / 2, -F * .75);
+  // (It turns with the pool: that's the game's spin, not the animal's own motion.)
+  const [x, y] = at(r.ang, MG_POOL.r - 9);
+  c.save(); c.translate(x, y); c.rotate(r.ang + Math.PI / 2);
+  mgAnimal(c, r, 0, 6.5, ["idle"], { scale: .65, flip: false, still: true });
   c.restore();
 }
 
@@ -2134,42 +2271,85 @@ function mgFrame(sheet, slug, row, frame, F) {
   return mgFrames[key];
 }
 
+// ---- How the animal moves --------------------------------------------------------
+// A pose's frames are picked from a running clock, not straight from the time: when the
+// pace changes (a flap, letting go, landing) the loop carries on from the frame it's on
+// instead of jumping to another one. f is where the old formula would be (quarter loops);
+// a jump in it is taken as a change of pace. A held frame (f not moving) is shown as is.
+function mgSmooth(r, f, id = "me") {
+  const all = r.anims || (r.anims = {});
+  const a = all[id] || (all[id] = { p: r.phase, f, clock: f, rate: 0 });
+  const dt = r.phase - a.p, d = f - a.f;
+  a.p = r.phase; a.f = f;
+  if (dt <= 0) return a.clock;
+  if (d === 0) { a.rate = 0; a.clock = f; return f; }
+  const now = d < 0 || d > 60 * dt + .5 ? a.rate || 4 : d / dt;
+  a.rate += (now - a.rate) * Math.min(1, dt * 12);
+  a.clock += a.rate * dt;
+  return a.clock;
+}
+// Where the animal is drawn: to a quarter of a game pixel (the canvas is MG_RES times
+// finer), so it glides instead of stepping a whole pixel at a time.
+const mgSub = (v) => Math.round(v * MG_RES) / MG_RES;
+// Lost: the sad row (head hangs, eyes shut, then a slow sigh with a tear) plays once
+// and then sighs on. False when the animal's sheet has no sad row.
+const MG_SAD_IN = 6, MG_SAD_FPS = 11, MG_SAD_HOLD = 1400;  // ms of sad face before the "try again" panel
+function mgSadFrame(r) {
+  const n = habNF(), t = Math.max(0, (performance.now() - r.overAt) / 1000);
+  const u = Math.floor(t * MG_SAD_FPS);
+  return u < n ? u : MG_SAD_IN + (Math.floor(u * .6) % (n - MG_SAD_IN));
+}
+// How far a flier sinks once it's lost (eased over half a second), to `floor` at most.
+function mgSadDrop(r, y, floor) {
+  if (r.mode !== "over" || floor == null || y >= floor) return y;
+  const u = Math.min(1, (performance.now() - r.overAt) / 600);
+  return y + (floor - y) * u * u * (3 - 2 * u);
+}
+// A dive frame for an angle (degrees, nose down): the dive row runs -55 to 75.
+const mgDiveFrame = (deg) => mgClamp(Math.round((deg + 55) / 130 * (habNF() - 1)), 0, habNF() - 1);
+
 function mgPlayer(c, r) {
   const s = mg.species, key = mg.game.key;
   const raw = habSkin(mg.imgs[`/sprites/${encodeURIComponent(s.slug)}.png`], habLook.skins[s.slug]);
   const sheet = habSkin(mg.sheets[`/sprites/anim/${encodeURIComponent(s.slug)}.png`], habLook.skins[s.slug]);
   const acts = (habAnimIdx && habAnimIdx.acts[s.slug]) || [];
   const framed = sheet && sheet.complete && sheet.naturalWidth && acts.length;
-  const cyc = habCyc;
+  const n = habNF(), loop = (t) => ((Math.floor(t * n / 4) % n) + n) % n;
   // The game's own pose when the animal draws one (fly, walk, swim), else standing.
   let pose = acts.includes(mg.game.pose) ? mg.game.pose : key === "river" && acts.includes("walk") ? "walk" : "idle";
   let frame = 0;
   const moving = r.mode === "play";
   // Trail Run: running flat out, the animals that draw a gallop or bound use it
   if (pose === "walk" && key === "trail" && moving && acts.includes("run")) pose = "run";
-  if (pose === "fly") frame = !moving ? cyc(r.phase * 4) : r.flap > 0 || r.vy < 20 ? cyc(r.phase * 14) : HAB_GLIDERS.test(s.slug) ? 0 : cyc(r.phase * 6);
-  else if (pose === "run") frame = !r.ground ? cyc(1.5) : cyc(r.dist / 14);
-  else if (pose === "walk") frame = key === "trail" && !r.ground ? cyc(1) : cyc((moving ? r.dist : r.phase * 20) / 9);
-  else if (pose === "swim") frame = cyc(r.phase * (r.held ? 5 : 2.5));
+  if (pose === "fly") {
+    // Flaps hard after a tap, beats slowly while it sinks; big soaring birds glide.
+    const glide = moving && !(r.flap > 0 || r.vy < 20) && HAB_GLIDERS.test(s.slug);
+    frame = glide ? 0 : loop(mgSmooth(r, r.phase * (!moving ? 4 : r.flap > 0 || r.vy < 20 ? 14 : 6)));
+  } else if (pose === "run" || (pose === "walk" && key === "trail")) {
+    // In the air: legs reach forward going up, tuck under coming down.
+    frame = !r.ground ? loop(r.vy < 0 ? 1 : 2.5) : loop(mgSmooth(r, (moving ? r.dist : r.phase * 20) / (pose === "run" ? 14 : 9)));
+  } else if (pose === "walk") frame = loop(mgSmooth(r, (moving ? r.dist : r.phase * 20) / 9));
+  else if (pose === "swim") frame = loop(mgSmooth(r, r.phase * (r.held ? 5 : 2.5)));
   else frame = habIdleFrame(r.phase * 4 / 3);
-  if (r.mode === "over" && acts.includes("idle")) { pose = "idle"; frame = 0; }
+  if (r.mode === "over") {
+    if (acts.includes("sad")) { pose = "sad"; frame = mgSadFrame(r); }
+    else if (acts.includes("idle")) { pose = "idle"; frame = 0; }
+  }
   const img = framed ? sheet : raw;
   if (!img || !img.complete || !img.naturalWidth) return;
   // Drawn 40 units square whatever the image's resolution (80 px sheets are 2x).
   const F = HAB_UNIT, FP = framed ? sheet.naturalWidth / habAnimIdx.frames : raw.naturalWidth;
-  if (r.mode === "over" && Math.floor(r.phase * 12) % 3 === 0) return;  // blink after a bump
-  let x = Math.round(r.x), y = Math.round(r.y), bob = 0;
+  // A flier that's lost sinks down to the meadow.
+  let x = mgSub(r.x), y = mgSub(mgSadDrop(r, r.y, key === "sky" ? MG_GROUND - 16 : null)), bob = 0;
   if (!framed) bob = Math.round(Math.sin(r.phase * 8) * 2);
   if (key === "trail" && r.ground) {
-    c.fillStyle = "rgba(20,32,10,.25)"; c.fillRect(x - 9, y - 1, 18, 2);
+    c.fillStyle = "rgba(20,32,10,.25)"; c.fillRect(Math.round(x) - 9, Math.round(y) - 1, 18, 2);
   }
   c.save();
-  // Sprites face left; the games run to the right.
+  // Sprites face left; the games run to the right. No tilting: every move is a drawn frame.
   if (key === "trail") c.translate(x, y + 2);  // feet on the trail
   else c.translate(x, y + F * .4);
   c.scale(-1, 1);
-  if (key === "sky" && moving) c.rotate(Math.max(-.35, Math.min(.35, r.vy / 400)));
-  if (key === "river" && moving) c.rotate(Math.max(-.3, Math.min(.3, r.vy / 350)));
   if (framed) c.drawImage(mgFrame(sheet, `${s.slug}~${habLook.skins[s.slug] || ""}`, habAnimIdx.rows.indexOf(pose), frame, FP), -F / 2, -F + bob, F, F);
   else c.drawImage(raw, -F / 2, -F + bob, F, F);
   c.restore();
@@ -2215,6 +2395,7 @@ function mgSay(r, x, y, text) {
 const mgA = (name) => (/^[aeiou]/i.test(name || "") && !/^(eu|uin|uni|uta|use|usu)/i.test(name) ? "an " : "a ") + name;
 
 function mgHud(c, r) {
+  if (r.demo) { mgIntroDraw(c, r); return; }
   const g = mg.game, top = g.key === "trail" ? 34 : 104;  // clear of the animal
   // How far along the course you are, with your best try marked.
   const p = Math.min(1, r.dist / r.len), bw = MG_W - 120;
@@ -2249,7 +2430,14 @@ function mgHud(c, r) {
   if (r.mode === "ready" && mg.practice) mgPanel(c, [[`${lvl.name}: practice`, 14], ["A bump sends you back a few seconds, not to the start.", 10, "#cfe"], ["No points or coins while practising.", 10, "#cfe"], ["Tap to start", 11, "#ffd28a"]], top);
   else if (r.mode === "ready") mgPanel(c, [[lvl.name, 14], [g.tip, 11], ["The course is the same every time. Learn it!", 10, "#cfe"], ["Tap to start", 11, "#ffd28a"]], top);
   else if (r.mode === "paused") mgPanel(c, [["Paused", 15], ["Tap to keep going", 11, "#ffd28a"]], top);
-  else if (r.mode === "over" && mg.practice) {
+  else if (r.mode === "over" && performance.now() - r.overAt < MG_SAD_HOLD) {
+    // First a moment to see your animal's sad face; the panel comes after.
+    const why = (P && P.why && P.why[r.why]) || (r.why === "bee" ? "Ouch, a bee!" : r.why === "missed" ? "Three got away!" : "Bump!");
+    c.font = "bold 13px system-ui, sans-serif"; c.textAlign = "center";
+    const w = c.measureText(why).width + 16;
+    c.fillStyle = "rgba(20,30,24,.72)"; c.fillRect(MG_W / 2 - w / 2, 40, w, 20);
+    c.fillStyle = "#fff"; c.fillText(why, MG_W / 2, 54);
+  } else if (r.mode === "over" && mg.practice) {
     const why = (P && P.why && P.why[r.why]) || (r.why === "bee" ? "Ouch, a bee!" : r.why === "missed" ? "Three got away!" : "Bump!");
     mgPanel(c, [[why, 15], [`Back to your flag at ${r.flagPct || 0}%`, 12, "#8fd3ff"], ["Tap to keep practising", 10, "#cfe"]], top);
   } else if (r.mode === "done" && mg.practice) {
@@ -2305,21 +2493,27 @@ function mgGot(r, o, x, y) {
 // The animal you play as, feet at (x, y): the first of the poses its frames have, else
 // its picture. Sprites face left, so it's flipped to face the way the games run.
 function mgAnimal(c, r, x, y, poses, o = {}) {
-  if (r.mode === "over" && Math.floor(r.phase * 12) % 3 === 0) return;  // blink after a bump
   const s = mg.species, skin = habLook.skins[s.slug];
   const raw = habSkin(mg.imgs[`/sprites/${encodeURIComponent(s.slug)}.png`], skin);
   const sheet = habSkin(mg.sheets[`/sprites/anim/${encodeURIComponent(s.slug)}.png`], skin);
   const acts = (habAnimIdx && habAnimIdx.acts[s.slug]) || [];
-  const pose = poses.find((p) => acts.includes(p));
+  // Lost: the sad pose, wherever it was (a flier sinks a little first, see o.floor).
+  const sad = r.mode === "over" && !o.other && acts.includes("sad");
+  let pose = sad ? "sad" : o.dive != null && acts.includes("dive") ? "dive" : poses.find((p) => acts.includes(p));
   const framed = pose && sheet && sheet.complete && sheet.naturalWidth;
   const img = framed ? sheet : raw;
   if (!img || !img.complete || !img.naturalWidth) return;
   const F = HAB_UNIT, FP = framed ? sheet.naturalWidth / habAnimIdx.frames : raw.naturalWidth;
-  // Frames count in quarter loops (habCyc); a still animal breathes and blinks.
-  const frame = pose === "idle" && !o.frame ? habIdleFrame(r.phase * 4 / 3) : habCyc(o.frame ?? r.phase * 8), k = o.scale || 1;
+  const n = habNF(), loop = (t) => ((Math.floor(t * n / 4) % n) + n) % n;
+  // Frames count in quarter loops; a still animal breathes and blinks. The loop runs on
+  // a smoothed clock (mgSmooth) unless o.id is false (many animals drawn at once).
+  const f = o.frame ?? r.phase * 8;
+  let frame = sad ? mgSadFrame(r) : pose === "dive" ? mgDiveFrame(o.dive)
+    : pose === "idle" && !o.frame ? habIdleFrame(r.phase * 4 / 3) : loop(o.id === false ? f : mgSmooth(r, f, o.id || poses[0]));
+  const k = o.scale || 1;
+  if (sad && o.floor != null) y = mgSadDrop(r, y, o.floor);
   c.save();
-  c.translate(Math.round(x), Math.round(y));
-  if (o.rot) c.rotate(o.rot);
+  c.translate(mgSub(x), mgSub(y));
   c.scale(o.flip === false ? k : -k, k);
   if (framed) c.drawImage(mgFrame(sheet, `${s.slug}~${skin || ""}`, habAnimIdx.rows.indexOf(pose), frame, FP), -F / 2, -F, F, F);
   else c.drawImage(raw, -F / 2, -F + (r.mode === "play" && !o.still ? Math.round(Math.sin(r.phase * 8) * 2) : 0), F, F);
@@ -2416,7 +2610,7 @@ MG_MORE.slide = {
       c.fillStyle = "#6e4e30";
       for (let i = 0; i < 4; i++) c.fillRect(r.x - 14 - ((r.phase * 60 + i * 9) % 26), r.ly - 2 - ((i * 5 + Math.floor(r.phase * 30)) % 7), 2, 2);
     }
-    mgAnimal(c, r, r.x, r.ly + 6, ["swim", "idle", "walk"], { rot: .12, frame: r.phase * 6 });
+    mgAnimal(c, r, r.x, r.ly + 6, ["swim", "idle", "walk"], { frame: r.phase * 6 });
   },
 };
 
@@ -2520,7 +2714,7 @@ MG_MORE.nectar = {
       c.fillStyle = "rgba(0,0,0,.25)"; c.font = "bold 8px system-ui, sans-serif"; c.textAlign = "center";
       c.fillText(String(f + 1), x, 192);
     });
-    mgAnimal(c, r, r.ax, 102 + Math.round(Math.sin(r.phase * 5) * 2), ["fly", "idle"], { frame: r.phase * 14, flip: r.to >= r.ax });
+    mgAnimal(c, r, r.ax, 102 + Math.round(Math.sin(r.phase * 5) * 2), ["fly", "idle"], { frame: r.phase * 14, flip: r.to >= r.ax, floor: 172 });
   },
 };
 
@@ -2563,7 +2757,7 @@ function mgCallKind(slug) {
 }
 function mgCallSfx(kind, low) {
   const ctx = mgAudio.ctx;
-  if (!ctx || mgAudio.muted) return;
+  if (!ctx || mgAudio.muted || (mg.run && mg.run.demo)) return;
   const out = ctx.destination, at = ctx.currentTime, f = low ? .8 : 1;
   if (kind === "drum") { mgHit16(ctx, out, at, .06, .5, 700); mgNote(ctx, out, "square", 180 * f, at, .05, .12, 90); }
   else if (kind === "croak") mgNote(ctx, out, "sawtooth", 160 * f, at, .16, .12, 90);
@@ -2676,8 +2870,8 @@ MG_MORE.call = {
     // After a whole song matched, your partner hops for joy; after a slip, they look away for a moment.
     const dance = r.t - r.dance < 1.2, sulk = r.t - r.sulk < .8;
     const hop = dance ? Math.round(Math.abs(Math.sin((r.t - r.dance) * 10)) * 5) : 0;
-    mgAnimal(c, r, 90 + ox, 150 - hop, ["idle", "walk"], { frame: sing || dance ? r.phase * 12 : 0, flip: !sulk, still: true });
-    mgAnimal(c, r, 230 + ox, 150 - (tapped ? 2 : 0), ["idle", "walk"], { frame: tapped ? r.phase * 12 : 0, flip: false, still: true });
+    mgAnimal(c, r, 90 + ox, 150 - hop, ["idle", "walk"], { frame: sing || dance ? r.phase * 12 : 0, flip: !sulk, still: true, id: "you" });
+    mgAnimal(c, r, 230 + ox, 150 - (tapped ? 2 : 0), ["idle", "walk"], { frame: tapped ? r.phase * 12 : 0, flip: false, still: true, id: "partner", other: true });
   },
 };
 
@@ -2887,7 +3081,7 @@ MG_MORE.echo = {
       c.strokeStyle = `rgba(200,220,255,${.6 * (1 - age / .5)})`; c.lineWidth = 1;
       c.beginPath(); c.arc(wx - r.dist + r.x, y, 8 + age * 240, -1, 1); c.stroke();
     }
-    mgAnimal(c, r, r.x, r.y + 10, ["fly", "idle"], { frame: r.held ? r.phase * 14 : r.phase * 6, rot: mgClamp(r.vy / 350, -.3, .3), scale: .8 });
+    mgAnimal(c, r, r.x, r.y + 10, ["fly", "idle"], { frame: r.held ? r.phase * 14 : r.phase * 6, scale: .8 });
   },
 };
 
@@ -3074,7 +3268,9 @@ MG_MORE.plunge = {
   draw(c, r) {
     mgSeaDraw(c, r, 100);
     const diving = r.vy > 60;
-    mgAnimal(c, r, r.x, r.y + 12, ["fly", "swim", "idle"], { frame: diving ? 1 : r.phase * (r.y > 100 ? 6 : 10), rot: mgClamp(r.vy / 220, -.5, 1.2) * (diving ? 1.2 : .4) });
+    mgAnimal(c, r, r.x, r.y + 12, ["fly", "swim", "idle"], { frame: diving ? 1 : r.phase * (r.y > 100 ? 6 : 10), floor: r.y < 100 ? 106 : null,
+      // Divers draw a dive: wings folded, pitched to the angle it's going at.
+      dive: diving || r.y > 100 ? Math.atan2(r.vy, MG_SPEED.plunge) * 180 / Math.PI : null });
   },
 };
 
@@ -3090,7 +3286,9 @@ MG_MORE.splash = {
   },
   draw(c, r) {
     mgSeaDraw(c, r, 104);
-    mgAnimal(c, r, r.x, r.y + 12, ["swim", "idle"], { frame: r.phase * (r.held ? 8 : 4), rot: mgClamp(r.vy / 300, -.8, .8) });
+    mgAnimal(c, r, r.x, r.y + 12, ["swim", "idle"], { frame: r.phase * (r.held ? 8 : 4), floor: r.y < 104 ? 116 : null,
+      // Dolphins and whales pitch up out of the water and nose down back in (drawn frames).
+      dive: Math.abs(r.vy) > 40 ? Math.atan2(r.vy, MG_SPEED.splash) * 180 / Math.PI : null });
   },
 };
 
@@ -3435,7 +3633,7 @@ MG_MORE.school = {
     // Your school: three of you in each bunch, wiggling.
     const off = mgSchoolOff(r);
     for (const [dy, dx, k] of [[-off - 4, 6, 0], [-off + 3, -4, 1], [-off - 1, -14, 2], [off - 3, 2, 3], [off + 4, -9, 4], [off, 12, 5]])
-      mgAnimal(c, r, r.x + dx + Math.round(Math.sin(r.phase * 6 + k) * 1.5), cy + dy + 5, ["swim", "idle"], { scale: .45, frame: r.phase * 8 + k, still: true });
+      mgAnimal(c, r, r.x + dx + Math.round(Math.sin(r.phase * 6 + k) * 1.5), cy + dy + 5, ["swim", "idle"], { scale: .45, frame: r.phase * 8 + k, still: true, id: false });
   },
 };
 

@@ -8,9 +8,9 @@
 //   with the last answer as the offline fallback. The page clears it on log out.
 // - Everything else (photos, galleries, the feed, uploads, any POST) goes straight to the network,
 //   so other players' photos never fill up the phone.
-const VERSION = "65";
+const VERSION = "66";
 const SHELL = `shell-v${VERSION}`;
-const ASSETS = "assets-v9";  // v9: the 0.47 animation remake (new sheets with run and groom rows)
+const ASSETS = "assets-v10";  // v10: sheets gain a "sad" row (minigame lost)
 const API = "api-v1";
 const SHELL_URLS = ["/", "/habitat.js", "/decor.js", "/decor.json", "/minigames.js", "/manifest.webmanifest", "/vendor/leaflet/leaflet.js",
   "/vendor/leaflet/leaflet.css", "/vendor/fonts/pixelify.woff2", "/vendor/fonts/spacegrotesk.woff2", "/icons/hummingbird/icon-192.png", "/icons/hummingbird/favicon-32.png",
