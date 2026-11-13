@@ -156,6 +156,10 @@ function habSpawn(a) {
 // A big collection doesn't all fit in the scene at once (85 animals were a heap at
 // night), so the animals take turns: up to HAB_ROOM are out at a time, and a new
 // mix comes out every HAB_TURN_MIN minutes. Everyone gets their turn; nothing to save.
+// Boxes this wide or wider get the wide (480) scene. Phones held upright are at most ~430
+// wide; a phone held sideways is short, so its scene is sized to the height and may be
+// only ~450 wide, which should still be the wide scene, not a tall narrow one.
+const HAB_WIDE = 440;
 const HAB_ROOM = { 320: 32, 480: 44 }, HAB_TURN_MIN = 20;
 const habTurn = () => Math.floor(habNow() / (HAB_TURN_MIN * 60000));
 function habOutNow(caught) {
@@ -170,7 +174,7 @@ function habOutNow(caught) {
 // in the scene stay where they are.
 function habitatSet(entries) {
   const box = $("habitat");
-  const w = box.clientWidth && box.clientWidth < 520 ? 320 : 480;
+  const w = box.clientWidth && box.clientWidth < HAB_WIDE ? 320 : 480;
   const relayout = w !== hab.w;
   if (relayout) { hab.w = w; hab.L = habLayout(w); hab.bgKey = ""; }
   const old = new Map(hab.animals.map((a) => [a.s.slug, a]));
@@ -1428,7 +1432,7 @@ function habLoop(now) {
   requestAnimationFrame(habLoop);
   const box = $("habitat");
   if (document.hidden || !box || box.closest(".off") || box.closest(".hidden")) { hab.last = 0; return; }
-  const w = box.clientWidth < 520 ? 320 : 480;
+  const w = box.clientWidth < HAB_WIDE ? 320 : 480;
   // A new size, or the next turn of animals coming out (see habOutNow).
   if (!hab.L || w !== hab.w || (hab.total > hab.animals.length && habTurn() !== hab.turn))
     habitatSet(hab.entries || hab.animals.map((a) => ({ caught: true, species: a.s, activity: a.activity, num: a.num })));

@@ -4,6 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -181,3 +184,52 @@ fun InkStamp(text: String, modifier: Modifier = Modifier, color: Color = Materia
     Text(text.uppercase(), modifier.rotate(-4f).border(2.5.dp, color, RoundedCornerShape(4.dp)).padding(horizontal = 10.dp, vertical = 4.dp),
         color = color, fontFamily = PixelFont, fontWeight = FontWeight.Bold, fontSize = 14.sp, letterSpacing = 1.5.sp)
 }
+
+/** Leather for the tab strip down the side of a phone held sideways: stitching along its inner edge. */
+fun Modifier.leatherSide(): Modifier = background(Journal.Leather).drawBehind {
+    val x = size.width - 4.dp.toPx()
+    val dash = 6.dp.toPx()
+    var y = 0f
+    while (y < size.height) {
+        drawLine(Journal.Brass.copy(alpha = .55f), Offset(x, y), Offset(x, y + dash), strokeWidth = 1.5.dp.toPx())
+        y += dash * 2
+    }
+}
+
+/**
+ * A phone held sideways: wider than tall and short (tablets stay as they are). Such a
+ * screen gets the tabs down the side and pictures sized to its height (kuro, 2026-11-13).
+ */
+@Composable
+fun isSideways(): Boolean {
+    val c = androidx.compose.ui.platform.LocalConfiguration.current
+    return c.screenWidthDp > c.screenHeightDp && c.screenHeightDp < 520
+}
+
+/**
+ * How wide the habitat can be so its whole scene fits in [height] (the scene plus its
+ * one-line note under it). habitat.js draws the wide 480x270 scene from 440 px wide and
+ * the narrow 320x270 one below that.
+ */
+fun habitatWidthFor(height: Dp): Dp {
+    val scene = (height - 36.dp).coerceAtLeast(120.dp)
+    val wide = scene * (16f / 9f)
+    return if (wide >= 440.dp) wide else scene * (32f / 27f)
+}
+
+/** Fills the width, keeping [aspect] (width / height), but no taller than [share] of a sideways screen. */
+@Composable
+fun Modifier.fitSideways(aspect: Float, share: Float = .75f): Modifier {
+    val h = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp * share
+    return this.widthIn(max = (h * aspect).dp).fillMaxWidth().aspectRatio(aspect)
+}
+
+/** A list inside a pop-up: up to 360 dp, less on a short (sideways) screen so the buttons still show. */
+@Composable
+fun dialogListMax(): Dp =
+    minOf(360, (androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp * .45f).toInt()).dp
+
+/** On a sideways phone, a habitat in a pop-up no wider than lets it fit in [share] of the screen's height. */
+@Composable
+fun sidewaysHabitat(share: Float): Modifier = if (!isSideways()) Modifier else Modifier.widthIn(
+    max = habitatWidthFor((androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp * share).dp))

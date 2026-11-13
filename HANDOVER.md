@@ -124,6 +124,14 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
   (`ui_ic_<name>.png`: pin, coin, shop, lock, bell, sun, moon, warn, chat, trophy, palette,
   sound, logout) via `ico()`/`icoText()` (web), `mgIco()` (minigames.js), `IconText` (Android).
   Check layouts at 360 px wide.
+- **Sideways phones (0.95.0)**: a phone held sideways (landscape, under 520 px/dp tall) gets the tabs
+  as a leather strip down the left side and a slimmer top bar; the habitat, log-in scene, photos and
+  maps are sized to the screen's height so they show whole, and the full-screen photo puts comments
+  beside the picture. Web: the `@media (orientation: landscape) and (max-height:520px)` block at the
+  end of index.html's style. Android: `isSideways()`, `SideTabs`, `habitatWidthFor()`, `fitSideways()`
+  (JournalTheme.kt / MainActivity.kt). MainActivity handles rotation itself (`configChanges`), so
+  turning the phone never reloads the habitat or a game. Check layouts at 740x360 too.
+  habitat.js draws the wide scene from `HAB_WIDE` (440 px), not 520.
 - Change habitat and map behaviour in `habitat.js` and the web first;
   Android packages `backend/app/static` and `species/` as assets, so it picks
   them up on its next build. Keep web and Android at feature parity.

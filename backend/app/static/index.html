@@ -536,6 +536,45 @@
   }
   /* The smallest phones (320 px): a smaller title so the picture and name still fit. */
   @media (max-width:340px) { header h1 { font-size:.85rem; gap:4px; } h1 .logo { width:24px; height:22px; } }
+  /* ---- Sideways phones (2026-11-13): a phone held sideways is short, so the tab bar becomes
+     a leather strip down the left side, the top bar gets slimmer, and the habitat, the log-in
+     scene and full-screen photos are sized to the screen's height so they show whole. ---- */
+  @media (orientation: landscape) and (max-height:520px) {
+    :root { --rail:calc(68px + env(safe-area-inset-left)); --side:max(10px, env(safe-area-inset-right)); }
+    body { font-size:15px; }
+    main { max-width:none; padding:0 var(--side) 12px max(10px, env(safe-area-inset-left)); }
+    body.authed main { padding-left:calc(var(--rail) + 10px); padding-bottom:12px; }
+    header { margin:0 0 4px; border-radius:0 0 12px 12px; padding:2px 12px; }
+    header h1 { font-size:1rem; margin:.1rem 0; } h1 .logo { width:30px; height:27px; }
+    header #state-name { display:none; }
+    p { margin:.6em 0; }
+    .card { padding:12px; margin:8px 0; }
+    .card h2 { font-size:1.1rem; margin-bottom:8px; }
+    nav#tabs { position:fixed; top:0; bottom:0; left:0; right:auto; width:var(--rail); margin:0; flex-direction:column;
+               justify-content:center; gap:2px; border:none; border-radius:0 14px 14px 0;
+               padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom) env(safe-area-inset-left);
+               box-shadow:inset -3px 0 0 var(--leather), inset -5px 0 0 rgba(201,164,90,.5), 3px 0 0 var(--leather2); }
+    nav#tabs button { flex:1 1 0; max-height:60px; min-height:0; grid-auto-flow:row; align-content:center; gap:1px;
+                      padding:0 2px; font-size:.68rem; }
+    nav#tabs button .ic { width:30px; height:30px; padding:2px; }
+    nav#tabs .badge { position:absolute; top:2px; left:calc(50% + 4px); }
+    /* The whole scene under the top bar: as wide as the screen's height allows, centred. */
+    .card.hab-card { margin:0 0 4px; }
+    #habitat { width:min(100%, max(440px, calc((100dvh - 58px) * 16 / 9))); margin:0 auto; }
+    #hab-canvas { border-width:3px; border-radius:6px; box-shadow:0 3px 0 var(--leather2); }
+    .hab-bar { padding:0; max-width:min(100%, max(440px, calc((100dvh - 58px) * 16 / 9))); margin:6px auto 0; }
+    /* Log in: the scene on the left, the form beside it. */
+    .auth { grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-items:start; }
+    .auth-scene { width:min(100%, calc((100dvh - 80px) * 32 / 27)); justify-self:center; }
+    .pitch-title { font-size:1.2rem; margin-top:0; }
+    .pitch-list { grid-column:1 / -1; }
+    /* Full-screen photo: the picture beside its likes and comments, not squeezed above them. */
+    #viewer .wrap { grid-template-columns:minmax(0,1fr) min(320px, 42vw); grid-template-rows:none; }
+    #viewer .side { max-height:none; padding-right:var(--side); }
+    /* Pop-ups use the whole height instead of leaving wide margins. */
+    dialog:not(#viewer) { max-height:calc(100dvh - 12px); margin-top:6px; margin-bottom:6px; }
+    #version { margin:12px 0 4px; }
+  }
 </style>
 </head>
 <body>
