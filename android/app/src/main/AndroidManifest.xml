@@ -15,8 +15,11 @@
         android:label="@string/app_name"
         android:theme="@style/Theme.CaptureAnimals">
 
+        <!-- Turning the phone re-lays out the screen in place instead of restarting it, so the
+             habitat, a game or a half-written comment carries on without a reload flash. -->
         <activity
             android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
