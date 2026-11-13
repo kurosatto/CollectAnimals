@@ -1,0 +1,1686 @@
+{
+ "source": "iNaturalist research-grade observations (species_counts by radius)",
+ "min_observations": 3,
+ "parks": [
+  {
+   "id": "hoge_veluwe",
+   "name": "Hoge Veluwe National Park",
+   "lat": 52.08,
+   "lon": 5.83,
+   "radius_km": 12,
+   "blurb": "Heath and sand with red deer, mouflon and wild boar.",
+   "species": [
+    {
+     "slug": "common_chaffinch",
+     "observations": 193
+    },
+    {
+     "slug": "red_deer",
+     "observations": 154
+    },
+    {
+     "slug": "european_robin",
+     "observations": 136
+    },
+    {
+     "slug": "green_shield_bug",
+     "observations": 132
+    },
+    {
+     "slug": "great_spotted_woodpecker",
+     "observations": 117
+    },
+    {
+     "slug": "sand_lizard",
+     "observations": 116
+    },
+    {
+     "slug": "european_stonechat",
+     "observations": 100
+    },
+    {
+     "slug": "great_tit",
+     "observations": 100
+    },
+    {
+     "slug": "common_slowworm",
+     "observations": 99
+    },
+    {
+     "slug": "eurasian_blue_tit",
+     "observations": 98
+    },
+    {
+     "slug": "wild_boar",
+     "observations": 93
+    },
+    {
+     "slug": "european_peacock_butterfly",
+     "observations": 90
+    },
+    {
+     "slug": "seven_spotted_lady_beetle",
+     "observations": 89
+    },
+    {
+     "slug": "western_roe_deer",
+     "observations": 86
+    },
+    {
+     "slug": "mallard",
+     "observations": 76
+    },
+    {
+     "slug": "grey_heron",
+     "observations": 75
+    },
+    {
+     "slug": "common_buzzard",
+     "observations": 74
+    },
+    {
+     "slug": "eurasian_blackbird",
+     "observations": 73
+    },
+    {
+     "slug": "asian_lady_beetle",
+     "observations": 73
+    },
+    {
+     "slug": "european_toad",
+     "observations": 73
+    },
+    {
+     "slug": "common_carder_bumble_bee",
+     "observations": 59
+    },
+    {
+     "slug": "common_drone_fly",
+     "observations": 59
+    },
+    {
+     "slug": "egyptian_goose",
+     "observations": 59
+    },
+    {
+     "slug": "carrion_crow",
+     "observations": 57
+    },
+    {
+     "slug": "speckled_wood",
+     "observations": 56
+    },
+    {
+     "slug": "cross_orbweaver",
+     "observations": 56
+    },
+    {
+     "slug": "house_sparrow",
+     "observations": 53
+    },
+    {
+     "slug": "common_rough_woodlouse",
+     "observations": 49
+    },
+    {
+     "slug": "common_wood_pigeon",
+     "observations": 46
+    },
+    {
+     "slug": "common_shiny_woodlouse",
+     "observations": 46
+    },
+    {
+     "slug": "red_admiral",
+     "observations": 46
+    },
+    {
+     "slug": "eurasian_red_squirrel",
+     "observations": 45
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 41
+    },
+    {
+     "slug": "eurasian_kestrel",
+     "observations": 40
+    },
+    {
+     "slug": "eurasian_moorhen",
+     "observations": 39
+    },
+    {
+     "slug": "tufted_duck",
+     "observations": 35
+    },
+    {
+     "slug": "eurasian_jackdaw",
+     "observations": 34
+    },
+    {
+     "slug": "large_yellow_underwing",
+     "observations": 33
+    },
+    {
+     "slug": "marmalade_hover_fly",
+     "observations": 32
+    },
+    {
+     "slug": "greylag_goose",
+     "observations": 31
+    },
+    {
+     "slug": "european_common_frog",
+     "observations": 30
+    },
+    {
+     "slug": "eurasian_coot",
+     "observations": 29
+    },
+    {
+     "slug": "barred_grass_snake",
+     "observations": 21
+    },
+    {
+     "slug": "bank_vole",
+     "observations": 21
+    },
+    {
+     "slug": "european_starling",
+     "observations": 20
+    },
+    {
+     "slug": "european_fallow_deer",
+     "observations": 20
+    },
+    {
+     "slug": "adder",
+     "observations": 20
+    },
+    {
+     "slug": "great_cormorant",
+     "observations": 19
+    },
+    {
+     "slug": "natterjack_toad",
+     "observations": 19
+    },
+    {
+     "slug": "viviparous_lizard",
+     "observations": 18
+    },
+    {
+     "slug": "mute_swan",
+     "observations": 17
+    },
+    {
+     "slug": "belted_springtail",
+     "observations": 17
+    },
+    {
+     "slug": "smooth_snake",
+     "observations": 14
+    },
+    {
+     "slug": "brown_hare",
+     "observations": 13
+    },
+    {
+     "slug": "great_egret",
+     "observations": 12
+    },
+    {
+     "slug": "common_striped_woodlouse",
+     "observations": 11
+    },
+    {
+     "slug": "black_headed_gull",
+     "observations": 10
+    },
+    {
+     "slug": "smooth_newt",
+     "observations": 10
+    },
+    {
+     "slug": "european_badger",
+     "observations": 10
+    },
+    {
+     "slug": "eurasian_magpie",
+     "observations": 10
+    },
+    {
+     "slug": "common_hedgehog",
+     "observations": 8
+    },
+    {
+     "slug": "european_wood_mouse",
+     "observations": 6
+    },
+    {
+     "slug": "alpine_newt",
+     "observations": 6
+    },
+    {
+     "slug": "great_crested_grebe",
+     "observations": 5
+    },
+    {
+     "slug": "european_mole",
+     "observations": 5
+    },
+    {
+     "slug": "gadwall",
+     "observations": 5
+    },
+    {
+     "slug": "moor_frog",
+     "observations": 4
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 4
+    },
+    {
+     "slug": "stone_marten",
+     "observations": 4
+    },
+    {
+     "slug": "common_pill_woodlouse",
+     "observations": 4
+    },
+    {
+     "slug": "ring_necked_pheasant",
+     "observations": 3
+    },
+    {
+     "slug": "eurasian_spoonbill",
+     "observations": 3
+    },
+    {
+     "slug": "eurasian_oystercatcher",
+     "observations": 3
+    },
+    {
+     "slug": "common_shelduck",
+     "observations": 3
+    },
+    {
+     "slug": "barnacle_goose",
+     "observations": 3
+    },
+    {
+     "slug": "daubentons_bat",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "oostvaardersplassen",
+   "name": "Oostvaardersplassen",
+   "lat": 52.45,
+   "lon": 5.35,
+   "radius_km": 10,
+   "blurb": "New wilderness with wild horses, red deer, spoonbills and white-tailed eagles.",
+   "species": [
+    {
+     "slug": "greylag_goose",
+     "observations": 146
+    },
+    {
+     "slug": "great_cormorant",
+     "observations": 90
+    },
+    {
+     "slug": "great_egret",
+     "observations": 77
+    },
+    {
+     "slug": "red_deer",
+     "observations": 77
+    },
+    {
+     "slug": "common_buzzard",
+     "observations": 73
+    },
+    {
+     "slug": "mallard",
+     "observations": 63
+    },
+    {
+     "slug": "grey_heron",
+     "observations": 61
+    },
+    {
+     "slug": "eurasian_spoonbill",
+     "observations": 60
+    },
+    {
+     "slug": "european_robin",
+     "observations": 53
+    },
+    {
+     "slug": "common_chaffinch",
+     "observations": 52
+    },
+    {
+     "slug": "gadwall",
+     "observations": 52
+    },
+    {
+     "slug": "barnacle_goose",
+     "observations": 49
+    },
+    {
+     "slug": "tufted_duck",
+     "observations": 47
+    },
+    {
+     "slug": "black_headed_gull",
+     "observations": 44
+    },
+    {
+     "slug": "common_shelduck",
+     "observations": 41
+    },
+    {
+     "slug": "european_peacock_butterfly",
+     "observations": 41
+    },
+    {
+     "slug": "red_admiral",
+     "observations": 39
+    },
+    {
+     "slug": "great_crested_grebe",
+     "observations": 37
+    },
+    {
+     "slug": "mute_swan",
+     "observations": 37
+    },
+    {
+     "slug": "northern_lapwing",
+     "observations": 34
+    },
+    {
+     "slug": "lesser_black_backed_gull",
+     "observations": 33
+    },
+    {
+     "slug": "carrion_crow",
+     "observations": 32
+    },
+    {
+     "slug": "eurasian_blue_tit",
+     "observations": 30
+    },
+    {
+     "slug": "eurasian_coot",
+     "observations": 29
+    },
+    {
+     "slug": "egyptian_goose",
+     "observations": 27
+    },
+    {
+     "slug": "barred_grass_snake",
+     "observations": 25
+    },
+    {
+     "slug": "great_spotted_woodpecker",
+     "observations": 22
+    },
+    {
+     "slug": "eurasian_magpie",
+     "observations": 22
+    },
+    {
+     "slug": "speckled_wood",
+     "observations": 21
+    },
+    {
+     "slug": "eurasian_kestrel",
+     "observations": 20
+    },
+    {
+     "slug": "european_starling",
+     "observations": 19
+    },
+    {
+     "slug": "european_common_frog",
+     "observations": 19
+    },
+    {
+     "slug": "seven_spotted_lady_beetle",
+     "observations": 19
+    },
+    {
+     "slug": "great_tit",
+     "observations": 19
+    },
+    {
+     "slug": "european_toad",
+     "observations": 19
+    },
+    {
+     "slug": "asian_lady_beetle",
+     "observations": 18
+    },
+    {
+     "slug": "eurasian_moorhen",
+     "observations": 18
+    },
+    {
+     "slug": "eurasian_blackbird",
+     "observations": 16
+    },
+    {
+     "slug": "common_wood_pigeon",
+     "observations": 14
+    },
+    {
+     "slug": "european_herring_gull",
+     "observations": 14
+    },
+    {
+     "slug": "common_hedgehog",
+     "observations": 13
+    },
+    {
+     "slug": "eurasian_oystercatcher",
+     "observations": 12
+    },
+    {
+     "slug": "european_stonechat",
+     "observations": 12
+    },
+    {
+     "slug": "house_sparrow",
+     "observations": 10
+    },
+    {
+     "slug": "common_carder_bumble_bee",
+     "observations": 10
+    },
+    {
+     "slug": "smooth_newt",
+     "observations": 9
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 8
+    },
+    {
+     "slug": "green_shield_bug",
+     "observations": 8
+    },
+    {
+     "slug": "common_drone_fly",
+     "observations": 6
+    },
+    {
+     "slug": "common_pill_woodlouse",
+     "observations": 6
+    },
+    {
+     "slug": "marsh_frog",
+     "observations": 6
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 5
+    },
+    {
+     "slug": "eurasian_beaver",
+     "observations": 5
+    },
+    {
+     "slug": "european_mole",
+     "observations": 5
+    },
+    {
+     "slug": "common_striped_woodlouse",
+     "observations": 5
+    },
+    {
+     "slug": "marmalade_hover_fly",
+     "observations": 5
+    },
+    {
+     "slug": "eurasian_jackdaw",
+     "observations": 5
+    },
+    {
+     "slug": "western_roe_deer",
+     "observations": 4
+    }
+   ]
+  },
+  {
+   "id": "wadden_nl",
+   "name": "Wadden Sea and Texel",
+   "lat": 53.1,
+   "lon": 4.8,
+   "radius_km": 20,
+   "blurb": "Islands and mudflats with seals, spoonbills and avocets.",
+   "species": [
+    {
+     "slug": "european_herring_gull",
+     "observations": 452
+    },
+    {
+     "slug": "black_headed_gull",
+     "observations": 377
+    },
+    {
+     "slug": "eurasian_oystercatcher",
+     "observations": 368
+    },
+    {
+     "slug": "common_redshank",
+     "observations": 348
+    },
+    {
+     "slug": "greylag_goose",
+     "observations": 329
+    },
+    {
+     "slug": "common_shelduck",
+     "observations": 311
+    },
+    {
+     "slug": "mallard",
+     "observations": 304
+    },
+    {
+     "slug": "eurasian_spoonbill",
+     "observations": 287
+    },
+    {
+     "slug": "european_green_crab",
+     "observations": 251
+    },
+    {
+     "slug": "ring_necked_pheasant",
+     "observations": 243
+    },
+    {
+     "slug": "lesser_black_backed_gull",
+     "observations": 193
+    },
+    {
+     "slug": "eurasian_jackdaw",
+     "observations": 163
+    },
+    {
+     "slug": "northern_lapwing",
+     "observations": 158
+    },
+    {
+     "slug": "great_cormorant",
+     "observations": 154
+    },
+    {
+     "slug": "eurasian_coot",
+     "observations": 140
+    },
+    {
+     "slug": "eurasian_kestrel",
+     "observations": 137
+    },
+    {
+     "slug": "tufted_duck",
+     "observations": 124
+    },
+    {
+     "slug": "barnacle_goose",
+     "observations": 112
+    },
+    {
+     "slug": "dustbin_lid_jelly",
+     "observations": 108
+    },
+    {
+     "slug": "egyptian_goose",
+     "observations": 107
+    },
+    {
+     "slug": "common_buzzard",
+     "observations": 101
+    },
+    {
+     "slug": "house_sparrow",
+     "observations": 99
+    },
+    {
+     "slug": "harbor_seal",
+     "observations": 98
+    },
+    {
+     "slug": "brown_hare",
+     "observations": 95
+    },
+    {
+     "slug": "european_starling",
+     "observations": 93
+    },
+    {
+     "slug": "carrion_crow",
+     "observations": 91
+    },
+    {
+     "slug": "european_stonechat",
+     "observations": 80
+    },
+    {
+     "slug": "compass_jelly",
+     "observations": 80
+    },
+    {
+     "slug": "eurasian_magpie",
+     "observations": 76
+    },
+    {
+     "slug": "gadwall",
+     "observations": 71
+    },
+    {
+     "slug": "common_wood_pigeon",
+     "observations": 68
+    },
+    {
+     "slug": "european_robin",
+     "observations": 67
+    },
+    {
+     "slug": "great_crested_grebe",
+     "observations": 60
+    },
+    {
+     "slug": "common_rough_woodlouse",
+     "observations": 55
+    },
+    {
+     "slug": "grey_seal",
+     "observations": 54
+    },
+    {
+     "slug": "great_egret",
+     "observations": 54
+    },
+    {
+     "slug": "eurasian_blackbird",
+     "observations": 53
+    },
+    {
+     "slug": "cross_orbweaver",
+     "observations": 53
+    },
+    {
+     "slug": "red_admiral",
+     "observations": 51
+    },
+    {
+     "slug": "grey_heron",
+     "observations": 50
+    },
+    {
+     "slug": "common_chaffinch",
+     "observations": 50
+    },
+    {
+     "slug": "common_moon_jelly",
+     "observations": 43
+    },
+    {
+     "slug": "great_tit",
+     "observations": 40
+    },
+    {
+     "slug": "common_drone_fly",
+     "observations": 35
+    },
+    {
+     "slug": "eurasian_blue_tit",
+     "observations": 33
+    },
+    {
+     "slug": "common_shiny_woodlouse",
+     "observations": 32
+    },
+    {
+     "slug": "eurasian_moorhen",
+     "observations": 32
+    },
+    {
+     "slug": "common_striped_woodlouse",
+     "observations": 31
+    },
+    {
+     "slug": "seven_spotted_lady_beetle",
+     "observations": 31
+    },
+    {
+     "slug": "marmalade_hover_fly",
+     "observations": 30
+    },
+    {
+     "slug": "large_yellow_underwing",
+     "observations": 28
+    },
+    {
+     "slug": "common_pill_woodlouse",
+     "observations": 25
+    },
+    {
+     "slug": "great_spotted_woodpecker",
+     "observations": 22
+    },
+    {
+     "slug": "european_peacock_butterfly",
+     "observations": 22
+    },
+    {
+     "slug": "green_shield_bug",
+     "observations": 21
+    },
+    {
+     "slug": "common_hedgehog",
+     "observations": 20
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 20
+    },
+    {
+     "slug": "asian_lady_beetle",
+     "observations": 18
+    },
+    {
+     "slug": "speckled_wood",
+     "observations": 18
+    },
+    {
+     "slug": "harbour_porpoise",
+     "observations": 16
+    },
+    {
+     "slug": "mute_swan",
+     "observations": 15
+    },
+    {
+     "slug": "belted_springtail",
+     "observations": 15
+    },
+    {
+     "slug": "common_pipistrelle",
+     "observations": 12
+    },
+    {
+     "slug": "common_carder_bumble_bee",
+     "observations": 12
+    },
+    {
+     "slug": "natterjack_toad",
+     "observations": 11
+    },
+    {
+     "slug": "european_toad",
+     "observations": 7
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 5
+    },
+    {
+     "slug": "european_common_frog",
+     "observations": 5
+    },
+    {
+     "slug": "smooth_newt",
+     "observations": 5
+    }
+   ]
+  },
+  {
+   "id": "biesbosch",
+   "name": "Biesbosch National Park",
+   "lat": 51.75,
+   "lon": 4.8,
+   "radius_km": 12,
+   "blurb": "Tidal willow swamp with beavers, kingfishers and sea eagles.",
+   "species": [
+    {
+     "slug": "grey_heron",
+     "observations": 264
+    },
+    {
+     "slug": "common_buzzard",
+     "observations": 262
+    },
+    {
+     "slug": "mallard",
+     "observations": 242
+    },
+    {
+     "slug": "mute_swan",
+     "observations": 239
+    },
+    {
+     "slug": "great_crested_grebe",
+     "observations": 235
+    },
+    {
+     "slug": "eurasian_coot",
+     "observations": 224
+    },
+    {
+     "slug": "western_roe_deer",
+     "observations": 170
+    },
+    {
+     "slug": "greylag_goose",
+     "observations": 166
+    },
+    {
+     "slug": "gadwall",
+     "observations": 151
+    },
+    {
+     "slug": "great_egret",
+     "observations": 139
+    },
+    {
+     "slug": "tufted_duck",
+     "observations": 135
+    },
+    {
+     "slug": "brown_hare",
+     "observations": 132
+    },
+    {
+     "slug": "black_headed_gull",
+     "observations": 132
+    },
+    {
+     "slug": "great_cormorant",
+     "observations": 120
+    },
+    {
+     "slug": "eurasian_kestrel",
+     "observations": 120
+    },
+    {
+     "slug": "ring_necked_pheasant",
+     "observations": 114
+    },
+    {
+     "slug": "carrion_crow",
+     "observations": 110
+    },
+    {
+     "slug": "eurasian_spoonbill",
+     "observations": 99
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 97
+    },
+    {
+     "slug": "common_shelduck",
+     "observations": 93
+    },
+    {
+     "slug": "northern_lapwing",
+     "observations": 89
+    },
+    {
+     "slug": "eurasian_blue_tit",
+     "observations": 89
+    },
+    {
+     "slug": "great_spotted_woodpecker",
+     "observations": 85
+    },
+    {
+     "slug": "egyptian_goose",
+     "observations": 84
+    },
+    {
+     "slug": "eurasian_moorhen",
+     "observations": 84
+    },
+    {
+     "slug": "great_tit",
+     "observations": 82
+    },
+    {
+     "slug": "eurasian_magpie",
+     "observations": 77
+    },
+    {
+     "slug": "common_chaffinch",
+     "observations": 76
+    },
+    {
+     "slug": "eurasian_oystercatcher",
+     "observations": 75
+    },
+    {
+     "slug": "european_peacock_butterfly",
+     "observations": 74
+    },
+    {
+     "slug": "barnacle_goose",
+     "observations": 71
+    },
+    {
+     "slug": "eurasian_jackdaw",
+     "observations": 70
+    },
+    {
+     "slug": "common_redshank",
+     "observations": 68
+    },
+    {
+     "slug": "eurasian_blackbird",
+     "observations": 67
+    },
+    {
+     "slug": "common_wood_pigeon",
+     "observations": 66
+    },
+    {
+     "slug": "red_admiral",
+     "observations": 63
+    },
+    {
+     "slug": "european_stonechat",
+     "observations": 61
+    },
+    {
+     "slug": "lesser_black_backed_gull",
+     "observations": 60
+    },
+    {
+     "slug": "eurasian_beaver",
+     "observations": 58
+    },
+    {
+     "slug": "european_starling",
+     "observations": 55
+    },
+    {
+     "slug": "european_robin",
+     "observations": 54
+    },
+    {
+     "slug": "speckled_wood",
+     "observations": 52
+    },
+    {
+     "slug": "asian_lady_beetle",
+     "observations": 45
+    },
+    {
+     "slug": "seven_spotted_lady_beetle",
+     "observations": 35
+    },
+    {
+     "slug": "common_drone_fly",
+     "observations": 35
+    },
+    {
+     "slug": "house_sparrow",
+     "observations": 34
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 34
+    },
+    {
+     "slug": "cross_orbweaver",
+     "observations": 26
+    },
+    {
+     "slug": "common_carder_bumble_bee",
+     "observations": 26
+    },
+    {
+     "slug": "european_toad",
+     "observations": 24
+    },
+    {
+     "slug": "european_herring_gull",
+     "observations": 22
+    },
+    {
+     "slug": "european_common_frog",
+     "observations": 18
+    },
+    {
+     "slug": "large_yellow_underwing",
+     "observations": 12
+    },
+    {
+     "slug": "green_shield_bug",
+     "observations": 11
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 10
+    },
+    {
+     "slug": "red_swamp_crayfish",
+     "observations": 8
+    },
+    {
+     "slug": "common_hedgehog",
+     "observations": 7
+    },
+    {
+     "slug": "marmalade_hover_fly",
+     "observations": 7
+    },
+    {
+     "slug": "common_pill_woodlouse",
+     "observations": 7
+    },
+    {
+     "slug": "european_mole",
+     "observations": 5
+    },
+    {
+     "slug": "common_rough_woodlouse",
+     "observations": 5
+    },
+    {
+     "slug": "smooth_newt",
+     "observations": 5
+    }
+   ]
+  },
+  {
+   "id": "amsterdam_waterleidingduinen",
+   "name": "Amsterdam Water Dunes",
+   "lat": 52.35,
+   "lon": 4.55,
+   "radius_km": 8,
+   "blurb": "Dunes with tame fallow deer, foxes and nightingales.",
+   "species": [
+    {
+     "slug": "european_fallow_deer",
+     "observations": 488
+    },
+    {
+     "slug": "great_cormorant",
+     "observations": 178
+    },
+    {
+     "slug": "tufted_duck",
+     "observations": 142
+    },
+    {
+     "slug": "eurasian_coot",
+     "observations": 127
+    },
+    {
+     "slug": "mallard",
+     "observations": 117
+    },
+    {
+     "slug": "eurasian_jackdaw",
+     "observations": 114
+    },
+    {
+     "slug": "european_herring_gull",
+     "observations": 109
+    },
+    {
+     "slug": "mute_swan",
+     "observations": 104
+    },
+    {
+     "slug": "speckled_wood",
+     "observations": 101
+    },
+    {
+     "slug": "great_crested_grebe",
+     "observations": 96
+    },
+    {
+     "slug": "greylag_goose",
+     "observations": 84
+    },
+    {
+     "slug": "great_tit",
+     "observations": 84
+    },
+    {
+     "slug": "common_chaffinch",
+     "observations": 81
+    },
+    {
+     "slug": "grey_heron",
+     "observations": 80
+    },
+    {
+     "slug": "common_buzzard",
+     "observations": 80
+    },
+    {
+     "slug": "european_stonechat",
+     "observations": 79
+    },
+    {
+     "slug": "european_common_frog",
+     "observations": 78
+    },
+    {
+     "slug": "sand_lizard",
+     "observations": 75
+    },
+    {
+     "slug": "egyptian_goose",
+     "observations": 71
+    },
+    {
+     "slug": "european_robin",
+     "observations": 69
+    },
+    {
+     "slug": "red_admiral",
+     "observations": 68
+    },
+    {
+     "slug": "european_toad",
+     "observations": 68
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 63
+    },
+    {
+     "slug": "great_spotted_woodpecker",
+     "observations": 63
+    },
+    {
+     "slug": "dustbin_lid_jelly",
+     "observations": 58
+    },
+    {
+     "slug": "common_rough_woodlouse",
+     "observations": 54
+    },
+    {
+     "slug": "carrion_crow",
+     "observations": 54
+    },
+    {
+     "slug": "asian_lady_beetle",
+     "observations": 52
+    },
+    {
+     "slug": "seven_spotted_lady_beetle",
+     "observations": 52
+    },
+    {
+     "slug": "gadwall",
+     "observations": 49
+    },
+    {
+     "slug": "northern_lapwing",
+     "observations": 48
+    },
+    {
+     "slug": "cross_orbweaver",
+     "observations": 47
+    },
+    {
+     "slug": "smooth_newt",
+     "observations": 46
+    },
+    {
+     "slug": "compass_jelly",
+     "observations": 44
+    },
+    {
+     "slug": "eurasian_blackbird",
+     "observations": 43
+    },
+    {
+     "slug": "green_shield_bug",
+     "observations": 42
+    },
+    {
+     "slug": "eurasian_kestrel",
+     "observations": 42
+    },
+    {
+     "slug": "house_sparrow",
+     "observations": 41
+    },
+    {
+     "slug": "eurasian_blue_tit",
+     "observations": 41
+    },
+    {
+     "slug": "european_peacock_butterfly",
+     "observations": 40
+    },
+    {
+     "slug": "belted_springtail",
+     "observations": 37
+    },
+    {
+     "slug": "harbor_seal",
+     "observations": 35
+    },
+    {
+     "slug": "grey_seal",
+     "observations": 35
+    },
+    {
+     "slug": "eurasian_magpie",
+     "observations": 33
+    },
+    {
+     "slug": "large_yellow_underwing",
+     "observations": 32
+    },
+    {
+     "slug": "common_drone_fly",
+     "observations": 30
+    },
+    {
+     "slug": "great_egret",
+     "observations": 30
+    },
+    {
+     "slug": "black_headed_gull",
+     "observations": 29
+    },
+    {
+     "slug": "lesser_black_backed_gull",
+     "observations": 28
+    },
+    {
+     "slug": "common_shelduck",
+     "observations": 25
+    },
+    {
+     "slug": "natterjack_toad",
+     "observations": 25
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 24
+    },
+    {
+     "slug": "common_pill_woodlouse",
+     "observations": 24
+    },
+    {
+     "slug": "harbour_porpoise",
+     "observations": 23
+    },
+    {
+     "slug": "common_striped_woodlouse",
+     "observations": 23
+    },
+    {
+     "slug": "common_moon_jelly",
+     "observations": 23
+    },
+    {
+     "slug": "common_slowworm",
+     "observations": 22
+    },
+    {
+     "slug": "european_starling",
+     "observations": 21
+    },
+    {
+     "slug": "common_wood_pigeon",
+     "observations": 20
+    },
+    {
+     "slug": "marmalade_hover_fly",
+     "observations": 20
+    },
+    {
+     "slug": "common_carder_bumble_bee",
+     "observations": 19
+    },
+    {
+     "slug": "western_roe_deer",
+     "observations": 18
+    },
+    {
+     "slug": "common_hedgehog",
+     "observations": 18
+    },
+    {
+     "slug": "eurasian_red_squirrel",
+     "observations": 18
+    },
+    {
+     "slug": "eurasian_moorhen",
+     "observations": 17
+    },
+    {
+     "slug": "brown_hare",
+     "observations": 14
+    },
+    {
+     "slug": "common_shiny_woodlouse",
+     "observations": 13
+    },
+    {
+     "slug": "eurasian_oystercatcher",
+     "observations": 11
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 6
+    },
+    {
+     "slug": "european_green_crab",
+     "observations": 6
+    },
+    {
+     "slug": "european_mole",
+     "observations": 5
+    },
+    {
+     "slug": "red_swamp_crayfish",
+     "observations": 5
+    },
+    {
+     "slug": "common_redshank",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "vondelpark",
+   "name": "Vondelpark and Amsterdamse Bos",
+   "lat": 52.33,
+   "lon": 4.85,
+   "radius_km": 6,
+   "blurb": "City parks with herons, parakeets, coots and foxes.",
+   "species": [
+    {
+     "slug": "grey_heron",
+     "observations": 1457
+    },
+    {
+     "slug": "eurasian_coot",
+     "observations": 1407
+    },
+    {
+     "slug": "egyptian_goose",
+     "observations": 1235
+    },
+    {
+     "slug": "mallard",
+     "observations": 754
+    },
+    {
+     "slug": "eurasian_moorhen",
+     "observations": 706
+    },
+    {
+     "slug": "eurasian_jackdaw",
+     "observations": 623
+    },
+    {
+     "slug": "carrion_crow",
+     "observations": 495
+    },
+    {
+     "slug": "black_headed_gull",
+     "observations": 470
+    },
+    {
+     "slug": "eurasian_magpie",
+     "observations": 458
+    },
+    {
+     "slug": "great_crested_grebe",
+     "observations": 441
+    },
+    {
+     "slug": "european_herring_gull",
+     "observations": 392
+    },
+    {
+     "slug": "eurasian_blackbird",
+     "observations": 323
+    },
+    {
+     "slug": "common_wood_pigeon",
+     "observations": 319
+    },
+    {
+     "slug": "mute_swan",
+     "observations": 269
+    },
+    {
+     "slug": "greylag_goose",
+     "observations": 256
+    },
+    {
+     "slug": "asian_lady_beetle",
+     "observations": 241
+    },
+    {
+     "slug": "great_cormorant",
+     "observations": 228
+    },
+    {
+     "slug": "european_starling",
+     "observations": 173
+    },
+    {
+     "slug": "lesser_black_backed_gull",
+     "observations": 172
+    },
+    {
+     "slug": "red_admiral",
+     "observations": 172
+    },
+    {
+     "slug": "cross_orbweaver",
+     "observations": 154
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 109
+    },
+    {
+     "slug": "great_tit",
+     "observations": 107
+    },
+    {
+     "slug": "tufted_duck",
+     "observations": 106
+    },
+    {
+     "slug": "european_robin",
+     "observations": 99
+    },
+    {
+     "slug": "speckled_wood",
+     "observations": 99
+    },
+    {
+     "slug": "eurasian_blue_tit",
+     "observations": 99
+    },
+    {
+     "slug": "great_spotted_woodpecker",
+     "observations": 88
+    },
+    {
+     "slug": "seven_spotted_lady_beetle",
+     "observations": 87
+    },
+    {
+     "slug": "european_peacock_butterfly",
+     "observations": 87
+    },
+    {
+     "slug": "common_carder_bumble_bee",
+     "observations": 86
+    },
+    {
+     "slug": "gadwall",
+     "observations": 81
+    },
+    {
+     "slug": "large_yellow_underwing",
+     "observations": 72
+    },
+    {
+     "slug": "red_swamp_crayfish",
+     "observations": 71
+    },
+    {
+     "slug": "ring_necked_pheasant",
+     "observations": 69
+    },
+    {
+     "slug": "green_shield_bug",
+     "observations": 68
+    },
+    {
+     "slug": "common_chaffinch",
+     "observations": 65
+    },
+    {
+     "slug": "eurasian_oystercatcher",
+     "observations": 60
+    },
+    {
+     "slug": "common_drone_fly",
+     "observations": 60
+    },
+    {
+     "slug": "marmalade_hover_fly",
+     "observations": 57
+    },
+    {
+     "slug": "common_buzzard",
+     "observations": 40
+    },
+    {
+     "slug": "common_rough_woodlouse",
+     "observations": 37
+    },
+    {
+     "slug": "house_sparrow",
+     "observations": 34
+    },
+    {
+     "slug": "european_common_frog",
+     "observations": 32
+    },
+    {
+     "slug": "european_toad",
+     "observations": 29
+    },
+    {
+     "slug": "brown_hare",
+     "observations": 26
+    },
+    {
+     "slug": "northern_lapwing",
+     "observations": 25
+    },
+    {
+     "slug": "common_striped_woodlouse",
+     "observations": 23
+    },
+    {
+     "slug": "common_hedgehog",
+     "observations": 19
+    },
+    {
+     "slug": "common_pill_woodlouse",
+     "observations": 19
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 18
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 17
+    },
+    {
+     "slug": "great_egret",
+     "observations": 17
+    },
+    {
+     "slug": "common_shiny_woodlouse",
+     "observations": 15
+    },
+    {
+     "slug": "smooth_newt",
+     "observations": 14
+    },
+    {
+     "slug": "common_shelduck",
+     "observations": 13
+    },
+    {
+     "slug": "eurasian_red_squirrel",
+     "observations": 13
+    },
+    {
+     "slug": "european_mole",
+     "observations": 10
+    },
+    {
+     "slug": "eurasian_kestrel",
+     "observations": 8
+    },
+    {
+     "slug": "barred_grass_snake",
+     "observations": 6
+    },
+    {
+     "slug": "eurasian_spoonbill",
+     "observations": 4
+    },
+    {
+     "slug": "barnacle_goose",
+     "observations": 4
+    },
+    {
+     "slug": "european_wood_mouse",
+     "observations": 4
+    },
+    {
+     "slug": "common_redshank",
+     "observations": 3
+    },
+    {
+     "slug": "belted_springtail",
+     "observations": 3
+    },
+    {
+     "slug": "marsh_frog",
+     "observations": 3
+    },
+    {
+     "slug": "bank_vole",
+     "observations": 3
+    }
+   ]
+  }
+ ]
+}
