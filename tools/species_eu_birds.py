@@ -1033,6 +1033,7 @@ def _goose(s, body, belly, wing, tail, neck, head, bill, *, cheek=None, tip=None
         s.ellipse(hx - 3.3, 15.4, 1.7, 0.9, bill)
         s.px([(round(hx - 1.5), 14)], "#000000")
         s.shift(0, bob)
+        s.seal()
         return
     _slim(s, (9.5, 7), (9.5, 8.5), 0.8, (19, 23), (19, 24), 1.04, 0.84, 29.5, (13, 15))
     _ripples(s, s.t * 4 if s.act == "swim" else 0, ((2, 30), (6, 29), (25, 30), (29, 29)))

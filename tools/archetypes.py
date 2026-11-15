@@ -836,6 +836,35 @@ def _bird_form(slug):
     return SONGBIRD
 
 
+def _folded_wing(s: Sprite, cy, wing, lift=0.0):
+    """The wing folded at rest, in bird()'s drawing coordinates: the rounded shoulder
+    and coverts, a row of tertials with pale fringes, and the dark primaries tapering
+    to a point past them over the tail (far for swallows, terns and falcons, short
+    for wrens and quail). lift raises it (preening). Leaves the whole wing as s.last."""
+    from birdwing import flight_kind
+    wspec, _ = flight_kind(getattr(s, "slug", ""))
+    proj = {"sickle": 3.4, "pointed": 2.4, "slotted": 1.4}.get(wspec.tip, 1.0)
+    dx, dy = 0.6 * lift, -1.2 * lift
+    rot = -15 - 16 * lift
+    a = math.radians(rot)
+    ca, sa = math.cos(a), math.sin(a)
+
+    def P(u, v):  # along the wing (u, back) and across it (v, down), from its middle
+        return (20 + dx + u * ca - v * sa, cy + dy + u * sa + v * ca)
+    tip = mix(wing, "#1a1420", 0.24)
+    prim = s.m_poly([P(0.5, -2.6), P(5.4 + proj, -0.6), P(5.6 + proj, 0.2), P(1.5, 3.4)])
+    cov = s.m_ellipse(20 + dx - 0.6 * ca, cy + dy - 0.6 * sa, 5.2, 4.1, rot)
+    whole = prim | cov
+    s.fill(prim & ~cov, tip, edge=True)
+    s.fill(cov, wing, edge=True)
+    # the tertials' pale fringes and the greater coverts' edge, catching the light
+    fr = mix(wing, "#fff4e0", 0.22)
+    s.paint(s.m_path([P(-0.5, 1.2), P(2.2, 1.6), P(4.3, 0.6)], 0.42), fr, within=cov)
+    s.paint(s.m_path([P(-3.4, -0.6), P(-1, 0.2), P(1.6, -0.2)], 0.4), mix(wing, "#1a1420", 0.16), within=cov)
+    s.last = whole
+    return whole
+
+
 def bird(s: Sprite, body, belly, *, head=None, wing=None, tail_col=None, beak="cone",
          beak_col="#4a3d3a", legs="#c99060", tail="mid", crest=None, eye_col=EYE,
          face=None, wing_mark=None, belly_mark=None, big=False):
@@ -857,6 +886,9 @@ def bird(s: Sprite, body, belly, *, head=None, wing=None, tail_col=None, beak="c
     head = head or body
     wing = wing or mix(body, "#000000", 0.15)
     tail_col = tail_col or wing
+    if flying:
+        return _bird_flight(s, body, belly, head, wing, tail_col, beak, beak_col, tail, crest, eye_col, face,
+                            wing_mark, belly_mark, big, legs)
     cy = 19 if not big else 18
     head_k, head_x, head_dy, body_kx, body_ky, tilt, beak_k, neck_r = _bird_form(getattr(s, "slug", ""))
     _slim(s, (11, 11), (head_x, cy + head_dy), head_k, (16.5, cy + 1), (17.5, cy + 3.5), body_kx, body_ky, cy + 8,
@@ -888,9 +920,9 @@ def bird(s: Sprite, body, belly, *, head=None, wing=None, tail_col=None, beak="c
             _flight_wing(s, cy, w, wing)
     elif s.act == "groom":
         lift = s.cyc(0, 1, 0.5, 1, 0.2, 0.7)
-        s.ellipse(20 + 0.6 * lift, cy - 1.2 * lift, 5.8, 4.2, wing, rot=-15 - 16 * lift, edge=True)
+        _folded_wing(s, cy, wing, lift)
     else:
-        s.ellipse(20, cy, 5.8, 4.2, wing, rot=-15, edge=True)
+        _folded_wing(s, cy, wing)
     if wing_mark:
         wing_mark(s, s.last)
     # a smooth neck from the shoulders up to the head, so the two don't just meet
@@ -915,6 +947,185 @@ def bird(s: Sprite, body, belly, *, head=None, wing=None, tail_col=None, beak="c
         # settled down on its belly, legs folded out of sight
         with s.unwarped():
             s.shift(0, 3)
+
+
+def _fly_warp(s: Sprite, head_c, head_to, head_k, body_c, body_to, kx, ky, neck, beak_k=1.0):
+    """Like _slim, for a bird in flight: the round perched drawing laid out level and
+    streamlined (body stretched by kx and flattened by ky about body_c to body_to), the
+    head (about head_c, scaled by head_k) carried forward to head_to. No legs to keep
+    on the ground, so nothing below the body is stretched."""
+    hx, hy = head_c
+    tx, ty = head_to
+    bx, by = body_c
+    ux, uy = body_to
+    nx, ny = neck
+    front, root = hx - 4, hy + 1
+
+    def fwd(x, y):
+        kb = _smooth((front - 1 - x) / 1.5)
+        hxp = tx + head_k * (np.maximum(x, front) - hx) + head_k * (1 + kb * (beak_k - 1)) * np.minimum(x - front, 0)
+        hyp = ty + head_k * (root - hy) + head_k * (1 + kb * (beak_k - 1)) * (y - root)
+        bxp = ux + kx * (x - bx)
+        byp = uy + ky * (y - by)
+        k = np.maximum(_smooth((ny - y) / 1.5) * _smooth((nx - x) / 1.5), _smooth((hx - 4 - x) / 1.5))
+        return k * hxp + (1 - k) * bxp, k * hyp + (1 - k) * byp
+    s.set_warp(fwd)
+
+
+_MARKS: dict = {}
+
+
+def _wing_marks(slug, wing, wing_mark):
+    """What a species' wing_mark paints on the folded wing, read back as flight-wing
+    markings: wing bars (lines across the coverts), a patch at the base of the
+    primaries, or pale tips. Found by painting the folded wing on its own and looking
+    at which colours the marks added, and where."""
+    if not wing_mark:
+        return {}
+    if slug in _MARKS:
+        return _MARKS[slug]
+    p = Sprite("idle", 0)
+    m = p.ellipse(20, 19, 5.8, 4.2, wing, rot=-15)
+    base = p.col.copy()
+    wing_mark(p, m)
+    changed = m & (np.abs(p.col - base).sum(axis=-1) > 0)
+    out = {}
+    if changed.any():
+        cols, counts = np.unique(p.col[changed].reshape(-1, 3), axis=0, return_counts=True)
+        order = np.argsort(-counts)
+        main = tuple(int(c) for c in cols[order[0]])
+        ys, xs = np.where(changed & np.all(p.col == cols[order[0]], axis=-1))
+        rows = len(set((ys // max(1, SS * 2)).tolist()))
+        share = counts[order[0]] / m.sum()
+        hexc = "#%02x%02x%02x" % main
+        xs_u = xs / SS - 4  # drawing units
+        if xs_u.mean() > 23 and share < 0.3:
+            out["tips"] = hexc
+        elif share > 0.3:
+            out["patch"] = hexc
+            out["bar"] = hexc
+        else:
+            out["bar"] = hexc
+            if rows >= 3:
+                out["bar2"] = hexc
+        if len(order) > 1 and counts[order[1]] >= 3:
+            second = "#%02x%02x%02x" % tuple(int(c) for c in cols[order[1]])
+            out.setdefault("trailing", second if "bar" in out else None)
+    _MARKS[slug] = {k: v for k, v in out.items() if v}
+    return _MARKS[slug]
+
+
+def _flight_tail(s: Sprite, x, y, kind, col, spread, slug, size=1.0):
+    """The tail streaming out behind a flying bird (x, y: where it leaves the body),
+    narrow at the base and widening to the tip; closed while it flaps and fanned as
+    it glides. Swallows' and terns' is forked."""
+    ln = {"long": 11, "mid": 8.5, "short": 6, "fan": 8.5}.get(kind, 7.5) * size
+    half = (1.5 + (1.3 if kind == "fan" else 1.0) * spread) * size
+    drop = 0.6 * size
+    if re.search(r"swallow|tern|kite|frigatebird|tropicbird", slug):
+        pts = [(x, y - 1.2 * size), (x + ln * 0.6, y - half * 0.9), (x + ln, y - half + drop), (x + ln * 0.72, y + drop),
+               (x + ln, y + half + drop), (x + ln * 0.6, y + half * 0.9 + drop), (x, y + 1.4 * size)]
+    elif kind == "fan":  # a broad tail, square-ended, spreading as it glides
+        pts = [(x, y - 1.1 * size), (x + ln, y - half + drop * 0.5), (x + ln + 0.4 * size, y + drop),
+               (x + ln, y + half + drop * 1.5), (x, y + 1.3 * size)]
+    else:
+        pts = [(x, y - 1.1 * size), (x + ln * 0.55, y - half * 0.8), (x + ln, y - half + drop * 0.5),
+               (x + ln + 0.5 * size, y + drop), (x + ln, y + half + drop * 1.5), (x + ln * 0.55, y + half * 0.8 + drop),
+               (x, y + 1.3 * size)]
+    m = s.poly(pts, col, edge=True)
+    s.paint(s.m_line(x + 2, y + 0.2, x + ln - 0.5, y + drop), mix(col, "#1a1420", 0.22), within=m)
+    return m
+
+
+def _affine_warp(s: Sprite, c, to, kx, ky, front=None, beak_k=1.0):
+    """Draw from now on scaled by kx, ky about c and moved to `to`; a head's beak (x
+    left of `front`) can be scaled by beak_k on top."""
+    cx, cy = c
+    tx, ty = to
+    if front is None or beak_k == 1.0:
+        s.set_warp(lambda x, y: (tx + kx * (x - cx), ty + ky * (y - cy)))
+        return
+    root = cy + 1
+
+    def fwd(x, y):
+        kb = _smooth((front - 1 - x) / 1.5)
+        k = 1 + kb * (beak_k - 1)
+        return (tx + kx * (np.maximum(x, front) - cx) + kx * k * np.minimum(x - front, 0),
+                ty + ky * (root - cy) + ky * k * (y - root))
+    s.set_warp(fwd)
+
+
+def _landing_legs(s: Sprite, x, y, col, k):
+    """Legs swung down and forward to meet the perch as a bird lands, toes spread."""
+    reach = 2 + 4 * min(1.0, k * 1.4)
+    for dx, c in ((1.2, mix(col, "#1a1420", 0.3)), (0, col)):
+        fx, fy = x - 1.6 * min(1.0, k * 1.4) + dx, y + reach
+        s.path([(x + dx + 0.5, y), (x + dx + 1.2, y + reach * 0.5), (fx, fy)], 0.5, c, shade=False)
+        s.px([(round(fx) - 1, round(fy)), (round(fx) - 2, round(fy) - 1), (round(fx) + 1, round(fy))], c)
+
+
+def _bird_flight(s: Sprite, body, belly, head, wing, tail_col, beak, beak_col, tail, crest, eye_col, face,
+                 wing_mark, belly_mark, big, legs="#c99060"):
+    """A songbird (or any bird() bird) in flight: the body levelled out and streamlined,
+    the head pushed forward in line with it, the tail streaming behind, and two jointed
+    wings beating (tools/birdwing.py) in the bird's own way: quick bursts and closed-wing
+    bounds for small birds, steady beats for pigeons and crows, flap and glide for
+    swallows and starlings. The body and the head are each drawn through their own
+    scaling of the perched drawing's coordinates, so every species' markings land on
+    them."""
+    from birdwing import Colors, draw_wing, fit_size, flight_kind, wing_state
+    slug = getattr(s, "slug", "")
+    wspec, beat = flight_kind(slug)
+    st = wing_state(s.t, beat, diving=getattr(s, "diving", False), landing=getattr(s, "landing", None))
+    if round(st["bob"]):  # the body rises on the downstroke
+        s.raise_by(-round(st["bob"]))
+    cy = 19 if not big else 18
+    head_k, head_x, head_dy, body_kx, body_ky, tilt, beak_k, neck_r = _bird_form(slug)
+    bx, by = 17.5, 14.0
+    kx, ky = body_kx * 1.12, body_ky * 0.8
+    rb = 8.5 if big else 8
+    front = bx - rb * kx
+    rear = bx + rb * kx
+    hk = head_k * 0.84
+    hx, hy = front + 6.2 * hk * 0.4, by - 1.9
+    ry = 7 * ky
+    marks = _wing_marks(slug, wing, wing_mark)
+    cols = Colors(coverts=wing, flight=mix(wing, "#1a1420", 0.1), tip=mix(wing, "#1a1420", 0.28),
+                  lining=mix(belly, wing, 0.25), under=mix(mix(wing, "#ffffff", 0.4), "#a0a4b0", 0.3),
+                  **{k: v for k, v in marks.items() if k in ("bar", "bar2", "patch", "tips", "trailing")})
+    shoulder = (bx - 2.8, by - ry * 0.55)
+    size = fit_size(wspec, beat, shoulder[1] + 1.5)
+    draw_wing(s, (shoulder[0] + 0.6, shoulder[1] - 0.3, -1.8), wspec, beat, cols, far=True, st=st, size=size)
+    tail_x = rear - 3.2
+    _flight_tail(s, tail_x, by + 0.2, tail, tail_col, st["tail"], slug)
+    # the rump and undertail, tapering from the body into the tail
+    s.poly([(bx + 2, by - ry * 0.9), (tail_x + 2.2, by - 1.3), (tail_x + 2.2, by + 1.6), (bx + 2, by + ry * 0.95)], body)
+    _affine_warp(s, (16.5, cy + 1), (bx, by), kx, ky)
+    s.ellipse(16.5, cy + 1, rb, 7, body)
+    s.ellipse(13.5, cy + 3, 5.5, 4.5, belly)
+    if belly_mark:
+        belly_mark(s, s.last)
+    with s.unwarped():  # the throat, joining head and breast
+        s.ellipse(front + 2.2, by - 0.3, 2.6, ry * 0.8, mix(head, belly, 0.35))
+    _affine_warp(s, (11, 11), (hx, hy), hk, hk, front=7, beak_k=beak_k)
+    if crest == "jay":
+        s.poly([(12, 6), (17, -1), (17, 7)], head)
+    elif crest == "quail":
+        s.path([(11, 6), (10, 2), (8, 1)], (0.9, 1.2), BLACK, shade=False)
+    elif crest == "roadrunner":
+        s.poly([(12, 6), (19, 1), (17, 7)], head)
+    s.ellipse(11, 11, 6.5, 6, head, edge=True)
+    if face:
+        face(s)
+    _beak(s, "dove" if re.search(r"dove|pigeon", slug) else beak, beak_col)
+    s.eye(8, 10, color=eye_col, shine=None)
+    if getattr(s, "landing", None) is not None:
+        with s.unwarped():
+            _landing_legs(s, bx - 1.5, by + ry * 0.7, legs, s.landing)
+    draw_wing(s, (shoulder[0], shoulder[1], 1.8), wspec, beat, cols, st=st, size=size)
+    # a species' own touches drawn after this (eye rings, face marks) still land on the
+    # head; anything meant for the standing bird's legs or body is left off
+    s.seal(s.m_ellipse(11, 11, 7.5, 7) | s.m_poly([(-3, 7), (6, 7), (6, 16), (-3, 16)]))
 
 
 def _lerp_pts(a, b, k):
@@ -1018,25 +1229,42 @@ def _far_wing(s: Sprite, x, y, w, col, size=1.0):
 
 
 def flying_waterbird(s: Sprite, *, body, belly, wing, tip=None, tail, neck, neck_col, head, head_col,
-                     head_r=(3.2, 2.8), cy=18, body_r=(8.5, 4), legs=None, size=1.0, coverts=None):
+                     head_r=(3.2, 2.8), cy=18, body_r=(8.5, 4), legs=None, size=1.0, coverts=None, colors=None,
+                     tail_kind="mid", before_wing=None):
     """A big bird in flight, side on and level: the far wing, the body (belly paler
     below), the tail, the neck (a list of points, thick to thin) and the head at
-    `head`, then the near wing, with legs trailing behind for herons. The body rides
-    up a touch on each downstroke. The caller adds the bill, eye and markings at the
-    head and should call s.shift(0, bob) last (the bob is returned)."""
-    w = s.wave()
+    `head`, then the near wing, with legs trailing behind for herons. The wings are
+    jointed and beat (or glide) in this kind of bird's own way (tools/birdwing.py).
+    The whole bird is drawn a few units higher than the coordinates given, so the
+    wings have room to sweep down; the caller adds the bill, eye and markings at the
+    head in the same coordinates and should call s.shift(0, bob) last (bob is
+    returned)."""
+    from birdwing import Colors, draw_wing, fit_size, flight_kind, wing_state
+    slug = getattr(s, "slug", "")
+    wspec, beat = flight_kind(slug)
+    st = wing_state(s.t, beat, diving=getattr(s, "diving", False), landing=getattr(s, "landing", None))
+    lift = cy - 14.5
+    if lift:
+        s.raise_by(lift)
     bx, by = 18, cy
-    _big_wing(s, bx - 4, by - 1.5, w, wing, size=size, far=True)
+    cols = colors or Colors(coverts=coverts or wing, flight=wing, tip=tip or mix(wing, "#1a1420", 0.25),
+                            lining=mix(belly, wing, 0.2))
+    shoulder = (bx - 4.5, by - body_r[1] * 0.55)
+    k = fit_size(wspec, beat, shoulder[1] - lift + 1.2) * min(1.15, 0.85 + 0.15 * size)
+    draw_wing(s, (shoulder[0] + 0.8, shoulder[1] - 0.2, -2.2), wspec, beat, cols, far=True, st=st, size=k)
     if legs:
         s.line(bx + body_r[0] - 2, by + 1, 31, by + 1.5, legs)
         s.line(bx + body_r[0] - 2, by + 2, 31, by + 3, legs)
-    s.poly([(bx + body_r[0] - 2, by - 1.5), (31, by - 1), (31, by + 1.5), (bx + body_r[0] - 2, by + 2)], tail)
+        s.px([(32, by + 1.5), (32, by + 3)], legs)
+    _flight_tail(s, bx + body_r[0] - 3, by - 0.3, tail_kind, tail, st["tail"], slug, size=0.85)
     b = s.ellipse(bx, by, body_r[0], body_r[1], body)
     s.fill(s.m_ellipse(bx - 1.5, by + body_r[1] * 0.7, body_r[0] * 0.75, body_r[1] * 0.45) & b, belly, shade=False)
     s.path(neck, (2.4 * size, 1.8 * size), neck_col)
     hm = s.ellipse(head[0], head[1], head_r[0], head_r[1], head_col, edge=True)
-    _big_wing(s, bx - 4, by - 1.5, w, wing, size=size, tip=tip, coverts=coverts)
-    return hm, round(0.6 * w)
+    if before_wing:  # markings on the body and head that the near wing passes over
+        before_wing(s, hm)
+    draw_wing(s, (shoulder[0], shoulder[1], 2.2), wspec, beat, cols, st=st, size=k)
+    return hm, round(st["bob"])
 
 
 def _ripples(s: Sprite, k, pts=((2, 29), (4, 30), (27, 30), (29, 29), (8, 30), (22, 30))):
@@ -1158,23 +1386,20 @@ def _owl_front(s: Sprite, body, face, tufts, eye_col, belly, beak, disk_edge, ba
 
 def _owl_flying(s: Sprite, body, face, belly, tufts, eye_col, beak, bars):
     """An owl flying left in profile: a round head with the facial disk at the front,
-    broad rounded wings beating slowly, legs tucked under a short tail."""
-    w = s.wave()
+    big broad rounded wings with soft fingered tips (tools/birdwing.py) beating slowly
+    and then gliding silently, pale and barred beneath with a dark wrist mark, legs
+    tucked under a short tail."""
+    from birdwing import Colors, draw_wing, fit_size, flight_kind, wing_state
+    wspec, beat = flight_kind("owl")
+    st = wing_state(s.t, beat, landing=getattr(s, "landing", None))
     wc = mix(body, "#000000", 0.15)
-    y = 18  # the shoulder
-
-    def wing(dx, col):
-        up = [(13, y), (13.5, y - 6), (16, y - 11), (20, y - 13.5), (23.5, y - 12), (24.5, y - 6), (23, y)]
-        down = [(13, y + 1), (14, y + 6), (17, y + 10), (21, y + 10.5), (23, y + 7), (23, y + 4), (23, y + 1)]
-        level = [(12, y - 1), (17, y - 3.5), (25, y - 4), (30, y - 2), (26, y + 1), (22, y + 1.6), (18, y + 2)]
-        pts = _lerp_pts(level, up if w >= 0 else down, abs(w) ** 1.3)  # blended through the beat
-        m = s.poly([(x + dx, yy) for x, yy in pts], col, edge=not dx)
-        # the pale flight-feather tips
-        s.paint(m & ~s.m_poly([(x + dx - 0.6 * (x > 18), yy + (0.8 if yy < y else -0.8)) for x, yy in pts]),
-                mix(col, WHITE, 0.3), within=m)
-    if w > -0.5:
-        wing(2.5, mix(wc, "#1a1420", 0.3))
-    s.poly([(23, 17), (29.5, 17.5), (29, 21), (23, 21)], wc)
+    s.raise_by(4)
+    cols = Colors(coverts=body, flight=wc, tip=mix(wc, "#1a1420", 0.15), lining=belly,
+                  under=mix(belly, "#d8d0c4", 0.4), under_tip=mix(belly, wc, 0.45), carpal=mix(wc, "#1a1420", 0.35),
+                  bars_under=mix(wc, belly, 0.35), bar=mix(body, "#ffffff", 0.3))
+    k = fit_size(wspec, beat, 14.5)
+    draw_wing(s, (15.2, 17.6, -2.4), wspec, beat, cols, far=True, st=st, size=k)
+    _flight_tail(s, 22.5, 19, "short", wc, st["tail"], "owl")
     m = s.ellipse(17.5, 19.5, 7.5, 4.3, body, rot=-4)
     s.fill(s.m_ellipse(16.5, 21.5, 6, 2.2) & m, belly, shade=False)
     if bars:
@@ -1193,7 +1418,9 @@ def _owl_flying(s: Sprite, body, face, belly, tufts, eye_col, beak, bars):
         s.px([(ex, ey), (ex, ey + 1)], EYE)
     s.eye_box(ex - 1, ey - 1, ex + 2, ey + 2)
     s.poly([(6.2, 17), (4.6, 18.4), (6.2, 19.6)], beak, shade=False)
-    wing(0, wc)
+    draw_wing(s, (14.6, 17.8, 2.4), wspec, beat, cols, st=st, size=k)
+    s.shift(0, round(st["bob"]))
+    s.seal()
 
 
 def wader(s: Sprite, body, *, neck=None, head=None, beak="#e8b830", legs="#3d3532", plume=None,
@@ -1226,6 +1453,7 @@ def wader(s: Sprite, body, *, neck=None, head=None, beak="#e8b830", legs="#3d353
             s.poly([(hx - 2, hy - 1), (hx - 10, hy + 0.5), (hx - 2, hy + 1)], beak)
         s.eye(round(hx - 1.5), round(hy - 1))
         s.shift(0, bob)
+        s.seal()
         return
     if flying:  # legs trail out behind
         _far_wing(s, 22, 15, w, mix(wc, "#1a1420", 0.3))
@@ -1263,18 +1491,24 @@ def duck(s: Sprite, body, chest, head, *, bill="#f0c22a", ring=WHITE, speculum="
     flying = s.act == "fly"
     w = s.wave()
     if flying:  # neck stretched out in front, fast stiff wingbeats
+        from birdwing import Colors
         wc = mix(body, "#000000", 0.12)
+
+        def chest_ring(s, hm):
+            s.ellipse(11, 19.5, 3.4, 3, chest)
+            if ring:
+                s.paint(s.m_ellipse(9, 18.4, 1, 1.8), ring)
+        cols = Colors(coverts=wc, flight=mix(wc, "#3a3440", 0.15), tip=mix(wc, "#1a1420", 0.3),
+                      lining=mix(body, "#ffffff", 0.45), speculum=speculum,
+                      trailing=WHITE if speculum and speculum != wc else None)
         hm, bob = flying_waterbird(s, body=body, belly=mix(body, "#ffffff", 0.15), wing=wc, tail=tail_col or body,
                                    neck=[(11, 18.5), (7.5, 17)], neck_col=head, head=(5.5, 16), head_col=head,
-                                   head_r=(3.2, 2.7), cy=19, body_r=(8, 4), size=0.95)
-        s.ellipse(11, 19.5, 3.4, 3, chest)
-        if ring:
-            s.paint(s.m_ellipse(9, 18.4, 1, 1.8), ring)
+                                   head_r=(3.2, 2.7), cy=19, body_r=(8, 4), size=0.95, colors=cols,
+                                   before_wing=chest_ring, tail_kind="short")
         s.ellipse(1.5, 17, 2.4, 1.2, bill)
         s.eye(4, 15, shine=None)
-        pts = _big_wing_pts(14, 17.5, w, 0.95)
-        s.paint(s.m_path(pts[7:10], 0.8), speculum, within=s.last)  # the speculum on the trailing edge
         s.shift(0, bob)
+        s.seal()
         return
     _slim(s, (10, 11), (9.5, 13.5), 0.74, (17, 23), (17.5, 24), 1.04, 0.82, 29.5, (15, 17))
     if flying:
@@ -1325,6 +1559,7 @@ def goose(s: Sprite):
         s.ellipse(-0.8, 15.4, 1.6, 0.9, BLACK)
         s.px([(1, 14)], "#000000")
         s.shift(0, bob)
+        s.seal()
         return
     _slim(s, (9.5, 7), (9.5, 8.5), 0.8, (19, 23), (19, 24), 1.04, 0.84, 29.5, (13, 15))
     if flying:
@@ -1347,21 +1582,52 @@ def goose(s: Sprite):
     s.px([(8, 5)], "#9a9aa8")
 
 
+def hummer_wing(s: Sprite, far=False, col="#5a5a60"):
+    """A hummingbird's wing. Hovering, the wings sweep forward and back about forty
+    times a second, so each frame shows the blade where it is now with a pale blur
+    fanning out behind it (four beats a loop, each its own drawn stroke). Perched, the
+    wing lies folded along the back, its long primaries reaching the tail."""
+    sx, sy = 18.5, 13.5
+    if s.act != "fly":
+        if far:
+            return
+        s.poly([(15, 14), (19, 13), (26, 19.5), (24.5, 21), (17, 18)], mix(col, "#1a1420", 0.1), edge=True)
+        return
+    p = (s.t * 4) % 1.0
+    k = 0.5 - 0.5 * math.cos(2 * math.pi * p)
+    ang = -118 + 122 * k                      # up and forward ... back and level
+    prev = -118 + 122 * (0.5 - 0.5 * math.cos(2 * math.pi * ((p - 0.12) % 1.0)))
+    ln = 11.0 if not far else 9.5
+    dx, dy = (1.6, -0.8) if far else (0.0, 0.0)
+
+    def blade(a, w=1.1):
+        r = math.radians(a)
+        c, s_ = math.cos(r), math.sin(r)
+        nx, ny = -s_, c
+        tip = (sx + dx + c * ln, sy + dy + s_ * ln)
+        mid = (sx + dx + c * ln * 0.55, sy + dy + s_ * ln * 0.55)
+        return [(sx + dx - nx * w * 0.6, sy + dy - ny * w * 0.6), (mid[0] - nx * w * 1.2, mid[1] - ny * w * 1.2), tip,
+                (mid[0] + nx * w, mid[1] + ny * w), (sx + dx + nx * w * 0.6, sy + dy + ny * w * 0.6)]
+    # the blur: a pale fan swept between where the wing was and where it is
+    lo, hi = sorted((prev, ang))
+    fan = [(sx + dx, sy + dy)] + [(sx + dx + math.cos(math.radians(a)) * ln * 0.95, sy + dy + math.sin(math.radians(a)) * ln * 0.95)
+                                  for a in np.linspace(lo, hi, 6)]
+    if hi - lo > 4 and not far:
+        s.poly(fan, "#d6e9f4", shade=False)
+    s.poly(blade(ang), mix(col, "#1a1420", 0.25) if far else col, shade=False, edge=not far)
+    if not far:
+        r = math.radians(ang)
+        s.paint(s.m_line(sx, sy, sx + math.cos(r) * ln * 0.8, sy + math.sin(r) * ln * 0.8), mix(col, "#ffffff", 0.3))
+
+
 def hummingbird(s: Sprite, *, head="#d93a8a", crown="#6aa56e", throat=None):
     s.can("fly")
-    down = s.act == "fly" and s.frame % 2 == 1  # a blur of wingbeats
     _slim(s, (12, 11), (11.5, 12), 0.78, (16, 18), (16.5, 18.5), 1.0, 0.9, 29, (15, 15))
-    if down:
-        s.ellipse(23, 17, 7, 3, "#cfe8f7", rot=20, shade=False)
-    else:
-        s.ellipse(22, 9, 7, 3, "#cfe8f7", rot=-35, shade=False)
+    with s.unwarped():
+        hummer_wing(s, far=True)
     s.poly([(18, 20), (24, 28), (20, 29)], "#4d7a52")
     s.ellipse(16, 18, 5.5, 6.5, "#6aa56e", rot=20)
     s.ellipse(14, 20, 3.5, 4, "#c9d6c0")
-    if down:
-        s.ellipse(20, 18, 6, 2.6, "#e6f4fc", rot=35, shade=False)
-    else:
-        s.ellipse(19, 12, 6, 2.6, "#e6f4fc", rot=-55, shade=False)
     s.ellipse(12, 11, 5.2, 5, head, edge=True)
     s.paint(s.m_ellipse(13.5, 8.3, 4, 2.3), crown, within=s.last)
     if throat:
@@ -1370,6 +1636,8 @@ def hummingbird(s: Sprite, *, head="#d93a8a", crown="#6aa56e", throat=None):
     s.line(7, 11, 1, 13, "#2b2630")
     s.eye(10, 9)
     s.px([(10, 9)], WHITE)
+    with s.unwarped():
+        hummer_wing(s)
 
 
 def pelican(s: Sprite, *, body="#6f6a6c", belly="#8a8486", wing="#b9b4ac", tip="#3f3b3d", neck="#5a3a2e",
@@ -1392,6 +1660,7 @@ def pelican(s: Sprite, *, body="#6f6a6c", belly="#8a8486", wing="#b9b4ac", tip="
             s.px([(4, 13)], "#f0d080")
         s.eye(9, 13)
         s.shift(0, bob)
+        s.seal()
         return
     s.poly([(25, 17), (31, 15), (30, 21)], tail)
     _bird_legs(s, (15, 19), 24, 28, legs, w if s.act == "walk" else 0, toes=(-2, -1, 0), toe_dy=1)
@@ -1429,18 +1698,32 @@ def gull(s: Sprite, mantle, *, tips=BLACK, spots=True, bill="#f0d040", legs="#f0
         s.bend(50 * s.cyc(0.4, 1, 0.4, 1), 17, 24.5, 4)
     w = s.wave()
     if s.act == "fly":
-        _flight_wing(s, 16, w, mix(mantle, "#1a1420", 0.3), dx=2.5, tip=mix(tips, "#1a1420", 0.2))
-        s.poly([(23, 16.5), (30, 16.5), (30.5, 19), (23, 19.5)], WHITE)  # tail
+        from birdwing import Colors, draw_wing, fit_size, flight_kind, wing_state
+        wspec, beat = flight_kind(getattr(s, "slug", "") or "gull")
+        st = wing_state(s.t, beat, diving=getattr(s, "diving", False), landing=getattr(s, "landing", None))
+        s.raise_by(3.5)
+        cols = Colors(coverts=mantle, flight=mantle, tip=mantle, tips=tips if tips != WHITE else None,
+                      mirrors=WHITE if spots and tips != WHITE else None, trailing=WHITE if mantle != WHITE else None,
+                      lining=WHITE, under=mix(mantle, WHITE, 0.6), under_tip=mix(tips, WHITE, 0.25))
+        k = fit_size(wspec, beat, 12.5)
+        draw_wing(s, (14.3, 16.2, -2), wspec, beat, cols, far=True, st=st, size=k)
+        _flight_tail(s, 22, 17.8, "mid", WHITE, st["tail"], getattr(s, "slug", ""), size=0.8)
         s.ellipse(17, 18, 8, 3.2, WHITE)
+        s.paint(s.m_ellipse(18, 16, 6.5, 1.6), mix(mantle, WHITE, 0.25))  # the mantle, along the back
         s.path([(12, 17.5), (9, 16)], 2.2, head)
         hm = s.ellipse(7.5, 15.5, 3.1, 2.6, head, edge=True)
         if hood:
             s.paint(s.m_ellipse(6.5, 15, 3.2, 2.6), hood, within=hm)
         bx, by = 4.6, 15.4
         s.poly([(bx, by - 0.6), (bx - (3 if thin_bill else 3.6), by + 0.2), (bx, by + 1)], bill)
+        if bill_spot:
+            s.px([(round(bx - 2.5), round(by + 0.6))], bill_spot)
         s.eye(6, 14, size=1, color=eye_col if not hood else EYE)
-        _flight_wing(s, 16, w, mantle, tip=tips)
-        s.shift(0, round(0.6 * w))
+        if getattr(s, "landing", None) is not None:
+            _landing_legs(s, 15, 20, legs, s.landing)
+        draw_wing(s, (13.8, 16.4, 2), wspec, beat, cols, st=st, size=k)
+        s.shift(0, round(st["bob"]))
+        s.seal()
         return
     # legs and webbed feet
     _bird_legs(s, (15.5, 19), 24, 30, legs, w if s.act == "walk" else 0, toes=(-2, -1, 0, 1))
@@ -1498,6 +1781,7 @@ def cormorant(s: Sprite, body="#26262c", *, wing=None, scale=None, throat=None, 
             s.px([(2, 16)], face)
         s.px([(2, 16)], eye_col)
         s.shift(0, bob)
+        s.seal()
         return
     if s.act == "swim":
         # low in the water: back awash, neck up, bill tilted up a little
@@ -1543,14 +1827,33 @@ def vulture(s: Sprite, *, head_col, body="#2f2a2e", ruff=None, wing_patch=None, 
     w = s.wave()
     wing = mix(body, "#ffffff", 0.06)
     if s.act == "fly":
-        _flight_wing(s, 16, w, mix(wing, "#1a1420", 0.3), dx=2.5)
-        s.poly([(23, 17), (30, 16.5), (30, 20), (23, 20)], body)
+        # soaring on long, broad, fingered wings held in a shallow V; turkey vultures
+        # show silvery flight feathers below, black vultures white wingtip patches, condors
+        # a white triangle under the wing
+        from birdwing import Colors, draw_wing, fit_size, flight_kind, wing_state
+        slug = getattr(s, "slug", "")
+        wspec, beat = flight_kind(slug or "vulture")
+        st = wing_state(s.t, beat, diving=getattr(s, "diving", False), landing=getattr(s, "landing", None))
+        s.raise_by(3.5)
+        black = slug == "black_vulture"
+        condor = "condor" in slug
+        cols = Colors(coverts=wing, flight=mix(wing, "#1a1420", 0.08), tip=mix(wing, "#1a1420", 0.2),
+                      lining=wing_patch if condor and wing_patch else mix(wing, "#1a1420", 0.1),
+                      under=(wing_patch if wing_patch and not condor and not black else mix(wing, "#8c8690", 0.5)
+                             if slug == "turkey_vulture" else mix(wing, "#ffffff", 0.1)),
+                      under_tip=wing_patch if black and wing_patch else None,
+                      patch=wing_patch if black and wing_patch else None,
+                      bar=wing_patch if condor and wing_patch else None)
+        if slug == "turkey_vulture":
+            cols.under = "#9a949e"
+            cols.under_tip = "#8a848e"
+        k = fit_size(wspec, beat, 12.8)
+        draw_wing(s, (14.3, 16.3, -2.2), wspec, beat, cols, far=True, st=st, size=k)
+        _flight_tail(s, 23, 18.2, "fan", body, 0.3 + 0.6 * st["tail"], slug, size=0.85)
         s.ellipse(17.5, 18.5, 8.5, 3.6, body)
-        m = _flight_wing(s, 16, w, wing)
-        if wing_patch:
-            s.paint(m & ~s.m_ellipse(17, 14, 9, 7), wing_patch, within=m)
         hx, hy = 7.5, 17
         s.path([(11, 18), (hx + 1, hy)], 1.4, head_col)
+        s.vulture_wing = (wspec, beat, cols, k, st)
     else:
         legs = "#c8b8b0"
         step = w if s.act == "walk" else 0
@@ -1576,6 +1879,12 @@ def vulture(s: Sprite, *, head_col, body="#2f2a2e", ruff=None, wing_patch=None, 
     s.px([(2, hy + 1)], mix(beak, "#000000", 0.45))  # the hook
     s.eye(7, round(hy) - 1, size=1)
     s.eye_box(7, round(hy) - 1, 7, round(hy) - 1)
+    if s.act == "fly":
+        from birdwing import draw_wing
+        wspec, beat, cols, k, st = s.vulture_wing
+        draw_wing(s, (13.8, 16.5, 2.2), wspec, beat, cols, st=st, size=k)
+        s.shift(0, round(st["bob"]))
+        s.seal()
 
 
 # How each kind of bird of prey is built: overall size, body length and depth, tail
@@ -1679,17 +1988,37 @@ def _raptor_bill(s: Sprite, x, y, k, bill, cere):
 
 def _raptor_flight(s, back, front, head, wing, tail, dark, k, wing_k, hrx, hry, bill, bill_k, cere, legs, eye_col,
                    brow, under, build):
-    """Side on, level, on broad wings: the far wing, a fanned tail, the body with its
-    paler underside, the head and bill, and the near wing with fingered primaries."""
-    s.set_warp(lambda x, y: (16 + (x - 16) * (0.6 + 0.4 * k), 18 + (y - 18) * (0.6 + 0.4 * k)))
-    w = s.wave()
-    size = 1.25 * wing_k
+    """Side on, level, on broad jointed wings (tools/birdwing.py): eagles, buzzards and
+    vultures soar on long slotted wings with spread "fingers", falcons beat fast on
+    pointed ones, accipiters flap and glide. Seen from a little above, a level wing
+    shows its top; raised, the near wing shows its paler, barred underside with the
+    dark wrist patch of a buzzard or an osprey. The tail fans out as it glides."""
+    from birdwing import Colors, draw_wing, fit_size, flight_kind, wing_state
+    slug = getattr(s, "slug", "")
+    kind = {"eagle": "eagle", "buteo": "hawk", "osprey": "osprey", "accip": "accipiter", "harrier": "harrier",
+            "kite": "kite", "falcon": "falcon"}[build]
+    wspec, beat = flight_kind(slug if re.search(r"eagle|hawk|buzzard|osprey|harrier|kite|falcon|kestrel|merlin|hobby"
+                                                r"|goshawk|sparrowhawk", slug) else kind)
+    st = wing_state(s.t, beat, diving=getattr(s, "diving", False), landing=getattr(s, "landing", None))
+    sc = 0.6 + 0.4 * k
+    s.raise_by(3.5)
+    pale = front if front != back else mix(back, "#ffffff", 0.2)
+    cols = Colors(coverts=wing, flight=mix(wing, "#1a1420", 0.06), tip=dark, lining=pale,
+                  under=mix(pale, "#c8c4c0", 0.45), under_tip=mix(dark, pale, 0.2),
+                  carpal=mix(wing, "#1a1420", 0.3) if build in ("buteo", "osprey") else None,
+                  bars_under=mix(wing, pale, 0.45) if build in ("buteo", "accip", "falcon", "osprey", "harrier") else None,
+                  leading=mix(wing, "#ffffff", 0.14))
     bx, by = 17.5, 18
-    _big_wing(s, bx - 5, by - 2, w, mix(wing, "#1a1420", 0.1), size=size, far=True)
-    s.poly([(bx + 6, by - 1.8), (31, by - 3), (31.5, by + 2.5), (bx + 6, by + 2)], tail, edge=True)  # tail, fanned
+    shoulder = (bx - 4.5 * sc, by - 2.2 * sc)
+    size = fit_size(wspec, beat, shoulder[1] - 3.5 + 1.0)
+    draw_wing(s, (shoulder[0] + 0.8, shoulder[1] - 0.2, -2.2), wspec, beat, cols, far=True, st=st, size=size)
+    s.set_warp(lambda x, y: (16 + (x - 16) * sc, 18 + (y - 18) * sc))
+    tl = {"accip": 11, "harrier": 11, "kite": 10, "falcon": 9}.get(build, 8)
+    with s.unwarped():
+        tm = _flight_tail(s, bx + 6.5 * sc, by - 0.3 * sc, "fan", tail, 0.3 + 0.7 * st["tail"], slug, size=sc * tl / 8.5)
     s.px([(bx + 4, by + 3), (bx + 5, by + 3)], legs)  # feet tucked up under the tail
-    b = s.ellipse(bx, by, 8.2, 3.4, back)
-    bm = s.m_ellipse(bx - 1.5, by + 1.6, 6.4, 2.0) & b
+    b = s.ellipse(bx + 0.5, by, 9.2, 3.6, back)
+    bm = s.m_ellipse(bx - 1, by + 1.7, 7.2, 2.1) & b
     s.fill(bm, front, shade=False)
     if under:
         under(s, bm)
@@ -1703,8 +2032,10 @@ def _raptor_flight(s, back, front, head, wing, tail, dark, k, wing_k, hrx, hry, 
     if brow:
         s.paint(s.m_line(ex - 1, ey - 1, ex + 2, ey - 1), mix(head, "#1a1420", 0.45), within=hm)
     s.eye_box(ex, ey, ex + 1, ey)
-    _big_wing(s, bx - 5, by - 2, w, wing, size=size, tip=dark, coverts=mix(wing, "#ffffff", 0.16))
-    s.shift(0, round(0.6 * w))
+    draw_wing(s, (shoulder[0], shoulder[1], 2.2), wspec, beat, cols, st=st, size=size)
+    with s.unwarped():
+        s.shift(0, round(st["bob"]))
+    s.seal()
 
 
 # --------------------------------------------------------------------------- reptiles & amphibians
