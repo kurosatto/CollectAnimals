@@ -3,7 +3,7 @@ earlier state's list: desert lizards and toads, Sky Island birds, chipmunks and
 antelope squirrels, and the bugs of the creosote flats."""
 from __future__ import annotations
 
-from archetypes import (cormorant, gull, BLACK, EYE, WHITE, back_stripes, bird, butterfly, critter, dragonfly, duck, face_stripes,
+from archetypes import (hummer_wing, cormorant, gull, BLACK, EYE, WHITE, back_stripes, bird, butterfly, critter, dragonfly, duck, face_stripes,
                         fish, flecks, frog, grasshopper, lizard, mantis, quad, snail_shell, spider_top, sprite,
                         wader)
 from pixel import mix
@@ -134,18 +134,10 @@ def _(s):
 def _hummer(s, body, belly, head, crown, throat, *, bill="#2b2630", tail=None):
     """The archetype hummingbird with its body, belly and tail colours free too."""
     s.can("fly")
-    down = s.act == "fly" and s.f % 2 == 1
-    if down:
-        s.ellipse(23, 17, 7, 3, "#cfe8f7", rot=20, shade=False)
-    else:
-        s.ellipse(22, 9, 7, 3, "#cfe8f7", rot=-35, shade=False)
+    hummer_wing(s, far=True)
     s.poly([(18, 20), (24, 28), (20, 29)], tail or mix(body, "#000000", 0.25))
     s.ellipse(16, 18, 5.5, 6.5, body, rot=20)
     s.ellipse(14, 20, 3.5, 4, belly)
-    if down:
-        s.ellipse(20, 18, 6, 2.6, "#e6f4fc", rot=35, shade=False)
-    else:
-        s.ellipse(19, 12, 6, 2.6, "#e6f4fc", rot=-55, shade=False)
     s.ellipse(12, 11, 5.2, 5, head, edge=True)
     s.paint(s.m_ellipse(13.5, 8.3, 4, 2.3), crown, within=s.last)
     if throat:
@@ -156,6 +148,7 @@ def _hummer(s, body, belly, head, crown, throat, *, bill="#2b2630", tail=None):
     s.px([(0, 13)], "#2b2630")
     s.eye(10, 9)
     s.px([(10, 9)], WHITE)
+    hummer_wing(s)
 
 
 @sprite("broad_billed_hummingbird")

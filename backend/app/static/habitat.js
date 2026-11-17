@@ -78,6 +78,8 @@ const HAB_ROLES = [
 const HAB_DEFAULT_ROLE = { bird: "fly", amphibian: "shore", marine: "swim", fish: "paddle" };
 const HAB_FLIERS = new Set(["fly", "soar", "hover", "flutter", "dive", "skim"]);
 // Big birds glide between bursts of slow wingbeats.
+// Birds land over their last HAB_LAND_D units to a perch, and take off over HAB_TAKEOFF s.
+const HAB_LAND_D = 34, HAB_TAKEOFF = .45;
 const HAB_GLIDERS = /pelican|gull|heron|egret|crane|stork|spoonbill|goose|swan|vulture|condor|eagle|osprey|hawk|ibis|(^|_)tern|skimmer/;
 // Sea birds rest and sleep on the sea stack (or the lighthouse) instead of the tree.
 const HAB_SEABIRDS = /gull|pelican|royal_tern|oystercatcher|black_skimmer|osprey|cormorant/;
@@ -674,6 +676,7 @@ function habPerchStep(a, dt) {
     if ((a.look -= dt) <= 0) { a.look = rnd(1.2, 3.5); a.dir = -a.dir; }
     if (a.rest <= 0) {  // take off
       habLeavePerch(a);
+      a.takeoff = HAB_TAKEOFF;
       a.mode = a.role === "dive" ? "fly" : null;
       a.vx = a.dir || pick(-1, 1);
       a.cy = a.role === "dive" ? habSpot(a)[1] : a.cy;
@@ -693,6 +696,7 @@ function habPerchStep(a, dt) {
 
 function habStep(a, dt, awake) {
   a.phase += dt;
+  if (a.takeoff > 0) a.takeoff -= dt;
   habWxReact(a, dt, awake);
   habTimers(a, dt, awake);
   if (habDecorStep(a, dt, awake)) return;
@@ -999,7 +1003,15 @@ function habAnim(a, awake, roost) {
   }
   if (roost || habDecorAnim(a, awake)) return still;  // sheltering from the rain, or perched on a decoration
   if (a.mode === "perched") return still;
-  if (a.mode === "toPerch") return has("fly") ? ["fly", cyc(a.phase * 9 / (2 * Math.PI) * 4)] : still;
+  if (a.mode === "toPerch") {
+    // the last stretch in to the perch: braking, nose up, feet reaching out (drawn "land" row)
+    const sp = a.perch !== undefined && habPerches(hab.L, habState())[a.perch];
+    const d = sp ? Math.hypot(sp[0] - a.x, sp[1] - a.y) : 1e9;
+    if (d < HAB_LAND_D && has("land")) return ["land", Math.min(habNF() - 1, Math.floor((1 - d / HAB_LAND_D) * habNF()))];
+    return has("fly") ? ["fly", cyc(a.phase * 9 / (2 * Math.PI) * 4)] : still;
+  }
+  // just off the perch: the landing played backwards, wings sweeping down and back
+  if (a.takeoff > 0 && has("land")) return ["land", Math.min(habNF() - 1, Math.floor(a.takeoff / HAB_TAKEOFF * habNF() * .8))];
   switch (a.role) {
     case "walk": case "shore": case "wade": case "beach": case "hop": {
       if (a.peck > 0 || (a.drinking && a.s.category === "bird")) return has("eat") ? ["eat", cyc(a.phase * 2.5)] : still;

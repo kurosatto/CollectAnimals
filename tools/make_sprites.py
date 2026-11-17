@@ -1043,6 +1043,18 @@ def _sad_pose(slug, f, acts):
     return s
 
 
+_WINGED: dict = {}
+
+
+def _has_wings(slug):
+    """Whether this animal flies on the jointed bird wings (tools/birdwing.py)."""
+    if slug not in _WINGED:
+        s = Sprite("fly", 0)
+        S[slug](s)
+        _WINGED[slug] = bool(getattr(s, "has_wings", False))
+    return _WINGED[slug]
+
+
 def _made_pose(slug, act, f, acts):
     """A Sprite set up to draw a generated pose, or None if this animal has none."""
     if act == "dive" and LEAPERS.search(slug) and "swim" in acts:
@@ -1061,6 +1073,14 @@ def _made_pose(slug, act, f, acts):
         return s
     if act == "sad":
         return _sad_pose(slug, f, acts)
+    if act == "land" and "fly" in acts and _has_wings(slug):
+        # coming in to land (the habitat plays it backwards for a take-off): braking
+        # beats with the body swinging nose up, wings spread wide and forward, tail fanned
+        k = f / (FRAMES - 1)
+        s = Sprite("fly", f)
+        s.landing = k
+        s.pitch(-(8 + 22 * k * k), 17, 15)
+        return s
     if act == "swim" and JELLIES.search(slug) and "swim" not in acts:
         w = math.sin(2 * math.pi * f / FRAMES)  # the bell squeezes and relaxes
         s = Sprite("idle", 0)

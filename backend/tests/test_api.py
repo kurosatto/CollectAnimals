@@ -654,7 +654,7 @@ def test_sprites(client):
 def test_sprite_animations(client):
     idx = client.get("/sprites/anim/index.json").json()
     assert idx["rows"] == ["idle", "walk", "fly", "swim", "sleep", "sit", "look", "back", "eat", "dive", "hide",
-                           "run", "groom", "sad"] and idx["frames"] == 16
+                           "run", "groom", "sad", "land"] and idx["frames"] == 16
     assert idx["size"] == 40 and 0 < idx["blink"] < 16  # 1:1 pixel frames; idle has a blink frame
     assert {"walk", "sit", "look", "back", "eat"} <= set(idx["acts"]["western_gray_squirrel"])
     assert {"walk", "swim", "sit", "look", "back"} <= set(idx["acts"]["harbor_seal"])  # sit = banana pose
@@ -671,6 +671,9 @@ def test_sprite_animations(client):
     assert "groom" in idx["acts"]["mallard"] and "groom" in idx["acts"]["american_bullfrog"]
     # every animal has the sad pose a lost minigame plays
     assert all("sad" in idx["acts"][s] for s in ("coyote", "american_robin", "bluegill", "ochre_sea_star", "monarch"))
+    # birds on jointed wings come in to land (played backwards to take off)
+    assert all("land" in idx["acts"][s] for s in ("american_robin", "laughing_gull", "brown_pelican", "red_tailed_hawk"))
+    assert "land" not in idx["acts"]["coyote"]
     r = client.get("/sprites/anim/mule_deer.png")
     assert r.status_code == 200 and r.headers["content-type"] == "image/png"
     assert client.get("/sprites/anim/nope.png").status_code == 404
