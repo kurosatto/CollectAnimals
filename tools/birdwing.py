@@ -37,7 +37,13 @@ from dataclasses import dataclass, field, replace
 
 from pixel import Sprite, mix
 
-VIEW_DEG = 36.0
+import os as _os
+VIEW_DEG = float(_os.environ.get("BW_VIEW", "14"))
+CHORD_K = float(_os.environ.get("BW_CHORD", "1.6"))
+SWING_K = float(_os.environ.get("BW_SWING", "0.4"))
+OUT_ADD = float(_os.environ.get("BW_OUT", "-14"))
+BOT_K = float(_os.environ.get("BW_BOT", "0.75"))
+SWEEP_K = float(_os.environ.get("BW_SWEEP", "1"))
 _CE, _SE = math.cos(math.radians(VIEW_DEG)), math.sin(math.radians(VIEW_DEG))
 # Light from the upper left and in front (x, y down, z toward you).
 _L = (-0.35, -0.8, 0.48)
@@ -147,13 +153,14 @@ def wing_state(t: float, beat: Beat, diving=False, landing=None):
     # the stroke runs down and forward, then up and back: at the top the tips point
     # back over the tail, at the bottom forward under the head
     mid = (beat.top + beat.bottom) / 2
-    lam = -beat.swing * (phi - mid) / max(1.0, (beat.top - beat.bottom) / 2)
+    lam = -SWING_K * beat.swing * (phi - mid) / max(1.0, (beat.top - beat.bottom) / 2)
     return dict(phi=phi, phih=phih, fold=fold, spread=spread, bob=bob, mode="beat", tail=0.3, lam=lam)
 
 
 def _stroke(u, beat):
     """Arm angle, wrist fold, primary spread and body bob at beat time u (0 = top)."""
     D = beat.down
+    beat = replace(beat, bottom=beat.bottom * BOT_K)
     if u < D:
         q = u / D
         phi = beat.top + (beat.bottom - beat.top) * _ease(q)
@@ -183,7 +190,7 @@ def _span_vec(phi, far, lam=0.0):
     return (-math.sin(l), -math.sin(p) * c, (-1 if far else 1) * math.cos(p) * c)
 
 
-YAW = float(__import__("os").environ.get("BW_YAW", "-0.38"))  # seen a little from the front: the near wing reaches forward
+YAW = float(__import__("os").environ.get("BW_YAW", "-0.1"))  # seen a little from the front: the near wing reaches forward
 
 
 def _project(p):
@@ -229,13 +236,13 @@ class _WingGeom:
         spread = st["spread"]
         self.L, self.f, self.wing, self.spread = L, f, wing, spread
         a_len = wing.arm * L * (1 - 0.4 * f)
-        alpha = wing.sweep + 50 * f
+        alpha = wing.sweep * SWEEP_K + 50 * f
         self.wrist = _rot((a_len, 0.0), alpha)
         beta = alpha + wing.hand_sweep + (102 - wing.hand_sweep - alpha) * min(1.0, f ** 1.1)
         self.hand_len = (1 - wing.arm) * L * 0.4
         hd = _rot((1.0, 0.0), beta)
         self.hand_end = (self.wrist[0] + hd[0] * self.hand_len, self.wrist[1] + hd[1] * self.hand_len)
-        chord = wing.chord * L * (1 - 0.3 * f)
+        chord = wing.chord * CHORD_K * L * (1 - 0.3 * f)
         n = wing.secs
         self.secs = []  # (base, tip) inner (at the body) to outer (at the wrist)
         for i in range(n + 1):
@@ -253,7 +260,7 @@ class _WingGeom:
             base = (self.wrist[0] + hd[0] * self.hand_len * k, self.wrist[1] + hd[1] * self.hand_len * k)
             fk = max(0.0, (i - (n - 1 - fing)) / max(1, fing)) if fing else 0.0  # 0..1 over the fingers
             if wing.tip == "pointed":
-                ln, out = reach * (0.5 + 0.55 * k ** 1.3), 8
+                ln, out = reach * (0.62 + 0.43 * k ** 1.3), 8
             elif wing.tip == "sickle":
                 ln, out = reach * (0.45 + 0.62 * k ** 1.15), 20
             elif wing.tip == "slotted":
@@ -262,7 +269,7 @@ class _WingGeom:
                 ln, out = reach * (0.66 + 0.36 * math.sin(math.pi * (0.2 + 0.62 * k))), 2
             ln *= (1 - 0.3 * f)
             inner = 86 - 8 * k
-            ang_spread = alpha + inner + (beta - alpha + out - inner) * k ** 0.85
+            ang_spread = alpha + inner + (beta - alpha + out + OUT_ADD - inner) * k ** 0.85
             ang_fold = beta + 3 - 3 * k
             ang = ang_fold + (ang_spread - ang_fold) * max(0.0, spread - 0.6 * f)
             d = _rot((1.0, 0.0), ang)
@@ -497,7 +504,7 @@ SWALLOW = Beat(top=64, bottom=-40, fold_up=0.7, lag=14, spread_up=0.3, layout=((
                offset=0.32, bob=0.6, glide_fold=0.25, glide_phi=2)
 CROW = Beat(top=58, bottom=-46, fold_up=0.38, lag=18, spread_up=0.35, layout=(("beat", 8), ("beat", 8)), offset=0.32,
             bob=0.8)
-GULL = Beat(top=52, bottom=-38, hand_trail=4, fold_up=0.3, lag=18, spread_up=0.4, layout=(("beat", 16),), offset=0.32, bob=0.9,
+GULL = Beat(top=46, bottom=-36, hand_trail=0, fold_up=0.08, lag=18, spread_up=0.4, layout=(("beat", 16),), offset=0.32, bob=0.9,
             glide_phi=6, glide_fold=0.22)
 WOODPECKER = Beat(top=70, bottom=-50, fold_up=0.9, lag=18, spread_up=0.25, layout=(("beat", 5), ("beat", 5), ("bound", 6)),
                   offset=0.08, bob=1.4)

@@ -1023,7 +1023,10 @@ def _flight_tail(s: Sprite, x, y, kind, col, spread, slug, size=1.0):
     half = (1.5 + (1.3 if kind == "fan" else 1.0) * spread) * size
     drop = 0.6 * size
     if re.search(r"swallow|tern|kite|frigatebird|tropicbird", slug):
-        pts = [(x, y - 1.2 * size), (x + ln * 0.6, y - half * 0.9), (x + ln, y - half + drop), (x + ln * 0.72, y + drop),
+        if re.search(r"barn_swallow|tern", slug):  # long outer streamers
+            ln = max(ln, 10 * size)
+        nk = 0.5 if ln >= 10 * size else 0.72
+        pts = [(x, y - 1.2 * size), (x + ln * 0.6, y - half * 0.9), (x + ln, y - half + drop), (x + ln * nk, y + drop),
                (x + ln, y + half + drop), (x + ln * 0.6, y + half * 0.9 + drop), (x, y + 1.4 * size)]
     elif kind == "fan":  # a broad tail, square-ended, spreading as it glides
         pts = [(x, y - 1.1 * size), (x + ln, y - half + drop * 0.5), (x + ln + 0.4 * size, y + drop),
@@ -1077,6 +1080,11 @@ def _bird_flight(s: Sprite, body, belly, head, wing, tail_col, beak, beak_col, t
     slug = getattr(s, "slug", "")
     wspec, beat = flight_kind(slug)
     st = wing_state(s.t, beat, diving=getattr(s, "diving", False), landing=getattr(s, "landing", None))
+    # anything a species drew before calling bird() belongs to the perched pose (a barn
+    # swallow's tail streamers hung under the flying bird): start from a clean canvas
+    s.col[:] = 0
+    s.reg[:] = 0
+    s.eye_px[:] = False
     if round(st["bob"]):  # the body rises on the downstroke
         s.raise_by(-round(st["bob"]))
     cy = 19 if not big else 18
