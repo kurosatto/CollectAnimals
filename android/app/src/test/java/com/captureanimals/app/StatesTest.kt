@@ -73,6 +73,11 @@ class StatesTest {
         assertEquals(listOf("CA", "NC", "OR", "SC"), StateList.alphabetical(states).map { it.code })
         // The state screen: only unlocked states, in states.json order.
         assertEquals(listOf("NC", "OR"), StateList.tiles(states, setOf("OR", "NC")).map { it.code })
+        // European countries come after the US states, each group A to Z.
+        val eu = listOf(StateInfo("DEU", "Germany", emptyList(), region = "europe") { error("not needed") },
+            StateInfo("AUT", "Austria", emptyList(), region = "europe") { error("not needed") })
+        assertEquals(listOf("CA", "NC", "OR", "SC", "AUT", "DEU"), StateList.alphabetical(eu + states).map { it.code })
+        assertEquals("country", eu[0].word)
     }
 
     @Test

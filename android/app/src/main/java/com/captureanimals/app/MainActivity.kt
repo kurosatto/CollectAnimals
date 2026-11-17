@@ -444,7 +444,7 @@ fun CatchScreen(state: UiState, animals: List<HabitatAnimal>, onCapture: (Uri, P
                 // A photo that unlocked a state offers to make it the main one.
                 makeMain = r.unlockedState?.takeIf { it != state.mainState() }
                     ?.let { code -> state.states.firstOrNull { it.code == code } }
-                    ?.let { st -> st.name to { onMakeMain(st.code) } },
+                    ?.let { st -> "${st.name} my main ${st.word}" to { onMakeMain(st.code) } },
                 changeState = if (r.canChangeState && state.states.size > 1) state.states to onChangeState else null,
                 naming = naming, sharing = state.account?.shareTrainingPhotos == true, signedIn = state.account != null)
         }
@@ -477,14 +477,14 @@ fun ResultCard(r: CaptureResult, onDismiss: () -> Unit, onPick: (String?) -> Uni
                 RarityTag(r.species.rarity)
             }
             Text(r.message, style = MaterialTheme.typography.bodyLarge)
-            makeMain?.let { (name, go) -> OutlinedButton(onClick = go) { Text("★ Make $name my main state") } }
+            makeMain?.let { (name, go) -> OutlinedButton(onClick = go) { Text("★ Make $name") } }
             changeState?.let { (states, go) ->
                 // No place in a game state (no GPS in the photo, or taken elsewhere): say where it was taken.
                 var picking by remember { mutableStateOf(false) }
-                OutlinedButton(onClick = { picking = true }) { IconText("pin", "Taken in another state?") }
+                OutlinedButton(onClick = { picking = true }) { IconText("pin", "Taken somewhere else?") }
                 if (picking) StateListDialog(states, "Where was this photo taken?",
                     "The photo has no location we can use, so it was checked against " +
-                        "${states.firstOrNull { it.code == r.state }?.name ?: "your state"}'s animals.",
+                        "${states.firstOrNull { it.code == r.state }?.name ?: "your home"}'s animals.",
                     onDismiss = { picking = false }) { code -> picking = false; if (code != r.state) go(code) }
             }
             if (r.matched && safety != null) SafetyCard(safety)

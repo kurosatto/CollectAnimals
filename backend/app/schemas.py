@@ -74,6 +74,8 @@ class StateOut(BaseModel):
     species_count: int
     # Map extent in degrees: {"west", "east", "south", "north"}
     bounds: dict
+    # "usa" for a state, "europe" for a country.
+    region: str = "usa"
 
 
 class SpeciesOut(BaseModel):

@@ -42,8 +42,9 @@ object StateList {
     /** The player's unlocked states, in states.json order (the state screen's tiles). */
     fun tiles(states: List<StateInfo>, unlocked: Set<String>): List<StateInfo> = states.filter { it.code in unlocked }
 
-    /** Every state A to Z, for the first-launch list. */
-    fun alphabetical(states: List<StateInfo>): List<StateInfo> = states.sortedBy { it.name }
+    /** Every US state A to Z, then every European country A to Z, for the first-launch list. */
+    fun alphabetical(states: List<StateInfo>): List<StateInfo> =
+        states.sortedWith(compareBy({ it.region == "europe" }, { it.name }))
 }
 
 /**
@@ -70,20 +71,20 @@ fun StateMenu(states: List<StateInfo>, viewing: String, main: String, tiles: Lis
     }
     if (tiles == null) return
     AlertDialog(onDismissRequest = onClose, confirmButton = {
-        if (viewing != main) TextButton(onClick = { onClose(); onMakeMain(viewing) }) { Text("★ Make $name my main state") }
+        if (viewing != main) TextButton(onClick = { onClose(); onMakeMain(viewing) }) { Text("★ Make $name my main ${states.firstOrNull { it.code == viewing }?.word ?: "state"}") }
     },
         dismissButton = { TextButton(onClick = onClose) { Text("Close") } },
-        title = { Text("Your states") },
+        title = { Text("Your places") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Tap a state to look at its Field Guide, habitat and parks. Your main state is where you start and what friends see first.",
+                Text("Tap one to look at its Field Guide, habitat and parks. Your main one (★) is where you start and what friends see first.",
                     style = MaterialTheme.typography.bodyMedium)
                 LazyVerticalGrid(GridCells.Adaptive(120.dp), Modifier.heightIn(max = dialogListMax()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(tiles, key = { it.code }) { t ->
                         states.firstOrNull { it.code == t.code }?.let { st ->
                             StateTile(st, main = t.code == viewing,
-                                label = if (t.main) "★ Main state" else if (t.code == viewing) "Looking now" else "",
+                                label = if (t.main) "★ Main ${st.word}" else if (t.code == viewing) "Looking now" else "",
                                 sub = "${t.caught} of ${t.total} captured") {
                                 onClose()
                                 if (t.code != viewing) onView(t.code)
@@ -92,7 +93,7 @@ fun StateMenu(states: List<StateInfo>, viewing: String, main: String, tiles: Lis
                     }
                 }
                 if (tiles.size < states.size) {
-                    Text("Capture an animal in another state to unlock it (${tiles.size} of ${states.size} unlocked).",
+                    Text("Capture an animal somewhere else to unlock it (${tiles.size} of ${states.size} unlocked).",
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
@@ -134,10 +135,10 @@ fun StatePicker(states: List<StateInfo>, onDismiss: () -> Unit, onPick: (String)
     val rows = remember(states) { StateList.alphabetical(states) }
     AlertDialog(onDismissRequest = onDismiss, confirmButton = {},
         dismissButton = { TextButton(onClick = onDismiss) { Text("Close") } },
-        title = { Text("Which state are you in?") },
+        title = { Text("Where do you live?") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Your Field Guide and parks follow your main state. Photos you take in other states unlock them.",
+                Text("Your Field Guide and parks follow your main state or country. Photos you take in other places unlock them.",
                     style = MaterialTheme.typography.bodyMedium)
                 val found = states.firstOrNull { it.code == guess }
                 when {

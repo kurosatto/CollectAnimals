@@ -32,6 +32,8 @@ class State:
     utc_offset: int = 0
     # Towns and regions for place names ("near Asheville"); optional.
     places: Path | None = None
+    # "usa", or "europe" for a country (ISO alpha-3 code).
+    region: str = "usa"
 
 
 _states: dict[str, State] = {}
@@ -48,7 +50,8 @@ def load(states_json: Path) -> None:
         _states[s["code"]] = State(
             code=s["code"], name=s["name"], species_csv=root / s["species"], dex_csv=opt("dex"),
             outline=opt("outline"), ranges=opt("ranges"), hotspots=opt("hotspots"),
-            bounds=s["bounds"], seasons=opt("seasons"), utc_offset=s.get("utc_offset", 0), places=opt("places"))
+            bounds=s["bounds"], seasons=opt("seasons"), utc_offset=s.get("utc_offset", 0), places=opt("places"),
+            region=s.get("region", "usa"))
     default_code = data.get("default", next(iter(_states)))
 
 

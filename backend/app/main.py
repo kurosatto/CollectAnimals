@@ -500,7 +500,7 @@ def state_at(lat: float = Query(..., ge=-90, le=90), lon: float = Query(..., ge=
 @app.get("/states", response_model=list[StateOut])
 def list_states(db: Session = Depends(get_db)):
     return [StateOut(code=s.code, name=s.name, species_count=len(state_species(db, s.code)),
-                     bounds=s.bounds) for s in st.all_states()]
+                     bounds=s.bounds, region=s.region) for s in st.all_states()]
 
 
 # --- species ----------------------------------------------------------------

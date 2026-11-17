@@ -8,7 +8,9 @@ import org.json.JSONObject
  * so 50 states don't all load at start-up.
  */
 class StateInfo(val code: String, val name: String, val species: List<Species>, val bounds: Box? = null,
-                outline: () -> List<DoubleArray> = { emptyList() }, guide: () -> FieldGuide) {
+                outline: () -> List<DoubleArray> = { emptyList() }, val region: String = "usa", guide: () -> FieldGuide) {
+    /** "state" for a US state, "country" for a European one. */
+    val word get() = if (region == "europe") "country" else "state"
     val fieldGuide: FieldGuide by lazy(guide)
     // The real outline's rings ([lon, lat, lon, lat, ...]); empty until the state has one.
     val outlineRings: List<DoubleArray> by lazy(outline)
@@ -42,7 +44,7 @@ object States {
                 Box(b.getDouble("west"), b.getDouble("east"), b.getDouble("south"), b.getDouble("north"))
             }
             StateInfo(s.getString("code"), name, parseSpecies(read(s.getString("species")) ?: error("no list for $name")),
-                box, { optional("outline")?.let { parseRings(it) }.orEmpty() }) {
+                box, { optional("outline")?.let { parseRings(it) }.orEmpty() }, s.optString("region", "usa")) {
                 // Sighting maps and outlines are built on a PC with iNaturalist access; until then
                 // a state has an empty sighting map and its bounding box as the outline.
                 val bounds = s.getJSONObject("bounds")
