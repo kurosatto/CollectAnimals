@@ -32,7 +32,7 @@ class State:
     utc_offset: int = 0
     # Towns and regions for place names ("near Asheville"); optional.
     places: Path | None = None
-    # "usa", or "europe" for a country (ISO alpha-3 code).
+    # "usa", or "europe" / "asia" for a country (ISO alpha-3 code).
     region: str = "usa"
 
 

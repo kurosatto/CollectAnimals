@@ -1,4 +1,4 @@
 {
- "note": "Countries drafted by ml/build_countries.py wait here until they go live; the 42 European countries (Turkey included) are now in states.json.",
+ "note": "Countries drafted by ml/build_countries.py wait here until they go live; the 42 European countries (Turkey included) and Singapore are now in states.json.",
  "states": []
 }

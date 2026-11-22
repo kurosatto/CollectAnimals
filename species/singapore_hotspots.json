@@ -1,0 +1,3322 @@
+{
+ "source": "iNaturalist research-grade observations via GBIF (species facets by radius)",
+ "min_observations": 3,
+ "parks": [
+  {
+   "id": "bukit_timah",
+   "name": "Bukit Timah Nature Reserve",
+   "lat": 1.354,
+   "lon": 103.776,
+   "radius_km": 1.5,
+   "blurb": "Old rainforest on Singapore's highest hill, with colugos, macaques, squirrels and flying lizards.",
+   "species": [
+    {
+     "slug": "clouded_monitor",
+     "observations": 670
+    },
+    {
+     "slug": "sunda_colugo",
+     "observations": 631
+    },
+    {
+     "slug": "waglers_pit_viper",
+     "observations": 560
+    },
+    {
+     "slug": "greater_racket_tailed_drongo",
+     "observations": 393
+    },
+    {
+     "slug": "common_sun_skink",
+     "observations": 335
+    },
+    {
+     "slug": "brown_pansy",
+     "observations": 323
+    },
+    {
+     "slug": "common_parasol",
+     "observations": 299
+    },
+    {
+     "slug": "common_mormon",
+     "observations": 291
+    },
+    {
+     "slug": "plantain_squirrel",
+     "observations": 283
+    },
+    {
+     "slug": "rufous_legged_grasshopper",
+     "observations": 247
+    },
+    {
+     "slug": "crimson_sunbird",
+     "observations": 211
+    },
+    {
+     "slug": "olive_winged_bulbul",
+     "observations": 199
+    },
+    {
+     "slug": "asian_glossy_starling",
+     "observations": 184
+    },
+    {
+     "slug": "pink_necked_green_pigeon",
+     "observations": 179
+    },
+    {
+     "slug": "asian_crimson_dropwing",
+     "observations": 166
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 141
+    },
+    {
+     "slug": "yellow_vented_bulbul",
+     "observations": 133
+    },
+    {
+     "slug": "slender_squirrel",
+     "observations": 124
+    },
+    {
+     "slug": "common_palmfly",
+     "observations": 114
+    },
+    {
+     "slug": "peacock_pansy",
+     "observations": 114
+    },
+    {
+     "slug": "blue_throated_bee_eater",
+     "observations": 93
+    },
+    {
+     "slug": "four_lined_tree_frog",
+     "observations": 88
+    },
+    {
+     "slug": "black_naped_oriole",
+     "observations": 80
+    },
+    {
+     "slug": "scarlet_backed_flowerpecker",
+     "observations": 79
+    },
+    {
+     "slug": "common_treeshrew",
+     "observations": 77
+    },
+    {
+     "slug": "javan_myna",
+     "observations": 77
+    },
+    {
+     "slug": "oriental_garden_lizard",
+     "observations": 75
+    },
+    {
+     "slug": "common_flameback",
+     "observations": 74
+    },
+    {
+     "slug": "zebra_dove",
+     "observations": 66
+    },
+    {
+     "slug": "asian_common_toad",
+     "observations": 64
+    },
+    {
+     "slug": "wild_boar",
+     "observations": 63
+    },
+    {
+     "slug": "asian_vine_snake",
+     "observations": 62
+    },
+    {
+     "slug": "common_gliding_lizard",
+     "observations": 59
+    },
+    {
+     "slug": "oriental_dollarbird",
+     "observations": 57
+    },
+    {
+     "slug": "white_throated_kingfisher",
+     "observations": 50
+    },
+    {
+     "slug": "white_bellied_sea_eagle",
+     "observations": 49
+    },
+    {
+     "slug": "pacific_swallow",
+     "observations": 47
+    },
+    {
+     "slug": "tawny_coster",
+     "observations": 47
+    },
+    {
+     "slug": "brown_throated_sunbird",
+     "observations": 45
+    },
+    {
+     "slug": "spotted_dove",
+     "observations": 42
+    },
+    {
+     "slug": "asian_water_monitor",
+     "observations": 40
+    },
+    {
+     "slug": "oriental_magpie_robin",
+     "observations": 40
+    },
+    {
+     "slug": "hubners_wasp_moth",
+     "observations": 34
+    },
+    {
+     "slug": "white_lipped_frog",
+     "observations": 33
+    },
+    {
+     "slug": "crested_honey_buzzard",
+     "observations": 29
+    },
+    {
+     "slug": "brahminy_kite",
+     "observations": 27
+    },
+    {
+     "slug": "asian_house_gecko",
+     "observations": 27
+    },
+    {
+     "slug": "lesser_mouse_deer",
+     "observations": 26
+    },
+    {
+     "slug": "lesser_short_nosed_fruit_bat",
+     "observations": 25
+    },
+    {
+     "slug": "scarlet_skimmer",
+     "observations": 24
+    },
+    {
+     "slug": "flambeau",
+     "observations": 24
+    },
+    {
+     "slug": "striped_snakehead",
+     "observations": 23
+    },
+    {
+     "slug": "greenhouse_frog",
+     "observations": 18
+    },
+    {
+     "slug": "paradise_tree_snake",
+     "observations": 18
+    },
+    {
+     "slug": "eurasian_tree_sparrow",
+     "observations": 18
+    },
+    {
+     "slug": "asian_palm_civet",
+     "observations": 16
+    },
+    {
+     "slug": "plain_tiger",
+     "observations": 16
+    },
+    {
+     "slug": "collared_kingfisher",
+     "observations": 14
+    },
+    {
+     "slug": "malaysian_pied_fantail",
+     "observations": 12
+    },
+    {
+     "slug": "banded_bullfrog",
+     "observations": 10
+    },
+    {
+     "slug": "arcuate_spotted_pygmy_frog",
+     "observations": 10
+    },
+    {
+     "slug": "asian_koel",
+     "observations": 9
+    },
+    {
+     "slug": "long_tailed_macaque",
+     "observations": 8
+    },
+    {
+     "slug": "white_breasted_waterhen",
+     "observations": 6
+    },
+    {
+     "slug": "house_crow",
+     "observations": 5
+    },
+    {
+     "slug": "smooth_coated_otter",
+     "observations": 4
+    },
+    {
+     "slug": "brown_anole",
+     "observations": 3
+    },
+    {
+     "slug": "red_breasted_parakeet",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "central_catchment",
+   "name": "Central Catchment & MacRitchie",
+   "lat": 1.357,
+   "lon": 103.812,
+   "radius_km": 3,
+   "blurb": "Rainforest trails around the reservoirs with monitor lizards, pit vipers, langurs and hornbills.",
+   "species": [
+    {
+     "slug": "common_parasol",
+     "observations": 1957
+    },
+    {
+     "slug": "brown_pansy",
+     "observations": 1286
+    },
+    {
+     "slug": "rufous_legged_grasshopper",
+     "observations": 868
+    },
+    {
+     "slug": "asian_crimson_dropwing",
+     "observations": 822
+    },
+    {
+     "slug": "common_mormon",
+     "observations": 704
+    },
+    {
+     "slug": "common_sun_skink",
+     "observations": 625
+    },
+    {
+     "slug": "clouded_monitor",
+     "observations": 469
+    },
+    {
+     "slug": "asian_water_monitor",
+     "observations": 427
+    },
+    {
+     "slug": "scarlet_skimmer",
+     "observations": 423
+    },
+    {
+     "slug": "sunda_colugo",
+     "observations": 422
+    },
+    {
+     "slug": "waglers_pit_viper",
+     "observations": 415
+    },
+    {
+     "slug": "common_palmfly",
+     "observations": 402
+    },
+    {
+     "slug": "flambeau",
+     "observations": 399
+    },
+    {
+     "slug": "plantain_squirrel",
+     "observations": 395
+    },
+    {
+     "slug": "peacock_pansy",
+     "observations": 352
+    },
+    {
+     "slug": "greater_racket_tailed_drongo",
+     "observations": 328
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 276
+    },
+    {
+     "slug": "oriental_garden_lizard",
+     "observations": 264
+    },
+    {
+     "slug": "striped_snakehead",
+     "observations": 260
+    },
+    {
+     "slug": "olive_winged_bulbul",
+     "observations": 257
+    },
+    {
+     "slug": "purple_heron",
+     "observations": 230
+    },
+    {
+     "slug": "crimson_sunbird",
+     "observations": 218
+    },
+    {
+     "slug": "slender_squirrel",
+     "observations": 215
+    },
+    {
+     "slug": "yellow_vented_bulbul",
+     "observations": 207
+    },
+    {
+     "slug": "pink_necked_green_pigeon",
+     "observations": 206
+    },
+    {
+     "slug": "pacific_swallow",
+     "observations": 192
+    },
+    {
+     "slug": "asian_vine_snake",
+     "observations": 175
+    },
+    {
+     "slug": "white_lipped_frog",
+     "observations": 174
+    },
+    {
+     "slug": "oriental_magpie_robin",
+     "observations": 174
+    },
+    {
+     "slug": "javan_myna",
+     "observations": 171
+    },
+    {
+     "slug": "hubners_wasp_moth",
+     "observations": 166
+    },
+    {
+     "slug": "lesser_mouse_deer",
+     "observations": 161
+    },
+    {
+     "slug": "asian_glossy_starling",
+     "observations": 159
+    },
+    {
+     "slug": "wild_boar",
+     "observations": 137
+    },
+    {
+     "slug": "common_flameback",
+     "observations": 119
+    },
+    {
+     "slug": "white_throated_kingfisher",
+     "observations": 117
+    },
+    {
+     "slug": "white_breasted_waterhen",
+     "observations": 111
+    },
+    {
+     "slug": "black_naped_oriole",
+     "observations": 104
+    },
+    {
+     "slug": "spotted_dove",
+     "observations": 100
+    },
+    {
+     "slug": "blue_throated_bee_eater",
+     "observations": 98
+    },
+    {
+     "slug": "tawny_coster",
+     "observations": 84
+    },
+    {
+     "slug": "long_tailed_macaque",
+     "observations": 83
+    },
+    {
+     "slug": "four_lined_tree_frog",
+     "observations": 81
+    },
+    {
+     "slug": "collared_kingfisher",
+     "observations": 81
+    },
+    {
+     "slug": "common_gliding_lizard",
+     "observations": 80
+    },
+    {
+     "slug": "brown_throated_sunbird",
+     "observations": 74
+    },
+    {
+     "slug": "asian_openbill",
+     "observations": 74
+    },
+    {
+     "slug": "crested_honey_buzzard",
+     "observations": 74
+    },
+    {
+     "slug": "zebra_dove",
+     "observations": 70
+    },
+    {
+     "slug": "scarlet_backed_flowerpecker",
+     "observations": 68
+    },
+    {
+     "slug": "asian_koel",
+     "observations": 66
+    },
+    {
+     "slug": "grey_heron",
+     "observations": 66
+    },
+    {
+     "slug": "asian_common_toad",
+     "observations": 63
+    },
+    {
+     "slug": "asian_house_gecko",
+     "observations": 57
+    },
+    {
+     "slug": "oriental_dollarbird",
+     "observations": 53
+    },
+    {
+     "slug": "white_bellied_sea_eagle",
+     "observations": 51
+    },
+    {
+     "slug": "brahminy_kite",
+     "observations": 45
+    },
+    {
+     "slug": "smooth_coated_otter",
+     "observations": 44
+    },
+    {
+     "slug": "blue_tailed_bee_eater",
+     "observations": 43
+    },
+    {
+     "slug": "rose_ringed_parakeet",
+     "observations": 43
+    },
+    {
+     "slug": "plain_tiger",
+     "observations": 43
+    },
+    {
+     "slug": "house_crow",
+     "observations": 41
+    },
+    {
+     "slug": "common_treeshrew",
+     "observations": 39
+    },
+    {
+     "slug": "eurasian_tree_sparrow",
+     "observations": 39
+    },
+    {
+     "slug": "paradise_tree_snake",
+     "observations": 38
+    },
+    {
+     "slug": "red_breasted_parakeet",
+     "observations": 35
+    },
+    {
+     "slug": "common_myna",
+     "observations": 31
+    },
+    {
+     "slug": "malaysian_pied_fantail",
+     "observations": 30
+    },
+    {
+     "slug": "greenhouse_frog",
+     "observations": 25
+    },
+    {
+     "slug": "oriental_pied_hornbill",
+     "observations": 25
+    },
+    {
+     "slug": "asian_palm_civet",
+     "observations": 21
+    },
+    {
+     "slug": "banded_bullfrog",
+     "observations": 20
+    },
+    {
+     "slug": "green_paddy_frog",
+     "observations": 20
+    },
+    {
+     "slug": "arcuate_spotted_pygmy_frog",
+     "observations": 16
+    },
+    {
+     "slug": "brown_anole",
+     "observations": 15
+    },
+    {
+     "slug": "ashy_tailorbird",
+     "observations": 12
+    },
+    {
+     "slug": "little_egret",
+     "observations": 11
+    },
+    {
+     "slug": "common_sandpiper",
+     "observations": 11
+    },
+    {
+     "slug": "lesser_short_nosed_fruit_bat",
+     "observations": 8
+    },
+    {
+     "slug": "raffles_banded_langur",
+     "observations": 8
+    },
+    {
+     "slug": "malesian_frog",
+     "observations": 5
+    },
+    {
+     "slug": "giant_mudskipper",
+     "observations": 4
+    },
+    {
+     "slug": "cave_nectar_bat",
+     "observations": 4
+    },
+    {
+     "slug": "asian_house_shrew",
+     "observations": 4
+    },
+    {
+     "slug": "variable_squirrel",
+     "observations": 4
+    },
+    {
+     "slug": "blue_swimming_crab",
+     "observations": 4
+    },
+    {
+     "slug": "estuarine_crocodile",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "sungei_buloh",
+   "name": "Sungei Buloh Wetland Reserve",
+   "lat": 1.446,
+   "lon": 103.727,
+   "radius_km": 1.5,
+   "blurb": "Mangroves with crocodiles, mudskippers, otters and flocks of migrating shorebirds.",
+   "species": [
+    {
+     "slug": "asian_water_monitor",
+     "observations": 1542
+    },
+    {
+     "slug": "estuarine_crocodile",
+     "observations": 1290
+    },
+    {
+     "slug": "little_egret",
+     "observations": 883
+    },
+    {
+     "slug": "giant_mudskipper",
+     "observations": 835
+    },
+    {
+     "slug": "lesser_short_nosed_fruit_bat",
+     "observations": 661
+    },
+    {
+     "slug": "collared_kingfisher",
+     "observations": 539
+    },
+    {
+     "slug": "plantain_squirrel",
+     "observations": 520
+    },
+    {
+     "slug": "white_bellied_sea_eagle",
+     "observations": 508
+    },
+    {
+     "slug": "ashy_tailorbird",
+     "observations": 504
+    },
+    {
+     "slug": "grey_heron",
+     "observations": 465
+    },
+    {
+     "slug": "asian_openbill",
+     "observations": 399
+    },
+    {
+     "slug": "pink_necked_green_pigeon",
+     "observations": 382
+    },
+    {
+     "slug": "common_sandpiper",
+     "observations": 373
+    },
+    {
+     "slug": "asian_vine_snake",
+     "observations": 361
+    },
+    {
+     "slug": "banded_archerfish",
+     "observations": 339
+    },
+    {
+     "slug": "rufous_legged_grasshopper",
+     "observations": 333
+    },
+    {
+     "slug": "common_parasol",
+     "observations": 298
+    },
+    {
+     "slug": "house_crow",
+     "observations": 296
+    },
+    {
+     "slug": "violet_tree_climbing_crab",
+     "observations": 276
+    },
+    {
+     "slug": "oriental_garden_lizard",
+     "observations": 250
+    },
+    {
+     "slug": "paradise_tree_snake",
+     "observations": 246
+    },
+    {
+     "slug": "common_sun_skink",
+     "observations": 232
+    },
+    {
+     "slug": "white_breasted_waterhen",
+     "observations": 229
+    },
+    {
+     "slug": "purple_heron",
+     "observations": 221
+    },
+    {
+     "slug": "oriental_pied_hornbill",
+     "observations": 220
+    },
+    {
+     "slug": "yellow_vented_bulbul",
+     "observations": 195
+    },
+    {
+     "slug": "brown_throated_sunbird",
+     "observations": 180
+    },
+    {
+     "slug": "striped_snakehead",
+     "observations": 175
+    },
+    {
+     "slug": "asian_house_gecko",
+     "observations": 159
+    },
+    {
+     "slug": "common_palmfly",
+     "observations": 141
+    },
+    {
+     "slug": "scarlet_skimmer",
+     "observations": 131
+    },
+    {
+     "slug": "brahminy_kite",
+     "observations": 127
+    },
+    {
+     "slug": "black_naped_oriole",
+     "observations": 117
+    },
+    {
+     "slug": "asian_glossy_starling",
+     "observations": 113
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 111
+    },
+    {
+     "slug": "scarlet_backed_flowerpecker",
+     "observations": 110
+    },
+    {
+     "slug": "pacific_swallow",
+     "observations": 109
+    },
+    {
+     "slug": "common_flameback",
+     "observations": 105
+    },
+    {
+     "slug": "crimson_sunbird",
+     "observations": 82
+    },
+    {
+     "slug": "brown_pansy",
+     "observations": 79
+    },
+    {
+     "slug": "blue_throated_bee_eater",
+     "observations": 74
+    },
+    {
+     "slug": "green_paddy_frog",
+     "observations": 71
+    },
+    {
+     "slug": "spotted_dove",
+     "observations": 71
+    },
+    {
+     "slug": "zebra_dove",
+     "observations": 68
+    },
+    {
+     "slug": "malaysian_pied_fantail",
+     "observations": 64
+    },
+    {
+     "slug": "common_gliding_lizard",
+     "observations": 61
+    },
+    {
+     "slug": "oriental_magpie_robin",
+     "observations": 60
+    },
+    {
+     "slug": "asian_koel",
+     "observations": 58
+    },
+    {
+     "slug": "clouded_monitor",
+     "observations": 55
+    },
+    {
+     "slug": "olive_winged_bulbul",
+     "observations": 39
+    },
+    {
+     "slug": "oriental_dollarbird",
+     "observations": 39
+    },
+    {
+     "slug": "pink_fingered_vinegar_crab",
+     "observations": 34
+    },
+    {
+     "slug": "white_throated_kingfisher",
+     "observations": 33
+    },
+    {
+     "slug": "javan_myna",
+     "observations": 33
+    },
+    {
+     "slug": "crested_honey_buzzard",
+     "observations": 30
+    },
+    {
+     "slug": "asian_palm_civet",
+     "observations": 27
+    },
+    {
+     "slug": "peacock_pansy",
+     "observations": 25
+    },
+    {
+     "slug": "common_treeshrew",
+     "observations": 22
+    },
+    {
+     "slug": "common_mormon",
+     "observations": 20
+    },
+    {
+     "slug": "blue_swimming_crab",
+     "observations": 14
+    },
+    {
+     "slug": "asian_common_toad",
+     "observations": 12
+    },
+    {
+     "slug": "flambeau",
+     "observations": 12
+    },
+    {
+     "slug": "four_lined_tree_frog",
+     "observations": 11
+    },
+    {
+     "slug": "long_tailed_macaque",
+     "observations": 8
+    },
+    {
+     "slug": "hubners_wasp_moth",
+     "observations": 8
+    },
+    {
+     "slug": "common_myna",
+     "observations": 6
+    },
+    {
+     "slug": "tawny_coster",
+     "observations": 5
+    },
+    {
+     "slug": "asian_crimson_dropwing",
+     "observations": 5
+    },
+    {
+     "slug": "blue_tailed_bee_eater",
+     "observations": 5
+    },
+    {
+     "slug": "banded_bullfrog",
+     "observations": 4
+    },
+    {
+     "slug": "greater_racket_tailed_drongo",
+     "observations": 4
+    },
+    {
+     "slug": "eurasian_tree_sparrow",
+     "observations": 4
+    },
+    {
+     "slug": "plain_tiger",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "kranji_marshes",
+   "name": "Kranji Marshes",
+   "lat": 1.428,
+   "lon": 103.737,
+   "radius_km": 1.2,
+   "blurb": "Freshwater marsh where purple herons, waterhens, frogs and dragonflies live.",
+   "species": [
+    {
+     "slug": "scarlet_skimmer",
+     "observations": 33
+    },
+    {
+     "slug": "common_parasol",
+     "observations": 16
+    },
+    {
+     "slug": "peacock_pansy",
+     "observations": 16
+    },
+    {
+     "slug": "brown_pansy",
+     "observations": 12
+    },
+    {
+     "slug": "common_palmfly",
+     "observations": 11
+    },
+    {
+     "slug": "purple_heron",
+     "observations": 10
+    },
+    {
+     "slug": "collared_kingfisher",
+     "observations": 9
+    },
+    {
+     "slug": "brahminy_kite",
+     "observations": 8
+    },
+    {
+     "slug": "white_bellied_sea_eagle",
+     "observations": 8
+    },
+    {
+     "slug": "asian_glossy_starling",
+     "observations": 8
+    },
+    {
+     "slug": "asian_water_monitor",
+     "observations": 6
+    },
+    {
+     "slug": "ashy_tailorbird",
+     "observations": 6
+    },
+    {
+     "slug": "blue_throated_bee_eater",
+     "observations": 5
+    },
+    {
+     "slug": "pink_necked_green_pigeon",
+     "observations": 5
+    },
+    {
+     "slug": "common_flameback",
+     "observations": 5
+    },
+    {
+     "slug": "plantain_squirrel",
+     "observations": 4
+    },
+    {
+     "slug": "estuarine_crocodile",
+     "observations": 4
+    },
+    {
+     "slug": "asian_vine_snake",
+     "observations": 4
+    },
+    {
+     "slug": "white_throated_kingfisher",
+     "observations": 4
+    },
+    {
+     "slug": "oriental_garden_lizard",
+     "observations": 4
+    },
+    {
+     "slug": "grey_heron",
+     "observations": 4
+    },
+    {
+     "slug": "smooth_coated_otter",
+     "observations": 3
+    },
+    {
+     "slug": "long_tailed_macaque",
+     "observations": 3
+    },
+    {
+     "slug": "little_egret",
+     "observations": 3
+    },
+    {
+     "slug": "house_crow",
+     "observations": 3
+    },
+    {
+     "slug": "oriental_dollarbird",
+     "observations": 3
+    },
+    {
+     "slug": "javan_myna",
+     "observations": 3
+    },
+    {
+     "slug": "black_naped_oriole",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "pulau_ubin",
+   "name": "Pulau Ubin & Chek Jawa",
+   "lat": 1.41,
+   "lon": 103.97,
+   "radius_km": 3,
+   "blurb": "A village island with wild boar, hornbills, otters and the tidal flats of Chek Jawa.",
+   "species": [
+    {
+     "slug": "haddons_carpet_anemone",
+     "observations": 440
+    },
+    {
+     "slug": "oriental_pied_hornbill",
+     "observations": 325
+    },
+    {
+     "slug": "pink_warty_sea_cucumber",
+     "observations": 245
+    },
+    {
+     "slug": "white_bellied_sea_eagle",
+     "observations": 229
+    },
+    {
+     "slug": "chocolate_chip_sea_star",
+     "observations": 214
+    },
+    {
+     "slug": "blue_swimming_crab",
+     "observations": 200
+    },
+    {
+     "slug": "grey_heron",
+     "observations": 192
+    },
+    {
+     "slug": "orange_striped_hermit_crab",
+     "observations": 133
+    },
+    {
+     "slug": "asian_water_monitor",
+     "observations": 119
+    },
+    {
+     "slug": "pacific_swallow",
+     "observations": 117
+    },
+    {
+     "slug": "asian_vine_snake",
+     "observations": 114
+    },
+    {
+     "slug": "wild_boar",
+     "observations": 114
+    },
+    {
+     "slug": "plain_tiger",
+     "observations": 111
+    },
+    {
+     "slug": "brown_pansy",
+     "observations": 106
+    },
+    {
+     "slug": "common_palmfly",
+     "observations": 100
+    },
+    {
+     "slug": "collared_kingfisher",
+     "observations": 99
+    },
+    {
+     "slug": "peacock_pansy",
+     "observations": 97
+    },
+    {
+     "slug": "common_mormon",
+     "observations": 89
+    },
+    {
+     "slug": "olive_winged_bulbul",
+     "observations": 83
+    },
+    {
+     "slug": "oriental_garden_lizard",
+     "observations": 82
+    },
+    {
+     "slug": "brahminy_kite",
+     "observations": 79
+    },
+    {
+     "slug": "asian_glossy_starling",
+     "observations": 79
+    },
+    {
+     "slug": "rufous_legged_grasshopper",
+     "observations": 76
+    },
+    {
+     "slug": "house_crow",
+     "observations": 75
+    },
+    {
+     "slug": "clouded_monitor",
+     "observations": 72
+    },
+    {
+     "slug": "common_sandpiper",
+     "observations": 71
+    },
+    {
+     "slug": "brown_throated_sunbird",
+     "observations": 70
+    },
+    {
+     "slug": "pink_necked_green_pigeon",
+     "observations": 69
+    },
+    {
+     "slug": "common_parasol",
+     "observations": 63
+    },
+    {
+     "slug": "pink_fingered_vinegar_crab",
+     "observations": 61
+    },
+    {
+     "slug": "asian_house_gecko",
+     "observations": 60
+    },
+    {
+     "slug": "giant_mudskipper",
+     "observations": 53
+    },
+    {
+     "slug": "oriental_magpie_robin",
+     "observations": 53
+    },
+    {
+     "slug": "banded_archerfish",
+     "observations": 45
+    },
+    {
+     "slug": "crimson_sunbird",
+     "observations": 38
+    },
+    {
+     "slug": "greater_mouse_deer",
+     "observations": 35
+    },
+    {
+     "slug": "long_tailed_macaque",
+     "observations": 34
+    },
+    {
+     "slug": "blue_tailed_bee_eater",
+     "observations": 33
+    },
+    {
+     "slug": "oriental_dollarbird",
+     "observations": 32
+    },
+    {
+     "slug": "scarlet_backed_flowerpecker",
+     "observations": 31
+    },
+    {
+     "slug": "flambeau",
+     "observations": 30
+    },
+    {
+     "slug": "common_gliding_lizard",
+     "observations": 28
+    },
+    {
+     "slug": "ashy_tailorbird",
+     "observations": 27
+    },
+    {
+     "slug": "red_breasted_parakeet",
+     "observations": 26
+    },
+    {
+     "slug": "asian_crimson_dropwing",
+     "observations": 25
+    },
+    {
+     "slug": "common_sun_skink",
+     "observations": 25
+    },
+    {
+     "slug": "white_throated_kingfisher",
+     "observations": 25
+    },
+    {
+     "slug": "javan_myna",
+     "observations": 25
+    },
+    {
+     "slug": "smooth_coated_otter",
+     "observations": 23
+    },
+    {
+     "slug": "yellow_vented_bulbul",
+     "observations": 23
+    },
+    {
+     "slug": "common_myna",
+     "observations": 23
+    },
+    {
+     "slug": "common_flameback",
+     "observations": 23
+    },
+    {
+     "slug": "eurasian_tree_sparrow",
+     "observations": 23
+    },
+    {
+     "slug": "crested_honey_buzzard",
+     "observations": 23
+    },
+    {
+     "slug": "asian_common_toad",
+     "observations": 22
+    },
+    {
+     "slug": "hubners_wasp_moth",
+     "observations": 21
+    },
+    {
+     "slug": "blue_throated_bee_eater",
+     "observations": 20
+    },
+    {
+     "slug": "purple_heron",
+     "observations": 19
+    },
+    {
+     "slug": "violet_tree_climbing_crab",
+     "observations": 19
+    },
+    {
+     "slug": "four_lined_tree_frog",
+     "observations": 18
+    },
+    {
+     "slug": "greater_racket_tailed_drongo",
+     "observations": 17
+    },
+    {
+     "slug": "black_naped_oriole",
+     "observations": 16
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 15
+    },
+    {
+     "slug": "paradise_tree_snake",
+     "observations": 15
+    },
+    {
+     "slug": "little_egret",
+     "observations": 15
+    },
+    {
+     "slug": "zebra_dove",
+     "observations": 13
+    },
+    {
+     "slug": "tawny_coster",
+     "observations": 11
+    },
+    {
+     "slug": "asian_palm_civet",
+     "observations": 10
+    },
+    {
+     "slug": "asian_koel",
+     "observations": 9
+    },
+    {
+     "slug": "scarlet_skimmer",
+     "observations": 8
+    },
+    {
+     "slug": "banded_bullfrog",
+     "observations": 8
+    },
+    {
+     "slug": "spotted_dove",
+     "observations": 8
+    },
+    {
+     "slug": "green_paddy_frog",
+     "observations": 7
+    },
+    {
+     "slug": "lesser_short_nosed_fruit_bat",
+     "observations": 7
+    },
+    {
+     "slug": "malesian_frog",
+     "observations": 5
+    },
+    {
+     "slug": "raffles_banded_langur",
+     "observations": 5
+    },
+    {
+     "slug": "malaysian_pied_fantail",
+     "observations": 4
+    },
+    {
+     "slug": "arcuate_spotted_pygmy_frog",
+     "observations": 3
+    },
+    {
+     "slug": "plantain_squirrel",
+     "observations": 3
+    },
+    {
+     "slug": "asian_openbill",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "botanic_gardens",
+   "name": "Singapore Botanic Gardens",
+   "lat": 1.315,
+   "lon": 103.816,
+   "radius_km": 1,
+   "blurb": "Lakes and old trees with otters, monitor lizards, kingfishers and a patch of real rainforest.",
+   "species": [
+    {
+     "slug": "clouded_monitor",
+     "observations": 1419
+    },
+    {
+     "slug": "oriental_magpie_robin",
+     "observations": 840
+    },
+    {
+     "slug": "plantain_squirrel",
+     "observations": 809
+    },
+    {
+     "slug": "white_breasted_waterhen",
+     "observations": 762
+    },
+    {
+     "slug": "common_parasol",
+     "observations": 745
+    },
+    {
+     "slug": "asian_crimson_dropwing",
+     "observations": 724
+    },
+    {
+     "slug": "yellow_vented_bulbul",
+     "observations": 524
+    },
+    {
+     "slug": "asian_water_monitor",
+     "observations": 518
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 511
+    },
+    {
+     "slug": "spotted_dove",
+     "observations": 418
+    },
+    {
+     "slug": "scarlet_skimmer",
+     "observations": 409
+    },
+    {
+     "slug": "pink_necked_green_pigeon",
+     "observations": 400
+    },
+    {
+     "slug": "javan_myna",
+     "observations": 378
+    },
+    {
+     "slug": "brown_throated_sunbird",
+     "observations": 362
+    },
+    {
+     "slug": "malaysian_pied_fantail",
+     "observations": 330
+    },
+    {
+     "slug": "greater_racket_tailed_drongo",
+     "observations": 320
+    },
+    {
+     "slug": "brown_pansy",
+     "observations": 296
+    },
+    {
+     "slug": "common_sun_skink",
+     "observations": 250
+    },
+    {
+     "slug": "blue_throated_bee_eater",
+     "observations": 228
+    },
+    {
+     "slug": "crimson_sunbird",
+     "observations": 228
+    },
+    {
+     "slug": "oriental_pied_hornbill",
+     "observations": 221
+    },
+    {
+     "slug": "olive_winged_bulbul",
+     "observations": 216
+    },
+    {
+     "slug": "plain_tiger",
+     "observations": 215
+    },
+    {
+     "slug": "rufous_legged_grasshopper",
+     "observations": 207
+    },
+    {
+     "slug": "oriental_garden_lizard",
+     "observations": 205
+    },
+    {
+     "slug": "white_throated_kingfisher",
+     "observations": 190
+    },
+    {
+     "slug": "black_naped_oriole",
+     "observations": 177
+    },
+    {
+     "slug": "common_palmfly",
+     "observations": 170
+    },
+    {
+     "slug": "pacific_swallow",
+     "observations": 161
+    },
+    {
+     "slug": "ashy_tailorbird",
+     "observations": 148
+    },
+    {
+     "slug": "asian_glossy_starling",
+     "observations": 133
+    },
+    {
+     "slug": "scarlet_backed_flowerpecker",
+     "observations": 125
+    },
+    {
+     "slug": "slender_squirrel",
+     "observations": 114
+    },
+    {
+     "slug": "asian_openbill",
+     "observations": 106
+    },
+    {
+     "slug": "common_treeshrew",
+     "observations": 96
+    },
+    {
+     "slug": "striped_snakehead",
+     "observations": 94
+    },
+    {
+     "slug": "common_flameback",
+     "observations": 94
+    },
+    {
+     "slug": "common_mormon",
+     "observations": 89
+    },
+    {
+     "slug": "hubners_wasp_moth",
+     "observations": 82
+    },
+    {
+     "slug": "four_lined_tree_frog",
+     "observations": 74
+    },
+    {
+     "slug": "common_gliding_lizard",
+     "observations": 69
+    },
+    {
+     "slug": "brahminy_kite",
+     "observations": 61
+    },
+    {
+     "slug": "zebra_dove",
+     "observations": 58
+    },
+    {
+     "slug": "asian_house_gecko",
+     "observations": 55
+    },
+    {
+     "slug": "paradise_tree_snake",
+     "observations": 49
+    },
+    {
+     "slug": "blue_tailed_bee_eater",
+     "observations": 47
+    },
+    {
+     "slug": "collared_kingfisher",
+     "observations": 45
+    },
+    {
+     "slug": "crested_honey_buzzard",
+     "observations": 44
+    },
+    {
+     "slug": "little_egret",
+     "observations": 41
+    },
+    {
+     "slug": "oriental_dollarbird",
+     "observations": 41
+    },
+    {
+     "slug": "asian_common_toad",
+     "observations": 40
+    },
+    {
+     "slug": "peacock_pansy",
+     "observations": 39
+    },
+    {
+     "slug": "purple_heron",
+     "observations": 37
+    },
+    {
+     "slug": "lesser_short_nosed_fruit_bat",
+     "observations": 34
+    },
+    {
+     "slug": "asian_vine_snake",
+     "observations": 34
+    },
+    {
+     "slug": "flambeau",
+     "observations": 27
+    },
+    {
+     "slug": "white_bellied_sea_eagle",
+     "observations": 23
+    },
+    {
+     "slug": "grey_heron",
+     "observations": 23
+    },
+    {
+     "slug": "asian_koel",
+     "observations": 22
+    },
+    {
+     "slug": "eurasian_tree_sparrow",
+     "observations": 22
+    },
+    {
+     "slug": "brown_anole",
+     "observations": 20
+    },
+    {
+     "slug": "rose_ringed_parakeet",
+     "observations": 15
+    },
+    {
+     "slug": "tawny_coster",
+     "observations": 13
+    },
+    {
+     "slug": "greenhouse_frog",
+     "observations": 12
+    },
+    {
+     "slug": "green_paddy_frog",
+     "observations": 12
+    },
+    {
+     "slug": "asian_palm_civet",
+     "observations": 11
+    },
+    {
+     "slug": "long_tailed_macaque",
+     "observations": 10
+    },
+    {
+     "slug": "banded_bullfrog",
+     "observations": 7
+    },
+    {
+     "slug": "smooth_coated_otter",
+     "observations": 7
+    },
+    {
+     "slug": "common_myna",
+     "observations": 7
+    },
+    {
+     "slug": "red_breasted_parakeet",
+     "observations": 7
+    },
+    {
+     "slug": "arcuate_spotted_pygmy_frog",
+     "observations": 6
+    },
+    {
+     "slug": "sunda_colugo",
+     "observations": 3
+    },
+    {
+     "slug": "house_crow",
+     "observations": 3
+    },
+    {
+     "slug": "raffles_banded_langur",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "bishan_park",
+   "name": "Bishan-Ang Mo Kio Park",
+   "lat": 1.363,
+   "lon": 103.844,
+   "radius_km": 1,
+   "blurb": "A river park in the city where otter families fish and herons wait on the banks.",
+   "species": [
+    {
+     "slug": "purple_heron",
+     "observations": 279
+    },
+    {
+     "slug": "white_breasted_waterhen",
+     "observations": 205
+    },
+    {
+     "slug": "grey_heron",
+     "observations": 205
+    },
+    {
+     "slug": "asian_water_monitor",
+     "observations": 146
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 134
+    },
+    {
+     "slug": "javan_myna",
+     "observations": 111
+    },
+    {
+     "slug": "oriental_garden_lizard",
+     "observations": 104
+    },
+    {
+     "slug": "plantain_squirrel",
+     "observations": 102
+    },
+    {
+     "slug": "zebra_dove",
+     "observations": 92
+    },
+    {
+     "slug": "plain_tiger",
+     "observations": 90
+    },
+    {
+     "slug": "black_naped_oriole",
+     "observations": 89
+    },
+    {
+     "slug": "yellow_vented_bulbul",
+     "observations": 87
+    },
+    {
+     "slug": "asian_openbill",
+     "observations": 85
+    },
+    {
+     "slug": "white_throated_kingfisher",
+     "observations": 80
+    },
+    {
+     "slug": "malaysian_pied_fantail",
+     "observations": 80
+    },
+    {
+     "slug": "scarlet_skimmer",
+     "observations": 65
+    },
+    {
+     "slug": "common_parasol",
+     "observations": 64
+    },
+    {
+     "slug": "spotted_dove",
+     "observations": 63
+    },
+    {
+     "slug": "asian_koel",
+     "observations": 62
+    },
+    {
+     "slug": "common_flameback",
+     "observations": 57
+    },
+    {
+     "slug": "brown_pansy",
+     "observations": 55
+    },
+    {
+     "slug": "asian_crimson_dropwing",
+     "observations": 46
+    },
+    {
+     "slug": "pink_necked_green_pigeon",
+     "observations": 46
+    },
+    {
+     "slug": "brown_throated_sunbird",
+     "observations": 45
+    },
+    {
+     "slug": "oriental_magpie_robin",
+     "observations": 42
+    },
+    {
+     "slug": "peacock_pansy",
+     "observations": 40
+    },
+    {
+     "slug": "common_myna",
+     "observations": 39
+    },
+    {
+     "slug": "eurasian_tree_sparrow",
+     "observations": 38
+    },
+    {
+     "slug": "oriental_pied_hornbill",
+     "observations": 35
+    },
+    {
+     "slug": "common_mormon",
+     "observations": 32
+    },
+    {
+     "slug": "common_gliding_lizard",
+     "observations": 32
+    },
+    {
+     "slug": "house_crow",
+     "observations": 29
+    },
+    {
+     "slug": "flambeau",
+     "observations": 29
+    },
+    {
+     "slug": "rose_ringed_parakeet",
+     "observations": 27
+    },
+    {
+     "slug": "tawny_coster",
+     "observations": 26
+    },
+    {
+     "slug": "collared_kingfisher",
+     "observations": 26
+    },
+    {
+     "slug": "pacific_swallow",
+     "observations": 22
+    },
+    {
+     "slug": "crested_honey_buzzard",
+     "observations": 22
+    },
+    {
+     "slug": "hubners_wasp_moth",
+     "observations": 22
+    },
+    {
+     "slug": "asian_glossy_starling",
+     "observations": 17
+    },
+    {
+     "slug": "little_egret",
+     "observations": 16
+    },
+    {
+     "slug": "blue_tailed_bee_eater",
+     "observations": 15
+    },
+    {
+     "slug": "ashy_tailorbird",
+     "observations": 15
+    },
+    {
+     "slug": "striped_snakehead",
+     "observations": 12
+    },
+    {
+     "slug": "scarlet_backed_flowerpecker",
+     "observations": 12
+    },
+    {
+     "slug": "long_tailed_macaque",
+     "observations": 11
+    },
+    {
+     "slug": "common_palmfly",
+     "observations": 8
+    },
+    {
+     "slug": "banded_bullfrog",
+     "observations": 8
+    },
+    {
+     "slug": "asian_common_toad",
+     "observations": 8
+    },
+    {
+     "slug": "asian_house_gecko",
+     "observations": 8
+    },
+    {
+     "slug": "blue_throated_bee_eater",
+     "observations": 7
+    },
+    {
+     "slug": "smooth_coated_otter",
+     "observations": 5
+    },
+    {
+     "slug": "clouded_monitor",
+     "observations": 4
+    },
+    {
+     "slug": "brown_anole",
+     "observations": 4
+    },
+    {
+     "slug": "asian_palm_civet",
+     "observations": 3
+    },
+    {
+     "slug": "brahminy_kite",
+     "observations": 3
+    },
+    {
+     "slug": "white_bellied_sea_eagle",
+     "observations": 3
+    },
+    {
+     "slug": "common_sandpiper",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "gardens_by_the_bay",
+   "name": "Gardens by the Bay & Marina Bay",
+   "lat": 1.284,
+   "lon": 103.864,
+   "radius_km": 1.5,
+   "blurb": "City gardens on the bay with otters, sunbirds, kingfishers and monitor lizards.",
+   "species": [
+    {
+     "slug": "brown_anole",
+     "observations": 972
+    },
+    {
+     "slug": "zebra_dove",
+     "observations": 394
+    },
+    {
+     "slug": "white_breasted_waterhen",
+     "observations": 387
+    },
+    {
+     "slug": "asian_water_monitor",
+     "observations": 324
+    },
+    {
+     "slug": "javan_myna",
+     "observations": 265
+    },
+    {
+     "slug": "common_myna",
+     "observations": 248
+    },
+    {
+     "slug": "house_crow",
+     "observations": 245
+    },
+    {
+     "slug": "yellow_vented_bulbul",
+     "observations": 238
+    },
+    {
+     "slug": "scarlet_skimmer",
+     "observations": 208
+    },
+    {
+     "slug": "oriental_magpie_robin",
+     "observations": 185
+    },
+    {
+     "slug": "asian_koel",
+     "observations": 174
+    },
+    {
+     "slug": "asian_openbill",
+     "observations": 160
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 158
+    },
+    {
+     "slug": "collared_kingfisher",
+     "observations": 156
+    },
+    {
+     "slug": "blue_tailed_bee_eater",
+     "observations": 141
+    },
+    {
+     "slug": "brown_throated_sunbird",
+     "observations": 139
+    },
+    {
+     "slug": "pink_necked_green_pigeon",
+     "observations": 130
+    },
+    {
+     "slug": "white_throated_kingfisher",
+     "observations": 130
+    },
+    {
+     "slug": "black_naped_oriole",
+     "observations": 126
+    },
+    {
+     "slug": "eurasian_tree_sparrow",
+     "observations": 123
+    },
+    {
+     "slug": "spotted_dove",
+     "observations": 122
+    },
+    {
+     "slug": "pacific_swallow",
+     "observations": 118
+    },
+    {
+     "slug": "white_bellied_sea_eagle",
+     "observations": 105
+    },
+    {
+     "slug": "malaysian_pied_fantail",
+     "observations": 92
+    },
+    {
+     "slug": "common_parasol",
+     "observations": 84
+    },
+    {
+     "slug": "ashy_tailorbird",
+     "observations": 82
+    },
+    {
+     "slug": "rose_ringed_parakeet",
+     "observations": 80
+    },
+    {
+     "slug": "common_sandpiper",
+     "observations": 77
+    },
+    {
+     "slug": "oriental_garden_lizard",
+     "observations": 71
+    },
+    {
+     "slug": "plain_tiger",
+     "observations": 70
+    },
+    {
+     "slug": "purple_heron",
+     "observations": 61
+    },
+    {
+     "slug": "crested_honey_buzzard",
+     "observations": 57
+    },
+    {
+     "slug": "brahminy_kite",
+     "observations": 51
+    },
+    {
+     "slug": "scarlet_backed_flowerpecker",
+     "observations": 45
+    },
+    {
+     "slug": "tawny_coster",
+     "observations": 44
+    },
+    {
+     "slug": "little_egret",
+     "observations": 41
+    },
+    {
+     "slug": "hubners_wasp_moth",
+     "observations": 41
+    },
+    {
+     "slug": "blue_throated_bee_eater",
+     "observations": 37
+    },
+    {
+     "slug": "asian_glossy_starling",
+     "observations": 35
+    },
+    {
+     "slug": "common_flameback",
+     "observations": 34
+    },
+    {
+     "slug": "peacock_pansy",
+     "observations": 33
+    },
+    {
+     "slug": "plantain_squirrel",
+     "observations": 26
+    },
+    {
+     "slug": "long_tailed_macaque",
+     "observations": 22
+    },
+    {
+     "slug": "brown_pansy",
+     "observations": 22
+    },
+    {
+     "slug": "grey_heron",
+     "observations": 20
+    },
+    {
+     "slug": "flambeau",
+     "observations": 19
+    },
+    {
+     "slug": "asian_house_gecko",
+     "observations": 17
+    },
+    {
+     "slug": "oriental_dollarbird",
+     "observations": 15
+    },
+    {
+     "slug": "striped_snakehead",
+     "observations": 14
+    },
+    {
+     "slug": "red_breasted_parakeet",
+     "observations": 11
+    },
+    {
+     "slug": "common_palmfly",
+     "observations": 10
+    },
+    {
+     "slug": "lesser_short_nosed_fruit_bat",
+     "observations": 10
+    },
+    {
+     "slug": "common_mormon",
+     "observations": 9
+    },
+    {
+     "slug": "smooth_coated_otter",
+     "observations": 9
+    },
+    {
+     "slug": "asian_common_toad",
+     "observations": 8
+    },
+    {
+     "slug": "four_lined_tree_frog",
+     "observations": 8
+    },
+    {
+     "slug": "oriental_pied_hornbill",
+     "observations": 5
+    },
+    {
+     "slug": "common_gliding_lizard",
+     "observations": 5
+    },
+    {
+     "slug": "greenhouse_frog",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "southern_ridges",
+   "name": "Labrador & the Southern Ridges",
+   "lat": 1.278,
+   "lon": 103.806,
+   "radius_km": 2,
+   "blurb": "Coastal forest and hill parks with orioles, sea eagles, squirrels and sunbirds.",
+   "species": [
+    {
+     "slug": "crested_honey_buzzard",
+     "observations": 459
+    },
+    {
+     "slug": "plantain_squirrel",
+     "observations": 281
+    },
+    {
+     "slug": "oriental_garden_lizard",
+     "observations": 197
+    },
+    {
+     "slug": "brown_pansy",
+     "observations": 184
+    },
+    {
+     "slug": "pink_necked_green_pigeon",
+     "observations": 174
+    },
+    {
+     "slug": "brahminy_kite",
+     "observations": 168
+    },
+    {
+     "slug": "yellow_vented_bulbul",
+     "observations": 167
+    },
+    {
+     "slug": "common_parasol",
+     "observations": 162
+    },
+    {
+     "slug": "black_naped_oriole",
+     "observations": 158
+    },
+    {
+     "slug": "asian_water_monitor",
+     "observations": 151
+    },
+    {
+     "slug": "collared_kingfisher",
+     "observations": 149
+    },
+    {
+     "slug": "greater_racket_tailed_drongo",
+     "observations": 144
+    },
+    {
+     "slug": "oriental_magpie_robin",
+     "observations": 122
+    },
+    {
+     "slug": "common_palmfly",
+     "observations": 120
+    },
+    {
+     "slug": "oriental_dollarbird",
+     "observations": 117
+    },
+    {
+     "slug": "rufous_legged_grasshopper",
+     "observations": 112
+    },
+    {
+     "slug": "olive_winged_bulbul",
+     "observations": 111
+    },
+    {
+     "slug": "brown_throated_sunbird",
+     "observations": 104
+    },
+    {
+     "slug": "white_bellied_sea_eagle",
+     "observations": 101
+    },
+    {
+     "slug": "javan_myna",
+     "observations": 100
+    },
+    {
+     "slug": "spotted_dove",
+     "observations": 92
+    },
+    {
+     "slug": "common_sun_skink",
+     "observations": 87
+    },
+    {
+     "slug": "oriental_pied_hornbill",
+     "observations": 80
+    },
+    {
+     "slug": "zebra_dove",
+     "observations": 79
+    },
+    {
+     "slug": "ashy_tailorbird",
+     "observations": 78
+    },
+    {
+     "slug": "asian_glossy_starling",
+     "observations": 77
+    },
+    {
+     "slug": "common_mormon",
+     "observations": 75
+    },
+    {
+     "slug": "blue_throated_bee_eater",
+     "observations": 75
+    },
+    {
+     "slug": "malaysian_pied_fantail",
+     "observations": 74
+    },
+    {
+     "slug": "asian_vine_snake",
+     "observations": 73
+    },
+    {
+     "slug": "scarlet_backed_flowerpecker",
+     "observations": 72
+    },
+    {
+     "slug": "flambeau",
+     "observations": 72
+    },
+    {
+     "slug": "paradise_tree_snake",
+     "observations": 69
+    },
+    {
+     "slug": "crimson_sunbird",
+     "observations": 59
+    },
+    {
+     "slug": "common_gliding_lizard",
+     "observations": 59
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 53
+    },
+    {
+     "slug": "common_flameback",
+     "observations": 52
+    },
+    {
+     "slug": "hubners_wasp_moth",
+     "observations": 51
+    },
+    {
+     "slug": "white_throated_kingfisher",
+     "observations": 50
+    },
+    {
+     "slug": "long_tailed_macaque",
+     "observations": 48
+    },
+    {
+     "slug": "white_breasted_waterhen",
+     "observations": 46
+    },
+    {
+     "slug": "plain_tiger",
+     "observations": 46
+    },
+    {
+     "slug": "peacock_pansy",
+     "observations": 33
+    },
+    {
+     "slug": "asian_house_gecko",
+     "observations": 32
+    },
+    {
+     "slug": "tawny_coster",
+     "observations": 31
+    },
+    {
+     "slug": "asian_common_toad",
+     "observations": 31
+    },
+    {
+     "slug": "asian_koel",
+     "observations": 31
+    },
+    {
+     "slug": "smooth_coated_otter",
+     "observations": 28
+    },
+    {
+     "slug": "banded_archerfish",
+     "observations": 27
+    },
+    {
+     "slug": "four_lined_tree_frog",
+     "observations": 26
+    },
+    {
+     "slug": "rose_ringed_parakeet",
+     "observations": 23
+    },
+    {
+     "slug": "asian_crimson_dropwing",
+     "observations": 21
+    },
+    {
+     "slug": "scarlet_skimmer",
+     "observations": 20
+    },
+    {
+     "slug": "pacific_swallow",
+     "observations": 19
+    },
+    {
+     "slug": "common_sandpiper",
+     "observations": 18
+    },
+    {
+     "slug": "eurasian_tree_sparrow",
+     "observations": 18
+    },
+    {
+     "slug": "blue_tailed_bee_eater",
+     "observations": 17
+    },
+    {
+     "slug": "red_breasted_parakeet",
+     "observations": 17
+    },
+    {
+     "slug": "clouded_monitor",
+     "observations": 14
+    },
+    {
+     "slug": "banded_bullfrog",
+     "observations": 13
+    },
+    {
+     "slug": "purple_heron",
+     "observations": 13
+    },
+    {
+     "slug": "house_crow",
+     "observations": 13
+    },
+    {
+     "slug": "asian_palm_civet",
+     "observations": 11
+    },
+    {
+     "slug": "giant_mudskipper",
+     "observations": 8
+    },
+    {
+     "slug": "common_myna",
+     "observations": 8
+    },
+    {
+     "slug": "blue_swimming_crab",
+     "observations": 8
+    },
+    {
+     "slug": "asian_openbill",
+     "observations": 8
+    },
+    {
+     "slug": "lesser_short_nosed_fruit_bat",
+     "observations": 7
+    },
+    {
+     "slug": "little_egret",
+     "observations": 7
+    },
+    {
+     "slug": "brown_anole",
+     "observations": 7
+    },
+    {
+     "slug": "common_treeshrew",
+     "observations": 6
+    },
+    {
+     "slug": "haddons_carpet_anemone",
+     "observations": 5
+    },
+    {
+     "slug": "striped_snakehead",
+     "observations": 4
+    },
+    {
+     "slug": "greenhouse_frog",
+     "observations": 3
+    },
+    {
+     "slug": "asian_house_shrew",
+     "observations": 3
+    },
+    {
+     "slug": "orange_striped_hermit_crab",
+     "observations": 3
+    },
+    {
+     "slug": "raffles_banded_langur",
+     "observations": 3
+    },
+    {
+     "slug": "grey_heron",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "pasir_ris",
+   "name": "Pasir Ris Park",
+   "lat": 1.381,
+   "lon": 103.952,
+   "radius_km": 1.5,
+   "blurb": "Mangrove boardwalks with monitor lizards, tree-climbing crabs, herons and kingfishers.",
+   "species": [
+    {
+     "slug": "asian_water_monitor",
+     "observations": 596
+    },
+    {
+     "slug": "pink_fingered_vinegar_crab",
+     "observations": 501
+    },
+    {
+     "slug": "giant_mudskipper",
+     "observations": 433
+    },
+    {
+     "slug": "grey_heron",
+     "observations": 360
+    },
+    {
+     "slug": "collared_kingfisher",
+     "observations": 344
+    },
+    {
+     "slug": "oriental_pied_hornbill",
+     "observations": 306
+    },
+    {
+     "slug": "violet_tree_climbing_crab",
+     "observations": 293
+    },
+    {
+     "slug": "asian_vine_snake",
+     "observations": 239
+    },
+    {
+     "slug": "rufous_legged_grasshopper",
+     "observations": 199
+    },
+    {
+     "slug": "plantain_squirrel",
+     "observations": 194
+    },
+    {
+     "slug": "common_palmfly",
+     "observations": 167
+    },
+    {
+     "slug": "brown_throated_sunbird",
+     "observations": 165
+    },
+    {
+     "slug": "oriental_garden_lizard",
+     "observations": 164
+    },
+    {
+     "slug": "common_flameback",
+     "observations": 161
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 160
+    },
+    {
+     "slug": "yellow_vented_bulbul",
+     "observations": 155
+    },
+    {
+     "slug": "oriental_magpie_robin",
+     "observations": 148
+    },
+    {
+     "slug": "pink_necked_green_pigeon",
+     "observations": 129
+    },
+    {
+     "slug": "black_naped_oriole",
+     "observations": 128
+    },
+    {
+     "slug": "ashy_tailorbird",
+     "observations": 127
+    },
+    {
+     "slug": "javan_myna",
+     "observations": 117
+    },
+    {
+     "slug": "asian_koel",
+     "observations": 113
+    },
+    {
+     "slug": "little_egret",
+     "observations": 109
+    },
+    {
+     "slug": "white_bellied_sea_eagle",
+     "observations": 102
+    },
+    {
+     "slug": "white_breasted_waterhen",
+     "observations": 100
+    },
+    {
+     "slug": "rose_ringed_parakeet",
+     "observations": 99
+    },
+    {
+     "slug": "asian_house_gecko",
+     "observations": 98
+    },
+    {
+     "slug": "white_throated_kingfisher",
+     "observations": 92
+    },
+    {
+     "slug": "spotted_dove",
+     "observations": 92
+    },
+    {
+     "slug": "brown_pansy",
+     "observations": 88
+    },
+    {
+     "slug": "common_mormon",
+     "observations": 85
+    },
+    {
+     "slug": "zebra_dove",
+     "observations": 79
+    },
+    {
+     "slug": "malaysian_pied_fantail",
+     "observations": 72
+    },
+    {
+     "slug": "blue_throated_bee_eater",
+     "observations": 69
+    },
+    {
+     "slug": "paradise_tree_snake",
+     "observations": 68
+    },
+    {
+     "slug": "asian_glossy_starling",
+     "observations": 66
+    },
+    {
+     "slug": "plain_tiger",
+     "observations": 65
+    },
+    {
+     "slug": "pacific_swallow",
+     "observations": 60
+    },
+    {
+     "slug": "banded_bullfrog",
+     "observations": 54
+    },
+    {
+     "slug": "banded_archerfish",
+     "observations": 53
+    },
+    {
+     "slug": "crested_honey_buzzard",
+     "observations": 47
+    },
+    {
+     "slug": "house_crow",
+     "observations": 43
+    },
+    {
+     "slug": "blue_tailed_bee_eater",
+     "observations": 42
+    },
+    {
+     "slug": "peacock_pansy",
+     "observations": 42
+    },
+    {
+     "slug": "common_sandpiper",
+     "observations": 39
+    },
+    {
+     "slug": "common_myna",
+     "observations": 38
+    },
+    {
+     "slug": "oriental_dollarbird",
+     "observations": 37
+    },
+    {
+     "slug": "hubners_wasp_moth",
+     "observations": 37
+    },
+    {
+     "slug": "brahminy_kite",
+     "observations": 34
+    },
+    {
+     "slug": "flambeau",
+     "observations": 34
+    },
+    {
+     "slug": "four_lined_tree_frog",
+     "observations": 33
+    },
+    {
+     "slug": "blue_swimming_crab",
+     "observations": 32
+    },
+    {
+     "slug": "tawny_coster",
+     "observations": 31
+    },
+    {
+     "slug": "eurasian_tree_sparrow",
+     "observations": 31
+    },
+    {
+     "slug": "common_gliding_lizard",
+     "observations": 28
+    },
+    {
+     "slug": "haddons_carpet_anemone",
+     "observations": 28
+    },
+    {
+     "slug": "olive_winged_bulbul",
+     "observations": 25
+    },
+    {
+     "slug": "orange_striped_hermit_crab",
+     "observations": 25
+    },
+    {
+     "slug": "long_tailed_macaque",
+     "observations": 23
+    },
+    {
+     "slug": "scarlet_skimmer",
+     "observations": 21
+    },
+    {
+     "slug": "asian_common_toad",
+     "observations": 20
+    },
+    {
+     "slug": "scarlet_backed_flowerpecker",
+     "observations": 16
+    },
+    {
+     "slug": "common_parasol",
+     "observations": 11
+    },
+    {
+     "slug": "asian_palm_civet",
+     "observations": 11
+    },
+    {
+     "slug": "common_sun_skink",
+     "observations": 10
+    },
+    {
+     "slug": "red_breasted_parakeet",
+     "observations": 10
+    },
+    {
+     "slug": "wild_boar",
+     "observations": 10
+    },
+    {
+     "slug": "lesser_short_nosed_fruit_bat",
+     "observations": 9
+    },
+    {
+     "slug": "asian_crimson_dropwing",
+     "observations": 8
+    },
+    {
+     "slug": "pink_warty_sea_cucumber",
+     "observations": 8
+    },
+    {
+     "slug": "smooth_coated_otter",
+     "observations": 6
+    },
+    {
+     "slug": "asian_openbill",
+     "observations": 5
+    },
+    {
+     "slug": "purple_heron",
+     "observations": 3
+    },
+    {
+     "slug": "raffles_banded_langur",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "coney_island",
+   "name": "Coney Island Park",
+   "lat": 1.409,
+   "lon": 103.922,
+   "radius_km": 1,
+   "blurb": "A wild island park with casuarina woods, birds of prey and beach life.",
+   "species": [
+    {
+     "slug": "oriental_garden_lizard",
+     "observations": 101
+    },
+    {
+     "slug": "oriental_magpie_robin",
+     "observations": 74
+    },
+    {
+     "slug": "flambeau",
+     "observations": 67
+    },
+    {
+     "slug": "tawny_coster",
+     "observations": 66
+    },
+    {
+     "slug": "collared_kingfisher",
+     "observations": 58
+    },
+    {
+     "slug": "brahminy_kite",
+     "observations": 36
+    },
+    {
+     "slug": "white_bellied_sea_eagle",
+     "observations": 36
+    },
+    {
+     "slug": "zebra_dove",
+     "observations": 36
+    },
+    {
+     "slug": "crested_honey_buzzard",
+     "observations": 36
+    },
+    {
+     "slug": "white_breasted_waterhen",
+     "observations": 31
+    },
+    {
+     "slug": "hubners_wasp_moth",
+     "observations": 31
+    },
+    {
+     "slug": "oriental_dollarbird",
+     "observations": 29
+    },
+    {
+     "slug": "haddons_carpet_anemone",
+     "observations": 29
+    },
+    {
+     "slug": "asian_openbill",
+     "observations": 26
+    },
+    {
+     "slug": "pacific_swallow",
+     "observations": 25
+    },
+    {
+     "slug": "asian_water_monitor",
+     "observations": 25
+    },
+    {
+     "slug": "plantain_squirrel",
+     "observations": 24
+    },
+    {
+     "slug": "yellow_vented_bulbul",
+     "observations": 24
+    },
+    {
+     "slug": "white_throated_kingfisher",
+     "observations": 24
+    },
+    {
+     "slug": "black_naped_oriole",
+     "observations": 23
+    },
+    {
+     "slug": "common_flameback",
+     "observations": 21
+    },
+    {
+     "slug": "spotted_dove",
+     "observations": 20
+    },
+    {
+     "slug": "rufous_legged_grasshopper",
+     "observations": 18
+    },
+    {
+     "slug": "blue_swimming_crab",
+     "observations": 18
+    },
+    {
+     "slug": "brown_pansy",
+     "observations": 16
+    },
+    {
+     "slug": "javan_myna",
+     "observations": 16
+    },
+    {
+     "slug": "grey_heron",
+     "observations": 16
+    },
+    {
+     "slug": "common_mormon",
+     "observations": 15
+    },
+    {
+     "slug": "common_sandpiper",
+     "observations": 15
+    },
+    {
+     "slug": "olive_winged_bulbul",
+     "observations": 15
+    },
+    {
+     "slug": "pink_necked_green_pigeon",
+     "observations": 13
+    },
+    {
+     "slug": "asian_vine_snake",
+     "observations": 12
+    },
+    {
+     "slug": "scarlet_skimmer",
+     "observations": 11
+    },
+    {
+     "slug": "ashy_tailorbird",
+     "observations": 11
+    },
+    {
+     "slug": "paradise_tree_snake",
+     "observations": 10
+    },
+    {
+     "slug": "rose_ringed_parakeet",
+     "observations": 9
+    },
+    {
+     "slug": "asian_glossy_starling",
+     "observations": 9
+    },
+    {
+     "slug": "orange_striped_hermit_crab",
+     "observations": 9
+    },
+    {
+     "slug": "blue_tailed_bee_eater",
+     "observations": 8
+    },
+    {
+     "slug": "brown_throated_sunbird",
+     "observations": 8
+    },
+    {
+     "slug": "common_palmfly",
+     "observations": 7
+    },
+    {
+     "slug": "oriental_pied_hornbill",
+     "observations": 7
+    },
+    {
+     "slug": "malaysian_pied_fantail",
+     "observations": 7
+    },
+    {
+     "slug": "wild_boar",
+     "observations": 7
+    },
+    {
+     "slug": "giant_mudskipper",
+     "observations": 6
+    },
+    {
+     "slug": "house_crow",
+     "observations": 6
+    },
+    {
+     "slug": "smooth_coated_otter",
+     "observations": 5
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 4
+    },
+    {
+     "slug": "common_parasol",
+     "observations": 3
+    },
+    {
+     "slug": "blue_throated_bee_eater",
+     "observations": 3
+    },
+    {
+     "slug": "asian_koel",
+     "observations": 3
+    },
+    {
+     "slug": "peacock_pansy",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "sentosa",
+   "name": "Sentosa & the Southern Islands",
+   "lat": 1.249,
+   "lon": 103.83,
+   "radius_km": 2.5,
+   "blurb": "Beaches, forest and reefs with hornbills, monitor lizards, sea stars and crabs.",
+   "species": [
+    {
+     "slug": "spotted_dove",
+     "observations": 131
+    },
+    {
+     "slug": "javan_myna",
+     "observations": 106
+    },
+    {
+     "slug": "asian_water_monitor",
+     "observations": 87
+    },
+    {
+     "slug": "oriental_pied_hornbill",
+     "observations": 78
+    },
+    {
+     "slug": "oriental_magpie_robin",
+     "observations": 75
+    },
+    {
+     "slug": "house_crow",
+     "observations": 66
+    },
+    {
+     "slug": "crested_honey_buzzard",
+     "observations": 65
+    },
+    {
+     "slug": "common_palmfly",
+     "observations": 61
+    },
+    {
+     "slug": "yellow_vented_bulbul",
+     "observations": 61
+    },
+    {
+     "slug": "plantain_squirrel",
+     "observations": 60
+    },
+    {
+     "slug": "long_tailed_macaque",
+     "observations": 57
+    },
+    {
+     "slug": "pink_necked_green_pigeon",
+     "observations": 53
+    },
+    {
+     "slug": "oriental_garden_lizard",
+     "observations": 50
+    },
+    {
+     "slug": "blue_throated_bee_eater",
+     "observations": 48
+    },
+    {
+     "slug": "brahminy_kite",
+     "observations": 45
+    },
+    {
+     "slug": "black_naped_oriole",
+     "observations": 40
+    },
+    {
+     "slug": "common_myna",
+     "observations": 37
+    },
+    {
+     "slug": "oriental_dollarbird",
+     "observations": 36
+    },
+    {
+     "slug": "collared_kingfisher",
+     "observations": 34
+    },
+    {
+     "slug": "smooth_coated_otter",
+     "observations": 33
+    },
+    {
+     "slug": "zebra_dove",
+     "observations": 33
+    },
+    {
+     "slug": "red_breasted_parakeet",
+     "observations": 28
+    },
+    {
+     "slug": "brown_pansy",
+     "observations": 27
+    },
+    {
+     "slug": "olive_winged_bulbul",
+     "observations": 26
+    },
+    {
+     "slug": "blue_swimming_crab",
+     "observations": 22
+    },
+    {
+     "slug": "tawny_coster",
+     "observations": 20
+    },
+    {
+     "slug": "asian_common_toad",
+     "observations": 20
+    },
+    {
+     "slug": "asian_glossy_starling",
+     "observations": 20
+    },
+    {
+     "slug": "eurasian_tree_sparrow",
+     "observations": 20
+    },
+    {
+     "slug": "pacific_swallow",
+     "observations": 18
+    },
+    {
+     "slug": "common_mormon",
+     "observations": 18
+    },
+    {
+     "slug": "white_bellied_sea_eagle",
+     "observations": 17
+    },
+    {
+     "slug": "asian_koel",
+     "observations": 17
+    },
+    {
+     "slug": "rufous_legged_grasshopper",
+     "observations": 16
+    },
+    {
+     "slug": "greater_racket_tailed_drongo",
+     "observations": 16
+    },
+    {
+     "slug": "hubners_wasp_moth",
+     "observations": 15
+    },
+    {
+     "slug": "scarlet_skimmer",
+     "observations": 14
+    },
+    {
+     "slug": "blue_tailed_bee_eater",
+     "observations": 14
+    },
+    {
+     "slug": "haddons_carpet_anemone",
+     "observations": 13
+    },
+    {
+     "slug": "asian_house_gecko",
+     "observations": 13
+    },
+    {
+     "slug": "asian_crimson_dropwing",
+     "observations": 12
+    },
+    {
+     "slug": "brown_throated_sunbird",
+     "observations": 12
+    },
+    {
+     "slug": "plain_tiger",
+     "observations": 12
+    },
+    {
+     "slug": "scarlet_backed_flowerpecker",
+     "observations": 11
+    },
+    {
+     "slug": "common_parasol",
+     "observations": 10
+    },
+    {
+     "slug": "flambeau",
+     "observations": 10
+    },
+    {
+     "slug": "brown_anole",
+     "observations": 9
+    },
+    {
+     "slug": "asian_vine_snake",
+     "observations": 8
+    },
+    {
+     "slug": "four_lined_tree_frog",
+     "observations": 7
+    },
+    {
+     "slug": "peacock_pansy",
+     "observations": 7
+    },
+    {
+     "slug": "raffles_banded_langur",
+     "observations": 7
+    },
+    {
+     "slug": "paradise_tree_snake",
+     "observations": 6
+    },
+    {
+     "slug": "common_sun_skink",
+     "observations": 6
+    },
+    {
+     "slug": "orange_striped_hermit_crab",
+     "observations": 6
+    },
+    {
+     "slug": "asian_openbill",
+     "observations": 6
+    },
+    {
+     "slug": "banded_archerfish",
+     "observations": 4
+    },
+    {
+     "slug": "greenhouse_frog",
+     "observations": 4
+    },
+    {
+     "slug": "malesian_frog",
+     "observations": 4
+    },
+    {
+     "slug": "clouded_monitor",
+     "observations": 4
+    },
+    {
+     "slug": "white_breasted_waterhen",
+     "observations": 4
+    },
+    {
+     "slug": "rose_ringed_parakeet",
+     "observations": 4
+    },
+    {
+     "slug": "ashy_tailorbird",
+     "observations": 4
+    },
+    {
+     "slug": "malaysian_pied_fantail",
+     "observations": 4
+    },
+    {
+     "slug": "sunda_colugo",
+     "observations": 3
+    },
+    {
+     "slug": "waglers_pit_viper",
+     "observations": 3
+    },
+    {
+     "slug": "crimson_sunbird",
+     "observations": 3
+    },
+    {
+     "slug": "grey_heron",
+     "observations": 3
+    }
+   ]
+  }
+ ]
+}

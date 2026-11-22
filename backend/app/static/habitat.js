@@ -229,6 +229,7 @@ const HAB_CITY = {
   RUS: [55.75, 37.61], SRB: [44.82, 20.47], SVK: [48.15, 17.12], SVN: [46.06, 14.51],
   ESP: [40.40, -3.69], SWE: [59.35, 18.10], CHE: [46.92, 7.47], TUR: [39.93, 32.86],
   UKR: [50.44, 30.51], GBR: [51.50, -0.12],
+  SGP: [1.29, 103.85],
 };
 // A European country's habitat borrows the scenery of a US state with a similar
 // landscape and no US landmark: the Mediterranean coast is California's golden
@@ -338,7 +339,7 @@ function habNote() {
     : `${n} animal${n > 1 ? "s" : ""} live${n > 1 ? "" : "s"} ${hab.visit ? "in " + who : "here"}` + out + (asleep ? `, ${asleep} asleep` : "")
       + (hab.wx ? ". " + habWxLine() : ". Tap one to say hi.")
       // Whole sentences: "It's fall." and at night "It's fall, under a full moon."
-      + ` It's ${habSeason()}${phase === "night" ? ", under a " + habMoonName()[1].toLowerCase() : ""}.`;
+      + ` It's ${habSeasonWords()}${phase === "night" ? ", under a " + habMoonName()[1].toLowerCase() : ""}.`;
   const night = phase === "night";
   const here = document.getElementById("hab-wx-here");
   if (here) here.hidden = !(hab.wxAsk && hab.wx && !hab.visit);
@@ -1548,10 +1549,22 @@ const habLovesRain = (a) => a.s.category === "amphibian" || a.role === "paddle" 
 const HAB_SEASONS = ["winter", "winter", "spring", "spring", "spring", "summer", "summer", "summer", "fall", "fall", "fall", "winter"];
 const HAB_SEASON_ICON = { spring: "🌸", summer: "☀️", fall: "🍂", winter: "❄️" };
 // States where winter is mild: no snow on the ground, and the animals stay up.
-const HAB_MILD_WINTER = new Set(["CA", "FL", "HI", "TX", "AZ", "LA", "MS", "AL", "GA", "SC", "NC"]);
+const HAB_MILD_WINTER = new Set(["CA", "FL", "HI", "TX", "AZ", "LA", "MS", "AL", "GA", "SC", "NC", "SGP"]);
 const habSeasonTest = (() => { try { return new URLSearchParams(location.search).get("season"); } catch { return null; } })();
+// Near the equator (Singapore) there are no spring, fall or winter: the scene
+// stays green all year, and the note names the monsoon instead.
+const HAB_TROPICS = new Set(["SGP"]);
 function habSeason() {
-  return HAB_SEASONS.includes(habSeasonTest) ? habSeasonTest : HAB_SEASONS[new Date().getMonth()];
+  if (HAB_SEASONS.includes(habSeasonTest)) return habSeasonTest;
+  return HAB_TROPICS.has(habRealState()) ? "summer" : HAB_SEASONS[new Date().getMonth()];
+}
+// "fall", or in the tropics "the northeast monsoon" (December to March, the wet
+// and windy months), "the southwest monsoon" (June to September) or "between
+// the monsoons" (the thundery spells in April-May and October-November).
+function habSeasonWords() {
+  if (!HAB_TROPICS.has(habRealState()) || HAB_SEASONS.includes(habSeasonTest)) return habSeason();
+  const m = new Date().getMonth();
+  return m === 11 || m <= 2 ? "the northeast monsoon" : m >= 5 && m <= 8 ? "the southwest monsoon" : "between the monsoons";
 }
 const habSnowy = (state = habState()) => habSeason() === "winter" && !HAB_MILD_WINTER.has(state);
 const habHibernating = () => habSnowy();
@@ -1954,6 +1967,11 @@ const HAB_SCENES = {
   PA: { far: ["#4f7f5a", "#5f9262", "#71a56c", "#88b87e"], near: ["#3c7040", "#4c834a", "#5e9654", "#74aa66"],
         meadow: ["#5f9a3d", "#77b04a", "#8fc35a", "#a8d36d"], dots: "forest", tree: "oak",
         flowers: [["#f6c4d8", "#ffffff"], ["#f6c4d8", "#ffffff"], ["#ffffff", "#f8e0ea"], ["#ffd84d", "#fff2a0"]] },
+  // Singapore: rainforest greens, a rain tree for the roosting tree, and the
+  // purple Vanda Miss Joaquim orchid (the national flower), bougainvillea and frangipani.
+  SGP: { far: ["#4e7e52", "#5e9060", "#72a46e", "#8ab882"], near: ["#2e6a34", "#3c7e40", "#4e924c", "#66a85c"],
+         meadow: ["#4f9438", "#64aa44", "#7abd52", "#94cf64"], dots: "round", tree: "raintree",
+         flowers: [["#b04ac8", "#f0c4f4"], ["#e0308a", "#ff9ccc"], ["#ffffff", "#ffe070"], ["#b04ac8", "#f0c4f4"]] },
   default: { far: ["#6f9e60", "#82b370", "#97c483", "#b0d69a"], near: ["#4f8d43", "#62a250", "#78b55e", "#90c771"],
              meadow: ["#5f9a3d", "#77b04a", "#8fc35a", "#a8d36d"], dots: "round", tree: "round",
              flowers: [["#ffffff", "#ffe9a0"], ["#ffd84d", "#fff2a0"], ["#f27aa8", "#ffc4dc"], ["#b48cff", "#e0d0ff"]] },
@@ -2577,6 +2595,8 @@ function habBackground(L, phase, state, lights = {}) {
     for (const ay of [rtop + 16, rtop + 34]) for (let x = rx + 5; x < gx - 3; x++) rk.set(x, ay, steel[0]);
     for (let dx = -10; dx <= 18; dx++) for (let y = pad; y < pad + 3; y++) rk.set(rx + dx, y, ramp(P("#7a7a80", "#9a9aa0", "#b8b8bc"), .8 - (y - pad) * .3, rx + dx, y));
     rk.onto(img, P("#1e1e24"));
+  } else if (state === "SGP") {
+    habSingaporeSea({ img, P, W, H, L, atmo });
   } else if (state === "VA" || land.sea === "lighthouse") {
     // Assateague Island: a sandy barrier island with marsh grass, the striped
     // lighthouse, and the wild ponies grazing.
@@ -2939,8 +2959,8 @@ function habBackground(L, phase, state, lights = {}) {
         for (let j = 0; j < w; j++) img.set(x, y + j, bark[j === 0 ? 2 : j === w - 1 ? 0 : 1]);
       }
     };
-    for (let y = 92; y <= ground; y++) {
-      const hw = 4 + (y > ground - 8 ? Math.round((y - ground + 8) * .9) : 0);
+    for (let y = kind === "raintree" ? 108 : 92; y <= ground; y++) {
+      const hw = (kind === "raintree" ? 5 : 4) + (y > ground - 8 ? Math.round((y - ground + 8) * .9) : 0);
       for (let x = tx - hw; x < tx + hw; x++) {
         const u = (x - tx + .5) / hw;
         let col = u < -.45 ? bark[2] : u < .35 ? bark[1] : bark[0];
@@ -2950,23 +2970,37 @@ function habBackground(L, phase, state, lights = {}) {
         img.set(x, y, col);
       }
     }
-    limb(tx + 2, 104, tx + 28, 100, 3, 2);
-    limb(tx - 2, 110, tx - 22, 101, 3, 2);
-    limb(tx + 2, 133, tx + 18, 130, 2, 1);
+    if (kind === "raintree") {
+      // A rain tree (Samanea saman): a short trunk splitting into long limbs that
+      // spread almost level, under a wide, low umbrella of fine leaves.
+      limb(tx + 2, 124, tx + 38, 106, 4, 2);
+      limb(tx - 2, 122, tx - 34, 107, 4, 2);
+      limb(tx + 2, 112, tx + 16, 98, 3, 2);
+      limb(tx - 2, 110, tx - 16, 99, 3, 2);
+    } else {
+      limb(tx + 2, 104, tx + 28, 100, 3, 2);
+      limb(tx - 2, 110, tx - 22, 101, 3, 2);
+      limb(tx + 2, 133, tx + 18, 130, 2, 1);
+    }
     // California's coast live oak is a darker, olive green.
     // Oaks stay green all year; other leafy trees turn in fall and are bare in a
     // snowy winter (New York's sugar maple is the reddest).
     // Junipers and palo verdes are evergreen; aspens and cottonwoods turn gold.
-    const ever = kind === "oak" || kind === "juniper" || kind === "paloverde";
+    const ever = kind === "oak" || kind === "juniper" || kind === "paloverde" || kind === "raintree";
     const turn = !ever && sc.leaves === "fall";
     const leaf = kind === "juniper" ? P("#1e2c24", "#2c3e32", "#3e5444", "#526a56", "#6c846c")
       : kind === "paloverde" ? P("#3e5424", "#52702e", "#6a8c3a", "#86a84a", "#a6c262")
       : turn && (kind === "aspen" || kind === "cottonwood") ? P("#7a5a0e", "#a87e12", "#d0a420", "#e8c43a", "#f8e070")
       : kind === "oak" ? P("#24391c", "#344f25", "#486b2f", "#62893c", "#86ab55")
+      : kind === "raintree" ? P("#1c4020", "#28562a", "#386e34", "#4c8840", "#68a452")
       : turn && kind === "maple" ? P("#6a1a12", "#9a2a16", "#c8441c", "#e8702a", "#f6b040")
       : turn ? P("#7a3a14", "#a8561a", "#d07a24", "#e8a032", "#f6c850")
       : P("#22492a", "#2f6633", "#41863d", "#5aa548", "#84c55c");
-    if (ever || sc.leaves !== "bare") habLeafCrown(img, tx + 3, 90, 34, 40, leaf, 91);
+    if (kind === "raintree") {
+      // the umbrella: a broad dome, wider than tall, in clumps along the limbs
+      for (const [dx, dy, rx, ry, sd] of [[-30, 100, 16, 9, 94], [34, 99, 16, 9, 95], [0, 88, 34, 15, 91], [-16, 94, 18, 10, 96], [18, 93, 18, 10, 97]])
+        habLeafCrown(img, tx + dx, dy, rx, ry, leaf, sd);
+    } else if (ever || sc.leaves !== "bare") habLeafCrown(img, tx + 3, 90, 34, 40, leaf, 91);
     else {
       // Bare winter branches: a fan of twigs reaching up from the limbs.
       const twig = P("#3a2e26", "#54443a");
@@ -3392,7 +3426,7 @@ const HAB_BIOME = {};
 for (const [bio, sts] of Object.entries({
   desert: "AZ NM NV UT", prairie: "ND SD NE KS OK TX CA", alpine: "CO WY MT ID",
   forest: "TN WV KY AR VT NH PA NY OH IN IL IA MO WI MI MA CT RI NJ DE MD VA NC GA AL",
-  north: "ME MN AK WA OR", marsh: "LA MS FL SC", tropical: "HI",
+  north: "ME MN AK WA OR", marsh: "LA MS FL SC", tropical: "HI SGP",
 })) for (const st of sts.split(" ")) HAB_BIOME[st] = bio;
 const HAB_FARM_STATES = new Set(["KS", "IA", "OK", "IN", "WI"]);
 const HAB_GROUND = {
@@ -3757,6 +3791,14 @@ function habPaintMesas(c, ms) {
 // Far scenery for states with their own: true when it drew something.
 function habFarScene(c) {
   const R = HAB_ROCK, st = c.state;
+  if (st === "SGP") {
+    // Singapore: the city's towers hazy across the water, a row of public
+    // housing blocks, and low hills of rainforest (Bukit Timah) in front.
+    habSkylineSG(c);
+    habPaintRidges(c, [[10, 26, 60], [22, 34, 80]], { pals: habLeafPals(c, "tropical"), pines: 0, shrink: .02, hazeK: .014, seed: 590,
+      env: (x) => 1 - .78 * clamp01((x - c.W * .34) / (c.W * .2)) });
+    return true;
+  }
   if (st === "CA") {
     // The Sierra Nevada: pale granite crest with snow in the gullies, above
     // golden foothills dotted with oaks.
@@ -3984,6 +4026,81 @@ function habFarScene(c) {
     return true;
   }
   return false;
+}
+
+// Singapore's skyline, generic and far away: slim glass and stone towers with
+// stepped and slanted tops, lower slab blocks of public housing in pale colours,
+// lit windows at night. No one building is copied.
+function habSkylineSG(c) {
+  const { img, P, foot, coastEnd, night } = c, sh = (col, k = .34) => c.atmo(col, k);
+  const lit = P("#ffe9a0", "#ffd36a"), x0 = Math.round(coastEnd * .3), x1 = coastEnd - 18;
+  // housing blocks: long and low, pastel, with rows of windows
+  const slab = [P("#a8a49a", "#c4beb0", "#dcd6c6"), P("#9aa6a8", "#b6c2c2", "#d0dada"), P("#b0a08e", "#cab8a4", "#e0d0bc")];
+  for (let x = Math.round(coastEnd * .08), i = 0; x < x0 + 20; i++) {
+    const w = 7 + Math.floor(hash2(i, 81) * 6), h = 9 + Math.floor(hash2(i, 82) * 7), pal = slab[i % 3];
+    for (let dx = 0; dx < w; dx++) for (let y = foot - 4 - h; y < foot; y++) {
+      const win = dx % 2 === 1 && dx < w - 1 && (y - foot + h) % 2 === 0 && y > foot - 3 - h;
+      if (win && night && hash2(x + dx, y, 83) > .5) img.set(x + dx, y, lit[1], 1);
+      else img.set(x + dx, y, sh(win ? pal[0] : pal[dx === 0 ? 2 : dx === w - 1 ? 0 : 1], .42));
+    }
+    x += w + 2 + Math.floor(hash2(i, 84) * 4);
+  }
+  // the city centre: towers of varied height, tallest toward the middle
+  const glass = [P("#5e7894", "#7690ac", "#90a8c2", "#b0c4d8"), P("#7a8494", "#949eac", "#b0b8c4", "#cfd4dc"), P("#8a8270", "#a69e8a", "#c2baa4", "#dcd4c0")];
+  const mid = (x0 + x1) / 2;
+  for (let x = x0, i = 0; x < x1; i++) {
+    const w = 4 + Math.floor(hash2(i, 85) * 5), near = 1 - Math.abs(x - mid) / ((x1 - x0) / 2);
+    const h = Math.round(16 + near * 34 + hash2(i, 86) * 16), pal = glass[Math.floor(hash2(i, 87) * 3)], top = foot - 2 - h;
+    const roof = Math.floor(hash2(i, 88) * 3);  // 0 flat, 1 stepped crown, 2 slanted
+    for (let dx = 0; dx < w && x + dx < x1; dx++) {
+      let t = top;
+      if (roof === 1 && (dx === 0 || dx === w - 1)) t += 3;
+      if (roof === 2) t += Math.round(dx * 4 / w);
+      for (let y = t; y < foot; y++) {
+        const win = dx > 0 && dx < w - 1 && (y - t) % 3 === 1 && y > t + 1;
+        if (win && night && hash2(x + dx, y, 89) > .55) img.set(x + dx, y, lit[hash2(x, y, 90) > .5 ? 0 : 1], 1);
+        else img.set(x + dx, y, sh(pal[dx === 0 ? 3 : dx === w - 1 ? 0 : win ? 2 : 1]));
+      }
+    }
+    if (roof === 0 && hash2(i, 91) > .6) for (let y = top - 4; y < top; y++) img.set(x + (w >> 1), y, sh(pal[0]));
+    x += w + (hash2(i, 92) > .6 ? 1 : 0);
+  }
+}
+
+// Singapore's waters: a mangrove islet, a kelong (a fishing platform on stilts
+// with a palm-thatch hut and a lift net) and a container ship on the horizon.
+function habSingaporeSea(c) {
+  const { img, P, W, L } = c;
+  const mg = pxLayer(W, c.H), mx = L.sea + Math.round((W - L.sea) * .56), top = L.water - 10;
+  const root = P("#4a3a2c", "#6a5440", "#8a7058"), leaf = P("#1f4a2a", "#2b5f34", "#3b7640", "#4f8f4c", "#6aa85a");
+  for (let k = -12; k <= 12; k += 4) for (let t = 0; t <= 1; t += .06) {
+    const x = Math.round(mx + k * .4 + (k * .6) * t), y = Math.round(top + 8 + t * (L.water + 3 - top - 8) - Math.sin(t * Math.PI) * 2);
+    mg.set(x, y, root[t < .5 ? 2 : 1]);
+  }
+  for (const [dx, dy, rx, ry] of [[-7, 5, 7, 5], [6, 5, 8, 5], [-1, 2, 9, 6], [11, 8, 4, 3]])
+    pxBlob(mg, mx + dx, top + dy, rx, ry, leaf, { rough: .9, grain: 1, seed: dx + 70 });
+  mg.onto(img, P("#132a18"));
+  // the kelong: a plank deck on a grid of poles, a hut with a pitched attap roof
+  const kl = pxLayer(W, c.H), kx = L.sea + Math.round((W - L.sea) * .2), deck = L.water + 6;
+  const wood = P("#4a3626", "#6a4e36", "#8a6a4a", "#a8885e"), attap = P("#6a4e2a", "#8a6a3a", "#a8864a", "#c4a462");
+  for (let k = 0; k < 6; k++) for (let y = deck; y < deck + 9; y++) kl.set(kx - 12 + k * 5, y, wood[y % 3 === 0 ? 0 : 1]);
+  for (let x = kx - 14; x <= kx + 14; x++) { kl.set(x, deck, wood[3]); kl.set(x, deck + 1, wood[1]); }
+  for (let y = deck - 9; y < deck; y++) for (let x = kx - 6; x <= kx + 6; x++)
+    kl.set(x, y, (x === kx - 1 || x === kx) && y > deck - 6 ? wood[0] : wood[x < kx ? 2 : 1]);
+  for (let j = 0; j < 6; j++) for (let x = kx - 8 + j; x <= kx + 8 - j; x++) kl.set(x, deck - 10 - j, ramp(attap, .8 - (x - kx + 8) / 17 * .6 + (j === 0 ? -.2 : 0), x, deck - 10 - j));
+  // the lift net hanging from a boom off the deck
+  for (let t = 0; t <= 12; t++) kl.set(kx + 14 + Math.round(t * .5), deck - 6 + t, wood[0]);
+  for (let x = kx + 16; x <= kx + 22; x++) kl.set(x, deck + 5 + (x % 2), P("#8a8a80")[0]);
+  kl.onto(img, P("#2a1e14"));
+  // a container ship far out, stacked with coloured boxes
+  const sx = W - 20, sy = L.water - 1;
+  if (sx - 16 > mx + 16) {
+    const hull = c.atmo(P("#3a3a44")[0], .35), boxes = ["#b84a3a", "#3a6ab0", "#d0a030", "#4a8a5a", "#c0c4c8"];
+    for (let x = sx - 16; x <= sx + 16; x++) { img.set(x, sy, hull); if (x > sx - 15 && x < sx + 16) img.set(x, sy - 1, hull); }
+    for (let x = sx - 12; x <= sx + 8; x += 2) for (let y = sy - 4; y < sy - 1; y++)
+      img.set(x, y, c.atmo(P(boxes[Math.floor(hash2(x, y >> 1, 93) * 5)])[0], .35)), img.set(x + 1, y, c.atmo(P(boxes[Math.floor(hash2(x, y >> 1, 93) * 5)])[0], .4));
+    for (let y = sy - 7; y < sy - 1; y++) for (let x = sx + 11; x <= sx + 13; x++) img.set(x, y, c.atmo(P("#e8e8e8")[0], .35));
+  }
 }
 
 // Landmarks and touches drawn over the water and shore, per state.

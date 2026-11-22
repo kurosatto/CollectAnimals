@@ -78,6 +78,10 @@ class StatesTest {
             StateInfo("AUT", "Austria", emptyList(), region = "europe") { error("not needed") })
         assertEquals(listOf("CA", "NC", "OR", "SC", "AUT", "DEU"), StateList.alphabetical(eu + states).map { it.code })
         assertEquals("country", eu[0].word)
+        // Then Asia (Singapore).
+        val sg = StateInfo("SGP", "Singapore", emptyList(), region = "asia") { error("not needed") }
+        assertEquals(listOf("CA", "NC", "OR", "SC", "AUT", "DEU", "SGP"), StateList.alphabetical(listOf(sg) + eu + states).map { it.code })
+        assertEquals("country", sg.word)
     }
 
     @Test

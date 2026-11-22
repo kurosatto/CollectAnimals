@@ -1530,7 +1530,7 @@ function addTile(grid, e, i, tier, owner = null) {
   }
   else if (state === "friend" && !e.friends_caught) {
     // Known because you captured it in another state; it counts here once you capture it here.
-    st.textContent = myState.region === "europe" ? "Other place" : "Other state";
+    st.textContent = (myState.region || "usa") !== "usa" ? "Other place" : "Other state";
     st.classList.add("friend");
     t.title = `You captured it somewhere else. Capture it in ${myState.name} too to add it here.`;
   }
@@ -1568,8 +1568,8 @@ function avatarImg(n, cls = "") {
 // are [lon, lat] from /map/<state>, with the "frame" (lon/lat box) its drawn map
 // /maps/<CODE>.webp covers (tools/make_state_maps.py).
 let states = [];
-// "state" for a US state, "country" for a European one (region from /states).
-const placeWord = (st) => (st && st.region === "europe" ? "country" : "state");
+// "state" for a US state, "country" for one in Europe or Asia (region from /states).
+const placeWord = (st) => (st && (st.region || "usa") !== "usa" ? "country" : "state");
 // Until /states and /me answer: no state, and a map of the lower 48.
 let myState = { code: "", name: "", bounds: { west: -124.8, east: -66.9, south: 24.5, north: 49.4 } };
 // The player's main state (from /me). myState is the one on screen, which can be
@@ -1667,9 +1667,10 @@ function pickState({ title, note = "", current = null, tiles = null, locate = fa
         }, () => guess.replaceChildren(el("p", "muted", "Location is off, so pick from the list.")),
         { timeout: 8000, maximumAge: 600000 });
       }
-      // US states, then European countries, each A to Z.
-      const groups = [["United States", states.filter((st) => st.region !== "europe")],
-                      ["Europe", states.filter((st) => st.region === "europe")]].filter(([, g]) => g.length);
+      // US states, then the countries of Europe, then Asia, each A to Z.
+      const groups = [["United States", states.filter((st) => (st.region || "usa") === "usa")],
+                      ["Europe", states.filter((st) => st.region === "europe")],
+                      ["Asia", states.filter((st) => st.region === "asia")]].filter(([, g]) => g.length);
       for (const [label, group] of groups) {
         if (groups.length > 1) list.append(el("div", "sep", label));
         for (const st of [...group].sort((a, b) => a.name.localeCompare(b.name))) {

@@ -59,6 +59,7 @@ import species_eu_birds  # noqa: E402,F401
 import species_eu_herps  # noqa: E402,F401
 import species_eu_bugs  # noqa: E402,F401
 import species_eu_water  # noqa: E402,F401
+import species_sg  # noqa: E402,F401
 from archetypes import (gull, raptor, BLACK, NOSE, PINK, S, WHITE, bee, beetle_top, bird, butterfly, critter,  # noqa: E402
                         dragonfly, duck, flecks, frog, goose, hummingbird, lizard, mantis, owl, pelican, pinniped, quad, snake,
                         sprite, star, turtle, vulture, wader, whale)
