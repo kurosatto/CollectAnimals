@@ -15,8 +15,9 @@ much faster, so this writes the same files from there:
     python ml/build_maps_gbif.py --only VA NY  # just these
     python ml/build_maps_gbif.py --only DEU FRA  # staged European countries too
 
-A European country (species/europe.json) is searched by its country code instead
-of a US state name.
+A country (Europe, Singapore; staged ones in species/europe.json) is searched by
+its country code instead of a US state name. draft_list_gbif() drafts a country's
+100-species list the same way (ml/build_countries.py --gbif).
 """
 
 from __future__ import annotations
@@ -25,6 +26,7 @@ import argparse
 import csv
 import json
 import time
+import unicodedata
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -54,13 +56,15 @@ def get(path, **params):
             time.sleep(5 * (attempt + 1))
 
 
-# GBIF country codes for the staged European countries (ISO alpha-2; Kosovo is XK).
+# GBIF country codes for the countries (ISO alpha-2; Kosovo is XK).
 ISO2 = {"ALB": "AL", "AUT": "AT", "BLR": "BY", "BEL": "BE", "BIH": "BA", "BGR": "BG", "HRV": "HR", "CYP": "CY",
         "CZE": "CZ", "DNK": "DK", "EST": "EE", "FIN": "FI", "FRA": "FR", "DEU": "DE", "GRC": "GR", "HUN": "HU",
         "ISL": "IS", "IRL": "IE", "ITA": "IT", "XKX": "XK", "LVA": "LV", "LTU": "LT", "LUX": "LU", "MLT": "MT",
         "MDA": "MD", "MNE": "ME", "NLD": "NL", "MKD": "MK", "NOR": "NO", "POL": "PL", "PRT": "PT", "ROU": "RO",
         "RUS": "RU", "SRB": "RS", "SVK": "SK", "SVN": "SI", "ESP": "ES", "SWE": "SE", "CHE": "CH", "TUR": "TR",
-        "UKR": "UA", "GBR": "GB", "AND": "AD", "LIE": "LI", "MCO": "MC", "SMR": "SM", "VAT": "VA"}
+        "UKR": "UA", "GBR": "GB", "AND": "AD", "LIE": "LI", "MCO": "MC", "SMR": "SM", "VAT": "VA",
+        # Asia
+        "SGP": "SG"}
 
 
 # iNaturalist names GBIF's backbone spells differently (an exact match either way).
@@ -80,7 +84,7 @@ def taxon_key(sci):
 
 def where(st):
     """GBIF filters for a state, or for a staged country by its code."""
-    if st.get("region") == "europe":
+    if st.get("region", "usa") != "usa":
         return dict(country=ISO2[st["code"]])
     return dict(country="US", stateProvince=st["name"])
 
@@ -113,6 +117,105 @@ def species_maps(sci, place, grid, per_species):
             break
         offset += PAGE
     return [[c, r, n] for (c, r), n in sorted(cells.items())], {"months": months, "hours": hours}
+
+
+# GBIF class/phylum -> the game's category, as iNaturalist's iconic taxa do it
+# (build_states.CATEGORY). The GBIF backbone splits reptiles into Squamata,
+# Testudines and Crocodylia and has no fish class: other chordates are fish.
+GBIF_CATEGORY = {"Mammalia": "mammal", "Aves": "bird", "Squamata": "reptile", "Testudines": "reptile",
+                 "Crocodylia": "reptile", "Amphibia": "amphibian", "Insecta": "invertebrate",
+                 "Arachnida": "invertebrate", "Diplopoda": "invertebrate", "Chilopoda": "invertebrate"}
+# Per-class searches so the small groups fill their quotas (the overall top
+# 1,500 is mostly insects and birds).
+GBIF_GROUPS = [dict(kingdomKey=1), dict(classKey=359), dict(classKey=11592253), dict(classKey=11418114),
+               dict(classKey=11493978), dict(classKey=131), dict(phylumKey=44), dict(phylumKey=52)]
+
+
+def gbif_category(t):
+    if t.get("phylum") == "Mollusca":
+        # land snails count as bugs; sea shells, slugs and octopuses as water animals
+        return "invertebrate" if t.get("order") in ("Stylommatophora", "Systellommatophora") else "marine"
+    if t.get("class") in GBIF_CATEGORY:
+        return GBIF_CATEGORY[t["class"]]
+    if t.get("phylum") == "Platyhelminthes" and t.get("family") == "Geoplanidae":
+        return "invertebrate"  # land flatworms
+    return "marine"
+
+
+def english_name(key):
+    """The English name most sources agree on (GBIF has no single preferred one)."""
+    names, seen = {}, {}
+    for v in get(f"species/{key}/vernacularNames", limit=300).get("results", []):
+        if v.get("language") == "eng":
+            n = v["vernacularName"].strip()
+            names[n.lower()] = names.get(n.lower(), 0) + 1
+            seen.setdefault(n.lower(), n)
+    return seen[max(names, key=names.get)] if names else None
+
+
+def draft_list_gbif(iso2, slugs, used, exclude, names=None, quota=None, rarity=None):
+    """A country's 100 most-sighted wild species from GBIF's copy of iNaturalist
+    research-grade sightings, per group up to the quota, then topped up by
+    count, like build_states.draft_list. `names` (scientific -> English) wins
+    over GBIF's names; species with no English name anywhere are skipped."""
+    from build_states import QUOTA, RARITY, slugify
+    quota, rarity, names = quota or QUOTA, rarity or RARITY, names or {}
+    known_names = {r["slug"]: r["common_name"] for f in SPECIES.glob("*_100.csv")
+                   for r in csv.DictReader(open(f, encoding="utf-8"))}
+    counts = {}
+    for g in GBIF_GROUPS:
+        fac = get("occurrence/search", country=iso2, datasetKey=INAT_DATASET, limit=0, facet="speciesKey",
+                  facetLimit=1500 if "kingdomKey" in g else 300, **g)
+        for f in fac.get("facets", []):
+            for c in f["counts"]:
+                counts[int(c["name"])] = c["count"]
+    pools = {}
+    with ThreadPoolExecutor(6) as pool:
+        taxa = list(pool.map(lambda k: get(f"species/{k}"), counts))
+    for t in taxa:
+        sci = t.get("canonicalName") or ""
+        if t.get("rank") != "SPECIES" or sci in exclude or sci.split()[0] in exclude:
+            continue
+        pools.setdefault(gbif_category(t), []).append({"key": t["key"], "sci": sci, "count": counts[t["key"]]})
+    for cat in pools:
+        pools[cat].sort(key=lambda r: -r["count"])
+    picked, seen = [], set()
+
+    def take(r, cat):
+        if r["key"] in seen:
+            return
+        common = names.get(r["sci"]) or english_name(r["key"])
+        if common:
+            seen.add(r["key"]); picked.append((r, cat, common))
+
+    for cat, n in quota.items():
+        for r in pools.get(cat, []):
+            if sum(1 for _, c, _ in picked if c == cat) >= n:
+                break
+            take(r, cat)
+    rest = sorted(((r, c) for c, rs in pools.items() for r in rs), key=lambda x: -x[0]["count"])
+    for r, cat in rest:
+        if len(picked) >= 100:
+            break
+        take(r, cat)
+    picked.sort(key=lambda x: -x[0]["count"])
+    rows = []
+    for r, cat, common in picked[:100]:
+        sci = r["sci"]
+        slug = slugs.get(sci.lower())
+        if slug and slug in known_names:  # one name per species across every list
+            common = known_names[slug]
+        if not slug:
+            slug = slugify(unicodedata.normalize("NFKD", common).encode("ascii", "ignore").decode())
+            if used.get(slug, sci) != sci:  # same English name, different species
+                slug = slugify(f"{common} {sci.split()[0]}")
+        used[slug] = sci
+        slugs[sci.lower()] = slug
+        rows.append({"slug": slug, "common_name": common[0].upper() + common[1:], "scientific_name": sci,
+                     "category": cat, "gbif_key": r["key"], "count": r["count"]})
+    for row, rar in zip(rows, rarity):
+        row["rarity"] = rar
+    return rows
 
 
 def main():

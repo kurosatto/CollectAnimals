@@ -16,6 +16,8 @@ most-observed first. One API call per park (~30 s for the whole list).
 Usage:
     python ml/build_hotspots.py              # California
     python ml/build_hotspots.py --state NC
+    python ml/build_hotspots.py --state SGP --gbif   # the same counts from GBIF's copy of
+                                                     # iNaturalist research-grade sightings
 """
 
 from __future__ import annotations
@@ -137,10 +139,13 @@ def main():
     ap.add_argument("--taxa", default="data/images/taxa.json",
                     help="taxon ids cached by fetch_inat.py (resolved from the API if missing)")
     ap.add_argument("--min-observations", type=int, default=3)
+    ap.add_argument("--gbif", action="store_true", help="count from GBIF (when api.inaturalist.org is out of reach)")
     args = ap.parse_args()
 
     state = load_states(only=[args.state])[0]
     species = list(csv.DictReader(open(state["species"], encoding="utf-8")))
+    if args.gbif:
+        return gbif_hotspots(state, species, args.min_observations)
     taxa_path = Path(args.taxa)
     taxa = json.loads(taxa_path.read_text(encoding="utf-8")) if taxa_path.exists() else {}
     slug_by_taxon = {}
@@ -173,6 +178,39 @@ def main():
 
     out = {"source": "iNaturalist research-grade observations (species_counts by radius)",
            "min_observations": args.min_observations, "parks": parks}
+    state["hotspots"].write_text(json.dumps(out, indent=1), encoding="utf-8")
+    print(f"wrote {state['hotspots']}")
+
+
+def park_list(code):
+    extra = json.loads((Path(__file__).resolve().parents[1] / "species" / "parks.json").read_text(encoding="utf-8"))
+    return PARKS.get(code) or extra[code]
+
+
+def gbif_hotspots(state, species, min_obs):
+    """build_hotspots from GBIF: species facets within each park's radius."""
+    from build_maps_gbif import INAT_DATASET, get, taxon_key
+    slug_by_key = {}
+    for s in species:
+        key = taxon_key(s["scientific_name"])
+        if key:
+            slug_by_key[key] = s["slug"]
+    parks = []
+    for pid, name, lat, lon, radius, blurb in park_list(state["code"]):
+        fac = get("occurrence/search", geoDistance=f"{lat},{lon},{radius}km", datasetKey=INAT_DATASET, limit=0,
+                  facet="speciesKey", facetLimit=3000)
+        counts = {}
+        for f in fac.get("facets", []):
+            for c in f["counts"]:
+                slug = slug_by_key.get(int(c["name"]))
+                if slug:
+                    counts[slug] = counts.get(slug, 0) + c["count"]
+        listed = sorted(((s, n) for s, n in counts.items() if n >= min_obs), key=lambda kv: -kv[1])
+        print(f"{name}: {len(listed)} species")
+        parks.append({"id": pid, "name": name, "lat": lat, "lon": lon, "radius_km": radius, "blurb": blurb,
+                      "species": [{"slug": s, "observations": n} for s, n in listed]})
+    out = {"source": "iNaturalist research-grade observations via GBIF (species facets by radius)",
+           "min_observations": min_obs, "parks": parks}
     state["hotspots"].write_text(json.dumps(out, indent=1), encoding="utf-8")
     print(f"wrote {state['hotspots']}")
 

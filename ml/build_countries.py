@@ -1,4 +1,4 @@
-"""Draft species lists and entries for the European countries (plus Turkey).
+"""Draft species lists and entries for the countries: Europe (plus Turkey) and Singapore.
 
 In Europe a country plays the part a US state plays: its own 100-species list,
 outline, map grid, towns, ranges, parks and seasons. This script does for each
@@ -20,6 +20,12 @@ species list uses that box instead of the whole-country place.
     python ml/build_countries.py                 # every missing country
     python ml/build_countries.py --only DEU FRA  # just these
     python ml/build_countries.py --list          # print the country table
+    python ml/build_countries.py --only SGP --gbif  # list from GBIF's copy of iNaturalist
+                                                    # (when api.inaturalist.org is out of reach)
+
+Singapore (2026-11) is the first country outside Europe: region "asia", its own
+clip box, and English names checked by hand (COMMON_NAMES) because GBIF has no
+single preferred name per species.
 
 Then, per country (or with --state for each code):
     python ml/build_ranges.py --state DEU
@@ -33,7 +39,8 @@ import argparse
 import csv
 import json
 
-from build_states import SPECIES, api, draft_list, grid_for, known_slugs, session
+from build_maps_gbif import draft_list_gbif
+from build_states import EXCLUDE, SPECIES, api, draft_list, grid_for, known_slugs, session
 
 NE = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/"
 COUNTRIES_GEO = NE + "ne_10m_admin_0_countries.geojson"
@@ -96,7 +103,41 @@ COUNTRIES = [
     ("TUR", "Turkey", ["Türkiye", "Turkiye"], "TUR", 3, "none"),
     ("UKR", "Ukraine", [], "UKR", 2, "eu"),
     ("GBR", "United Kingdom", ["UK", "Great Britain"], "GBR", 0, "eu"),
+    # Asia
+    ("SGP", "Singapore", [], "SGP", 8, "none"),
 ]
+# Countries outside Europe: their region and the box their outline is clipped to.
+REGION = {"SGP": ("asia", (103.55, 1.13, 104.15, 1.48))}
+# Natural Earth 1:10m is too coarse for a 50 km island (40 points, no Pulau Ubin
+# or Sentosa): these countries' outlines and "near ..." places come from
+# geoBoundaries instead (Singapore: URA Master Plan 2014 subzones via data.gov.sg,
+# Singapore Open Data Licence, attribution required).
+GEOB = "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/"
+GEOBOUNDARIES = {"SGP": ("the Urban Redevelopment Authority's Master Plan 2014 subzones via data.gov.sg "
+                         "(Singapore Open Data Licence) and geoBoundaries", {"North-Eastern Islands": "Pulau Ubin",
+                                                       "Southern Islands": "Sentosa"})}
+# iNaturalist place ids, for when the name lookup can't reach the API (--gbif).
+PLACE_IDS = {"SGP": 6734}
+# Released pets and escapees that iNaturalist marks wild but no player should
+# be sent to find, plus Singapore's feral chickens (red junglefowl crosses).
+EXCLUDE_EXTRA = {"Rattus", "Canis lupus", "Iguana iguana", "Carettochelys insculpta", "Apalone ferox", "Pseudemys nelsoni",
+                 "Emydura subglobosa", "Podocnemis unifilis", "Testudo hermanni", "Poecilia reticulata"}
+# English names (iNaturalist's where known) for species GBIF names badly.
+COMMON_NAMES = {
+    # Singapore (iNaturalist's English names; GBIF's majority pick was a synonym or a lumped name)
+    "Varanus salvator": "Asian Water Monitor", "Calotes versicolor": "Oriental Garden Lizard",
+    "Macaca fascicularis": "Long-tailed Macaque", "Eutropis multifasciata": "Common Sun Skink",
+    "Galeopterus variegatus": "Sunda Colugo", "Hirundo javanica": "Pacific Swallow",
+    "Rhipidura javanica": "Malaysian Pied Fantail", "Tropidolaemus wagleri": "Wagler's Pit Viper",
+    "Duttaphrynus melanostictus": "Asian Common Toad", "Stichodactyla haddoni": "Haddon's Carpet Anemone",
+    "Portunus pelagicus": "Blue Swimming Crab", "Polypedates leucomystax": "Four-lined Tree Frog",
+    "Channa striata": "Striped Snakehead", "Episesarma chentongense": "Pink-fingered Vinegar Crab",
+    "Kaloula pulchra": "Banded Bullfrog", "Callosciurus finlaysonii": "Variable Squirrel",
+    "Presbytis femoralis": "Raffles' Banded Langur", "Limnonectes malesianus": "Malesian Frog",
+    "Hylarana erythraea": "Green Paddy Frog", "Trachypithecus obscurus": "Dusky Leaf Monkey",
+    "Oriolus chinensis": "Black-naped Oriole", "Anthracoceros albirostris": "Oriental Pied Hornbill",
+    "Eonycteris spelaea": "Cave Nectar Bat", "Haliaeetus leucogaster": "White-bellied Sea Eagle",
+}
 
 
 def country_place_id(name, alts):
@@ -148,17 +189,51 @@ def ring_area(r):
     return abs(sum(x0 * y1 - x1 * y0 for (x0, y0), (x1, y1) in zip(r, r[1:]))) / 2
 
 
-def outline_rings(geo, a3):
+def outline_rings(geo, a3, box=BOX):
     f = next(f for f in geo["features"] if f["properties"].get("ADM0_A3") == a3)
     g = f["geometry"]
     polys = g["coordinates"] if g["type"] == "MultiPolygon" else [g["coordinates"]]
-    rings = [r for p in polys if (r := clip_ring(p[0]))]
+    rings = [r for p in polys if (r := clip_ring(p[0], box))]
     if a3 == "NOR":  # Jan Mayen, far out in the Atlantic
         rings = [r for r in rings if min(x for x, _ in r) > 0]
     # Drop specks (rocks and tiny islets) that would only clutter the map,
     # but never a microstate's only ring.
     big = max(ring_area(r) for r in rings)
     return [r for r in rings if ring_area(r) >= big * 0.0005]
+
+
+def fine_grid(bounds, step=0.02):
+    """A ~2 km sighting grid for a small country (grid_for's finest is ~7 km,
+    which would cover Singapore in about 40 squares)."""
+    import math
+    lon0 = math.floor(bounds["west"] / step) * step; lat0 = math.floor(bounds["south"] / step) * step
+    return {"lon0": round(lon0, 4), "lat0": round(lat0, 4), "step": step,
+            "cols": math.ceil((bounds["east"] - lon0) / step - 1e-9), "rows": math.ceil((bounds["north"] - lat0) / step - 1e-9)}
+
+
+def geoboundaries(code, renames):
+    """Outline rings (ADM0) and planning-area places [name, lat, lon] (ADM2)."""
+    def get(level):
+        url = f"{GEOB}{code}/{level}/geoBoundaries-{code}-{level}_simplified.geojson"
+        return session.get(url, timeout=300).json()["features"]
+    rings = []
+    for f in get("ADM0"):
+        g = f["geometry"]
+        for poly in (g["coordinates"] if g["type"] == "MultiPolygon" else [g["coordinates"]]):
+            rings.append([[round(x, 4), round(y, 4)] for x, y in poly[0]])
+    big = max(ring_area(r) for r in rings)
+    rings = sorted((r for r in rings if ring_area(r) >= big * 0.0005), key=ring_area, reverse=True)
+    towns = []
+    for f in get("ADM2"):
+        g = f["geometry"]
+        poly = max((g["coordinates"] if g["type"] == "MultiPolygon" else [g["coordinates"]]),
+                   key=lambda p: ring_area(p[0]))[0]
+        # the middle of the area's largest part (good enough for "near ...")
+        lon = sum(x for x, _ in poly) / len(poly); lat = sum(y for _, y in poly) / len(poly)
+        name = f["properties"]["shapeName"].title().replace("'S", "'s")
+        towns.append([renames.get(name, name), round(lat, 3), round(lon, 3), ring_area(poly)])
+    towns.sort(key=lambda t: -t[3])
+    return rings, towns
 
 
 def main():
@@ -168,6 +243,8 @@ def main():
     ap.add_argument("--list", action="store_true", help="print the countries and stop")
     ap.add_argument("--place", nargs="*", default=[], metavar="CODE=ID",
                     help="iNaturalist place id for a country the name lookup misses")
+    ap.add_argument("--gbif", action="store_true",
+                    help="draft the lists from GBIF's copy of iNaturalist research-grade sightings")
     args = ap.parse_args()
     if args.list:
         for c in COUNTRIES:
@@ -190,11 +267,16 @@ def main():
     skipped = []
     for code, name, alts, a3, utc, dst in todo:
         stem = name.lower().replace(" ", "_")
-        pid = forced.get(code) or country_place_id(name, alts)
+        region, clip = REGION.get(code, ("europe", BOX))
+        pid = forced.get(code) or (PLACE_IDS.get(code) if args.gbif else None) or country_place_id(name, alts)
         if not pid:
             skipped.append(f"{code} {name}: no iNaturalist place (pass --place {code}=<id>)")
             continue
-        rows = draft_list(pid, slugs, used, where=RUSSIA_BOX if code == "RUS" else None)
+        if args.gbif:
+            from build_maps_gbif import ISO2
+            rows = draft_list_gbif(ISO2[code], slugs, used, EXCLUDE | EXCLUDE_EXTRA, names=COMMON_NAMES)
+        else:
+            rows = draft_list(pid, slugs, used, where=RUSSIA_BOX if code == "RUS" else None)
         if len(rows) < MIN_SPECIES:
             skipped.append(f"{code} {name}: only {len(rows)} species with enough sightings")
             continue
@@ -203,14 +285,18 @@ def main():
             w.writerow(["slug", "common_name", "scientific_name", "category", "rarity"])
             for r in rows:
                 w.writerow([r["slug"], r["common_name"], r["scientific_name"], r["category"], r["rarity"]])
-        rings = outline_rings(ukr_geo if code in UKR_VIEW else geo, a3)
-        (SPECIES / f"{stem}_outline.json").write_text(json.dumps(
-            {"source": "Natural Earth 1:10m admin-0 (public domain), clipped to Europe", "rings": rings}),
-            encoding="utf-8")
+        if code in GEOBOUNDARIES:
+            source, renames = GEOBOUNDARIES[code]
+            rings, towns = geoboundaries(code, renames)
+        else:
+            source = f"Natural Earth 1:10m admin-0 (public domain), clipped to {region.title()}"
+            rings = outline_rings(ukr_geo if code in UKR_VIEW else geo, a3, clip)
+        (SPECIES / f"{stem}_outline.json").write_text(json.dumps({"source": source, "rings": rings}),
+                                                    encoding="utf-8")
         xs = [x for r in rings for x, _ in r]; ys = [y for r in rings for _, y in r]
         bounds = {"west": round(min(xs) - 0.1, 1), "east": round(max(xs) + 0.1, 1),
                   "south": round(min(ys) - 0.1, 1), "north": round(max(ys) + 0.1, 1)}
-        towns = sorted(([p["properties"]["name"], round(p["geometry"]["coordinates"][1], 2),
+        towns = towns if code in GEOBOUNDARIES else sorted(([p["properties"]["name"], round(p["geometry"]["coordinates"][1], 2),
                          round(p["geometry"]["coordinates"][0], 2), p["properties"].get("pop_max") or 0]
                         for p in towns_geo["features"]
                         if p["properties"].get("adm0_a3") == a3
@@ -219,15 +305,16 @@ def main():
                        key=lambda t: -t[3])
         (SPECIES / f"{stem}_places.json").write_text(json.dumps(
             {"note": f"Towns used to describe roughly where a capture happened in {name} (\"near ...\"). "
-                     "From Natural Earth populated places (public domain).",
+                     + (f"Planning areas from {GEOBOUNDARIES[code][0]}." if code in GEOBOUNDARIES
+                        else "From Natural Earth populated places (public domain)."),
              "towns": [t[:3] for t in towns]}), encoding="utf-8")
         staged["states"] = [s for s in staged["states"] if s["code"] != code]
         staged["states"].append({
-            "code": code, "name": name, "region": "europe", "species": f"{stem}_100.csv", "dex": None,
+            "code": code, "name": name, "region": region, "species": f"{stem}_100.csv", "dex": None,
             "outline": f"{stem}_outline.json", "ranges": f"{stem}_ranges.json",
             "hotspots": f"{stem}_hotspots.json", "places": f"{stem}_places.json",
             "seasons": f"{stem}_seasons.json", "utc_offset": utc, "dst": dst, "inat_place_id": pid,
-            "bounds": bounds, "grid": grid_for(bounds)})
+            "bounds": bounds, "grid": fine_grid(bounds) if code in REGION else grid_for(bounds)})
         staged["states"].sort(key=lambda s: s["name"])
         STAGING.write_text(json.dumps(staged, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
         cats = {}

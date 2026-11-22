@@ -1,4 +1,33 @@
 {
  "note": "Countries drafted by ml/build_countries.py wait here until they go live; the 42 European countries (Turkey included) are now in states.json.",
- "states": []
+ "states": [
+  {
+   "code": "SGP",
+   "name": "Singapore",
+   "region": "asia",
+   "species": "singapore_100.csv",
+   "dex": null,
+   "outline": "singapore_outline.json",
+   "ranges": "singapore_ranges.json",
+   "hotspots": "singapore_hotspots.json",
+   "places": "singapore_places.json",
+   "seasons": "singapore_seasons.json",
+   "utc_offset": 8,
+   "dst": "none",
+   "inat_place_id": 6734,
+   "bounds": {
+    "west": 103.5,
+    "east": 104.2,
+    "south": 1.1,
+    "north": 1.6
+   },
+   "grid": {
+    "lon0": 103.5,
+    "lat0": 1.1,
+    "step": 0.02,
+    "cols": 35,
+    "rows": 25
+   }
+  }
+ ]
 }
