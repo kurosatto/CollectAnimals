@@ -1,0 +1,831 @@
+{
+ "source": "iNaturalist research-grade observations (species_counts by radius)",
+ "min_observations": 3,
+ "parks": [
+  {
+   "id": "kuscenneti",
+   "name": "Ku\u015fcenneti National Park (Bird Paradise)",
+   "lat": 40.2,
+   "lon": 27.95,
+   "radius_km": 8,
+   "blurb": "Lake Manyas with pelicans, spoonbills and herons.",
+   "species": [
+    {
+     "slug": "greek_tortoise",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "goreme",
+   "name": "G\u00f6reme and Cappadocia",
+   "lat": 38.65,
+   "lon": 34.85,
+   "radius_km": 15,
+   "blurb": "Fairy chimneys with long-legged buzzards, rock thrushes and lizards.",
+   "species": [
+    {
+     "slug": "house_sparrow",
+     "observations": 102
+    },
+    {
+     "slug": "snake_eyed_lizard",
+     "observations": 92
+    },
+    {
+     "slug": "eurasian_magpie",
+     "observations": 84
+    },
+    {
+     "slug": "greek_tortoise",
+     "observations": 71
+    },
+    {
+     "slug": "roughtail_rock_agama",
+     "observations": 61
+    },
+    {
+     "slug": "long_legged_buzzard",
+     "observations": 53
+    },
+    {
+     "slug": "laughing_dove",
+     "observations": 48
+    },
+    {
+     "slug": "black_redstart",
+     "observations": 47
+    },
+    {
+     "slug": "eurasian_collared_dove",
+     "observations": 43
+    },
+    {
+     "slug": "european_starling",
+     "observations": 42
+    },
+    {
+     "slug": "eurasian_jay",
+     "observations": 28
+    },
+    {
+     "slug": "northern_wheatear",
+     "observations": 24
+    },
+    {
+     "slug": "great_tit",
+     "observations": 24
+    },
+    {
+     "slug": "crested_lark",
+     "observations": 24
+    },
+    {
+     "slug": "eurasian_blackbird",
+     "observations": 23
+    },
+    {
+     "slug": "turkish_snail",
+     "observations": 23
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 21
+    },
+    {
+     "slug": "spotted_flycatcher",
+     "observations": 17
+    },
+    {
+     "slug": "common_blue",
+     "observations": 17
+    },
+    {
+     "slug": "red_fox",
+     "observations": 15
+    },
+    {
+     "slug": "red_backed_shrike",
+     "observations": 14
+    },
+    {
+     "slug": "seven_spotted_lady_beetle",
+     "observations": 14
+    },
+    {
+     "slug": "eurasian_coot",
+     "observations": 13
+    },
+    {
+     "slug": "green_toad",
+     "observations": 13
+    },
+    {
+     "slug": "painted_lady",
+     "observations": 12
+    },
+    {
+     "slug": "mallard",
+     "observations": 11
+    },
+    {
+     "slug": "european_firebug",
+     "observations": 9
+    },
+    {
+     "slug": "great_cormorant",
+     "observations": 6
+    },
+    {
+     "slug": "european_goldfinch",
+     "observations": 5
+    },
+    {
+     "slug": "common_chaffinch",
+     "observations": 5
+    },
+    {
+     "slug": "european_robin",
+     "observations": 5
+    },
+    {
+     "slug": "hooded_crow",
+     "observations": 5
+    },
+    {
+     "slug": "common_darter",
+     "observations": 4
+    },
+    {
+     "slug": "nomad",
+     "observations": 4
+    },
+    {
+     "slug": "ruddy_shelduck",
+     "observations": 3
+    },
+    {
+     "slug": "black_headed_gull",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "lake_van",
+   "name": "Lake Van",
+   "lat": 38.65,
+   "lon": 42.9,
+   "radius_km": 30,
+   "blurb": "Soda lake with flamingos, white-headed ducks and the Van cat.",
+   "species": []
+  },
+  {
+   "id": "koprulu_canyon",
+   "name": "K\u00f6pr\u00fcl\u00fc Canyon National Park",
+   "lat": 37.2,
+   "lon": 31.17,
+   "radius_km": 15,
+   "blurb": "River canyon with otters, kingfishers and tortoises.",
+   "species": [
+    {
+     "slug": "roughtail_rock_agama",
+     "observations": 4
+    }
+   ]
+  },
+  {
+   "id": "dalyan",
+   "name": "Dalyan and \u0130ztuzu Beach",
+   "lat": 36.8,
+   "lon": 28.63,
+   "radius_km": 10,
+   "blurb": "Beach where loggerhead turtles nest and river with blue crabs.",
+   "species": [
+    {
+     "slug": "roughtail_rock_agama",
+     "observations": 129
+    },
+    {
+     "slug": "western_caspian_turtle",
+     "observations": 50
+    },
+    {
+     "slug": "marsh_frog",
+     "observations": 49
+    },
+    {
+     "slug": "snake_eyed_lizard",
+     "observations": 37
+    },
+    {
+     "slug": "greek_tortoise",
+     "observations": 35
+    },
+    {
+     "slug": "mediterranean_house_gecko",
+     "observations": 29
+    },
+    {
+     "slug": "violet_dropwing",
+     "observations": 28
+    },
+    {
+     "slug": "loggerhead_sea_turtle",
+     "observations": 24
+    },
+    {
+     "slug": "fazilas_salamander",
+     "observations": 22
+    },
+    {
+     "slug": "green_toad",
+     "observations": 19
+    },
+    {
+     "slug": "little_egret",
+     "observations": 18
+    },
+    {
+     "slug": "garden_snail",
+     "observations": 18
+    },
+    {
+     "slug": "great_cormorant",
+     "observations": 17
+    },
+    {
+     "slug": "eurasian_jay",
+     "observations": 17
+    },
+    {
+     "slug": "southern_white_breasted_hedgehog",
+     "observations": 17
+    },
+    {
+     "slug": "nomad",
+     "observations": 14
+    },
+    {
+     "slug": "pantropical_jumping_spider",
+     "observations": 13
+    },
+    {
+     "slug": "hooded_crow",
+     "observations": 13
+    },
+    {
+     "slug": "eurasian_collared_dove",
+     "observations": 12
+    },
+    {
+     "slug": "pygmy_cormorant",
+     "observations": 12
+    },
+    {
+     "slug": "white_wagtail",
+     "observations": 11
+    },
+    {
+     "slug": "caucasian_squirrel",
+     "observations": 11
+    },
+    {
+     "slug": "greater_flamingo",
+     "observations": 11
+    },
+    {
+     "slug": "western_marsh_harrier",
+     "observations": 10
+    },
+    {
+     "slug": "barn_swallow",
+     "observations": 10
+    },
+    {
+     "slug": "house_sparrow",
+     "observations": 9
+    },
+    {
+     "slug": "yellow_legged_gull",
+     "observations": 9
+    },
+    {
+     "slug": "tessellated_water_snake",
+     "observations": 9
+    },
+    {
+     "slug": "red_backed_shrike",
+     "observations": 8
+    },
+    {
+     "slug": "chocolate_band_snail",
+     "observations": 7
+    },
+    {
+     "slug": "great_tit",
+     "observations": 7
+    },
+    {
+     "slug": "common_chaffinch",
+     "observations": 6
+    },
+    {
+     "slug": "spotted_flycatcher",
+     "observations": 6
+    },
+    {
+     "slug": "common_blue",
+     "observations": 6
+    },
+    {
+     "slug": "eastern_tree_frog",
+     "observations": 6
+    },
+    {
+     "slug": "white_stork",
+     "observations": 5
+    },
+    {
+     "slug": "grey_heron",
+     "observations": 5
+    },
+    {
+     "slug": "european_goldfinch",
+     "observations": 5
+    },
+    {
+     "slug": "wild_boar",
+     "observations": 5
+    },
+    {
+     "slug": "crested_lark",
+     "observations": 5
+    },
+    {
+     "slug": "laughing_dove",
+     "observations": 5
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 4
+    },
+    {
+     "slug": "lebanon_lizard",
+     "observations": 4
+    },
+    {
+     "slug": "mallard",
+     "observations": 3
+    },
+    {
+     "slug": "red_fox",
+     "observations": 3
+    },
+    {
+     "slug": "painted_lady",
+     "observations": 3
+    },
+    {
+     "slug": "common_buzzard",
+     "observations": 3
+    },
+    {
+     "slug": "european_toad",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "goksu_delta",
+   "name": "G\u00f6ksu Delta",
+   "lat": 36.3,
+   "lon": 34.0,
+   "radius_km": 12,
+   "blurb": "Delta with flamingos, purple swamphens and nesting green turtles.",
+   "species": [
+    {
+     "slug": "violet_dropwing",
+     "observations": 20
+    },
+    {
+     "slug": "snake_eyed_lizard",
+     "observations": 19
+    },
+    {
+     "slug": "greek_tortoise",
+     "observations": 17
+    },
+    {
+     "slug": "western_marsh_harrier",
+     "observations": 14
+    },
+    {
+     "slug": "white_stork",
+     "observations": 13
+    },
+    {
+     "slug": "white_spectacled_bulbul",
+     "observations": 12
+    },
+    {
+     "slug": "lemon_yellow_tree_frog",
+     "observations": 12
+    },
+    {
+     "slug": "grey_heron",
+     "observations": 11
+    },
+    {
+     "slug": "crested_lark",
+     "observations": 11
+    },
+    {
+     "slug": "greater_flamingo",
+     "observations": 10
+    },
+    {
+     "slug": "western_caspian_turtle",
+     "observations": 10
+    },
+    {
+     "slug": "little_egret",
+     "observations": 8
+    },
+    {
+     "slug": "laughing_dove",
+     "observations": 8
+    },
+    {
+     "slug": "long_legged_buzzard",
+     "observations": 7
+    },
+    {
+     "slug": "european_goldfinch",
+     "observations": 7
+    },
+    {
+     "slug": "nomad",
+     "observations": 6
+    },
+    {
+     "slug": "common_buzzard",
+     "observations": 6
+    },
+    {
+     "slug": "marsh_frog",
+     "observations": 6
+    },
+    {
+     "slug": "mallard",
+     "observations": 5
+    },
+    {
+     "slug": "red_backed_shrike",
+     "observations": 5
+    },
+    {
+     "slug": "white_wagtail",
+     "observations": 5
+    },
+    {
+     "slug": "roughtail_rock_agama",
+     "observations": 5
+    },
+    {
+     "slug": "green_toad",
+     "observations": 5
+    },
+    {
+     "slug": "mediterranean_house_gecko",
+     "observations": 4
+    },
+    {
+     "slug": "eurasian_collared_dove",
+     "observations": 3
+    },
+    {
+     "slug": "ruddy_shelduck",
+     "observations": 3
+    },
+    {
+     "slug": "eurasian_jay",
+     "observations": 3
+    },
+    {
+     "slug": "black_redstart",
+     "observations": 3
+    },
+    {
+     "slug": "house_sparrow",
+     "observations": 3
+    },
+    {
+     "slug": "eurasian_moorhen",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "kackar",
+   "name": "Ka\u00e7kar Mountains National Park",
+   "lat": 40.85,
+   "lon": 41.1,
+   "radius_km": 20,
+   "blurb": "Black Sea mountains with Caucasian black grouse, bears and wild goats.",
+   "species": [
+    {
+     "slug": "nomad",
+     "observations": 7
+    },
+    {
+     "slug": "painted_lady",
+     "observations": 6
+    },
+    {
+     "slug": "common_blue",
+     "observations": 5
+    },
+    {
+     "slug": "taurus_frog",
+     "observations": 4
+    },
+    {
+     "slug": "common_chaffinch",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "belgrad_forest",
+   "name": "Belgrad Forest, Istanbul",
+   "lat": 41.18,
+   "lon": 28.98,
+   "radius_km": 8,
+   "blurb": "Istanbul's forest with woodpeckers, deer and storks overhead.",
+   "species": [
+    {
+     "slug": "european_robin",
+     "observations": 107
+    },
+    {
+     "slug": "common_buzzard",
+     "observations": 93
+    },
+    {
+     "slug": "marsh_frog",
+     "observations": 86
+    },
+    {
+     "slug": "common_chaffinch",
+     "observations": 81
+    },
+    {
+     "slug": "italian_wall_lizard",
+     "observations": 52
+    },
+    {
+     "slug": "mallard",
+     "observations": 48
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 48
+    },
+    {
+     "slug": "eurasian_blackbird",
+     "observations": 43
+    },
+    {
+     "slug": "great_tit",
+     "observations": 40
+    },
+    {
+     "slug": "white_stork",
+     "observations": 36
+    },
+    {
+     "slug": "eurasian_jay",
+     "observations": 34
+    },
+    {
+     "slug": "grey_heron",
+     "observations": 31
+    },
+    {
+     "slug": "chocolate_band_snail",
+     "observations": 28
+    },
+    {
+     "slug": "turkish_snail",
+     "observations": 28
+    },
+    {
+     "slug": "great_cormorant",
+     "observations": 27
+    },
+    {
+     "slug": "hooded_crow",
+     "observations": 24
+    },
+    {
+     "slug": "greek_tortoise",
+     "observations": 23
+    },
+    {
+     "slug": "yellow_legged_gull",
+     "observations": 23
+    },
+    {
+     "slug": "painted_lady",
+     "observations": 21
+    },
+    {
+     "slug": "seven_spotted_lady_beetle",
+     "observations": 21
+    },
+    {
+     "slug": "garden_snail",
+     "observations": 17
+    },
+    {
+     "slug": "western_marsh_harrier",
+     "observations": 16
+    },
+    {
+     "slug": "european_starling",
+     "observations": 16
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 15
+    },
+    {
+     "slug": "eastern_slowworm",
+     "observations": 15
+    },
+    {
+     "slug": "pygmy_cormorant",
+     "observations": 15
+    },
+    {
+     "slug": "common_blue",
+     "observations": 13
+    },
+    {
+     "slug": "house_sparrow",
+     "observations": 12
+    },
+    {
+     "slug": "european_firebug",
+     "observations": 12
+    },
+    {
+     "slug": "black_headed_gull",
+     "observations": 10
+    },
+    {
+     "slug": "yellow_legged_pachyiulus",
+     "observations": 9
+    },
+    {
+     "slug": "laughing_dove",
+     "observations": 9
+    },
+    {
+     "slug": "barn_swallow",
+     "observations": 7
+    },
+    {
+     "slug": "white_wagtail",
+     "observations": 7
+    },
+    {
+     "slug": "agile_frog",
+     "observations": 7
+    },
+    {
+     "slug": "common_bottlenose_dolphin",
+     "observations": 7
+    },
+    {
+     "slug": "wild_boar",
+     "observations": 7
+    },
+    {
+     "slug": "european_toad",
+     "observations": 7
+    },
+    {
+     "slug": "eurasian_collared_dove",
+     "observations": 5
+    },
+    {
+     "slug": "spotted_flycatcher",
+     "observations": 5
+    },
+    {
+     "slug": "northern_white_breasted_hedgehog",
+     "observations": 5
+    },
+    {
+     "slug": "common_moon_jelly",
+     "observations": 5
+    },
+    {
+     "slug": "mediterranean_house_gecko",
+     "observations": 4
+    },
+    {
+     "slug": "western_roe_deer",
+     "observations": 4
+    },
+    {
+     "slug": "eurasian_moorhen",
+     "observations": 4
+    },
+    {
+     "slug": "eurasian_jackdaw",
+     "observations": 4
+    },
+    {
+     "slug": "long_legged_buzzard",
+     "observations": 3
+    },
+    {
+     "slug": "red_fox",
+     "observations": 3
+    },
+    {
+     "slug": "common_darter",
+     "observations": 3
+    },
+    {
+     "slug": "western_caspian_turtle",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "uludag",
+   "name": "Uluda\u011f National Park",
+   "lat": 40.08,
+   "lon": 29.12,
+   "radius_km": 12,
+   "blurb": "Mountain forests with wolves, bears and alpine birds.",
+   "species": [
+    {
+     "slug": "common_chaffinch",
+     "observations": 18
+    },
+    {
+     "slug": "turkish_snail",
+     "observations": 10
+    },
+    {
+     "slug": "black_redstart",
+     "observations": 9
+    },
+    {
+     "slug": "greek_tortoise",
+     "observations": 8
+    },
+    {
+     "slug": "red_fox",
+     "observations": 7
+    },
+    {
+     "slug": "common_blue",
+     "observations": 6
+    },
+    {
+     "slug": "european_goldfinch",
+     "observations": 5
+    },
+    {
+     "slug": "brown_bear",
+     "observations": 4
+    },
+    {
+     "slug": "southern_white_breasted_hedgehog",
+     "observations": 4
+    },
+    {
+     "slug": "european_robin",
+     "observations": 3
+    },
+    {
+     "slug": "caucasian_squirrel",
+     "observations": 3
+    },
+    {
+     "slug": "taurus_frog",
+     "observations": 3
+    },
+    {
+     "slug": "laughing_dove",
+     "observations": 3
+    }
+   ]
+  }
+ ]
+}

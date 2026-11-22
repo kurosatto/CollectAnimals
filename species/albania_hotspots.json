@@ -48,7 +48,7 @@
     },
     {
      "slug": "black_headed_gull",
-     "observations": 57
+     "observations": 59
     },
     {
      "slug": "black_redstart",
@@ -71,15 +71,15 @@
      "observations": 47
     },
     {
+     "slug": "european_pond_turtle",
+     "observations": 46
+    },
+    {
      "slug": "yellow_legged_gull",
      "observations": 45
     },
     {
      "slug": "european_robin",
-     "observations": 43
-    },
-    {
-     "slug": "european_pond_turtle",
      "observations": 43
     },
     {
@@ -159,15 +159,15 @@
      "observations": 19
     },
     {
+     "slug": "european_seabass",
+     "observations": 18
+    },
+    {
      "slug": "european_mantis",
      "observations": 17
     },
     {
      "slug": "western_house_martin",
-     "observations": 17
-    },
-    {
-     "slug": "european_seabass",
      "observations": 17
     },
     {
@@ -180,7 +180,7 @@
     },
     {
      "slug": "nodal_desert_ant",
-     "observations": 16
+     "observations": 17
     },
     {
      "slug": "garden_snail",
@@ -310,14 +310,14 @@
    "species": [
     {
      "slug": "european_pond_turtle",
-     "observations": 64
-    },
-    {
-     "slug": "little_egret",
-     "observations": 52
+     "observations": 69
     },
     {
      "slug": "blue_throated_keeled_lizard",
+     "observations": 53
+    },
+    {
+     "slug": "little_egret",
      "observations": 52
     },
     {
@@ -334,7 +334,7 @@
     },
     {
      "slug": "marbled_crab",
-     "observations": 31
+     "observations": 32
     },
     {
      "slug": "hermanns_tortoise",
@@ -453,6 +453,10 @@
      "observations": 6
     },
     {
+     "slug": "nodal_desert_ant",
+     "observations": 6
+    },
+    {
      "slug": "white_wagtail",
      "observations": 5
     },
@@ -470,10 +474,6 @@
     },
     {
      "slug": "european_stonechat",
-     "observations": 5
-    },
-    {
-     "slug": "nodal_desert_ant",
      "observations": 5
     },
     {
@@ -705,6 +705,10 @@
      "observations": 9
     },
     {
+     "slug": "european_fat_dormouse",
+     "observations": 8
+    },
+    {
      "slug": "western_honey_bee",
      "observations": 7
     },
@@ -718,10 +722,6 @@
     },
     {
      "slug": "red_fox",
-     "observations": 3
-    },
-    {
-     "slug": "european_fat_dormouse",
      "observations": 3
     },
     {
@@ -755,11 +755,11 @@
      "observations": 28
     },
     {
-     "slug": "common_wall_lizard",
-     "observations": 24
+     "slug": "marsh_frog",
+     "observations": 26
     },
     {
-     "slug": "marsh_frog",
+     "slug": "common_wall_lizard",
      "observations": 24
     },
     {
@@ -888,6 +888,10 @@
     },
     {
      "slug": "crested_lark",
+     "observations": 3
+    },
+    {
+     "slug": "european_red_rumped_swallow",
      "observations": 3
     }
    ]

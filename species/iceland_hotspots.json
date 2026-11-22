@@ -12,22 +12,22 @@
    "species": [
     {
      "slug": "greylag_goose",
-     "observations": 497
+     "observations": 498
     },
     {
      "slug": "redwing",
-     "observations": 302
+     "observations": 306
     },
     {
      "slug": "harlequin_duck",
      "observations": 117
     },
     {
-     "slug": "red_throated_loon",
-     "observations": 102
+     "slug": "white_wagtail",
+     "observations": 103
     },
     {
-     "slug": "white_wagtail",
+     "slug": "red_throated_loon",
      "observations": 102
     },
     {
@@ -44,11 +44,11 @@
     },
     {
      "slug": "rock_ptarmigan",
-     "observations": 80
+     "observations": 81
     },
     {
      "slug": "common_snipe",
-     "observations": 77
+     "observations": 78
     },
     {
      "slug": "black_headed_gull",
@@ -84,7 +84,7 @@
     },
     {
      "slug": "common_raven",
-     "observations": 37
+     "observations": 38
     },
     {
      "slug": "meadow_pipit",
@@ -100,7 +100,7 @@
     },
     {
      "slug": "whooper_swan",
-     "observations": 21
+     "observations": 22
     },
     {
      "slug": "cross_orbweaver",
@@ -178,7 +178,7 @@
     },
     {
      "slug": "barrows_goldeneye",
-     "observations": 244
+     "observations": 245
     },
     {
      "slug": "tufted_duck",
@@ -190,11 +190,11 @@
     },
     {
      "slug": "redwing",
-     "observations": 128
+     "observations": 129
     },
     {
      "slug": "long_tailed_duck",
-     "observations": 125
+     "observations": 127
     },
     {
      "slug": "common_loon",
@@ -213,12 +213,12 @@
      "observations": 83
     },
     {
-     "slug": "greater_scaup",
+     "slug": "european_golden_plover",
      "observations": 75
     },
     {
-     "slug": "european_golden_plover",
-     "observations": 74
+     "slug": "greater_scaup",
+     "observations": 75
     },
     {
      "slug": "gadwall",
@@ -242,7 +242,7 @@
     },
     {
      "slug": "white_wagtail",
-     "observations": 48
+     "observations": 49
     },
     {
      "slug": "black_headed_gull",
@@ -352,11 +352,11 @@
     },
     {
      "slug": "black_legged_kittiwake",
-     "observations": 187
+     "observations": 188
     },
     {
      "slug": "common_murre",
-     "observations": 131
+     "observations": 132
     },
     {
      "slug": "northern_fulmar",
@@ -395,15 +395,15 @@
      "observations": 10
     },
     {
+     "slug": "common_eider",
+     "observations": 9
+    },
+    {
      "slug": "meadow_pipit",
      "observations": 9
     },
     {
      "slug": "arctic_tern",
-     "observations": 8
-    },
-    {
-     "slug": "common_eider",
      "observations": 8
     },
     {
@@ -454,15 +454,15 @@
    "species": [
     {
      "slug": "common_eider",
-     "observations": 441
+     "observations": 447
     },
     {
      "slug": "snow_bunting",
-     "observations": 402
+     "observations": 404
     },
     {
      "slug": "harbor_seal",
-     "observations": 389
+     "observations": 391
     },
     {
      "slug": "arctic_tern",
@@ -470,11 +470,11 @@
     },
     {
      "slug": "parasitic_jaeger",
-     "observations": 160
+     "observations": 161
     },
     {
      "slug": "barnacle_goose",
-     "observations": 136
+     "observations": 138
     },
     {
      "slug": "great_skua",
@@ -482,7 +482,7 @@
     },
     {
      "slug": "black_legged_kittiwake",
-     "observations": 124
+     "observations": 130
     },
     {
      "slug": "lesser_black_backed_gull",
@@ -530,7 +530,7 @@
     },
     {
      "slug": "whooper_swan",
-     "observations": 20
+     "observations": 21
     },
     {
      "slug": "red_throated_loon",
@@ -561,6 +561,10 @@
      "observations": 10
     },
     {
+     "slug": "eurasian_oystercatcher",
+     "observations": 10
+    },
+    {
      "slug": "long_tailed_duck",
      "observations": 10
     },
@@ -574,10 +578,6 @@
     },
     {
      "slug": "glaucous_gull",
-     "observations": 9
-    },
-    {
-     "slug": "eurasian_oystercatcher",
      "observations": 9
     },
     {
@@ -668,7 +668,7 @@
    "species": [
     {
      "slug": "black_legged_kittiwake",
-     "observations": 390
+     "observations": 394
     },
     {
      "slug": "arctic_tern",
@@ -684,11 +684,11 @@
     },
     {
      "slug": "european_shag",
-     "observations": 179
+     "observations": 180
     },
     {
      "slug": "glaucous_gull",
-     "observations": 153
+     "observations": 155
     },
     {
      "slug": "eurasian_oystercatcher",
@@ -696,7 +696,7 @@
     },
     {
      "slug": "great_black_backed_gull",
-     "observations": 116
+     "observations": 117
     },
     {
      "slug": "eurasian_whimbrel",
@@ -711,11 +711,11 @@
      "observations": 88
     },
     {
-     "slug": "red_necked_phalarope",
-     "observations": 81
+     "slug": "common_murre",
+     "observations": 82
     },
     {
-     "slug": "common_murre",
+     "slug": "red_necked_phalarope",
      "observations": 81
     },
     {
@@ -724,7 +724,7 @@
     },
     {
      "slug": "redwing",
-     "observations": 69
+     "observations": 70
     },
     {
      "slug": "harlequin_duck",
@@ -752,14 +752,14 @@
     },
     {
      "slug": "red_throated_loon",
-     "observations": 46
-    },
-    {
-     "slug": "european_golden_plover",
-     "observations": 46
+     "observations": 47
     },
     {
      "slug": "black_headed_gull",
+     "observations": 47
+    },
+    {
+     "slug": "european_golden_plover",
      "observations": 46
     },
     {
@@ -998,7 +998,7 @@
     },
     {
      "slug": "black_legged_kittiwake",
-     "observations": 105
+     "observations": 107
     },
     {
      "slug": "common_murre",
@@ -1018,7 +1018,7 @@
     },
     {
      "slug": "european_golden_plover",
-     "observations": 50
+     "observations": 51
     },
     {
      "slug": "razorbill",
@@ -1034,7 +1034,7 @@
     },
     {
      "slug": "white_wagtail",
-     "observations": 33
+     "observations": 34
     },
     {
      "slug": "common_ringed_plover",
@@ -1085,15 +1085,19 @@
      "observations": 12
     },
     {
+     "slug": "redwing",
+     "observations": 10
+    },
+    {
      "slug": "european_starling",
      "observations": 9
     },
     {
-     "slug": "redwing",
-     "observations": 8
+     "slug": "purple_sandpiper",
+     "observations": 7
     },
     {
-     "slug": "purple_sandpiper",
+     "slug": "great_cormorant",
      "observations": 7
     },
     {
@@ -1111,10 +1115,6 @@
     {
      "slug": "european_green_crab",
      "observations": 7
-    },
-    {
-     "slug": "great_cormorant",
-     "observations": 6
     },
     {
      "slug": "parasitic_jaeger",

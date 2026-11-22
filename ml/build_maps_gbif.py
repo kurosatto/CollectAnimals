@@ -63,10 +63,19 @@ ISO2 = {"ALB": "AL", "AUT": "AT", "BLR": "BY", "BEL": "BE", "BIH": "BA", "BGR": 
         "UKR": "UA", "GBR": "GB", "AND": "AD", "LIE": "LI", "MCO": "MC", "SMR": "SM", "VAT": "VA"}
 
 
+# iNaturalist names GBIF's backbone spells differently (an exact match either way).
+GBIF_NAMES = {"Colias crocea": "Colias croceus"}
+# The GBIF backbone has no Neogale vison: iNat's mink sightings sit on the genus
+# Neogale, and in Europe and the US the only wild Neogale is the American mink.
+GBIF_KEYS = {"Neogale vison": 4833733}
+
+
 def taxon_key(sci):
-    m = get("species/match", name=sci, kingdom="Animalia", strict="true")
+    if sci in GBIF_KEYS:
+        return GBIF_KEYS[sci]
+    m = get("species/match", name=GBIF_NAMES.get(sci, sci), kingdom="Animalia", strict="true")
     # Only an exact name: a fuzzy or higher-rank match would map a different animal.
-    return m.get("usageKey") if m.get("matchType") == "EXACT" else None
+    return (m.get("acceptedUsageKey") or m.get("usageKey")) if m.get("matchType") == "EXACT" else None
 
 
 def where(st):

@@ -12,23 +12,23 @@
    "species": [
     {
      "slug": "greater_flamingo",
-     "observations": 3257
+     "observations": 3265
     },
     {
      "slug": "little_egret",
-     "observations": 1927
+     "observations": 1929
     },
     {
      "slug": "grey_heron",
-     "observations": 1825
+     "observations": 1829
     },
     {
      "slug": "black_headed_gull",
-     "observations": 1174
+     "observations": 1175
     },
     {
      "slug": "coypu",
-     "observations": 967
+     "observations": 971
     },
     {
      "slug": "mallard",
@@ -36,19 +36,19 @@
     },
     {
      "slug": "white_stork",
-     "observations": 882
+     "observations": 884
     },
     {
      "slug": "yellow_legged_gull",
-     "observations": 768
+     "observations": 770
     },
     {
      "slug": "mute_swan",
-     "observations": 651
+     "observations": 652
     },
     {
      "slug": "eurasian_moorhen",
-     "observations": 641
+     "observations": 642
     },
     {
      "slug": "house_sparrow",
@@ -56,7 +56,7 @@
     },
     {
      "slug": "eurasian_coot",
-     "observations": 604
+     "observations": 605
     },
     {
      "slug": "mediterranean_tree_frog",
@@ -64,7 +64,7 @@
     },
     {
      "slug": "great_cormorant",
-     "observations": 578
+     "observations": 581
     },
     {
      "slug": "common_wall_lizard",
@@ -92,11 +92,11 @@
     },
     {
      "slug": "moorish_gecko",
-     "observations": 269
+     "observations": 270
     },
     {
      "slug": "common_chiffchaff",
-     "observations": 260
+     "observations": 261
     },
     {
      "slug": "european_starling",
@@ -108,7 +108,7 @@
     },
     {
      "slug": "european_stonechat",
-     "observations": 196
+     "observations": 197
     },
     {
      "slug": "eurasian_kestrel",
@@ -116,11 +116,11 @@
     },
     {
      "slug": "eurasian_collared_dove",
-     "observations": 176
+     "observations": 177
     },
     {
      "slug": "southern_green_stink_bug",
-     "observations": 163
+     "observations": 165
     },
     {
      "slug": "red_fox",
@@ -144,7 +144,7 @@
     },
     {
      "slug": "black_redstart",
-     "observations": 128
+     "observations": 129
     },
     {
      "slug": "european_goldfinch",
@@ -192,7 +192,7 @@
     },
     {
      "slug": "long_tailed_tit",
-     "observations": 75
+     "observations": 76
     },
     {
      "slug": "great_tit",
@@ -200,11 +200,11 @@
     },
     {
      "slug": "eurasian_blue_tit",
-     "observations": 67
+     "observations": 68
     },
     {
      "slug": "common_slowworm",
-     "observations": 67
+     "observations": 68
     },
     {
      "slug": "ocellated_lizard",
@@ -330,11 +330,11 @@
    "species": [
     {
      "slug": "alpine_marmot",
-     "observations": 755
+     "observations": 757
     },
     {
      "slug": "alpine_ibex",
-     "observations": 313
+     "observations": 315
     },
     {
      "slug": "european_common_frog",
@@ -346,7 +346,7 @@
     },
     {
      "slug": "eurasian_griffon",
-     "observations": 135
+     "observations": 136
     },
     {
      "slug": "eurasian_kestrel",
@@ -382,7 +382,7 @@
     },
     {
      "slug": "great_tit",
-     "observations": 30
+     "observations": 31
     },
     {
      "slug": "seven_spotted_lady_beetle",
@@ -528,7 +528,7 @@
     },
     {
      "slug": "northern_chamois",
-     "observations": 195
+     "observations": 196
     },
     {
      "slug": "alpine_ibex",
@@ -726,19 +726,19 @@
    "species": [
     {
      "slug": "common_wall_lizard",
-     "observations": 291
+     "observations": 292
     },
     {
      "slug": "eurasian_griffon",
-     "observations": 194
+     "observations": 196
     },
     {
      "slug": "western_green_lizard",
-     "observations": 193
+     "observations": 195
     },
     {
      "slug": "common_blue",
-     "observations": 138
+     "observations": 139
     },
     {
      "slug": "spiny_toad",
@@ -746,7 +746,7 @@
     },
     {
      "slug": "european_mantis",
-     "observations": 134
+     "observations": 135
     },
     {
      "slug": "meadow_brown",
@@ -762,7 +762,7 @@
     },
     {
      "slug": "european_common_frog",
-     "observations": 115
+     "observations": 116
     },
     {
      "slug": "european_firebug",
@@ -770,11 +770,11 @@
     },
     {
      "slug": "asian_lady_beetle",
-     "observations": 88
+     "observations": 90
     },
     {
      "slug": "red_fox",
-     "observations": 84
+     "observations": 85
     },
     {
      "slug": "fire_salamander",
@@ -806,11 +806,15 @@
     },
     {
      "slug": "western_roe_deer",
-     "observations": 61
+     "observations": 62
     },
     {
      "slug": "eurasian_beaver",
      "observations": 61
+    },
+    {
+     "slug": "aesculapian_snake",
+     "observations": 56
     },
     {
      "slug": "great_tit",
@@ -819,10 +823,6 @@
     {
      "slug": "garden_snail",
      "observations": 56
-    },
-    {
-     "slug": "aesculapian_snake",
-     "observations": 55
     },
     {
      "slug": "house_centipede",
@@ -869,12 +869,12 @@
      "observations": 35
     },
     {
-     "slug": "common_slowworm",
+     "slug": "stone_marten",
      "observations": 35
     },
     {
-     "slug": "stone_marten",
-     "observations": 34
+     "slug": "common_slowworm",
+     "observations": 35
     },
     {
      "slug": "black_kite",
@@ -949,6 +949,10 @@
      "observations": 16
     },
     {
+     "slug": "mediterranean_spiny_false_wolf_spider",
+     "observations": 15
+    },
+    {
      "slug": "long_tailed_tit",
      "observations": 14
     },
@@ -958,10 +962,6 @@
     },
     {
      "slug": "moorish_gecko",
-     "observations": 14
-    },
-    {
-     "slug": "mediterranean_spiny_false_wolf_spider",
      "observations": 14
     },
     {
@@ -1048,7 +1048,7 @@
     },
     {
      "slug": "black_redstart",
-     "observations": 89
+     "observations": 90
     },
     {
      "slug": "meadow_brown",
@@ -1282,11 +1282,11 @@
    "species": [
     {
      "slug": "mute_swan",
-     "observations": 183
+     "observations": 184
     },
     {
      "slug": "grey_heron",
-     "observations": 161
+     "observations": 162
     },
     {
      "slug": "great_crested_grebe",
@@ -1306,7 +1306,7 @@
     },
     {
      "slug": "great_cormorant",
-     "observations": 112
+     "observations": 113
     },
     {
      "slug": "white_wagtail",
@@ -1322,7 +1322,7 @@
     },
     {
      "slug": "little_egret",
-     "observations": 90
+     "observations": 91
     },
     {
      "slug": "common_chaffinch",
@@ -1342,7 +1342,7 @@
     },
     {
      "slug": "common_buzzard",
-     "observations": 60
+     "observations": 61
     },
     {
      "slug": "house_sparrow",
@@ -1532,11 +1532,11 @@
    "species": [
     {
      "slug": "black_headed_gull",
-     "observations": 394
+     "observations": 398
     },
     {
      "slug": "white_stork",
-     "observations": 323
+     "observations": 324
     },
     {
      "slug": "great_cormorant",
@@ -1544,35 +1544,35 @@
     },
     {
      "slug": "mute_swan",
-     "observations": 239
+     "observations": 240
     },
     {
      "slug": "eurasian_coot",
-     "observations": 231
+     "observations": 232
     },
     {
      "slug": "mallard",
-     "observations": 191
+     "observations": 192
     },
     {
      "slug": "little_egret",
-     "observations": 187
+     "observations": 190
     },
     {
      "slug": "great_crested_grebe",
-     "observations": 116
+     "observations": 118
     },
     {
      "slug": "eurasian_moorhen",
-     "observations": 111
+     "observations": 112
     },
     {
      "slug": "white_wagtail",
-     "observations": 99
+     "observations": 100
     },
     {
      "slug": "grey_heron",
-     "observations": 92
+     "observations": 93
     },
     {
      "slug": "european_green_crab",
@@ -1580,7 +1580,7 @@
     },
     {
      "slug": "european_herring_gull",
-     "observations": 76
+     "observations": 81
     },
     {
      "slug": "red_admiral",
@@ -1588,11 +1588,11 @@
     },
     {
      "slug": "common_chaffinch",
-     "observations": 59
+     "observations": 60
     },
     {
      "slug": "eurasian_kestrel",
-     "observations": 50
+     "observations": 53
     },
     {
      "slug": "speckled_wood",
@@ -1604,7 +1604,7 @@
     },
     {
      "slug": "common_chiffchaff",
-     "observations": 44
+     "observations": 45
     },
     {
      "slug": "european_stonechat",
@@ -1612,6 +1612,10 @@
     },
     {
      "slug": "european_robin",
+     "observations": 41
+    },
+    {
+     "slug": "european_starling",
      "observations": 40
     },
     {
@@ -1619,27 +1623,23 @@
      "observations": 38
     },
     {
-     "slug": "european_starling",
-     "observations": 37
+     "slug": "common_buzzard",
+     "observations": 35
     },
     {
      "slug": "house_sparrow",
      "observations": 34
     },
     {
-     "slug": "common_buzzard",
-     "observations": 33
-    },
-    {
      "slug": "grey_seal",
      "observations": 30
     },
     {
-     "slug": "red_fox",
-     "observations": 29
+     "slug": "garden_snail",
+     "observations": 30
     },
     {
-     "slug": "garden_snail",
+     "slug": "red_fox",
      "observations": 29
     },
     {
@@ -1679,11 +1679,11 @@
      "observations": 19
     },
     {
-     "slug": "eurasian_collared_dove",
-     "observations": 17
+     "slug": "common_pill_woodlouse",
+     "observations": 18
     },
     {
-     "slug": "common_pill_woodlouse",
+     "slug": "eurasian_collared_dove",
      "observations": 17
     },
     {
@@ -1723,11 +1723,11 @@
      "observations": 11
     },
     {
-     "slug": "yellow_legged_gull",
-     "observations": 9
+     "slug": "carrion_crow",
+     "observations": 10
     },
     {
-     "slug": "carrion_crow",
+     "slug": "yellow_legged_gull",
      "observations": 9
     },
     {
@@ -1865,12 +1865,12 @@
      "observations": 76
     },
     {
-     "slug": "black_headed_gull",
+     "slug": "common_shiny_woodlouse",
      "observations": 66
     },
     {
-     "slug": "common_shiny_woodlouse",
-     "observations": 65
+     "slug": "black_headed_gull",
+     "observations": 66
     },
     {
      "slug": "mediterranean_spiny_false_wolf_spider",
@@ -1997,6 +1997,10 @@
      "observations": 30
     },
     {
+     "slug": "palmate_newt",
+     "observations": 30
+    },
+    {
      "slug": "eurasian_kestrel",
      "observations": 29
     },
@@ -2007,10 +2011,6 @@
     {
      "slug": "house_centipede",
      "observations": 27
-    },
-    {
-     "slug": "palmate_newt",
-     "observations": 25
     },
     {
      "slug": "eurasian_moorhen",
@@ -2092,7 +2092,7 @@
     },
     {
      "slug": "moorish_gecko",
-     "observations": 175
+     "observations": 176
     },
     {
      "slug": "western_honey_bee",
@@ -2104,7 +2104,7 @@
     },
     {
      "slug": "coypu",
-     "observations": 104
+     "observations": 105
     },
     {
      "slug": "common_wall_lizard",
@@ -2211,12 +2211,12 @@
      "observations": 25
     },
     {
-     "slug": "meadow_brown",
+     "slug": "common_blue",
      "observations": 24
     },
     {
-     "slug": "common_blue",
-     "observations": 23
+     "slug": "meadow_brown",
+     "observations": 24
     },
     {
      "slug": "eurasian_red_squirrel",
@@ -2252,7 +2252,7 @@
     },
     {
      "slug": "western_montpellier_snake",
-     "observations": 14
+     "observations": 15
     },
     {
      "slug": "spiny_toad",
@@ -2261,6 +2261,10 @@
     {
      "slug": "mediterranean_spiny_false_wolf_spider",
      "observations": 11
+    },
+    {
+     "slug": "asian_lady_beetle",
+     "observations": 10
     },
     {
      "slug": "eurasian_moorhen",
@@ -2285,10 +2289,6 @@
     {
      "slug": "european_stonechat",
      "observations": 9
-    },
-    {
-     "slug": "asian_lady_beetle",
-     "observations": 8
     },
     {
      "slug": "black_kite",
@@ -2338,7 +2338,7 @@
    "species": [
     {
      "slug": "common_wall_lizard",
-     "observations": 109
+     "observations": 110
     },
     {
      "slug": "european_toad",

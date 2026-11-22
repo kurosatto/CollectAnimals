@@ -16,7 +16,7 @@
     },
     {
      "slug": "troodos_rock_lizard",
-     "observations": 76
+     "observations": 78
     },
     {
      "slug": "sloe_bug",
@@ -36,7 +36,7 @@
     },
     {
      "slug": "cyprus_processionary_moth",
-     "observations": 32
+     "observations": 33
     },
     {
      "slug": "snake_eyed_lizard",
@@ -181,6 +181,10 @@
     {
      "slug": "common_chiffchaff",
      "observations": 3
+    },
+    {
+     "slug": "cyprian_green_toad",
+     "observations": 3
     }
    ]
   },
@@ -198,11 +202,11 @@
     },
     {
      "slug": "snake_eyed_lizard",
-     "observations": 90
+     "observations": 91
     },
     {
      "slug": "troodos_rock_lizard",
-     "observations": 53
+     "observations": 54
     },
     {
      "slug": "cyprus_wheatear",
@@ -472,7 +476,7 @@
    "species": [
     {
      "slug": "greater_flamingo",
-     "observations": 132
+     "observations": 134
     },
     {
      "slug": "spur_winged_lapwing",
@@ -547,6 +551,10 @@
      "observations": 14
     },
     {
+     "slug": "giant_african_mantis",
+     "observations": 14
+    },
+    {
      "slug": "eastern_mediterranean_thin_toed_gecko",
      "observations": 14
     },
@@ -560,10 +568,6 @@
     },
     {
      "slug": "pantropical_jumping_spider",
-     "observations": 13
-    },
-    {
-     "slug": "giant_african_mantis",
      "observations": 13
     },
     {
@@ -663,6 +667,14 @@
      "observations": 5
     },
     {
+     "slug": "bridled_skink",
+     "observations": 5
+    },
+    {
+     "slug": "cyprian_green_toad",
+     "observations": 5
+    },
+    {
      "slug": "mallard",
      "observations": 4
     },
@@ -676,14 +688,6 @@
     },
     {
      "slug": "red_sea_goatfish",
-     "observations": 4
-    },
-    {
-     "slug": "bridled_skink",
-     "observations": 4
-    },
-    {
-     "slug": "cyprian_green_toad",
      "observations": 4
     },
     {
@@ -706,11 +710,11 @@
    "species": [
     {
      "slug": "sling_tailed_agama",
-     "observations": 175
+     "observations": 176
     },
     {
      "slug": "snake_eyed_lizard",
-     "observations": 77
+     "observations": 79
     },
     {
      "slug": "chukar",

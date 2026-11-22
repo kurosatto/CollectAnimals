@@ -20,15 +20,15 @@
     },
     {
      "slug": "common_chaffinch",
-     "observations": 26
+     "observations": 27
     },
     {
      "slug": "common_wall_lizard",
-     "observations": 26
+     "observations": 27
     },
     {
      "slug": "queen_of_spain_fritillary",
-     "observations": 23
+     "observations": 24
     },
     {
      "slug": "meadow_brown",
@@ -162,18 +162,18 @@
     },
     {
      "slug": "common_chaffinch",
-     "observations": 32
+     "observations": 33
     },
     {
      "slug": "clouded_yellow",
      "observations": 30
     },
     {
-     "slug": "european_common_frog",
-     "observations": 27
+     "slug": "fire_salamander",
+     "observations": 28
     },
     {
-     "slug": "fire_salamander",
+     "slug": "european_common_frog",
      "observations": 27
     },
     {
@@ -181,12 +181,16 @@
      "observations": 20
     },
     {
+     "slug": "european_robin",
+     "observations": 18
+    },
+    {
      "slug": "seven_spotted_lady_beetle",
      "observations": 18
     },
     {
-     "slug": "european_robin",
-     "observations": 16
+     "slug": "black_redstart",
+     "observations": 14
     },
     {
      "slug": "white_stork",
@@ -195,10 +199,6 @@
     {
      "slug": "red_backed_shrike",
      "observations": 12
-    },
-    {
-     "slug": "black_redstart",
-     "observations": 11
     },
     {
      "slug": "great_spotted_woodpecker",
@@ -469,11 +469,11 @@
      "observations": 5
     },
     {
-     "slug": "white_stork",
-     "observations": 3
+     "slug": "mute_swan",
+     "observations": 4
     },
     {
-     "slug": "mute_swan",
+     "slug": "white_stork",
      "observations": 3
     },
     {
@@ -635,6 +635,14 @@
      "observations": 5
     },
     {
+     "slug": "european_fallow_deer",
+     "observations": 5
+    },
+    {
+     "slug": "european_fat_dormouse",
+     "observations": 5
+    },
+    {
      "slug": "hooded_crow",
      "observations": 5
     },
@@ -714,7 +722,7 @@
     },
     {
      "slug": "mute_swan",
-     "observations": 49
+     "observations": 50
     },
     {
      "slug": "eurasian_collared_dove",
@@ -733,6 +741,10 @@
      "observations": 36
     },
     {
+     "slug": "barrel_jelly",
+     "observations": 35
+    },
+    {
      "slug": "red_backed_shrike",
      "observations": 34
     },
@@ -741,11 +753,11 @@
      "observations": 34
     },
     {
-     "slug": "barrel_jelly",
-     "observations": 34
+     "slug": "spotted_flycatcher",
+     "observations": 32
     },
     {
-     "slug": "spotted_flycatcher",
+     "slug": "european_starling",
      "observations": 32
     },
     {
@@ -753,15 +765,11 @@
      "observations": 32
     },
     {
-     "slug": "european_starling",
+     "slug": "hooded_crow",
      "observations": 31
     },
     {
      "slug": "mallard",
-     "observations": 30
-    },
-    {
-     "slug": "hooded_crow",
      "observations": 30
     },
     {
@@ -805,15 +813,15 @@
      "observations": 17
     },
     {
+     "slug": "clouded_yellow",
+     "observations": 16
+    },
+    {
      "slug": "eurasian_kestrel",
      "observations": 16
     },
     {
      "slug": "seven_spotted_lady_beetle",
-     "observations": 15
-    },
-    {
-     "slug": "clouded_yellow",
      "observations": 15
     },
     {
@@ -897,10 +905,6 @@
      "observations": 8
     },
     {
-     "slug": "european_fat_dormouse",
-     "observations": 7
-    },
-    {
      "slug": "meadow_brown",
      "observations": 6
     },
@@ -909,15 +913,19 @@
      "observations": 6
     },
     {
+     "slug": "eurasian_green_woodpecker",
+     "observations": 6
+    },
+    {
      "slug": "black_redstart",
      "observations": 5
     },
     {
-     "slug": "cotton_bollworm_moth",
+     "slug": "european_robin",
      "observations": 5
     },
     {
-     "slug": "eurasian_green_woodpecker",
+     "slug": "cotton_bollworm_moth",
      "observations": 5
     },
     {
@@ -926,10 +934,6 @@
     },
     {
      "slug": "eurasian_blackbird",
-     "observations": 4
-    },
-    {
-     "slug": "european_robin",
      "observations": 4
     },
     {
