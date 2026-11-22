@@ -260,7 +260,8 @@ def test_place_names(client):
     assert places.region(34.8, -116.0) == "the California deserts"
     assert places.region(35.6, -82.5) == "the Blue Ridge Mountains"
     assert places.region(40.7, -74.0) == "New York"  # every state is on the map now
-    assert places.region(51.5, -0.1) == "another state"  # London
+    assert places.region(35.7, 139.7) == "another state"  # Tokyo
+    assert places.region(51.5, -0.1) == "United Kingdom"  # no named regions: the country
 
 
 def test_local_feed(client, fake):

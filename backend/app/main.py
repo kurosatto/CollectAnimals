@@ -876,7 +876,7 @@ def _identify(db: Session, user: User, model, capture: Capture, image: Image.Ima
     elif state.code != user.state and matched:
         message += f" It counts in your {state.name} Field Guide."
     if place_outside:
-        message = (f"This photo was taken outside the states in the game, so it was checked "
+        message = (f"This photo was taken outside the places in the game, so it was checked "
                    f"against {state.name}. " + message)
 
     return CaptureOut(

@@ -909,9 +909,26 @@ def test_pick_the_state_for_a_photo_without_a_place(client, fake):
 def test_photo_from_outside_the_game_says_so(client, fake):
     h = signup(client)
     fake.next = [Prediction("coyote", 0.95)]
-    r = client.post("/captures", headers=h, data={"latitude": 51.5, "longitude": -0.1},
+    r = client.post("/captures", headers=h, data={"latitude": 35.7, "longitude": 139.7},
                     files={"photo": ("p.jpg", jpeg_bytes(), "image/jpeg")}).json()
-    assert r["state"] == "CA" and r["can_change_state"] and "outside the states in the game" in r["message"]
+    assert r["state"] == "CA" and r["can_change_state"] and "outside the places in the game" in r["message"]
+
+
+def test_european_countries_are_playable(client, fake):
+    from app import places
+    from app import states as st
+    europe = [s for s in st.all_states() if s.region == "europe"]
+    assert len(europe) == 42 and all(len(s.code) == 3 for s in europe)
+    assert places.state_at(st.all_states(), 51.5, -0.1).code == "GBR"
+    assert places.state_at(st.all_states(), 52.52, 13.4).code == "DEU"
+    assert places.state_at(st.all_states(), 41.0, 29.0).code == "TUR"
+    listed = {s["code"]: s for s in client.get("/states").json()}
+    assert listed["FRA"]["region"] == "europe" and listed["CA"]["region"] == "usa"
+    h = signup(client)
+    fake.next = [Prediction("mallard", 0.95)]
+    r = client.post("/captures", headers=h, data={"photo_latitude": 52.52, "photo_longitude": 13.4},
+                    files={"photo": ("p.jpg", jpeg_bytes(), "image/jpeg")}).json()
+    assert r["state"] == "DEU" and r["matched"]
 
 
 def test_state_at():
@@ -923,12 +940,12 @@ def test_state_at():
     assert at(34.05, -118.24) == "CA" and at(35.6, -82.55) == "NC"
     # Reno is inside California's bounding box but not its outline.
     assert at(39.53, -119.81) == "NV" and at(40.7, -74.0) == "NY"
-    assert at(51.5, -0.1) is None
+    assert at(51.5, -0.1) == "GBR" and at(35.7, 139.7) is None
 
 
 def test_state_at_endpoint(client):
     assert client.get("/states/at", params={"lat": 35.78, "lon": -78.64}).json() == {"code": "NC"}
-    assert client.get("/states/at", params={"lat": 51.5, "lon": -0.1}).json() == {"code": None}
+    assert client.get("/states/at", params={"lat": 35.7, "lon": 139.7}).json() == {"code": None}
     assert client.get("/states/at", params={"lat": 120, "lon": 0}).status_code == 422
 
 
