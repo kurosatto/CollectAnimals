@@ -78,7 +78,7 @@ fun StateMenu(states: List<StateInfo>, viewing: String, main: String, tiles: Lis
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Tap a state to look at its Field Guide, habitat and parks. Your main state is where you start and what friends see first.",
                     style = MaterialTheme.typography.bodyMedium)
-                LazyVerticalGrid(GridCells.Adaptive(120.dp), Modifier.heightIn(max = 360.dp),
+                LazyVerticalGrid(GridCells.Adaptive(120.dp), Modifier.heightIn(max = dialogListMax()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(tiles, key = { it.code }) { t ->
                         states.firstOrNull { it.code == t.code }?.let { st ->
@@ -171,7 +171,7 @@ fun StateListDialog(states: List<StateInfo>, title: String, note: String, onDism
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(note, style = MaterialTheme.typography.bodyMedium)
-                LazyColumn(Modifier.heightIn(max = 360.dp)) {
+                LazyColumn(Modifier.heightIn(max = dialogListMax())) {
                     items(rows, key = { it.code }) { st ->
                         Row(Modifier.fillMaxWidth().clickable { onPick(st.code) }.padding(vertical = 10.dp, horizontal = 4.dp)) {
                             Text(st.name)

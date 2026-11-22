@@ -424,6 +424,7 @@ def _(s):
         s.poly([(1, 15.5), (-4.5, 16.5), (1, 17)], "#d8c82a")
         s.px([(2, 15)], "#e02a2a")
         s.shift(0, bob)
+        s.seal()
         return
     if flying:
         _far_wing(s, 23, 21, w, "#3a3a40")

@@ -124,6 +124,14 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
   (`ui_ic_<name>.png`: pin, coin, shop, lock, bell, sun, moon, warn, chat, trophy, palette,
   sound, logout) via `ico()`/`icoText()` (web), `mgIco()` (minigames.js), `IconText` (Android).
   Check layouts at 360 px wide.
+- **Sideways phones (0.95.0)**: a phone held sideways (landscape, under 520 px/dp tall) gets the tabs
+  as a leather strip down the left side and a slimmer top bar; the habitat, log-in scene, photos and
+  maps are sized to the screen's height so they show whole, and the full-screen photo puts comments
+  beside the picture. Web: the `@media (orientation: landscape) and (max-height:520px)` block at the
+  end of index.html's style. Android: `isSideways()`, `SideTabs`, `habitatWidthFor()`, `fitSideways()`
+  (JournalTheme.kt / MainActivity.kt). MainActivity handles rotation itself (`configChanges`), so
+  turning the phone never reloads the habitat or a game. Check layouts at 740x360 too.
+  habitat.js draws the wide scene from `HAB_WIDE` (440 px), not 520.
 - Change habitat and map behaviour in `habitat.js` and the web first;
   Android packages `backend/app/static` and `species/` as assets, so it picks
   them up on its next build. Keep web and Android at feature parity.
@@ -133,7 +141,7 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
   (0.35.0 preview) and preferred the old look. The apps always draw an animal 40
   units square (`HAB_UNIT`) and pick frames with `habCyc()` / `habIdleFrame()`.
 - Sheet rows are `pixel.ACTS` (idle, walk, fly, swim, sleep, sit, look, back, eat,
-  dive, hide, run, groom); append new rows at the end so the apps' row indices stay
+  dive, hide, run, groom, sad, land); append new rows at the end so the apps' row indices stay
   valid. `run` is the gallop / bound (habitat: fleeing or chasing; Trail Run) and
   `groom` the animal's own idle behaviour (dog scratches, cat/squirrel washes, bird
   and duck preen, lizard push-ups, frog calls, snake raises its head).
@@ -147,6 +155,17 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
   used for drinking. `dive` (plunge divers, leaping dolphins and whales) is drawn
   pitched from 55 degrees nose up to 75 nose down (`make_sprites.DIVE_DEG`,
   `habPitchFrame()`), `hide` is reef animals and jellies pulling in.
+- 0.96.0 bird remake: every bird flies on jointed 3-D wings (`tools/birdwing.py`): arm and
+  hand with their own stroke angles, wrist fold on the upstroke, drawn secondaries and
+  primaries (pointed, rounded, slotted "fingers"), seen a little from above and in front
+  (`VIEW_DEG`, `YAW`), lit per wing part, far wing dimmer. `FLIGHT_KINDS` (by slug) picks
+  each kind's wing shape and beat (songbird bursts and closed-wing bounds, steady duck and
+  pigeon beats, slow heron beats, gull/raptor/vulture flap-and-glide); fly frame 0 is always
+  a gliding frame. Body plans call `draw_wing` for the far wing, draw the body and head,
+  then the near wing, and `s.seal()` so species' standing-pose extras don't float in the
+  sky. New sheet row `land` (made in `make_sprites._made_pose` for winged birds): the
+  habitat plays it over a bird's last `HAB_LAND_D` units to a perch and backwards for
+  `HAB_TAKEOFF` s after leaving one. Perched birds got a drawn folded wing (`_folded_wing`).
 - kuro doesn't want pictures stretched, squashed or turned to fake motion: every
   movement in the habitat is a drawn frame. Bends of a whole drawing are done in
   the sprite generator (`Sprite.pitch` / `Sprite.bend`), drawn pixel by pixel.

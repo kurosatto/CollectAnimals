@@ -73,7 +73,7 @@ european_tree_frog,European Tree Frog,Hyla arborea,amphibian,uncommon
 smooth_snake,Smooth Snake,Coronella austriaca,reptile,uncommon
 greek_frog,Greek frog,Rana graeca,amphibian,uncommon
 house_centipede,House Centipede,Scutigera coleoptrata,marine,uncommon
-mediterranean_banded_centipede,Mediterranean Banded Centipede,Scolopendra cingulata,marine,uncommon
+mediterranean_banded_centipede,Mediterranean Banded Centipede,Scolopendra cingulata,invertebrate,uncommon
 brown_bear,Brown Bear,Ursus arctos,mammal,uncommon
 agile_frog,Agile Frog,Rana dalmatina,amphibian,uncommon
 red_fox,Red Fox,Vulpes vulpes,mammal,rare
@@ -87,7 +87,7 @@ dalmatian_roach,Dalmatian Roach,Leucos basak,marine,rare
 eurasian_otter,Eurasian Otter,Lutra lutra,mammal,rare
 european_badger,European Badger,Meles meles,mammal,rare
 albanian_minnow,Albanian Minnow,Pachychilon pictum,marine,rare
-kotor_pachyiulus,Kotor Pachyiulus,Pachyiulus cattarensis,marine,rare
+kotor_pachyiulus,Kotor Pachyiulus,Pachyiulus cattarensis,invertebrate,rare
 greater_horseshoe_bat,Greater Horseshoe Bat,Rhinolophus ferrumequinum,mammal,rare
 common_pill_woodlouse,Common Pill Woodlouse,Armadillidium vulgare,marine,rare
 gray_wolf,Gray Wolf,Canis lupus,mammal,rare

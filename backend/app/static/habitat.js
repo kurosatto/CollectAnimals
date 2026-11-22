@@ -18,7 +18,9 @@ const HAB_H = 270;
 // animals in their state's scenery (`visit`); closing the profile brings yours back.
 const hab = { w: 0, L: null, animals: [], peek: false, picked: null, pickedUntil: 0, factIdx: 0, last: 0, bg: null, bgKey: "", t: 0,
               fx: [], visit: null };
-const habState = () => (hab.visit ? hab.visit.state : myState.code);
+const habRealState = () => (hab.visit ? hab.visit.state : myState.code);
+// The state whose scenery the habitat is drawn with (HAB_TWIN for countries).
+const habState = () => { const st = habRealState(); return HAB_TWIN[st] || st; };
 const habImgs = {};
 // Animation sheets (species/sprites/anim): a row of frames for each pose (8 now, 4 in
 // older sheets), and an index of the poses each species really draws. Without them
@@ -76,6 +78,8 @@ const HAB_ROLES = [
 const HAB_DEFAULT_ROLE = { bird: "fly", amphibian: "shore", marine: "swim", fish: "paddle" };
 const HAB_FLIERS = new Set(["fly", "soar", "hover", "flutter", "dive", "skim"]);
 // Big birds glide between bursts of slow wingbeats.
+// Birds land over their last HAB_LAND_D units to a perch, and take off over HAB_TAKEOFF s.
+const HAB_LAND_D = 34, HAB_TAKEOFF = .45;
 const HAB_GLIDERS = /pelican|gull|heron|egret|crane|stork|spoonbill|goose|swan|vulture|condor|eagle|osprey|hawk|ibis|(^|_)tern|skimmer/;
 // Sea birds rest and sleep on the sea stack (or the lighthouse) instead of the tree.
 const HAB_SEABIRDS = /gull|pelican|royal_tern|oystercatcher|black_skimmer|osprey|cormorant/;
@@ -154,6 +158,10 @@ function habSpawn(a) {
 // A big collection doesn't all fit in the scene at once (85 animals were a heap at
 // night), so the animals take turns: up to HAB_ROOM are out at a time, and a new
 // mix comes out every HAB_TURN_MIN minutes. Everyone gets their turn; nothing to save.
+// Boxes this wide or wider get the wide (480) scene. Phones held upright are at most ~430
+// wide; a phone held sideways is short, so its scene is sized to the height and may be
+// only ~450 wide, which should still be the wide scene, not a tall narrow one.
+const HAB_WIDE = 440;
 const HAB_ROOM = { 320: 32, 480: 44 }, HAB_TURN_MIN = 20;
 const habTurn = () => Math.floor(habNow() / (HAB_TURN_MIN * 60000));
 function habOutNow(caught) {
@@ -168,7 +176,7 @@ function habOutNow(caught) {
 // in the scene stay where they are.
 function habitatSet(entries) {
   const box = $("habitat");
-  const w = box.clientWidth && box.clientWidth < 520 ? 320 : 480;
+  const w = box.clientWidth && box.clientWidth < HAB_WIDE ? 320 : 480;
   const relayout = w !== hab.w;
   if (relayout) { hab.w = w; hab.L = habLayout(w); hab.bgKey = ""; }
   const old = new Map(hab.animals.map((a) => [a.s.slug, a]));
@@ -209,6 +217,32 @@ const HAB_CITY = {
   SD: [43.54, -96.73], TN: [36.16, -86.78], TX: [29.76, -95.37], UT: [40.76, -111.89],
   VT: [44.48, -73.21], VA: [37.54, -77.44], WA: [47.61, -122.33], WV: [38.35, -81.63],
   WI: [43.04, -87.91], WY: [41.14, -104.82],
+  // European countries (ISO alpha-3 codes): their capitals.
+  ALB: [41.33, 19.82], AUT: [48.20, 16.36], BLR: [53.90, 27.56], BEL: [50.84, 4.33],
+  BIH: [43.85, 18.38], BGR: [42.69, 23.31], HRV: [45.80, 16.00], CYP: [35.17, 33.37],
+  CZE: [50.09, 14.46], DNK: [55.68, 12.56], EST: [59.43, 24.73], FIN: [60.18, 24.93],
+  FRA: [48.87, 2.33], DEU: [52.52, 13.40], GRC: [37.99, 23.73], HUN: [47.50, 19.08],
+  ISL: [64.15, -21.95], IRL: [53.34, -6.25], ITA: [41.90, 12.48], XKX: [42.67, 21.17],
+  LVA: [56.95, 24.10], LTU: [54.68, 25.32], LUX: [49.61, 6.13], MLT: [35.90, 14.51],
+  MDA: [47.01, 28.86], MNE: [42.47, 19.27], NLD: [52.35, 4.91], MKD: [42.00, 21.43],
+  NOR: [59.92, 10.75], POL: [52.25, 21.00], PRT: [38.72, -9.15], ROU: [44.44, 26.10],
+  RUS: [55.75, 37.61], SRB: [44.82, 20.47], SVK: [48.15, 17.12], SVN: [46.06, 14.51],
+  ESP: [40.40, -3.69], SWE: [59.35, 18.10], CHE: [46.92, 7.47], TUR: [39.93, 32.86],
+  UKR: [50.44, 30.51], GBR: [51.50, -0.12],
+};
+// A European country's habitat borrows the scenery of a US state with a similar
+// landscape and no US landmark: the Mediterranean coast is California's golden
+// hills and sea, the Alps are Colorado's peaks, the Balkan and Carpathian hills
+// the Smokies, the Baltic and Nordic woods Minnesota's and Maine's, Iceland and
+// Norway Alaska's, Ukraine Kansas's wheat. The sun, moon and weather still use the
+// country's own capital (habRealState).
+const HAB_TWIN = {
+  ALB: "CA", AUT: "CO", BLR: "MN", BEL: "DE", BIH: "TN", BGR: "TN", HRV: "CA", CYP: "CA",
+  CZE: "KY", DNK: "RI", EST: "ME", FIN: "MN", FRA: "MD", DEU: "KY", GRC: "CA", HUN: "IA",
+  ISL: "AK", IRL: "RI", ITA: "CA", XKX: "TN", LVA: "ME", LTU: "MN", LUX: "KY", MLT: "CA",
+  MDA: "IA", MNE: "CA", NLD: "DE", MKD: "TN", NOR: "AK", POL: "WI", PRT: "CA", ROU: "TN",
+  RUS: "MN", SRB: "KY", SVK: "TN", SVN: "CO", ESP: "CA", SWE: "MN", CHE: "CO", TUR: "CA",
+  UKR: "KS", GBR: "RI",
 };
 // The water on the right of the scene is the Pacific in these states, so the sun
 // sets over it there; everywhere else it rises on the water side.
@@ -244,7 +278,7 @@ function habSkyAt(ms, lat, lon) {
            elong, waxing: gap < 180, lit: (1 - Math.cos(elong * r)) / 2 } };
 }
 function habSkyNow() {
-  const state = habState(), here = !hab.visit && hab.here && hab.here.state === state && hab.here;
+  const state = habRealState(), here = !hab.visit && hab.here && hab.here.state === state && hab.here;
   const [lat, lon] = here ? [here.lat, here.lon] : HAB_CITY[state] || HAB_CITY.CA;
   const at = Math.floor(habNow() / 15e3), key = `${state}/${lat}/${lon}/${at}`;
   if (hab.skyKey !== key) { hab.sky = habSkyAt(at * 15e3, lat, lon); hab.skyKey = key; }
@@ -642,6 +676,7 @@ function habPerchStep(a, dt) {
     if ((a.look -= dt) <= 0) { a.look = rnd(1.2, 3.5); a.dir = -a.dir; }
     if (a.rest <= 0) {  // take off
       habLeavePerch(a);
+      a.takeoff = HAB_TAKEOFF;
       a.mode = a.role === "dive" ? "fly" : null;
       a.vx = a.dir || pick(-1, 1);
       a.cy = a.role === "dive" ? habSpot(a)[1] : a.cy;
@@ -661,6 +696,7 @@ function habPerchStep(a, dt) {
 
 function habStep(a, dt, awake) {
   a.phase += dt;
+  if (a.takeoff > 0) a.takeoff -= dt;
   habWxReact(a, dt, awake);
   habTimers(a, dt, awake);
   if (habDecorStep(a, dt, awake)) return;
@@ -967,7 +1003,15 @@ function habAnim(a, awake, roost) {
   }
   if (roost || habDecorAnim(a, awake)) return still;  // sheltering from the rain, or perched on a decoration
   if (a.mode === "perched") return still;
-  if (a.mode === "toPerch") return has("fly") ? ["fly", cyc(a.phase * 9 / (2 * Math.PI) * 4)] : still;
+  if (a.mode === "toPerch") {
+    // the last stretch in to the perch: braking, nose up, feet reaching out (drawn "land" row)
+    const sp = a.perch !== undefined && habPerches(hab.L, habState())[a.perch];
+    const d = sp ? Math.hypot(sp[0] - a.x, sp[1] - a.y) : 1e9;
+    if (d < HAB_LAND_D && has("land")) return ["land", Math.min(habNF() - 1, Math.floor((1 - d / HAB_LAND_D) * habNF()))];
+    return has("fly") ? ["fly", cyc(a.phase * 9 / (2 * Math.PI) * 4)] : still;
+  }
+  // just off the perch: the landing played backwards, wings sweeping down and back
+  if (a.takeoff > 0 && has("land")) return ["land", Math.min(habNF() - 1, Math.floor(a.takeoff / HAB_TAKEOFF * habNF() * .8))];
   switch (a.role) {
     case "walk": case "shore": case "wade": case "beach": case "hop": {
       if (a.peck > 0 || (a.drinking && a.s.category === "bird")) return has("eat") ? ["eat", cyc(a.phase * 2.5)] : still;
@@ -1400,7 +1444,7 @@ function habLoop(now) {
   requestAnimationFrame(habLoop);
   const box = $("habitat");
   if (document.hidden || !box || box.closest(".off") || box.closest(".hidden")) { hab.last = 0; return; }
-  const w = box.clientWidth < 520 ? 320 : 480;
+  const w = box.clientWidth < HAB_WIDE ? 320 : 480;
   // A new size, or the next turn of animals coming out (see habOutNow).
   if (!hab.L || w !== hab.w || (hab.total > hab.animals.length && habTurn() !== hab.turn))
     habitatSet(hab.entries || hab.animals.map((a) => ({ caught: true, species: a.s, activity: a.activity, num: a.num })));
@@ -1418,7 +1462,8 @@ function habLoop(now) {
 }
 
 // ---- Weather: the real sky outside right now (GET /weather/{state}, from the
-// National Weather Service) as clouds, rain, snow, fog, wind and thunderstorms.
+// National Weather Service, or MET Norway in Europe) as clouds, rain, snow, fog,
+// wind and thunderstorms.
 // The animals react: small fliers wait out the rain in the tree, ducks and frogs
 // love it, the others shake it off or shiver, reptiles, amphibians and bugs stay
 // tucked in when it's cold, and everyone jumps at thunder. Add ?weather=rain,windy
@@ -1442,7 +1487,7 @@ function habWeather() {
     }
     return;
   }
-  const state = habState(), now = Date.now();
+  const state = habRealState(), now = Date.now();
   if (state === hab.wxKey && now - hab.wxAt < 15 * 60e3) return;
   if (state !== hab.wxKey) { hab.wx = null; hab.drops = []; }
   hab.wxKey = state; hab.wxAt = now;
@@ -1545,6 +1590,8 @@ function habWxLine() {
   let line = HAB_WX_WORDS[w.sky];
   if (w.wind === "windy") line += " and windy";
   if (w.place) line += ` ${w.near ? "near" : "in"} ${w.place}`;
+  // Europe's (MET Norway, which asks to be credited) is in °C.
+  if (w.temp_c != null) return line + `, ${w.temp_c}°C. Weather: MET Norway.`;
   if (w.temp_f != null) line += `, ${w.temp_f}°F`;
   return line + ".";
 }

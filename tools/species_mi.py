@@ -45,6 +45,7 @@ def _(s):
         s.poly([(0.5, 14), (-3.5, 15.5), (-3, 16.6), (0.5, 16.4)], "#1e1a1e")
         s.eye(1, 14, shine="#ffffff", color="#000000")
         s.shift(0, bob)
+        s.seal()
         return
     if flying:
         _far_wing(s, 23, 20, w, "#c8ccd4")

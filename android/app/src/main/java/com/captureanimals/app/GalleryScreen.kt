@@ -57,7 +57,8 @@ fun GalleryScreen(species: List<Species>, collection: Map<String, Badge>, onOpen
         return
     }
 
-    LazyVerticalGrid(columns = GridCells.Fixed(4), modifier = Modifier.fillMaxSize(),
+    // Four to a row on a phone held upright, more when it's sideways.
+    LazyVerticalGrid(columns = GridCells.Adaptive(80.dp), modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(10.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         item(span = { GridItemSpan(maxLineSpan) }) {

@@ -21,8 +21,17 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -185,16 +194,39 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
     val total = info?.species?.size ?: 0
     // Badges are per species, so a coyote captured in one state counts in every state that lists it.
     val captured = info?.species?.count { it.slug in state.collection } ?: 0
+    // A phone held sideways is short (kuro, 2026-11-13): the tabs become a leather strip down
+    // the left side, the progress joins the top bar, and the page keeps most of the height.
+    val sideways = isSideways()
+    // The system bars, and a camera notch, which is on a side when the phone is sideways.
+    val barsAndNotch = WindowInsets.systemBars.union(WindowInsets.displayCutout)
 
-    Scaffold(topBar = {
+    Row(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    if (sideways && !gameOn) SideTabs(tab, requests) { tabChoice = it; parksOpen = false }
+    Scaffold(Modifier.weight(1f), contentWindowInsets = when {
+        gameOn -> ScaffoldDefaults.contentWindowInsets
+        // The strip already keeps clear of a notch or buttons on the left.
+        sideways -> barsAndNotch.only(WindowInsetsSides.End + WindowInsetsSides.Bottom)
+        else -> barsAndNotch
+    }, topBar = {
         if (!gameOn) Column {
             // One slim leather line (kuro, 2026-11-04): title, state, and your picture and name
             // (log out is in the account dialog it opens).
             Row(Modifier.fillMaxWidth().leather(top = false).windowInsetsPadding(WindowInsets.statusBars)
-                .height(46.dp).padding(start = 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                .windowInsetsPadding(barsAndNotch.only(
+                    if (sideways) WindowInsetsSides.End else WindowInsetsSides.Horizontal))
+                .height(if (sideways) 40.dp else 46.dp).padding(start = 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(if (tab == 0) "Capture Animals" else if (showParks) "Parks" else TABS[tab].title,
                     style = MaterialTheme.typography.titleMedium, color = Journal.CreamBright, maxLines = 1,
-                    overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                    overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = !sideways))
+                // Sideways there's room in the bar for the progress, so it needs no line of its own.
+                if (sideways && info != null) {
+                    Text("$captured/$total captured", style = handStyle(13), color = Journal.Cream, maxLines = 1,
+                        modifier = Modifier.padding(start = 12.dp))
+                    LinearProgressIndicator(
+                        progress = { if (total == 0) 0f else captured / total.toFloat() },
+                        modifier = Modifier.padding(horizontal = 8.dp).weight(1f).widthIn(max = 160.dp).height(6.dp),
+                        color = Journal.Brass, trackColor = Journal.Cream.copy(alpha = .3f), drawStopIndicator = {})
+                }
                 if (state.states.size > 1) StateMenu(state.states, state.stateCode, state.mainState(), state.stateTiles,
                     onOpen = vm::loadStateTiles, onClose = vm::closeStateTiles, onView = vm::viewState, onMakeMain = vm::chooseState)
                 TextButton(onClick = { showAccount = true }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp),
@@ -204,7 +236,7 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
                         overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 110.dp))
                 }
             }
-            if (info != null) {
+            if (info != null && !sideways) {
                 // Progress on one short line instead of a sentence over a thick bar.
                 Row(Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("$captured/$total captured", style = handStyle(13))
@@ -218,7 +250,7 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
         }
     }, bottomBar = {
         // One screen per job instead of one long page.
-        if (!gameOn) NavigationBar(Modifier.leather(bottom = false), containerColor = Color.Transparent, tonalElevation = 0.dp) {
+        if (!gameOn && !sideways) NavigationBar(Modifier.leather(bottom = false), containerColor = Color.Transparent, tonalElevation = 0.dp) {
             TABS.forEachIndexed { i, t ->
                 // Six tabs: one line of small text each, so "Field Guide" doesn't wrap.
                 NavigationBarItem(selected = tab == i, onClick = { tabChoice = i; parksOpen = false },
@@ -278,6 +310,37 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
             }
         }
     }
+    }
+}
+
+/**
+ * The tabs on a phone held sideways: a leather strip down the left side, one icon and a
+ * short label per tab, the open one in a brass ring like the bottom bar's.
+ */
+@Composable
+private fun SideTabs(tab: Int, requests: Int, onPick: (Int) -> Unit) {
+    Column(Modifier.fillMaxHeight().leatherSide()
+        .windowInsetsPadding(WindowInsets.systemBars.union(WindowInsets.displayCutout)
+            .only(WindowInsetsSides.Start + WindowInsetsSides.Vertical))
+        .width(72.dp).padding(end = 6.dp, top = 2.dp, bottom = 2.dp),
+        verticalArrangement = Arrangement.SpaceEvenly, horizontalAlignment = Alignment.CenterHorizontally) {
+        TABS.forEachIndexed { i, t ->
+            val on = tab == i
+            Column(Modifier.fillMaxWidth().weight(1f, fill = false).heightIn(max = 64.dp)
+                .clickable(role = androidx.compose.ui.semantics.Role.Tab, onClickLabel = t.title) { onPick(i) }
+                .padding(vertical = 3.dp),
+                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                BadgedBox(badge = { if (t.key == "social" && requests > 0) Badge { Text("$requests") } }) {
+                    TabIcon(t.icon, Modifier.size(28.dp).then(
+                        if (on) Modifier.background(Journal.Cream, CircleShape).border(2.dp, Journal.Brass, CircleShape).padding(3.dp)
+                        else Modifier.padding(2.dp)))
+                }
+                Text(t.title, maxLines = 1, softWrap = false, fontSize = 10.sp, overflow = TextOverflow.Clip,
+                    color = if (on) Journal.CreamBright else Journal.Cream.copy(alpha = .75f),
+                    fontWeight = if (on) FontWeight.Bold else FontWeight.Normal)
+            }
+        }
+    }
 }
 
 // Icons are the website's 16x16 pixel-art tab icons (species/sprites/ui_tab_*.png).
@@ -321,6 +384,10 @@ fun CatchScreen(state: UiState, animals: List<HabitatAnimal>, onCapture: (Uri, P
         takePicture.launch(uri)
     }
 
+    // Sideways the whole scene fits under the top bar, centred; upright it runs edge to edge.
+    val sideways = isSideways()
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+    val habMod = if (sideways) Modifier.widthIn(max = habitatWidthFor(maxHeight)) else Modifier.bleed(12.dp)
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 12.dp, end = 12.dp, bottom = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -329,7 +396,7 @@ fun CatchScreen(state: UiState, animals: List<HabitatAnimal>, onCapture: (Uri, P
         // The habitat is the home page, edge to edge with no frame (kuro, 2026-11-04); while a
         // photo is being identified it moves below the result so the result shows first.
         val working = cropping != null || state.busy || state.result != null || state.error != null
-        if (!working) Habitat(habitat, animals, state.stateCode, Modifier.bleed(12.dp), onOpen = onOpenDex)
+        if (!working) Habitat(habitat, animals, state.stateCode, habMod, onOpen = onOpenDex)
         else Spacer(Modifier.height(4.dp))
         Text("Photograph a wild animal. If it's one of the ${state.info?.species?.size ?: 100} " +
             "${state.fieldGuide?.region ?: ""} species, it's captured in your Field Guide.",
@@ -382,7 +449,8 @@ fun CatchScreen(state: UiState, animals: List<HabitatAnimal>, onCapture: (Uri, P
                 naming = naming, sharing = state.account?.shareTrainingPhotos == true, signedIn = state.account != null)
         }
         // Your live habitat: the animals you've captured, in your state's scenery.
-        if (working) Habitat(habitat, animals, state.stateCode, Modifier.bleed(12.dp), onOpen = onOpenDex)
+        if (working) Habitat(habitat, animals, state.stateCode, habMod, onOpen = onOpenDex)
+    }
     }
 }
 

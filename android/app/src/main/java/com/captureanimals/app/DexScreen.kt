@@ -70,7 +70,8 @@ fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: FieldGuide, sets
             RarityTag(s.rarity)
         }
 
-        Box(Modifier.fillMaxWidth().aspectRatio(4f / 3f).clip(RoundedCornerShape(16.dp))
+        // Sized to the screen's height when the phone is held sideways, so it isn't taller than the screen.
+        Box(Modifier.align(Alignment.CenterHorizontally).fitSideways(4f / 3f).clip(RoundedCornerShape(16.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
             // Signed in, the photo is on the game server; offline it's a file on the phone.
             val remote = badge?.photo?.takeIf { it.startsWith("/") && !java.io.File(it).exists() }
@@ -123,7 +124,7 @@ fun DexEntryScreen(number: Int, s: Species, badge: Badge?, dex: FieldGuide, sets
         }
 
         Text("Where to find it", style = MaterialTheme.typography.titleMedium)
-        RangeMap(dex, s.slug, rarityColor(s.rarity), Modifier.fillMaxWidth())
+        RangeMap(dex, s.slug, rarityColor(s.rarity), Modifier.align(Alignment.CenterHorizontally))
         details?.whereToFind?.takeIf { it.isNotBlank() }?.let {
             IconText("pin", it, style = MaterialTheme.typography.bodyMedium)
         }
@@ -239,7 +240,7 @@ fun RangeMap(dex: FieldGuide, slug: String, color: Color, modifier: Modifier = M
     val cells = g.cells[slug].orEmpty()
     val maxCount = cells.maxOfOrNull { it[2] } ?: 1
 
-    Canvas(modifier.aspectRatio(frame.aspect).clip(RoundedCornerShape(16.dp)).background(sea)) {
+    Canvas(modifier.fitSideways(frame.aspect, share = .85f).clip(RoundedCornerShape(16.dp)).background(sea)) {
         val path = frame.outlinePath(dex.outline, size)
         if (map != null) drawImage(map, dstSize = IntSize(size.width.toInt(), size.height.toInt()),
             filterQuality = FilterQuality.High)

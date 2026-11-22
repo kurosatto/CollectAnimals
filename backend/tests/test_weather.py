@@ -90,3 +90,27 @@ def test_too_many_spots_fall_back_to_the_city(client, nws):
     for i in range(25):
         client.get("/weather/CA", params={"lat": 32.5 + i * .35, "lon": -117})
     assert any("/points/34.05,-118.24" in c for c in calls)
+
+
+def test_european_weather_from_met_norway(monkeypatch):
+    """A country (three-letter code) asks MET Norway, at the capital unless the player shares a spot."""
+    calls = []
+
+    def get(url, accept="application/geo+json"):
+        calls.append((url, accept))
+        return {"properties": {"timeseries": [{"data": {
+            "instant": {"details": {"air_temperature": 7.4, "wind_speed": 9.0, "wind_from_direction": 250}},
+            "next_1_hours": {"summary": {"symbol_code": "lightrainshowersandthunder_day"}}}}]}}
+    weather._points.clear(); weather._now.clear()
+    monkeypatch.setattr(weather, "_get_json", get)
+    assert weather.met_words("partlycloudy_night") == "Partly Cloudy"
+    assert weather.met_words("heavysleet") == "Heavy Sleet"
+    where = weather.spot("DEU", None, None, None)
+    assert where == (52.52, 13.40)
+    w = weather.current(where, "DEU")
+    assert calls[0] == (f"{weather.MET}?lat=52.52&lon=13.40", "application/json")
+    assert w == {"sky": "storm", "wind": "windy", "wind_from": 250, "temp_f": 45, "temp_c": 7,
+                 "text": "Light Rain Showers and Thunder", "place": "Berlin"}
+    # The player's own spot has no town name.
+    assert weather.current((48.1, 11.6), "DEU")["place"] is None
+    weather._points.clear(); weather._now.clear()

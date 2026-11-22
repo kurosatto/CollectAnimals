@@ -44,7 +44,7 @@ fun MinigamesScreen(animals: List<HabitatAnimal>, modifier: Modifier = Modifier,
     val view = remember { MinigamesWebView(context, { playing = it }, { picking = it }) }
     DisposableEffect(view) { onDispose { view.destroy() } }
     // While a game is on, it gets the whole screen: no app or system bars, and the
-    // screen stays the way it's held (turning it would restart the page). Back quits the game.
+    // screen stays the way it's held (turning it mid-jump would throw you off). Back quits the game.
     DisposableEffect(playing) {
         onPlaying(playing)
         val activity = context.findActivity()

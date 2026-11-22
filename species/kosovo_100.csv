@@ -69,10 +69,10 @@ rook,Rook,Corvus frugilegus,bird,uncommon
 eurasian_tree_sparrow,Eurasian Tree Sparrow,Passer montanus,bird,uncommon
 wild_boar,Wild Boar,Sus scrofa,mammal,uncommon
 grass_snake,Grass snake,Natrix natrix,reptile,uncommon
-hungarian_pachyiulus,Hungarian Pachyiulus,Pachyiulus hungaricus,marine,uncommon
+hungarian_pachyiulus,Hungarian Pachyiulus,Pachyiulus hungaricus,invertebrate,uncommon
 brown_hare,Brown Hare,Lepus europaeus,mammal,uncommon
 european_crayfish,European Crayfish,Astacus astacus,marine,uncommon
-collared_flat_backed_millipede,Collared flat-backed millipede,Polydesmus collaris,marine,uncommon
+collared_flat_backed_millipede,Collared flat-backed millipede,Polydesmus collaris,invertebrate,uncommon
 viviparous_lizard,Viviparous Lizard,Zootoca vivipara,reptile,uncommon
 macedonian_crested_newt,Macedonian Crested Newt,Triturus macedonicus,amphibian,uncommon
 european_mole,European Mole,Talpa europaea,mammal,uncommon
@@ -85,7 +85,7 @@ danubian_minnow,Danubian Minnow,Phoxinus csikii,marine,rare
 stone_crayfish,Stone Crayfish,Austropotamobius torrentium,marine,rare
 european_fallow_deer,European Fallow Deer,Dama dama,mammal,rare
 european_perch,European Perch,Perca fluviatilis,marine,rare
-mediterranean_banded_centipede,Mediterranean Banded Centipede,Scolopendra cingulata,marine,rare
+mediterranean_banded_centipede,Mediterranean Banded Centipede,Scolopendra cingulata,invertebrate,rare
 greater_horseshoe_bat,Greater Horseshoe Bat,Rhinolophus ferrumequinum,mammal,rare
 gray_wolf,Gray Wolf,Canis lupus,mammal,rare
 european_fat_dormouse,European Fat Dormouse,Glis glis,mammal,rare

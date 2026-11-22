@@ -67,7 +67,7 @@ aesculapian_snake,Aesculapian Snake,Zamenis longissimus,reptile,uncommon
 marsh_frog,Marsh Frog,Pelophylax ridibundus,amphibian,uncommon
 long_nosed_viper,Long-nosed Viper,Vipera ammodytes,reptile,uncommon
 western_roe_deer,Western Roe Deer,Capreolus capreolus,mammal,uncommon
-hungarian_pachyiulus,Hungarian Pachyiulus,Pachyiulus hungaricus,marine,uncommon
+hungarian_pachyiulus,Hungarian Pachyiulus,Pachyiulus hungaricus,invertebrate,uncommon
 european_toad,European Toad,Bufo bufo,amphibian,uncommon
 agile_frog,Agile Frog,Rana dalmatina,amphibian,uncommon
 greek_frog,Greek frog,Rana graeca,amphibian,uncommon
@@ -81,14 +81,14 @@ caspian_whipsnake,Caspian Whipsnake,Dolichophis caspius,reptile,rare
 wild_boar,Wild Boar,Sus scrofa,mammal,rare
 common_pill_woodlouse,Common Pill Woodlouse,Armadillidium vulgare,marine,rare
 greater_horseshoe_bat,Greater Horseshoe Bat,Rhinolophus ferrumequinum,mammal,rare
-versicolored_pill_woodlouse,Versicolored Pill Woodlouse,Armadillidium versicolor,marine,rare
-belted_springtail,Belted Springtail,Orchesella cincta,marine,rare
+versicolored_pill_woodlouse,Versicolored Pill Woodlouse,Armadillidium versicolor,invertebrate,rare
+belted_springtail,Belted Springtail,Orchesella cincta,invertebrate,rare
 schreibers_long_fingered_bat,Schreibers' Long-fingered Bat,Miniopterus schreibersii,mammal,rare
 pumpkinseed,Pumpkinseed,Lepomis gibbosus,marine,rare
 european_badger,European Badger,Meles meles,mammal,rare
 black_bullhead,Black Bullhead,Ameiurus melas,marine,rare
 european_ground_squirrel,European Ground Squirrel,Spermophilus citellus,mammal,rare
-collared_flat_backed_millipede,Collared flat-backed millipede,Polydesmus collaris,marine,rare
+collared_flat_backed_millipede,Collared flat-backed millipede,Polydesmus collaris,invertebrate,rare
 prussian_carp,Prussian Carp,Carassius gibelio,marine,rare
 muskrat,Muskrat,Ondatra zibethicus,mammal,rare
 bleak,Bleak,Alburnus alburnus,marine,rare

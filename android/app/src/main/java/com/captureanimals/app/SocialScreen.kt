@@ -10,6 +10,8 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.ui.draw.clipToBounds
@@ -370,7 +372,8 @@ fun AccountDialog(state: UiState, vm: GameViewModel, onDismiss: () -> Unit) {
             if (acct == null) {
                 val here = state.states.find { it.code == state.stateCode } ?: state.states.firstOrNull()
                 val place = here?.name ?: "your state"
-                HabitatShowcase(rememberHabitatView(), here?.code ?: "", place)
+                // Sideways the pop-up is short: a smaller scene, still whole.
+                HabitatShowcase(rememberHabitatView(), here?.code ?: "", place, sidewaysHabitat(.7f).align(Alignment.CenterHorizontally))
                 Text("How many of $place's ${here?.species?.size ?: 100} animals can you capture?", style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold)
                 Text("Spot a wild animal, snap a great photo, and it's captured in your Field Guide. Then it moves " +
@@ -536,9 +539,12 @@ private fun Comments(s: SocialState, social: SocialViewModel, p: OnlinePhoto) {
 fun PhotoViewer(s: SocialState, social: SocialViewModel, parks: List<Park> = emptyList(),
                 onDelete: ((OnlinePhoto) -> Unit)? = null) {
     val p = s.viewing ?: return
+    // Upright: the photo above its likes and comments. Sideways (a short screen) they sit
+    // side by side, or the comments would leave no room for the photo.
+    val sideways = isSideways()
     Dialog(onDismissRequest = social::closePhoto, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Column(Modifier.fillMaxSize().background(Color.Black).imePadding()) {
-            Box(Modifier.weight(1f).fillMaxWidth().clipToBounds(), Alignment.Center) {
+        val pic: @Composable (Modifier) -> Unit = { m ->
+            Box(m.clipToBounds(), Alignment.Center) {
                 var scale by remember(p.id) { mutableFloatStateOf(1f) }
                 var offset by remember(p.id) { mutableStateOf(Offset.Zero) }
                 val zoom = rememberTransformableState { z, pan, _ ->
@@ -556,7 +562,9 @@ fun PhotoViewer(s: SocialState, social: SocialViewModel, parks: List<Park> = emp
                     Text("✕", color = Color.White, style = MaterialTheme.typography.titleLarge)
                 }
             }
-            Surface(Modifier.fillMaxWidth().heightIn(max = 360.dp)) {
+        }
+        val info: @Composable (Modifier) -> Unit = { m ->
+            Surface(m) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
@@ -586,6 +594,14 @@ fun PhotoViewer(s: SocialState, social: SocialViewModel, parks: List<Park> = emp
                     Comments(s, social, p)
                 }
             }
+        }
+        if (sideways) Row(Modifier.fillMaxSize().background(Color.Black).imePadding()) {
+            pic(Modifier.weight(1f).fillMaxHeight())
+            // The comments scroll inside it, as below the photo when upright.
+            info(Modifier.width(320.dp).fillMaxHeight())
+        } else Column(Modifier.fillMaxSize().background(Color.Black).imePadding()) {
+            pic(Modifier.weight(1f).fillMaxWidth())
+            info(Modifier.fillMaxWidth().heightIn(max = 360.dp))
         }
     }
 }
@@ -621,9 +637,12 @@ private fun FeedCard(p: OnlinePhoto, social: SocialViewModel, onOpenDex: (String
     Card(shape = RoundedCornerShape(12.dp)) {
         Column {
             if (p.url != null) {
-                RemoteImage(p.url, p.commonName, Modifier.fillMaxWidth().aspectRatio(4f / 3f)
-                    .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
-                    .clickable { social.openPhoto(p) })
+                // Sideways the photo is sized to the screen's height, on a dark mat.
+                Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant), Alignment.Center) {
+                    RemoteImage(p.url, p.commonName, Modifier.fitSideways(4f / 3f, share = .6f)
+                        .clickable { social.openPhoto(p) })
+                }
             } else {
                 // Animals you haven't unlocked stay hidden, as on the website.
                 Box(Modifier.fillMaxWidth().height(120.dp).background(MaterialTheme.colorScheme.surfaceVariant),
@@ -771,7 +790,7 @@ fun FriendGuideDialog(s: SocialState, social: SocialViewModel, game: UiState, on
                                 e.slug?.let { HabitatAnimal(n, it, e.commonName ?: "", e.category, e.rarity, e.activity ?: "day") }
                             }
                             if (animals.isNotEmpty()) item(span = { GridItemSpan(maxLineSpan) }, key = "habitat") {
-                                Habitat(habitat, animals, g.state, visitor = who) { slug ->
+                                Habitat(habitat, animals, g.state, sidewaysHabitat(.7f), visitor = who) { slug ->
                                     social.closeGuide(); onOpenDex(slug)
                                 }
                             }
@@ -870,7 +889,7 @@ fun OnlinePhotosScreen(social: SocialViewModel, onOpenDex: (String) -> Unit, onD
     }
     // Four to a row: the photo, its name and stars. Tap one for the full photo, its
     // likes and comments, and deleting it.
-    LazyVerticalGrid(columns = GridCells.Fixed(4), modifier = Modifier.fillMaxSize(),
+    LazyVerticalGrid(columns = GridCells.Adaptive(80.dp), modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(10.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         item(span = { GridItemSpan(maxLineSpan) }) {

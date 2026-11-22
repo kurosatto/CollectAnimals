@@ -42,27 +42,31 @@ def line(habitat: str, parks: list[str]) -> str:
 def main() -> None:
     with open(SPECIES / "habitats.csv", newline="", encoding="utf-8") as fh:
         habitats = {r["slug"]: r["habitat"] for r in csv.DictReader(fh)}
-    sj_path = SPECIES / "states.json"
-    sj = json.loads(sj_path.read_text(encoding="utf-8"))
     missing = set()
-    for st in sj["states"]:
-        if st["code"] in SKIP:
+    # The playable states, and the European countries still staged in europe.json.
+    for sj_path in (SPECIES / "states.json", SPECIES / "europe.json"):
+        if not sj_path.exists():
             continue
-        stem = st["species"].removesuffix("_100.csv")
-        with open(SPECIES / st["species"], newline="", encoding="utf-8") as fh:
-            slugs = [r["slug"] for r in csv.DictReader(fh)]
-        parks = json.loads((SPECIES / st["hotspots"]).read_text(encoding="utf-8"))["parks"] if st.get("hotspots") else []
-        out = SPECIES / f"{stem}_dex.csv"
-        with open(out, "w", newline="", encoding="utf-8") as fh:
-            w = csv.DictWriter(fh, FIELDS)
-            w.writeheader()
-            for slug in slugs:
-                if slug not in habitats:
-                    missing.add(slug)
-                    continue
-                w.writerow({"slug": slug, "where_to_find": line(habitats[slug], parks_for(slug, parks))})
-        st["dex"] = out.name
-    sj_path.write_text(json.dumps(sj, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+        sj = json.loads(sj_path.read_text(encoding="utf-8"))
+        for st in sj["states"]:
+            if st["code"] in SKIP:
+                continue
+            stem = st["species"].removesuffix("_100.csv")
+            with open(SPECIES / st["species"], newline="", encoding="utf-8") as fh:
+                slugs = [r["slug"] for r in csv.DictReader(fh)]
+            hot = SPECIES / st["hotspots"] if st.get("hotspots") else None
+            parks = json.loads(hot.read_text(encoding="utf-8"))["parks"] if hot and hot.exists() else []
+            out = SPECIES / f"{stem}_dex.csv"
+            with open(out, "w", newline="", encoding="utf-8") as fh:
+                w = csv.DictWriter(fh, FIELDS)
+                w.writeheader()
+                for slug in slugs:
+                    if slug not in habitats:
+                        missing.add(slug)
+                        continue
+                    w.writerow({"slug": slug, "where_to_find": line(habitats[slug], parks_for(slug, parks))})
+            st["dex"] = out.name
+        sj_path.write_text(json.dumps(sj, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     if missing:
         print("No habitat line yet (add to species/habitats.csv):", ", ".join(sorted(missing)))
 

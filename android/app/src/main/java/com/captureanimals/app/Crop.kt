@@ -124,7 +124,9 @@ fun CropPanel(uri: Uri, onIdentify: (CropBox?) -> Unit, onCancel: () -> Unit) {
             Text("Drag the box or its corners to crop to the animal.", style = MaterialTheme.typography.bodyMedium)
             val bmp = preview
             when {
-                bmp != null -> Box(Modifier.fillMaxWidth().heightIn(max = 420.dp)
+                // No taller than most of the screen, so the box and Identify both show on a phone held sideways.
+                bmp != null -> Box(Modifier.fillMaxWidth().heightIn(max = minOf(420,
+                        (androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp * .7f).toInt()).dp)
                     .aspectRatio(bmp.width / bmp.height.toFloat(), matchHeightConstraintsFirst = true)) {
                     Image(bmp.asImageBitmap(), contentDescription = "Your photo", Modifier.matchParentSize(),
                         contentScale = ContentScale.FillBounds)

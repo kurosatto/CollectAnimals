@@ -95,7 +95,11 @@ function setAnimals(entries, state, visitor) {
 // The account screen before you log in: the state's scenery with one featured animal.
 function showcase(state, placeName) {
   document.body.classList.add("showcase");
-  $("place").textContent = `📍 ${placeName}`;
+  // A pixel pin, not an emoji (kuro wants no generic emojis in the app).
+  const pin = document.createElement("img");
+  pin.className = "pi"; pin.src = "/sprites/ui_ic_pin.png"; pin.alt = "";
+  pin.style.cssText = "width:12px;height:12px;vertical-align:-1px;margin-right:4px";
+  $("place").replaceChildren(pin, placeName);
   $("place").classList.remove("hidden");
   habShowcase(state || "");
   reportHeight();
@@ -107,6 +111,9 @@ function reportHeight() {
 
 habInit();
 window.addEventListener("resize", reportHeight);
+// Turning the phone changes the scene's width, and the scene picks its layout (320 or 480
+// wide) a frame later, so the page's height is reported again whenever it actually changes.
+if (window.ResizeObserver) new ResizeObserver(() => reportHeight()).observe(document.body);
 if (bridge) bridge.ready();
 </script>
 </body>
