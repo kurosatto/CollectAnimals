@@ -931,6 +931,23 @@ def test_european_countries_are_playable(client, fake):
     assert r["state"] == "DEU" and r["matched"]
 
 
+def test_singapore_is_playable(client, fake):
+    from app import places
+    from app import states as st
+    sg = st.get("SGP")
+    assert sg.region == "asia" and sg.utc_offset == 8
+    assert places.state_at(st.all_states(), 1.35, 103.82).code == "SGP"  # Bukit Timah
+    assert places.state_at(st.all_states(), 1.40, 103.96).code == "SGP"  # Pulau Ubin
+    assert places.state_at(st.all_states(), 3.14, 101.69) is None  # Kuala Lumpur
+    listed = {s["code"]: s for s in client.get("/states").json()}
+    assert listed["SGP"]["region"] == "asia" and listed["SGP"]["species_count"] == 100
+    h = signup(client)
+    fake.next = [Prediction("long_tailed_macaque", 0.95)]
+    r = client.post("/captures", headers=h, data={"photo_latitude": 1.35, "photo_longitude": 103.82},
+                    files={"photo": ("p.jpg", jpeg_bytes(), "image/jpeg")}).json()
+    assert r["state"] == "SGP" and r["matched"]
+
+
 def test_state_at():
     from app import places
     from app import states as st

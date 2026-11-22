@@ -175,6 +175,16 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
   degrees C), scenery borrows a similar US state's scene (`HAB_TWIN` in habitat.js).
   Pickers group "United States" then "Europe" and say "state or country".
   The photo ID model only knows Europe's animals once model v8 is trained on the PC.
+- 0.98.0 Singapore (SGP, `"region": "asia"`): the first Asian country, picked under
+  "Asia". Built in the cloud without iNaturalist: `ml/build_countries.py --gbif` drafts
+  the 100-species list from GBIF's copy of iNat research-grade sightings (CC0/CC BY only),
+  outline + planning areas from geoBoundaries (URA Master Plan 2014, Singapore Open Data
+  Licence, attribution required). Own scenery in habitat.js (`HAB_SCENES.SGP`: rain
+  trees, generic skyline, kelong, mangrove, container ship; `HAB_TROPICS` = no winter,
+  monsoon wording). 87 new sprites in `tools/species_sg.py`, with new drawings for
+  monkeys (`_primate`), colugo, slow loris, pangolin, mudskipper and mouse-deer (a
+  proportion swap on the deer skeleton). iNat place id 6734 is unverified; the ID model
+  knows Singapore's new animals only after the next model is trained on the PC.
 - kuro doesn't want pictures stretched, squashed or turned to fake motion: every
   movement in the habitat is a drawn frame. Bends of a whole drawing are done in
   the sprite generator (`Sprite.pitch` / `Sprite.bend`), drawn pixel by pixel.
