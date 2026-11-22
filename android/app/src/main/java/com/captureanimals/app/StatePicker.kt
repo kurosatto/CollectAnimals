@@ -42,9 +42,12 @@ object StateList {
     /** The player's unlocked states, in states.json order (the state screen's tiles). */
     fun tiles(states: List<StateInfo>, unlocked: Set<String>): List<StateInfo> = states.filter { it.code in unlocked }
 
-    /** Every US state A to Z, then every European country A to Z, for the first-launch list. */
+    /** Every US state A to Z, then the countries of Europe, then Asia, each A to Z, for the first-launch list. */
     fun alphabetical(states: List<StateInfo>): List<StateInfo> =
-        states.sortedWith(compareBy({ it.region == "europe" }, { it.name }))
+        states.sortedWith(compareBy({ REGIONS.indexOf(it.region).let { i -> if (i < 0) REGIONS.size else i } }, { it.name }))
+
+    /** The picker's groups, in order. */
+    val REGIONS = listOf("usa", "europe", "asia")
 }
 
 /**

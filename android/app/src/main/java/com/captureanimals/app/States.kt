@@ -9,8 +9,8 @@ import org.json.JSONObject
  */
 class StateInfo(val code: String, val name: String, val species: List<Species>, val bounds: Box? = null,
                 outline: () -> List<DoubleArray> = { emptyList() }, val region: String = "usa", guide: () -> FieldGuide) {
-    /** "state" for a US state, "country" for a European one. */
-    val word get() = if (region == "europe") "country" else "state"
+    /** "state" for a US state, "country" for one in Europe or Asia. */
+    val word get() = if (region != "usa") "country" else "state"
     val fieldGuide: FieldGuide by lazy(guide)
     // The real outline's rings ([lon, lat, lon, lat, ...]); empty until the state has one.
     val outlineRings: List<DoubleArray> by lazy(outline)

@@ -4,6 +4,7 @@
     python tools/make_state_maps.py            # all 50 states
     python tools/make_state_maps.py --only MI CA
     python tools/make_state_maps.py --europe   # the European countries (species/europe.json)
+    python tools/make_state_maps.py --asia     # Singapore
 
 For every state in species/states.json it writes
 
@@ -70,7 +71,9 @@ SEAS = [("Pacific Ocean", -125.5, 36), ("Pacific Ocean", -158.5, 19.4), ("Gulf o
         ("Mediterranean Sea", 5, 38.5), ("Mediterranean Sea", 18, 34.6), ("Tyrrhenian Sea", 11.5, 40), ("Adriatic Sea", 15.5, 43),
         ("Ionian Sea", 18.5, 38), ("Aegean Sea", 25, 38.8), ("Ligurian Sea", 8.8, 43.6), ("Balearic Sea", 2.5, 40.5),
         ("Alboran Sea", -3.5, 36.1), ("Black Sea", 34, 43.3), ("Sea of Azov", 36.5, 46.2), ("Sea of Marmara", 28.2, 40.7),
-        ("Caspian Sea", 50.5, 43.5), ("Levantine Sea", 31, 34.4), ("Greenland Sea", -15, 70)]
+        ("Caspian Sea", 50.5, 43.5), ("Levantine Sea", 31, 34.4), ("Greenland Sea", -15, 70),
+        # Singapore (python tools/make_state_maps.py --asia)
+        ("Singapore Strait", 103.82, 1.19), ("Strait of Johor", 103.66, 1.39), ("South China Sea", 104.12, 1.3)]
 
 
 def fetch(url: str, path: Path) -> Path:
@@ -485,9 +488,12 @@ def main():
     ap.add_argument("--cache", default=str(Path.home() / ".cache" / "capture-animals-maps"))
     ap.add_argument("--svg", help="also save the SVGs in this folder")
     ap.add_argument("--europe", action="store_true", help="the countries in species/europe.json instead of the US states")
+    ap.add_argument("--asia", action="store_true", help="Singapore")
     args = ap.parse_args()
     cache = Path(args.cache)
-    if args.europe:
+    if args.asia:
+        sj, geoms, data = asia(cache)
+    elif args.europe:
         sj, geoms, data = europe(cache)
     else:
         sj = json.loads((SPECIES / "states.json").read_text(encoding="utf-8"))["states"]
@@ -551,6 +557,42 @@ def europe(cache: Path):
             "places": places, "names": names, "unit": "km",
             "source": "Natural Earth 1:10m admin-0, clipped to Europe; Ukraine and Russia from the Ukraine "
                       "point-of-view file (public domain)"}
+    return sj, geoms, data
+
+
+GEOB = "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/releaseData/gbOpen/"
+
+
+def geob(code: str, level: str, cache: Path) -> list[dict]:
+    name = f"geoBoundaries-{code}-{level}_simplified.geojson"
+    return json.loads(fetch(f"{GEOB}{code}/{level}/{name}", cache / "geoboundaries" / name).read_text(encoding="utf-8"))["features"]
+
+
+def asia(cache: Path):
+    """Singapore, with Johor (Malaysia) and the Riau Islands (Indonesia) washed out
+    around it. Natural Earth's 1:10m Singapore is far too coarse for a 50 km island,
+    so the outlines come from geoBoundaries: Singapore from the Urban Redevelopment
+    Authority's Master Plan 2014 subzones (data.gov.sg, Singapore Open Data
+    Licence), Malaysia and Indonesia from OpenStreetMap (ODbL)."""
+    from shapely.geometry import Point
+    sj = [s for f in ("europe.json", "states.json")
+          for s in json.loads((SPECIES / f).read_text(encoding="utf-8"))["states"] if s.get("region") == "asia"]
+    near = box(102.8, 0.5, 105.0, 2.2)
+    geoms = {"SGP": unary_union([shape(f["geometry"]).buffer(0) for f in geob("SGP", "ADM0", cache)])}
+    countries, country_names = [], []
+    for code, name in (("MYS", "Malaysia"), ("IDN", "Indonesia")):
+        g = unary_union([shape(f["geometry"]).buffer(0) for f in geob(code, "ADM0", cache)]).intersection(near)
+        countries.append(g); country_names.append(name)
+    places = [{"name": "Singapore", "state": "Singapore", "pop": 5_900_000, "capital": True, "pt": Point(103.851, 1.290)}]
+    # A few planning areas round the island (populations: Singapore Department of Statistics, rounded).
+    for name, lon, lat, pop in (("Woodlands", 103.786, 1.437, 255000), ("Jurong West", 103.705, 1.340, 260000),
+                                ("Tampines", 103.945, 1.350, 270000), ("Punggol", 103.906, 1.405, 190000),
+                                ("Pulau Ubin", 103.960, 1.410, 61000)):
+        places.append({"name": name, "state": "Singapore", "pop": pop, "capital": False, "pt": Point(lon, lat)})
+    data = {"countries": countries, "country_names": country_names, "lakes": [], "rivers": [],
+            "places": places, "names": {"SGP": "Singapore"}, "unit": "km",
+            "source": "the Urban Redevelopment Authority's Master Plan 2014 subzones via data.gov.sg (Singapore Open "
+                      "Data Licence) and geoBoundaries; neighbours from OpenStreetMap contributors (ODbL)"}
     return sj, geoms, data
 
 

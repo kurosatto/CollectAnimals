@@ -2,8 +2,8 @@
 
 From the US National Weather Service (api.weather.gov: free, no key, public
 domain) for US states, and from MET Norway (api.met.no: free, CC BY 4.0, credit
-"Weather data from MET Norway") for European countries, whose codes have three
-letters. Each state's weather is a big city's (a country's is its capital's), unless the player's phone shares
+"Weather data from MET Norway") for the countries (Europe, Singapore), whose codes
+have three letters. Each state's weather is a big city's (a country's is its capital's), unless the player's phone shares
 roughly where they are (rounded to a tenth of a degree, about 10 km, before
 it's used or cached). Answers are cached, and anything that goes wrong just means
 no weather in the scene.
@@ -40,7 +40,7 @@ CITIES = {
     "WI": (43.04, -87.91), "WY": (41.14, -104.82),
 }
 
-# A European country's capital: (lat, lon, name), from Natural Earth's populated places.
+# A country's capital: (lat, lon, name), from Natural Earth's populated places.
 CAPITALS = {
     "ALB": (41.33, 19.82, "Tirana"), "AUT": (48.20, 16.36, "Vienna"), "BLR": (53.90, 27.56, "Minsk"),
     "BEL": (50.84, 4.33, "Brussels"), "BIH": (43.85, 18.38, "Sarajevo"), "BGR": (42.69, 23.31, "Sofia"),
@@ -56,6 +56,8 @@ CAPITALS = {
     "SRB": (44.82, 20.47, "Belgrade"), "SVK": (48.15, 17.12, "Bratislava"), "SVN": (46.06, 14.51, "Ljubljana"),
     "ESP": (40.40, -3.69, "Madrid"), "SWE": (59.35, 18.10, "Stockholm"), "CHE": (46.92, 7.47, "Bern"),
     "TUR": (39.93, 32.86, "Ankara"), "UKR": (50.44, 30.51, "Kyiv"), "GBR": (51.50, -0.12, "London"),
+    # Asia
+    "SGP": (1.29, 103.85, "Singapore"),
 }
 
 _lock = threading.Lock()

@@ -6,7 +6,7 @@
    "name": "Singapore",
    "region": "asia",
    "species": "singapore_100.csv",
-   "dex": null,
+   "dex": "singapore_dex.csv",
    "outline": "singapore_outline.json",
    "ranges": "singapore_ranges.json",
    "hotspots": "singapore_hotspots.json",
