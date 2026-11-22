@@ -1,0 +1,262 @@
+{
+ "source": "iNaturalist research-grade observations (species_counts by radius)",
+ "min_observations": 3,
+ "parks": [
+  {
+   "id": "sutjeska",
+   "name": "Sutjeska National Park",
+   "lat": 43.33,
+   "lon": 18.68,
+   "radius_km": 15,
+   "blurb": "Old-growth Peru\u0107ica forest with brown bears, chamois and wolves.",
+   "species": [
+    {
+     "slug": "silver_washed_fritillary",
+     "observations": 9
+    },
+    {
+     "slug": "common_wall_lizard",
+     "observations": 7
+    },
+    {
+     "slug": "european_stag_beetle",
+     "observations": 5
+    },
+    {
+     "slug": "barn_swallow",
+     "observations": 4
+    },
+    {
+     "slug": "green_lizard",
+     "observations": 4
+    },
+    {
+     "slug": "tessellated_water_snake",
+     "observations": 4
+    },
+    {
+     "slug": "grass_snake",
+     "observations": 4
+    },
+    {
+     "slug": "white_wagtail",
+     "observations": 3
+    },
+    {
+     "slug": "greek_frog",
+     "observations": 3
+    },
+    {
+     "slug": "fire_salamander",
+     "observations": 3
+    },
+    {
+     "slug": "european_mantis",
+     "observations": 3
+    },
+    {
+     "slug": "common_buzzard",
+     "observations": 3
+    },
+    {
+     "slug": "marsh_frog",
+     "observations": 3
+    },
+    {
+     "slug": "long_nosed_viper",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "una",
+   "name": "Una National Park",
+   "lat": 44.65,
+   "lon": 16.05,
+   "radius_km": 12,
+   "blurb": "Waterfalls and river canyons with otters, dippers and trout.",
+   "species": [
+    {
+     "slug": "green_lizard",
+     "observations": 16
+    },
+    {
+     "slug": "common_wall_lizard",
+     "observations": 11
+    },
+    {
+     "slug": "red_backed_shrike",
+     "observations": 10
+    },
+    {
+     "slug": "white_throated_dipper",
+     "observations": 9
+    },
+    {
+     "slug": "common_wood_pigeon",
+     "observations": 7
+    },
+    {
+     "slug": "common_chaffinch",
+     "observations": 7
+    },
+    {
+     "slug": "eurasian_nuthatch",
+     "observations": 7
+    },
+    {
+     "slug": "eurasian_blackbird",
+     "observations": 6
+    },
+    {
+     "slug": "long_tailed_tit",
+     "observations": 5
+    },
+    {
+     "slug": "meadow_brown",
+     "observations": 5
+    },
+    {
+     "slug": "silver_washed_fritillary",
+     "observations": 5
+    },
+    {
+     "slug": "mallard",
+     "observations": 4
+    },
+    {
+     "slug": "barn_swallow",
+     "observations": 4
+    },
+    {
+     "slug": "common_buzzard",
+     "observations": 4
+    },
+    {
+     "slug": "long_nosed_viper",
+     "observations": 4
+    },
+    {
+     "slug": "eurasian_jay",
+     "observations": 3
+    },
+    {
+     "slug": "european_rose_chafer",
+     "observations": 3
+    },
+    {
+     "slug": "european_mantis",
+     "observations": 3
+    },
+    {
+     "slug": "tessellated_water_snake",
+     "observations": 3
+    },
+    {
+     "slug": "common_slowworm",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "hutovo_blato",
+   "name": "Hutovo Blato",
+   "lat": 43.05,
+   "lon": 17.78,
+   "radius_km": 8,
+   "blurb": "Mediterranean wetland with herons, pygmy cormorants and terrapins.",
+   "species": [
+    {
+     "slug": "western_cattle_egret",
+     "observations": 25
+    },
+    {
+     "slug": "dalmatian_wall_lizard",
+     "observations": 19
+    },
+    {
+     "slug": "marsh_frog",
+     "observations": 14
+    },
+    {
+     "slug": "hermanns_tortoise",
+     "observations": 7
+    },
+    {
+     "slug": "little_egret",
+     "observations": 6
+    },
+    {
+     "slug": "european_glass_lizard",
+     "observations": 6
+    },
+    {
+     "slug": "tessellated_water_snake",
+     "observations": 6
+    },
+    {
+     "slug": "european_tree_frog",
+     "observations": 6
+    },
+    {
+     "slug": "little_grebe",
+     "observations": 5
+    },
+    {
+     "slug": "grass_snake",
+     "observations": 5
+    },
+    {
+     "slug": "agile_frog",
+     "observations": 4
+    },
+    {
+     "slug": "mediterranean_house_gecko",
+     "observations": 4
+    },
+    {
+     "slug": "european_toad",
+     "observations": 4
+    },
+    {
+     "slug": "european_bee_eater",
+     "observations": 3
+    },
+    {
+     "slug": "common_wood_pigeon",
+     "observations": 3
+    },
+    {
+     "slug": "barn_swallow",
+     "observations": 3
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 3
+    },
+    {
+     "slug": "meadow_brown",
+     "observations": 3
+    },
+    {
+     "slug": "aesculapian_snake",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "kozara",
+   "name": "Kozara National Park",
+   "lat": 45.0,
+   "lon": 16.9,
+   "radius_km": 8,
+   "blurb": "Wooded hills with roe deer, woodpeckers and fire salamanders.",
+   "species": [
+    {
+     "slug": "alpine_newt",
+     "observations": 3
+    }
+   ]
+  }
+ ]
+}

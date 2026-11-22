@@ -1,0 +1,688 @@
+{
+ "source": "iNaturalist research-grade observations (species_counts by radius)",
+ "min_observations": 3,
+ "parks": [
+  {
+   "id": "lahemaa",
+   "name": "Lahemaa National Park",
+   "lat": 59.55,
+   "lon": 25.85,
+   "radius_km": 20,
+   "blurb": "Coastal forests and bogs with elk, brown bears, lynx and cranes.",
+   "species": [
+    {
+     "slug": "common_goldeneye",
+     "observations": 40
+    },
+    {
+     "slug": "white_wagtail",
+     "observations": 37
+    },
+    {
+     "slug": "barn_swallow",
+     "observations": 36
+    },
+    {
+     "slug": "common_merganser",
+     "observations": 33
+    },
+    {
+     "slug": "viviparous_lizard",
+     "observations": 31
+    },
+    {
+     "slug": "european_toad",
+     "observations": 29
+    },
+    {
+     "slug": "european_common_frog",
+     "observations": 26
+    },
+    {
+     "slug": "common_crane",
+     "observations": 24
+    },
+    {
+     "slug": "common_gull",
+     "observations": 23
+    },
+    {
+     "slug": "great_cormorant",
+     "observations": 22
+    },
+    {
+     "slug": "common_chaffinch",
+     "observations": 22
+    },
+    {
+     "slug": "mute_swan",
+     "observations": 21
+    },
+    {
+     "slug": "white_stork",
+     "observations": 20
+    },
+    {
+     "slug": "great_spotted_woodpecker",
+     "observations": 20
+    },
+    {
+     "slug": "common_tern",
+     "observations": 16
+    },
+    {
+     "slug": "black_headed_gull",
+     "observations": 16
+    },
+    {
+     "slug": "mallard",
+     "observations": 14
+    },
+    {
+     "slug": "small_tortoiseshell",
+     "observations": 13
+    },
+    {
+     "slug": "white_tailed_eagle",
+     "observations": 12
+    },
+    {
+     "slug": "eurasian_red_squirrel",
+     "observations": 12
+    },
+    {
+     "slug": "hooded_crow",
+     "observations": 11
+    },
+    {
+     "slug": "northern_lapwing",
+     "observations": 10
+    },
+    {
+     "slug": "eastern_slowworm",
+     "observations": 10
+    },
+    {
+     "slug": "threespine_stickleback",
+     "observations": 9
+    },
+    {
+     "slug": "copse_snail",
+     "observations": 9
+    },
+    {
+     "slug": "eurasian_blackbird",
+     "observations": 8
+    },
+    {
+     "slug": "eurasian_nuthatch",
+     "observations": 8
+    },
+    {
+     "slug": "eurasian_lynx",
+     "observations": 8
+    },
+    {
+     "slug": "european_mole",
+     "observations": 8
+    },
+    {
+     "slug": "common_brimstone",
+     "observations": 8
+    },
+    {
+     "slug": "great_tit",
+     "observations": 8
+    },
+    {
+     "slug": "european_herring_gull",
+     "observations": 8
+    },
+    {
+     "slug": "fieldfare",
+     "observations": 7
+    },
+    {
+     "slug": "spotted_flycatcher",
+     "observations": 7
+    },
+    {
+     "slug": "map",
+     "observations": 7
+    },
+    {
+     "slug": "great_egret",
+     "observations": 7
+    },
+    {
+     "slug": "grey_heron",
+     "observations": 6
+    },
+    {
+     "slug": "eurasian_tree_sparrow",
+     "observations": 6
+    },
+    {
+     "slug": "red_fox",
+     "observations": 6
+    },
+    {
+     "slug": "western_roe_deer",
+     "observations": 6
+    },
+    {
+     "slug": "red_admiral",
+     "observations": 6
+    },
+    {
+     "slug": "moose",
+     "observations": 6
+    },
+    {
+     "slug": "mainland_raccoon_dog",
+     "observations": 6
+    },
+    {
+     "slug": "northern_wheatear",
+     "observations": 5
+    },
+    {
+     "slug": "common_moon_jelly",
+     "observations": 5
+    },
+    {
+     "slug": "green_veined_white",
+     "observations": 5
+    },
+    {
+     "slug": "round_goby",
+     "observations": 5
+    },
+    {
+     "slug": "silver_washed_fritillary",
+     "observations": 5
+    },
+    {
+     "slug": "adder",
+     "observations": 5
+    },
+    {
+     "slug": "grass_snake",
+     "observations": 5
+    },
+    {
+     "slug": "american_mink",
+     "observations": 5
+    },
+    {
+     "slug": "common_wood_pigeon",
+     "observations": 4
+    },
+    {
+     "slug": "yellowhammer",
+     "observations": 4
+    },
+    {
+     "slug": "brown_bear",
+     "observations": 4
+    },
+    {
+     "slug": "brown_hare",
+     "observations": 4
+    },
+    {
+     "slug": "seven_spotted_lady_beetle",
+     "observations": 4
+    },
+    {
+     "slug": "common_blue_damselfly",
+     "observations": 4
+    },
+    {
+     "slug": "eurasian_blue_tit",
+     "observations": 4
+    },
+    {
+     "slug": "common_buzzard",
+     "observations": 4
+    },
+    {
+     "slug": "greater_whitethroat",
+     "observations": 4
+    },
+    {
+     "slug": "eurasian_bullfinch",
+     "observations": 3
+    },
+    {
+     "slug": "european_starling",
+     "observations": 3
+    },
+    {
+     "slug": "eurasian_beaver",
+     "observations": 3
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 3
+    },
+    {
+     "slug": "ringlet",
+     "observations": 3
+    },
+    {
+     "slug": "western_yellow_wagtail",
+     "observations": 3
+    },
+    {
+     "slug": "eurasian_jackdaw",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "matsalu",
+   "name": "Matsalu National Park",
+   "lat": 58.75,
+   "lon": 23.7,
+   "radius_km": 15,
+   "blurb": "Bay and reed beds with huge goose and swan flocks in migration.",
+   "species": [
+    {
+     "slug": "northern_lapwing",
+     "observations": 33
+    },
+    {
+     "slug": "common_crane",
+     "observations": 21
+    },
+    {
+     "slug": "white_tailed_eagle",
+     "observations": 21
+    },
+    {
+     "slug": "white_stork",
+     "observations": 20
+    },
+    {
+     "slug": "western_roe_deer",
+     "observations": 16
+    },
+    {
+     "slug": "roman_snail",
+     "observations": 16
+    },
+    {
+     "slug": "white_wagtail",
+     "observations": 13
+    },
+    {
+     "slug": "barn_swallow",
+     "observations": 12
+    },
+    {
+     "slug": "mute_swan",
+     "observations": 11
+    },
+    {
+     "slug": "copse_snail",
+     "observations": 11
+    },
+    {
+     "slug": "western_yellow_wagtail",
+     "observations": 11
+    },
+    {
+     "slug": "grey_heron",
+     "observations": 10
+    },
+    {
+     "slug": "northern_wheatear",
+     "observations": 10
+    },
+    {
+     "slug": "silver_washed_fritillary",
+     "observations": 10
+    },
+    {
+     "slug": "common_gull",
+     "observations": 9
+    },
+    {
+     "slug": "yellowhammer",
+     "observations": 9
+    },
+    {
+     "slug": "european_common_frog",
+     "observations": 9
+    },
+    {
+     "slug": "european_toad",
+     "observations": 9
+    },
+    {
+     "slug": "common_chaffinch",
+     "observations": 8
+    },
+    {
+     "slug": "green_veined_white",
+     "observations": 8
+    },
+    {
+     "slug": "brown_hare",
+     "observations": 7
+    },
+    {
+     "slug": "great_egret",
+     "observations": 7
+    },
+    {
+     "slug": "grass_snake",
+     "observations": 7
+    },
+    {
+     "slug": "small_tortoiseshell",
+     "observations": 6
+    },
+    {
+     "slug": "moose",
+     "observations": 6
+    },
+    {
+     "slug": "greater_whitethroat",
+     "observations": 6
+    },
+    {
+     "slug": "common_tern",
+     "observations": 5
+    },
+    {
+     "slug": "mallard",
+     "observations": 5
+    },
+    {
+     "slug": "common_merganser",
+     "observations": 5
+    },
+    {
+     "slug": "eurasian_tree_sparrow",
+     "observations": 5
+    },
+    {
+     "slug": "eurasian_beaver",
+     "observations": 5
+    },
+    {
+     "slug": "european_firebug",
+     "observations": 5
+    },
+    {
+     "slug": "black_headed_gull",
+     "observations": 5
+    },
+    {
+     "slug": "common_buzzard",
+     "observations": 5
+    },
+    {
+     "slug": "gadwall",
+     "observations": 5
+    },
+    {
+     "slug": "eurasian_nuthatch",
+     "observations": 4
+    },
+    {
+     "slug": "moor_frog",
+     "observations": 4
+    },
+    {
+     "slug": "red_fox",
+     "observations": 4
+    },
+    {
+     "slug": "eurasian_red_squirrel",
+     "observations": 4
+    },
+    {
+     "slug": "seven_spotted_lady_beetle",
+     "observations": 4
+    },
+    {
+     "slug": "map",
+     "observations": 4
+    },
+    {
+     "slug": "common_blue_damselfly",
+     "observations": 4
+    },
+    {
+     "slug": "great_cormorant",
+     "observations": 3
+    },
+    {
+     "slug": "common_goldeneye",
+     "observations": 3
+    },
+    {
+     "slug": "greater_white_fronted_goose",
+     "observations": 3
+    },
+    {
+     "slug": "fieldfare",
+     "observations": 3
+    },
+    {
+     "slug": "european_starling",
+     "observations": 3
+    },
+    {
+     "slug": "common_brimstone",
+     "observations": 3
+    },
+    {
+     "slug": "hooded_crow",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "soomaa",
+   "name": "Soomaa National Park",
+   "lat": 58.43,
+   "lon": 25.05,
+   "radius_km": 15,
+   "blurb": "Bogs and flooded forests with beavers, elk and flying squirrels.",
+   "species": [
+    {
+     "slug": "european_common_frog",
+     "observations": 24
+    },
+    {
+     "slug": "viviparous_lizard",
+     "observations": 24
+    },
+    {
+     "slug": "common_blue_damselfly",
+     "observations": 17
+    },
+    {
+     "slug": "european_toad",
+     "observations": 15
+    },
+    {
+     "slug": "silver_washed_fritillary",
+     "observations": 10
+    },
+    {
+     "slug": "white_stork",
+     "observations": 9
+    },
+    {
+     "slug": "common_crane",
+     "observations": 8
+    },
+    {
+     "slug": "white_wagtail",
+     "observations": 8
+    },
+    {
+     "slug": "eurasian_beaver",
+     "observations": 8
+    },
+    {
+     "slug": "copse_snail",
+     "observations": 8
+    },
+    {
+     "slug": "small_tortoiseshell",
+     "observations": 6
+    },
+    {
+     "slug": "common_goldeneye",
+     "observations": 5
+    },
+    {
+     "slug": "common_brimstone",
+     "observations": 5
+    },
+    {
+     "slug": "adder",
+     "observations": 5
+    },
+    {
+     "slug": "great_spotted_woodpecker",
+     "observations": 4
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 4
+    },
+    {
+     "slug": "map",
+     "observations": 4
+    },
+    {
+     "slug": "barn_swallow",
+     "observations": 3
+    },
+    {
+     "slug": "spotted_flycatcher",
+     "observations": 3
+    },
+    {
+     "slug": "european_mole",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "vilsandi",
+   "name": "Vilsandi National Park",
+   "lat": 58.38,
+   "lon": 21.85,
+   "radius_km": 12,
+   "blurb": "Islands with grey seals, eiders and nesting seabirds.",
+   "species": [
+    {
+     "slug": "common_blue_damselfly",
+     "observations": 12
+    },
+    {
+     "slug": "common_crane",
+     "observations": 6
+    },
+    {
+     "slug": "spotted_flycatcher",
+     "observations": 6
+    },
+    {
+     "slug": "white_wagtail",
+     "observations": 6
+    },
+    {
+     "slug": "silver_washed_fritillary",
+     "observations": 6
+    },
+    {
+     "slug": "black_headed_gull",
+     "observations": 6
+    },
+    {
+     "slug": "grey_heron",
+     "observations": 5
+    },
+    {
+     "slug": "mute_swan",
+     "observations": 5
+    },
+    {
+     "slug": "common_chaffinch",
+     "observations": 5
+    },
+    {
+     "slug": "seven_spotted_lady_beetle",
+     "observations": 5
+    },
+    {
+     "slug": "yellowhammer",
+     "observations": 4
+    },
+    {
+     "slug": "northern_lapwing",
+     "observations": 3
+    },
+    {
+     "slug": "white_tailed_eagle",
+     "observations": 3
+    },
+    {
+     "slug": "red_fox",
+     "observations": 3
+    },
+    {
+     "slug": "common_moon_jelly",
+     "observations": 3
+    },
+    {
+     "slug": "common_brimstone",
+     "observations": 3
+    },
+    {
+     "slug": "roman_snail",
+     "observations": 3
+    },
+    {
+     "slug": "ringlet",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "karula",
+   "name": "Karula National Park",
+   "lat": 57.72,
+   "lon": 26.5,
+   "radius_km": 10,
+   "blurb": "Hilly lake country with lynx, beavers and woodpeckers.",
+   "species": [
+    {
+     "slug": "white_stork",
+     "observations": 5
+    },
+    {
+     "slug": "common_crane",
+     "observations": 3
+    },
+    {
+     "slug": "great_crested_grebe",
+     "observations": 3
+    },
+    {
+     "slug": "western_roe_deer",
+     "observations": 3
+    }
+   ]
+  }
+ ]
+}

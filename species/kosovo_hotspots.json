@@ -1,0 +1,444 @@
+{
+ "source": "iNaturalist research-grade observations (species_counts by radius)",
+ "min_observations": 3,
+ "parks": [
+  {
+   "id": "sharr",
+   "name": "Sharr Mountains National Park",
+   "lat": 42.15,
+   "lon": 20.95,
+   "radius_km": 15,
+   "blurb": "High mountains with chamois, lynx, bears and golden eagles.",
+   "species": [
+    {
+     "slug": "common_wall_lizard",
+     "observations": 10
+    },
+    {
+     "slug": "queen_of_spain_fritillary",
+     "observations": 9
+    },
+    {
+     "slug": "green_lizard",
+     "observations": 8
+    },
+    {
+     "slug": "hermanns_tortoise",
+     "observations": 8
+    },
+    {
+     "slug": "common_chaffinch",
+     "observations": 7
+    },
+    {
+     "slug": "fire_salamander",
+     "observations": 7
+    },
+    {
+     "slug": "eurasian_jay",
+     "observations": 5
+    },
+    {
+     "slug": "yellowhammer",
+     "observations": 5
+    },
+    {
+     "slug": "european_robin",
+     "observations": 5
+    },
+    {
+     "slug": "viviparous_lizard",
+     "observations": 5
+    },
+    {
+     "slug": "european_rose_chafer",
+     "observations": 5
+    },
+    {
+     "slug": "great_tit",
+     "observations": 5
+    },
+    {
+     "slug": "common_buzzard",
+     "observations": 5
+    },
+    {
+     "slug": "long_tailed_tit",
+     "observations": 4
+    },
+    {
+     "slug": "red_backed_shrike",
+     "observations": 4
+    },
+    {
+     "slug": "black_redstart",
+     "observations": 4
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 4
+    },
+    {
+     "slug": "scarce_swallowtail",
+     "observations": 4
+    },
+    {
+     "slug": "yellow_bellied_toad",
+     "observations": 4
+    },
+    {
+     "slug": "northern_wheatear",
+     "observations": 3
+    },
+    {
+     "slug": "eurasian_nuthatch",
+     "observations": 3
+    },
+    {
+     "slug": "brown_bear",
+     "observations": 3
+    },
+    {
+     "slug": "seven_spotted_lady_beetle",
+     "observations": 3
+    },
+    {
+     "slug": "european_stag_beetle",
+     "observations": 3
+    },
+    {
+     "slug": "corn_bunting",
+     "observations": 3
+    },
+    {
+     "slug": "turkish_snail",
+     "observations": 3
+    },
+    {
+     "slug": "eurasian_kestrel",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "bjeshket_nemuna",
+   "name": "Bjeshk\u00ebt e Nemuna National Park",
+   "lat": 42.65,
+   "lon": 20.15,
+   "radius_km": 15,
+   "blurb": "Accursed Mountains with bears, wolves and Rugova gorge dippers.",
+   "species": [
+    {
+     "slug": "alpine_newt",
+     "observations": 55
+    },
+    {
+     "slug": "fire_salamander",
+     "observations": 18
+    },
+    {
+     "slug": "yellow_bellied_toad",
+     "observations": 15
+    },
+    {
+     "slug": "viviparous_lizard",
+     "observations": 11
+    },
+    {
+     "slug": "queen_of_spain_fritillary",
+     "observations": 10
+    },
+    {
+     "slug": "greek_frog",
+     "observations": 9
+    },
+    {
+     "slug": "eurasian_jay",
+     "observations": 7
+    },
+    {
+     "slug": "european_rose_chafer",
+     "observations": 7
+    },
+    {
+     "slug": "common_buzzard",
+     "observations": 7
+    },
+    {
+     "slug": "coal_tit",
+     "observations": 6
+    },
+    {
+     "slug": "common_slowworm",
+     "observations": 6
+    },
+    {
+     "slug": "red_backed_shrike",
+     "observations": 5
+    },
+    {
+     "slug": "black_redstart",
+     "observations": 5
+    },
+    {
+     "slug": "white_wagtail",
+     "observations": 5
+    },
+    {
+     "slug": "brown_bear",
+     "observations": 5
+    },
+    {
+     "slug": "common_wall_lizard",
+     "observations": 5
+    },
+    {
+     "slug": "marbled_white",
+     "observations": 5
+    },
+    {
+     "slug": "collared_flat_backed_millipede",
+     "observations": 5
+    },
+    {
+     "slug": "yellowhammer",
+     "observations": 4
+    },
+    {
+     "slug": "mistle_thrush",
+     "observations": 4
+    },
+    {
+     "slug": "northern_wheatear",
+     "observations": 4
+    },
+    {
+     "slug": "wild_boar",
+     "observations": 4
+    },
+    {
+     "slug": "northern_chamois",
+     "observations": 4
+    },
+    {
+     "slug": "painted_lady",
+     "observations": 4
+    },
+    {
+     "slug": "seven_spotted_lady_beetle",
+     "observations": 4
+    },
+    {
+     "slug": "eurasian_kestrel",
+     "observations": 4
+    },
+    {
+     "slug": "whinchat",
+     "observations": 3
+    },
+    {
+     "slug": "eurasian_nuthatch",
+     "observations": 3
+    },
+    {
+     "slug": "smooth_snake",
+     "observations": 3
+    },
+    {
+     "slug": "sand_lizard",
+     "observations": 3
+    },
+    {
+     "slug": "eurasian_red_squirrel",
+     "observations": 3
+    },
+    {
+     "slug": "aesculapian_snake",
+     "observations": 3
+    },
+    {
+     "slug": "turkish_snail",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "germia",
+   "name": "Germia Park, Pristina",
+   "lat": 42.68,
+   "lon": 21.2,
+   "radius_km": 4,
+   "blurb": "City forest with squirrels, woodpeckers and songbirds.",
+   "species": [
+    {
+     "slug": "turkish_snail",
+     "observations": 21
+    },
+    {
+     "slug": "hooded_crow",
+     "observations": 17
+    },
+    {
+     "slug": "common_chaffinch",
+     "observations": 10
+    },
+    {
+     "slug": "house_sparrow",
+     "observations": 10
+    },
+    {
+     "slug": "common_wall_lizard",
+     "observations": 10
+    },
+    {
+     "slug": "european_stag_beetle",
+     "observations": 10
+    },
+    {
+     "slug": "eurasian_jay",
+     "observations": 9
+    },
+    {
+     "slug": "northern_white_breasted_hedgehog",
+     "observations": 9
+    },
+    {
+     "slug": "asian_lady_beetle",
+     "observations": 9
+    },
+    {
+     "slug": "great_tit",
+     "observations": 8
+    },
+    {
+     "slug": "eurasian_nuthatch",
+     "observations": 7
+    },
+    {
+     "slug": "fire_salamander",
+     "observations": 7
+    },
+    {
+     "slug": "cirl_bunting",
+     "observations": 6
+    },
+    {
+     "slug": "red_backed_shrike",
+     "observations": 6
+    },
+    {
+     "slug": "smooth_snake",
+     "observations": 6
+    },
+    {
+     "slug": "eurasian_red_squirrel",
+     "observations": 6
+    },
+    {
+     "slug": "european_mantis",
+     "observations": 6
+    },
+    {
+     "slug": "european_copper_skink",
+     "observations": 6
+    },
+    {
+     "slug": "aesculapian_snake",
+     "observations": 6
+    },
+    {
+     "slug": "marbled_white",
+     "observations": 6
+    },
+    {
+     "slug": "long_nosed_viper",
+     "observations": 6
+    },
+    {
+     "slug": "eurasian_blackbird",
+     "observations": 5
+    },
+    {
+     "slug": "european_robin",
+     "observations": 5
+    },
+    {
+     "slug": "white_stork",
+     "observations": 4
+    },
+    {
+     "slug": "long_tailed_tit",
+     "observations": 4
+    },
+    {
+     "slug": "european_starling",
+     "observations": 4
+    },
+    {
+     "slug": "red_fox",
+     "observations": 4
+    },
+    {
+     "slug": "european_rose_chafer",
+     "observations": 4
+    },
+    {
+     "slug": "eurasian_green_woodpecker",
+     "observations": 4
+    },
+    {
+     "slug": "european_toad",
+     "observations": 4
+    },
+    {
+     "slug": "eurasian_jackdaw",
+     "observations": 4
+    },
+    {
+     "slug": "common_slowworm",
+     "observations": 4
+    },
+    {
+     "slug": "rook",
+     "observations": 3
+    },
+    {
+     "slug": "syrian_woodpecker",
+     "observations": 3
+    },
+    {
+     "slug": "agile_frog",
+     "observations": 3
+    },
+    {
+     "slug": "green_lizard",
+     "observations": 3
+    },
+    {
+     "slug": "wild_boar",
+     "observations": 3
+    },
+    {
+     "slug": "meadow_brown",
+     "observations": 3
+    },
+    {
+     "slug": "scarce_swallowtail",
+     "observations": 3
+    },
+    {
+     "slug": "queen_of_spain_fritillary",
+     "observations": 3
+    },
+    {
+     "slug": "common_buzzard",
+     "observations": 3
+    },
+    {
+     "slug": "hungarian_pachyiulus",
+     "observations": 3
+    }
+   ]
+  }
+ ]
+}

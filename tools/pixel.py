@@ -119,7 +119,8 @@ def _seg_dist(x0, y0, x1, y1):
 
 
 # Animation: every body plan can draw itself in these poses, FRAMES frames each.
-ACTS = ("idle", "walk", "fly", "swim", "sleep", "sit", "look", "back", "eat", "dive", "hide", "run", "groom", "sad")
+ACTS = ("idle", "walk", "fly", "swim", "sleep", "sit", "look", "back", "eat", "dive", "hide", "run", "groom", "sad",
+        "land")
 FRAMES = 16  # 16 since 0.93 (kuro: "add more frames"); was 12, and 8 and 4 before
 OLD_FRAMES = 4  # body plans that still pick poses by s.f count in these
 # Still poses breathe (BREATH: how far the body rises, as a share of its height),
@@ -198,6 +199,9 @@ class Sprite:
             self.base = lambda x, y, a=a: (x, GROUND - (GROUND - y) * (1 + a))
             self.base_grid = _XS, GROUND - (GROUND - _YS) / (1 + a)
         self.fwd, self.xs, self.ys = self.base, *(self.base_grid if self.base else (_XS, _YS))
+        # Set when a body plan has finished a pose that species' own extra touches (drawn
+        # in the standing pose's coordinates) shouldn't reach: only this area takes them.
+        self.clip_after = None
 
     def set_base(self, fwd, inv=None):
         """Bend the whole drawing (under any warp the body plan adds) through fwd: the
@@ -205,8 +209,22 @@ class Sprite:
         Everything is still drawn and rasterized fresh, pixel by pixel. inv, a rough
         inverse, starts the search for each pixel's source point (needed for big turns)."""
         self.base = fwd
+        self.base_inv = inv
         self.base_grid = _invert(fwd, inv)
         self.fwd, (self.xs, self.ys) = fwd, self.base_grid
+
+    def raise_by(self, dy: float):
+        """Draw everything dy units higher (under any bend already set, such as a dive's
+        pitch): flying birds use it to make room for their wings' downstroke."""
+        old, old_inv = self.base, getattr(self, "base_inv", None)
+        if old is None:
+            self.set_base(lambda x, y: (x, y - dy), lambda x, y: (x, y + dy))
+            return
+
+        def inv(x, y):
+            ix, iy = old_inv(x, y) if old_inv else (x, y)
+            return ix, iy + dy
+        self.set_base(lambda x, y: old(x, y - dy), inv)
 
     def pitch(self, deg: float, cx: float = 16.0, cy: float = 18.0):
         """Turn the whole animal nose down by deg (nose up when negative) about (cx, cy)."""
@@ -252,6 +270,10 @@ class Sprite:
     def can(self, *acts):
         """Declare poses this body plan draws."""
         self.acts.update(acts)
+
+    def seal(self, keep=None):
+        """The pose is finished: later drawing only lands inside keep (nowhere if None)."""
+        self.clip_after = keep if keep is not None else np.zeros((N, N), bool)
 
     def shift(self, dx: int, dy: int):
         """Move everything drawn so far (in drawing units; halves move half a unit)."""
@@ -451,6 +473,8 @@ class Sprite:
             mask = mask | mask[:, ::-1]
         if clip is not None:
             mask = mask & clip
+        if self.clip_after is not None:
+            mask = mask & self.clip_after
         self.n += 1
         c = rgb(color)
         self.col[mask] = c
@@ -472,6 +496,8 @@ class Sprite:
             mask = mask | mask[:, ::-1]
         if within is not None:
             mask = mask & within
+        if self.clip_after is not None:
+            mask = mask & self.clip_after
         mask = mask & (self.reg > 0)
         self.col[mask] = rgb(color)
         return mask
