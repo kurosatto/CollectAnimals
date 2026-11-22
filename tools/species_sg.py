@@ -9,9 +9,12 @@ import math
 
 from archetypes import BLACK, EYE, PINK, WHITE, alligator, bird, butterfly, crab, critter, dragonfly, duck, fish, \
     frog, grasshopper, lizard, raptor, snake, sprite, star, wader
+import mammal
 from mammal import quad
 from pixel import mix
+from archetypes import back_stripes, flecks
 from species_east import _hermit
+from species_eu_mammals import _antler, _bat, _shrew
 from species_eu_birds import _song
 from species_eu_bugs import EDGE_F, EDGE_H, TIP, D, E, L, P, _bf
 from species_eu_herps import NET, SPOTS, _both, _dots, _lines
@@ -646,3 +649,418 @@ def _(s):
         s.paint(s.m_px([(x, y - 1)]), "#f4c8d0", within=m)
     for x in (3, 5, 7):
         s.ellipse(x - st, 21 + abs(x - 5) * 0.6, 1.1, 1.1, "#f0c8d0")
+
+
+# =========================================================================== mammals
+@sprite("plantain_squirrel")
+def _(s):
+    # Olive-brown above with a black-and-buff stripe along each side and a rich
+    # chestnut-red belly.
+    def side(s, g):
+        if g["view"] == "side":
+            back_stripes(s, g, ["#e8d0a0", "#2b2226"], top=0.62, width=0.8)
+    critter(s, "#7a6a4a", "#b8502a", build="squirrel", ear_in="#c8a080", tail="squirrel", tail_col="#6a5a3e",
+            tail_tip="#8a7a58", markings=side)
+
+
+@sprite("slender_squirrel")
+def _(s):
+    # A tiny, plain olive-gray squirrel with a slim tail, often running head-down on trunks.
+    critter(s, "#7a7460", "#b8b098", build="squirrel", ear_in="#a89a80", tail="squirrel", tail_col="#6a6450",
+            eye_ring="#c8c0a8")
+
+
+@sprite("variable_squirrel")
+def _(s):
+    # Singapore's variable squirrels are mostly creamy white, with a rusty-orange tail
+    # and dark eyes.
+    critter(s, "#ece0c8", "#f8f2e4", build="squirrel", ear_in="#e8c0a8", tail="squirrel", tail_col="#d88a4a",
+            tail_tip="#e8b080", nose="#c88a80")
+
+
+@sprite("smooth_coated_otter")
+def _(s):
+    # Singapore's city otters: sleek, short-furred and brown, with a pale throat, a flat
+    # head and a thick, flattened tail.
+    critter(s, "#7a5a40", "#d8c8a8", build="otter", ear_in="#5a4030", tail="otter", tail_col="#6a4c36",
+            muzzle="#d8c8a8", nose="#2b2226")
+
+
+def _mouse_deer(s, fur, side, *, stripes=1):
+    """A chevrotain: deer-shaped but hare-sized, hunched with a high rounded rump, a short
+    neck carrying the head low, pencil-thin legs, no antlers, and a white throat striped
+    with brown. Drawn on the deer skeleton with these proportions swapped in."""
+    def m(s, b):
+        if b["view"] != "side":
+            return
+        hx, hy, hrx, hry = b["head"]
+        (nx0, ny0), (nx1, ny1), nr = b["neck"]
+        throat = s.m_path([(hx + 0.5, hy + 2.0), (nx0 - 1.5, ny0 + 2.2)], 1.3)
+        s.paint(throat, WHITE)
+        for k in range(stripes):
+            off = 0.9 * (k - (stripes - 1) / 2)
+            s.paint(s.m_path([(hx + 0.8, hy + 2.2 + off), (nx0 - 1.2, ny0 + 2.4 + off)], 0.35), _dk(fur, 0.15),
+                    within=throat)
+        bx, by, brx, bry = b["body"]
+        s.paint(s.m_ellipse(bx, by - bry * 0.6, brx, bry * 0.45), side, within=s.m_ellipse(bx, by, brx, bry))
+    g = mammal.G["deer"]
+    mammal.G["deer"] = dict(g, chest=(13.6, 19.0, 3.6, 3.6), barrel=(19.0, 18.0, 6.6, 3.9),
+                            haunch=(24.0, 16.8, 4.3, 4.8), fore=(13.2, 20.6), fore_l=(5.0, 4.8), hind=(24.6, 19.8),
+                            fore_r=(0.85, 0.5), hind_r=(1.0, 0.55), head=(8.2, 14.6, 3.0, 2.6), neck=((13.2, 17.2), 1.8),
+                            rest_y=14.6)
+    try:
+        quad(s, fur, "#f2ece0", build="deer", ears="round", ear_in="#d8a888", tail="short", tail_col=fur,
+             nose="#2b2226", feet="#3a2a22", legs=_dk(fur, 0.1), markings=m)
+    finally:
+        mammal.G["deer"] = g
+
+
+@sprite("lesser_mouse_deer")
+def _(s):
+    # The world's smallest hoofed animal: orange-brown with a darker back, a white throat
+    # with dark stripes and legs as thin as pencils.
+    _mouse_deer(s, "#b0703a", "#7a4a28", stripes=1)
+
+
+@sprite("greater_mouse_deer")
+def _(s):
+    # Bigger and grayer-brown, with several white stripes down its throat.
+    _mouse_deer(s, "#8a6a48", "#5a4430", stripes=3)
+
+
+@sprite("sambar")
+def _(s):
+    # A big, dark gray-brown deer with a shaggy mane and stout three-pointed antlers.
+    def mane(s, b):
+        (nx0, ny0), (nx1, ny1), nr = b["neck"]
+        s.paint(s.m_path([(nx0, ny0), (nx1, ny1)], nr + 0.4), "#3e3026")
+    quad(s, "#5a4a3a", "#8a7a64", build="deer", ears="mule", ear_in="#a88a70", tail="short", tail_col="#2e2620",
+         nose="#1e1a1e", feet="#2a221c", legs="#4a3c30", belly=False, markings=mane,
+         behind=_antler([(0, 0), (1.5, -3.5), (2.5, -7), (2.8, -9)],
+                        [((0.6, -1.2), (-2.4, -2.2)), ((2.6, -7.2), (4.8, -8.4))], "#c8b48c", w=0.75))
+
+
+@sprite("asian_palm_civet")
+def _(s):
+    # The toddy cat: gray-brown with rows of dark spots, dark legs, a dark masked face
+    # with pale patches and a long dark tail.
+    def m(s, b):
+        bx, by, brx, bry = b["body"]
+        body = s.m_ellipse(bx, by, brx, bry)
+        s.paint(s.m_px([(round(bx + dx), round(by + dy)) for dx, dy in
+                        ((-5, -2), (-2, -2), (1, -2), (4, -2), (-4, 0), (-1, 0), (2, 0), (5, 0), (-3, 2), (0, 2),
+                         (3, 2))]), "#3a302a", within=body)
+        hx, hy, hrx, hry = b["head"]
+        hm = s.m_ellipse(hx, hy, hrx, hry)
+        if b["view"] == "side":
+            s.paint(s.m_ellipse(hx - 0.5, hy + 0.5, 2.6, 1.6), "#2e2622", within=hm)
+            s.paint(s.m_px([(round(hx), round(hy - 1.5)), (round(hx - 2), round(hy + 1.5))]), "#e0d8c8", within=hm)
+    quad(s, "#8a8070", "#a89e8c", build="low", ears="round", ear_in="#4a403a", tail="long", tail_col="#3a322c",
+         muzzle="#4a423c", nose="#1e1a1e", legs="#3a322c", feet="#2a2420", belly=False, markings=m)
+
+
+@sprite("common_treeshrew")
+def _(s):
+    # Not a shrew at all: a squirrel-like olive-brown climber with a long pointed snout,
+    # a pale stripe on each shoulder and a bushy tail.
+    critter(s, "#7a6648", "#c8b088", build="squirrel", ear_in="#a08a70", tail="squirrel", tail_col="#6a583e",
+            muzzle="#8a7656", nose="#2b2226",
+            face=lambda s, g: s.paint(s.m_path([(g["head"][0] - 2.5, g["head"][1] + 0.5),
+                                                (g["head"][0] - 6, g["head"][1] + 1.5)], 1.1), "#7a6648")
+            if g["view"] == "side" else None)
+
+
+@sprite("asian_house_shrew")
+def _(s):
+    # A large, velvety gray shrew with a pink snout, pink feet and a thick tail; it smells
+    # of musk and chirps as it runs along walls.
+    _shrew(s, "#7a7478", "#a8a2a6", tail=7, snout="#e0a0a8", ears=True, size=1.1)
+
+
+@sprite("lesser_short_nosed_fruit_bat")
+def _(s):
+    # A dog-faced fruit bat: warm brown with big dark eyes and ears rimmed in white.
+    _bat(s, "#9a6a44", "#3a2e28", "#2a2018", ears="round", face="#7a5236", belly="#b88a60", big_eyes=True)
+    for x in (12.5, 19.5):
+        s.paint(s.m_ellipse(x, 8, 2, 2.4) & ~s.m_ellipse(x, 8.4, 1.5, 1.9), "#f0ece4")
+
+
+@sprite("lesser_false_vampire_bat")
+def _(s):
+    # Soft gray with enormous ears joined across the forehead and a tall, upright nose leaf.
+    _bat(s, "#9a9498", "#4a4448", "#2a2628", ears="long", ear_col="#b89a9a", leaf="#c8a0a0", belly="#c8c4c4")
+    s.path([(13.5, 9.5), (18.5, 9.5)], 0.6, "#b89a9a", shade=False)
+
+
+@sprite("cave_nectar_bat")
+def _(s):
+    # A plain brown fruit bat with a long, slim snout for lapping nectar from flowers.
+    _bat(s, "#7a5a40", "#2e2420", "#1e1612", ears="short", face="#5a4230", belly="#9a7a5a")
+    s.path([(16, 13), (16, 15.5)], (1.2, 0.8), "#5a4230")
+
+
+# --------------------------------------------------------------------------- primates
+def _primate(s, fur, light, face, *, limbs=None, hands=None, tail="arch", crest=False, eye_ring=None,
+             mouth=None, cheek=None, belly_band=None):
+    """A monkey from the side, facing left. It sits on its haunches most of the time (idle,
+    look, eat, groom, sleep): an upright back, the near thigh forward with the foot flat,
+    the arm resting on the knee and the long tail lying out behind. Walking and running it
+    goes on all fours, rump higher than shoulders, palms flat and the tail carried in an
+    arch (macaques) or hanging in a long curve (leaf monkeys). Every pose is drawn joint by
+    joint, never warped.
+    face: bare skin of the face. crest: a pointed tuft on the crown (leaf monkeys).
+    eye_ring/mouth: pale rings round the eyes and patch round the mouth (dusky langur)."""
+    s.can("walk", "run", "sit", "look", "eat", "groom")
+    act, t = s.act, s.t
+    limbs = limbs or fur
+    hands = hands or _dk(limbs, 0.25)
+    far = _dk(fur, 0.22)
+    sitting = act not in ("walk", "run")
+
+    def tail_path(pts, w=(1.3, 0.8)):
+        s.path(pts, w, _dk(fur, 0.08))
+
+    if sitting:
+        bob = 0.4 * math.sin(2 * math.pi * t) if act in ("idle", "look") else 0
+        sway = math.sin(2 * math.pi * t)
+        # tail out along the ground behind, its tip lifting and curling
+        if tail == "arch":
+            tail_path([(22, 27.5), (27, 29.5), (32, 29.3), (35, 27.5 - sway * 0.6), (35.5, 25.5 - sway)])
+        else:
+            tail_path([(22, 27.5), (28, 29.6), (34, 29.6), (38, 29.2 - sway * 0.4)], (1.2, 0.9))
+        # far arm, then the body, near thigh and foot
+        s.path([(16, 17 + bob), (14.5, 22), (13.5, 27)], 1.0, far)
+        s.ellipse(13.2, 28.4, 1.4, 0.8, _dk(hands, 0.2))
+        head_down = act == "sleep"
+        lean = 1.6 if head_down else 0
+        body = s.ellipse(18.2 - lean * 0.4, 21 + bob * 0.5, 4.8, 6.4, fur, rot=-14 - lean * 4, edge=True)
+        s.paint(s.m_ellipse(15.8 - lean * 0.4, 22.5 + bob * 0.5, 2.0, 4.8, -14), light, within=body)
+        if belly_band:
+            s.paint(s.m_ellipse(16.2, 23.5, 1.3, 4.2, -14), belly_band, within=body)
+        s.ellipse(19.5, 26, 4.4, 3.0, limbs, rot=-12, edge=True)  # the near thigh, knee forward
+        s.path([(16.2, 25.4), (15.5, 29)], 1.1, limbs, edge=True)  # shin down to the foot
+        s.ellipse(14, 29.6, 2.4, 0.9, hands)
+        # head
+        hx, hy = (11.2, 13.4 + bob) if not head_down else (10.8, 15.8)
+        if act == "eat":  # hand up to the mouth and down again, chewing
+            k = 0.5 - 0.5 * math.cos(2 * math.pi * t)
+            hand = (9.8 + 2 * (1 - k), 16.5 + 7 * (1 - k))
+            s.path([(16, 17.5), (15 + k, 22.5 - 4 * k), hand], 1.0, limbs, edge=True)
+            s.ellipse(hand[0], hand[1] + 0.3, 1.2, 1.1, hands)
+            s.ellipse(hand[0] - 0.8, hand[1] - 0.2, 1.0, 1.0, "#d8a040")  # a piece of fruit
+        elif act == "groom":  # picking through the fur of its own thigh
+            k = 0.5 + 0.5 * math.sin(4 * math.pi * t)
+            hand = (17 + 2.5 * k, 24.3 - 0.6 * k)
+            s.path([(16, 17.5), (14.2, 21.5), hand], 1.0, limbs, edge=True)
+            s.ellipse(*hand, 1.1, 0.9, hands)
+            hy += 1.4
+            hx += 1.0
+        else:
+            s.path([(16, 17.5 + bob), (14.2, 21.8), (13.6, 25.6)], 1.0, limbs, edge=True)  # arm resting on the knee
+            s.ellipse(13.4, 26.2, 1.2, 1.0, hands)
+        view = "front" if act == "look" else "side"
+    else:
+        running = act == "run"
+        stride = 2.6 if running else 1.8
+        w = s.wave()
+        bound = -1.2 * abs(math.sin(2 * math.pi * t)) if running else 0
+        sway = math.sin(2 * math.pi * t)
+        # tail: arched up and over (macaque), or hanging in a long loop (leaf monkey)
+        if tail == "arch":
+            tail_path([(25, 17 + bound), (29, 14.5 + bound), (33, 15.5 + bound - sway * 0.4),
+                       (35, 19.5 + bound - sway * 0.6), (35.5, 23)])
+        else:
+            tail_path([(25.5, 18.5 + bound), (30, 21 + bound), (33, 25.5 + sway * 0.6), (33.6, 30)], (1.2, 0.9))
+
+        def leg(x0, y0, knee, foot, col, hand_col):
+            s.path([(x0, y0), knee, foot], 1.2, col)
+            s.ellipse(foot[0] - 0.6, foot[1] + 0.4, 1.6, 0.8, hand_col)
+
+        # far legs (opposite phase), body, near legs
+        leg(12.5, 18 + bound, (11.5 - w * stride * 0.5, 23 + bound), (11 - w * stride, 29.4), far, _dk(hands, 0.2))
+        leg(23.5, 18 + bound, (26.5 - w * stride * 0.3, 23 + bound), (23.5 + w * stride, 29.4), far,
+            _dk(hands, 0.2))
+        body = s.ellipse(18.5, 17.5 + bound, 7.6, 4.0, fur, rot=8, edge=True)
+        s.paint(s.m_ellipse(18, 20.5 + bound, 6.6, 1.4, 8), light, within=body)
+        leg(13, 18.5 + bound, (12 + w * stride * 0.5, 23.5 + bound), (11.5 + w * stride, 29.4), limbs, hands)
+        leg(24, 18.5 + bound, (27 + w * stride * 0.3, 23.5 + bound), (24 - w * stride, 29.4), limbs, hands)
+        hx, hy = 8.6, 14.8 + bound
+        view = "side"
+
+    # the head: a round skull, the bare face and muzzle, a brow ridge and small ears
+    if crest:  # a tall rounded tuft of hair on the crown, swept back
+        s.ellipse(hx + 1.2, hy - 3.2, 2.2, 1.8, _dk(fur, 0.05), rot=-25)
+    if view == "front":
+        hm = s.ellipse(hx + 0.5, hy, 3.7, 3.6, fur, edge=True)
+        s.ellipse(hx - 3, hy + 0.2, 1.1, 1.3, face)
+        s.ellipse(hx + 4, hy + 0.2, 1.1, 1.3, face)
+        s.paint(s.m_ellipse(hx + 0.5, hy + 0.9, 2.5, 2.6), face, within=hm)
+        if eye_ring:
+            s.paint(s.m_ellipse(hx - 0.6, hy, 1.3, 1.1) | s.m_ellipse(hx + 1.6, hy, 1.3, 1.1), eye_ring, within=hm)
+        if mouth:
+            s.paint(s.m_ellipse(hx + 0.5, hy + 2.4, 1.4, 1.0), mouth, within=hm)
+        s.eye(round(hx - 1), round(hy - 0.5), size=1)
+        s.eye(round(hx + 1.6), round(hy - 0.5), size=1)
+        s.px([(round(hx), round(hy + 1.6)), (round(hx + 1), round(hy + 1.6))], _dk(face, 0.45))
+    else:
+        hm = s.ellipse(hx, hy, 4.0, 3.8, fur, edge=True)
+        s.ellipse(hx + 2.4, hy + 0.2, 1.0, 1.3, face)  # ear
+        mz = s.ellipse(hx - 3.0, hy + 1.4, 2.0, 1.8, face, edge=True)
+        s.paint(s.m_ellipse(hx - 1.8, hy + 0.3, 2.0, 2.4), face, within=hm)
+        if cheek:
+            s.paint(s.m_ellipse(hx + 0.4, hy + 1.6, 1.6, 1.8), cheek, within=hm)
+        if eye_ring:
+            s.paint(s.m_ellipse(hx - 1.6, hy - 0.6, 1.7, 1.5), eye_ring, within=hm)
+        if mouth:
+            s.paint(s.m_ellipse(hx - 3, hy + 1.8, 1.4, 1.0), mouth, within=mz | hm)
+        s.paint(s.m_line(hx - 3, hy - 1.6, hx - 0.4, hy - 1.8), _dk(fur, 0.25), within=hm)  # brow ridge
+        s.eye(round(hx - 2), round(hy - 1), size=1)
+        s.px([(round(hx - 4.4), round(hy + 1.4))], _dk(face, 0.45))  # nostril
+        s.px([(round(hx - 3.8), round(hy + 2.6)), (round(hx - 2.8), round(hy + 2.8))], _dk(face, 0.35))
+
+
+@sprite("long_tailed_macaque")
+def _(s):
+    # Singapore's common monkey: gray-brown with a paler belly, a pinkish-gray bare face,
+    # gray cheek whiskers, a little peak of hair on the crown and a very long tail.
+    _primate(s, "#8a7a62", "#c8bca4", "#d8a898", hands="#4a3a34", cheek="#b8b0a0", tail="arch")
+    if s.act not in ("walk", "run", "sleep", "look", "groom"):
+        s.poly([(10.6, 10), (11.6, 8.8), (12.8, 10)], "#8a7a62")
+
+
+@sprite("raffles_banded_langur")
+def _(s):
+    # A rare black leaf monkey of the central forest, with a white band down the inside
+    # of its belly and limbs, pale skin round the eyes and a tall pointed crest.
+    _primate(s, "#262228", "#3a3438", "#2e2a30", hands="#1a181c", crest=True, eye_ring="#d8d0d0",
+             belly_band="#f0ece8", tail="hang")
+
+
+@sprite("dusky_leaf_monkey")
+def _(s):
+    # The spectacled langur: dark slate-gray with big white rings round its eyes, a pale
+    # mouth patch, a crested crown and a long hanging tail.
+    _primate(s, "#5e5a60", "#8a8690", "#2e2a30", hands="#2a272c", crest=True, eye_ring="#f2eeea",
+             mouth="#d8d0cc", tail="hang")
+
+
+# --------------------------------------------------------------------------- colugo, loris, pangolin
+def _mottle(s, m, lite, dark):
+    """Lichen-like blotches: small pale and dark patches scattered unevenly."""
+    for k in range(26):
+        x, y = 4 + (k * 13) % 31, 11 + (k * 7) % 19
+        s.paint(s.m_ellipse(x, y, 1.2, 0.8), lite if k % 3 else dark, within=m)
+
+
+@sprite("sunda_colugo")
+def _(s):
+    # The flying lemur: mottled gray-brown and lichen-flecked, with huge dark eyes and a
+    # furry gliding membrane from neck to fingers to toes to tail tip. At rest it hunches
+    # under the membrane like a cloak; gliding, it spreads into a kite.
+    s.can("fly", "walk")
+    fur, lite, dark = "#8a8270", "#c8c0a8", "#4e4a3e"
+    if s.act == "fly":
+        sway = 0.6 * math.sin(2 * math.pi * s.t)
+        kite = [(6, 16), (10, 11 - sway), (17, 12 - sway * 0.6), (24, 11 - sway), (33, 15), (35, 18),
+                (27, 19.5 + sway * 0.5), (17, 20 + sway * 0.4), (9, 19.5 + sway * 0.5)]
+        m = s.poly(kite, fur, edge=True)
+        _mottle(s, m, lite, dark)
+        s.paint(s.m_path([(10, 11 - sway), (16, 16), (24, 11 - sway)], 0.5) |
+                s.m_path([(9, 19.5), (16, 17), (27, 19.5)], 0.5), dark, within=m)  # limbs inside the membrane
+        s.ellipse(16, 16, 6, 2.6, _dk(fur, 0.08))  # the body
+        s.ellipse(5.5, 15.5, 3.2, 2.8, fur, edge=True)
+        s.ellipse(3, 16.4, 1.4, 1.1, _dk(fur, 0.2))
+        s.ellipse(4.6, 14.6, 1.6, 1.5, "#1a1418")
+        s.px([(4, 14)], WHITE)
+        return
+    w = s.wave() if s.act == "walk" else 0
+    s.path([(25, 26), (30, 28.5), (34, 29.5)], (1.6, 0.8), fur)  # tail inside the membrane's tip
+    cloak = s.poly([(12, 18), (20, 15.5), (27, 18), (31, 26), (28, 29.5), (14, 29.5), (10, 25)], fur, edge=True)
+    _mottle(s, cloak, lite, dark)
+    s.paint(s.m_path([(14, 20), (13 - w, 29)], 0.7) | s.m_path([(24, 20), (26 + w, 29)], 0.7), dark, within=cloak)
+    s.ellipse(12.5 - w, 29.6, 1.6, 0.8, dark)
+    s.ellipse(26.5 + w, 29.6, 1.6, 0.8, dark)
+    s.ellipse(10.5, 16.8, 1.2, 1.4, fur)  # ear
+    hm = s.ellipse(8.5, 18.5, 3.6, 3.2, fur, edge=True)
+    s.paint(s.m_ellipse(6.5, 19.8, 2.2, 1.6), lite, within=hm)
+    s.ellipse(4.8, 19.6, 1.2, 1.0, _dk(fur, 0.15))
+    s.ellipse(6.8, 17.6, 1.7, 1.6, "#1a1418")  # the huge eye
+    s.eye_box(6, 17, 7, 18)
+    s.px([(6, 17)], WHITE)
+    if s.act == "walk" and s.f % 2:
+        s.shift(0, -1)
+
+
+@sprite("sunda_slow_loris")
+def _(s):
+    # A round, woolly, buff-gray primate that moves in slow motion: huge orange-brown eyes
+    # in dark rings, a pale stripe between them, tiny ears and a dark stripe down its back.
+    s.can("walk", "eat")
+    fur, lite, dark = "#b8a088", "#e8dcc8", "#6a4a34"
+    act, t = s.act, s.t
+    reach = 0.5 - 0.5 * math.cos(2 * math.pi * t) if act == "walk" else 0
+    far = _dk(fur, 0.22)
+    # slow, deliberate steps: one limb at a time, gripping
+    s.path([(14, 23), (12 - reach * 1.5, 29.4)], 1.1, far)
+    s.path([(23, 24), (25 + reach, 29.4)], 1.1, far)
+    m = s.ellipse(18.5, 22.5, 7.5, 5.6, fur, edge=True)
+    s.paint(s.m_path([(12, 17.5), (19, 17), (25, 19)], 0.8), dark, within=m)  # the back stripe
+    s.paint(s.m_ellipse(18, 26.5, 6.5, 1.8), lite, within=m)
+    s.path([(13, 24), (11 + reach * 2, 29.4)], 1.2, fur)
+    s.path([(24, 25), (23 - reach, 29.4)], 1.3, fur)
+    for x in (11 + reach * 2, 23 - reach):
+        s.ellipse(x - 0.5, 29.7, 1.4, 0.7, "#d8b8a0")  # the gripping hands
+    hx, hy = 9.2, 19.4 + (1.0 if act == "eat" else 0)
+    s.ellipse(hx + 2.6, hy - 2.6, 1.0, 0.9, dark)  # tiny ear
+    hm = s.ellipse(hx, hy, 4.2, 3.8, fur, edge=True)
+    s.paint(s.m_ellipse(hx - 2.2, hy + 1.6, 2.2, 1.6), lite, within=hm)
+    s.paint(s.m_ellipse(hx - 1.6, hy - 0.6, 2.2, 2.0), dark, within=hm)  # the dark eye ring
+    s.paint(s.m_line(hx - 3.6, hy - 1.4, hx - 3.6, hy + 1), lite, within=hm)
+    s.ellipse(hx - 1.6, hy - 0.6, 1.4, 1.4, "#c87a2a", shade=False)
+    s.px([(round(hx - 2), round(hy - 1)), (round(hx - 1), round(hy - 1)), (round(hx - 2), round(hy)),
+          (round(hx - 1), round(hy))], "#1a1210")
+    s.px([(round(hx - 2), round(hy - 1))], WHITE)
+    s.eye_box(round(hx - 3), round(hy - 2), round(hx), round(hy + 1))
+    s.px([(round(hx - 4.2), round(hy + 1.6))], "#3a2a24")
+
+
+@sprite("sunda_pangolin")
+def _(s):
+    # A scaly anteater: covered in overlapping olive-brown scales like a pine cone, with a
+    # small pointed head, a long broad tail and big digging claws. Asleep it rolls into a ball.
+    s.can("walk", "eat")
+    scale, edge, skin = "#8a7050", "#4e3c2a", "#c8a88a"
+    act, t = s.act, s.t
+
+    def scales(m, cx, cy, rx, ry):
+        for row, y in enumerate(range(round(cy - ry), round(cy + ry) + 1, 2)):
+            for x in range(round(cx - rx) + row % 2 * 1, round(cx + rx) + 1, 2):
+                s.paint(s.m_px([(x, y + 1), (x + 1, y)]), edge, within=m)
+        s.paint(s.m_ellipse(cx - rx * 0.2, cy - ry * 0.55, rx * 0.6, ry * 0.25), mix(scale, "#ffffff", 0.18),
+                within=m)
+
+    if act == "sleep":
+        m = s.ellipse(17, 23.5, 7.5, 6.2, scale, edge=True)
+        scales(m, 17, 23.5, 7.5, 6.2)
+        tm = s.path([(23, 27), (17, 29.6), (10, 27.5), (9.5, 22)], (2.6, 1.6), scale, edge=True)
+        scales(tm, 16, 27, 7, 2.5)
+        return
+    w = s.wave() if act == "walk" else 0
+    dip = 2.0 if act == "eat" else 0
+    s.path([(24, 22), (30, 25), (35, 28), (38, 29.4)], (4.0, 1.4), scale, edge=True)  # the long tail
+    tm = s.last
+    scales(tm, 31, 26, 6, 3)
+    for x, sw, c in ((12, -w, _dk(skin, 0.25)), (22, w, _dk(skin, 0.25))):
+        s.path([(x, 24), (x - sw, 29.5)], 1.2, c)
+    m = s.ellipse(17.5, 21.5, 8.5, 5.8, scale, edge=True)
+    scales(m, 17.5, 21.5, 8.5, 5.8)
+    for x, sw in ((11, w), (21, -w)):
+        s.path([(x, 25), (x - sw, 29.5)], 1.3, skin)
+        s.px([(round(x - sw) - 1, 30), (round(x - sw) - 2, 30)], "#3a2a22")  # claws
+    hx, hy = 7.5, 22.5 + dip
+    s.path([(10, 21), (hx, hy)], 2.4, scale)
+    s.ellipse(hx, hy, 2.6, 2.2, skin, edge=True)
+    s.path([(hx - 1.5, hy + 0.6), (hx - 5, hy + 1.8)], (1.0, 0.5), skin)  # the slim snout
+    if act == "eat" and t % 0.5 < 0.25:
+        s.path([(hx - 5, hy + 2), (hx - 7.5, hy + 3.2)], 0.3, "#d87a8a", shade=False)  # the long tongue
+    s.eye(round(hx - 1), round(hy - 1), size=1)
