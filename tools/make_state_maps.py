@@ -505,6 +505,8 @@ def europe(cache: Path):
     """The countries staged in species/europe.json (plus any already playable),
     with every other country around them as washed-out neighbours."""
     sj = json.loads((SPECIES / "europe.json").read_text(encoding="utf-8"))["states"]
+    sj += [s for s in json.loads((SPECIES / "states.json").read_text(encoding="utf-8"))["states"]
+           if s.get("region") == "europe"]
     want = {NE_A3.get(s["code"], s["code"]): s["code"] for s in sj}
     clip = box(*EUROPE_BOX)
     feats = ne("ne_10m_admin_0_countries_lakes", cache)

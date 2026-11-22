@@ -586,7 +586,7 @@
     <span id="offline" class="hidden" title="No connection: your Field Guide and habitat still work, new captures need the internet">Offline</span>
     <button class="link hidden" id="install">Install app</button>
     <div id="who" class="hidden"><button class="link" id="username"></button>
-      <button class="link" id="my-state" title="Your states: look at any state you have unlocked, or pick your main state"><img class="pi" src="/sprites/ui_ic_pin.png" alt=""></button>
+      <button class="link" id="my-state" title="Your places: look at any state or country you have unlocked, or pick your main one"><img class="pi" src="/sprites/ui_ic_pin.png" alt=""></button>
       <button class="link hidden" id="reports-open" title="Reports from players" aria-label="Reports"><img class="pi" src="/sprites/ui_ic_flag.png" alt=""><span class="lbl"> Reports</span></button>
       <button class="link" id="logout" title="Log out" aria-label="Log out"><img class="pi" src="/sprites/ui_ic_logout.png" alt=""><span class="lbl">Log out</span></button></div>
     </div>
@@ -603,7 +603,7 @@
 
   <section id="auth" class="card auth">
     <div class="auth-scene" id="auth-scene"><button type="button" class="auth-place" id="auth-place"
-      title="Pick your state"><img class="pi" src="/sprites/ui_ic_pin.png" alt=""></button></div>
+      title="Pick your state or country"><img class="pi" src="/sprites/ui_ic_pin.png" alt=""></button></div>
     <div class="auth-side">
     <h2 class="pitch-title">How many of <span id="pitch-state">your state's</span> <span id="pitch-count">100</span> animals can you capture?</h2>
     <p class="pitch">Spot a wild animal, snap a great photo, and it's captured in your Field Guide.
@@ -614,7 +614,7 @@
       <input id="ident" placeholder="Email or username" required>
       <input id="password" type="password" placeholder="Password (8+ chars)" required>
       <input id="birth-year" type="number" inputmode="numeric" min="1900" max="2100" placeholder="Year you were born" class="hidden">
-      <button type="button" class="photo-btn hidden" id="signup-state"><img class="pi" src="/sprites/ui_ic_pin.png" alt="">Choose your state</button>
+      <button type="button" class="photo-btn hidden" id="signup-state"><img class="pi" src="/sprites/ui_ic_pin.png" alt="">Choose where you live</button>
       <button type="submit" id="auth-submit">Log in</button>
     </form>
     <!-- Two links spaced apart; on a narrow phone each gets its own line (no dangling "·"). -->
@@ -838,7 +838,7 @@ let authState = savedState;
 function authScene(code) {
   if (code) authState = code;
   const st = states.find((x) => x.code === authState);
-  icoText($("auth-place"), "pin", st ? st.name : "Your state?");
+  icoText($("auth-place"), "pin", st ? st.name : "Where are you?");
   $("pitch-state").textContent = st ? `${st.name}'s` : "your state's";
   $("pitch-count").textContent = (st && st.species_count) || 100;
   $("state-name").textContent = st ? st.name : "";
@@ -1047,10 +1047,10 @@ function showCapture(r, file, box) {
     markLocked([...unlocked, r.unlocked_state]);
     const st = states.find((x) => x.code === r.unlocked_state);
     if (st && st.code !== mainCode) {
-      const b = el("button", "photo-btn", `★ Make ${st.name} my main state`);
+      const b = el("button", "photo-btn", `★ Make ${st.name} my main ${placeWord(st)}`);
       b.type = "button";
       b.onclick = async () => {
-        try { await setMainState(st.code); b.replaceWith(el("p", "muted", `${st.name} is now your main state.`)); }
+        try { await setMainState(st.code); b.replaceWith(el("p", "muted", `${st.name} is now your main ${placeWord(st)}.`)); }
         catch (err) { alert(err.message); }
       };
       box.append(b);
@@ -1070,7 +1070,7 @@ function showCapture(r, file, box) {
   if (r.can_change_state) {
     // No place in a game state (no GPS in the file, or taken elsewhere): the
     // player can say where it was taken and it's identified again there.
-    const b = elIco("button", "photo-btn", "pin", "Taken in another state?");
+    const b = elIco("button", "photo-btn", "pin", "Taken somewhere else?");
     b.type = "button";
     b.onclick = async () => {
       const code = await pickState({ title: "Where was this photo taken?", current: r.state,
@@ -1530,9 +1530,9 @@ function addTile(grid, e, i, tier, owner = null) {
   }
   else if (state === "friend" && !e.friends_caught) {
     // Known because you captured it in another state; it counts here once you capture it here.
-    st.textContent = "Other state";
+    st.textContent = myState.region === "europe" ? "Other place" : "Other state";
     st.classList.add("friend");
-    t.title = `You captured it in another state. Capture it in ${myState.name} too to add it here.`;
+    t.title = `You captured it somewhere else. Capture it in ${myState.name} too to add it here.`;
   }
   else if (state === "friend") {
     icoText(st, "tab_friends", String(e.friends_caught));
@@ -1568,6 +1568,8 @@ function avatarImg(n, cls = "") {
 // are [lon, lat] from /map/<state>, with the "frame" (lon/lat box) its drawn map
 // /maps/<CODE>.webp covers (tools/make_state_maps.py).
 let states = [];
+// "state" for a US state, "country" for a European one (region from /states).
+const placeWord = (st) => (st && st.region === "europe" ? "country" : "state");
 // Until /states and /me answer: no state, and a map of the lower 48.
 let myState = { code: "", name: "", bounds: { west: -124.8, east: -66.9, south: 24.5, north: 49.4 } };
 // The player's main state (from /me). myState is the one on screen, which can be
@@ -1604,8 +1606,8 @@ async function useState(code) {
     el("span", "st-short", myState.code || ""));
   // On a phone there's no room for "(visiting)": the code turns gold instead.
   $("my-state").classList.toggle("visiting", !!visiting);
-  $("my-state").title = visiting ? `Visiting ${myState.name}. Tap to change states.`
-    : "Your states: look at any state you have unlocked, or pick your main state";
+  $("my-state").title = visiting ? `Visiting ${myState.name}. Tap to change places.`
+    : "Your places: look at any state or country you have unlocked, or pick your main one";
   $("my-state").classList.toggle("hidden", states.length < 2);
   let o = null;
   try { o = await api(`/map/${myState.code}`); } catch {}
@@ -1640,7 +1642,7 @@ function pickState({ title, note = "", current = null, tiles = null, locate = fa
       const grid = el("div", "state-tiles");
       for (const t of tiles) {
         const st = states.find((x) => x.code === t.state) || { code: t.state, name: t.name };
-        grid.append(tile(st, t.main ? "★ Main state" : st.code === current ? "Looking now" : "",
+        grid.append(tile(st, t.main ? `★ Main ${placeWord(st)}` : st.code === current ? "Looking now" : "",
                          `${t.caught} of ${t.total} captured`));
       }
       list.append(grid);
@@ -1655,8 +1657,8 @@ function pickState({ title, note = "", current = null, tiles = null, locate = fa
       list.className = "state-list";
       const guess = el("div", "state-tiles");
       if (locate && navigator.geolocation) {
-        guess.append(el("p", "muted", "Finding your state…"));
-        list.append(guess, el("div", "sep", "Or pick your state"));
+        guess.append(el("p", "muted", "Finding where you are…"));
+        list.append(guess, el("div", "sep", "Or pick your state or country"));
         navigator.geolocation.getCurrentPosition(async (p) => {
           let code = null;
           try { ({ code } = await api(`/states/at?lat=${p.coords.latitude}&lon=${p.coords.longitude}`)); } catch {}
@@ -1665,12 +1667,18 @@ function pickState({ title, note = "", current = null, tiles = null, locate = fa
         }, () => guess.replaceChildren(el("p", "muted", "Location is off, so pick from the list.")),
         { timeout: 8000, maximumAge: 600000 });
       }
-      for (const st of [...states].sort((a, b) => a.name.localeCompare(b.name))) {
-        const b = el("button", st.code === current ? "on" : "");
-        b.type = "button";
-        b.append(el("span", "", st.name), el("span", "muted", st.code === current ? "✓" : ""));
-        b.onclick = () => finish(st.code);
-        list.append(b);
+      // US states, then European countries, each A to Z.
+      const groups = [["United States", states.filter((st) => st.region !== "europe")],
+                      ["Europe", states.filter((st) => st.region === "europe")]].filter(([, g]) => g.length);
+      for (const [label, group] of groups) {
+        if (groups.length > 1) list.append(el("div", "sep", label));
+        for (const st of [...group].sort((a, b) => a.name.localeCompare(b.name))) {
+          const b = el("button", st.code === current ? "on" : "");
+          b.type = "button";
+          b.append(el("span", "", st.name), el("span", "muted", st.code === current ? "✓" : ""));
+          b.onclick = () => finish(st.code);
+          list.append(b);
+        }
       }
     }
     $("state-pick-close").onclick = () => finish(null);
@@ -1682,8 +1690,8 @@ function pickState({ title, note = "", current = null, tiles = null, locate = fa
 // Sign-up: which state they live in, guessed from where they are.
 let signupState = null;
 async function chooseSignupState() {
-  const code = await pickState({ title: "Which state are you in?", current: signupState, locate: true,
-    note: "Your Field Guide and parks follow your main state. Photos you take in other states unlock them." });
+  const code = await pickState({ title: "Where do you live?", current: signupState, locate: true,
+    note: "Your Field Guide and parks follow your main state or country. Photos you take in other places unlock them." });
   if (code) setSignupState(code);
 }
 function setSignupState(code) {
@@ -1693,7 +1701,7 @@ function setSignupState(code) {
 }
 $("signup-state").onclick = chooseSignupState;
 $("auth-place").onclick = async () => {
-  const code = await pickState({ title: "Which state are you in?", current: authState,
+  const code = await pickState({ title: "Which state or country?", current: authState,
     note: "See its scenery and one of its animals." });
   if (code) signup ? setSignupState(code) : authScene(code);
 };
@@ -1727,10 +1735,10 @@ $("my-state").onclick = async () => {
   try { tiles = await api("/me/states"); } catch (err) { alert(err.message); return; }
   markLocked(tiles.map((t) => t.state));
   const MAKE_MAIN = "★";
-  const code = await pickState({ title: "Your states", current: myState.code, tiles,
-    note: "Tap a state to look at its Field Guide, habitat and parks. Your main state is where you start and what friends see first.",
+  const code = await pickState({ title: "Your places", current: myState.code, tiles,
+    note: "Tap one to look at its Field Guide, habitat and parks. Your main one (★) is where you start and what friends see first.",
     action: myState.code !== mainCode ? [`★ Make ${myState.name} my main state`, MAKE_MAIN] : null,
-    after: tiles.length < states.length ? `Capture an animal in another state to unlock it (${tiles.length} of ${states.length} unlocked).` : "" });
+    after: tiles.length < states.length ? `Capture an animal somewhere else to unlock it (${tiles.length} of ${states.length} unlocked).` : "" });
   try {
     if (code === MAKE_MAIN) await setMainState(myState.code);
     else if (code && code !== myState.code) await viewState(code);

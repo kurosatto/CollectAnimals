@@ -166,6 +166,15 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
   sky. New sheet row `land` (made in `make_sprites._made_pose` for winged birds): the
   habitat plays it over a bird's last `HAB_LAND_D` units to a perch and backwards for
   `HAB_TAKEOFF` s after leaving one. Perched birds got a drawn folded wing (`_folded_wing`).
+- 0.97.0 Europe: 42 European countries (Turkey included) are playable "states" in
+  `species/states.json` with `"region": "europe"` and ISO alpha-3 codes (GBR, DEU,
+  TUR; two letters would clash with US states). `species/europe.json` is now an empty
+  staging file for future countries (`ml/build_countries.py`). Maps, seasons and park
+  hotspots came from the GBIF copy of iNat research-grade sightings
+  (`ml/build_maps_gbif.py`, `ml/build_hotspots.py`). Weather is MET Norway (credited,
+  degrees C), scenery borrows a similar US state's scene (`HAB_TWIN` in habitat.js).
+  Pickers group "United States" then "Europe" and say "state or country".
+  The photo ID model only knows Europe's animals once model v8 is trained on the PC.
 - kuro doesn't want pictures stretched, squashed or turned to fake motion: every
   movement in the habitat is a drawn frame. Bends of a whole drawing are done in
   the sprite generator (`Sprite.pitch` / `Sprite.bend`), drawn pixel by pixel.
