@@ -1,0 +1,614 @@
+{
+ "source": "iNaturalist research-grade observations (species_counts by radius)",
+ "min_observations": 3,
+ "parks": [
+  {
+   "id": "ghadira",
+   "name": "G\u0127adira Nature Reserve",
+   "lat": 35.97,
+   "lon": 14.35,
+   "radius_km": 2,
+   "blurb": "Wetland where migrating herons, waders and warblers rest.",
+   "species": [
+    {
+     "slug": "common_chameleon",
+     "observations": 115
+    },
+    {
+     "slug": "common_sandpiper",
+     "observations": 29
+    },
+    {
+     "slug": "little_ringed_plover",
+     "observations": 29
+    },
+    {
+     "slug": "moorish_gecko",
+     "observations": 28
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 28
+    },
+    {
+     "slug": "spanish_sparrow",
+     "observations": 25
+    },
+    {
+     "slug": "old_world_swallowtail",
+     "observations": 22
+    },
+    {
+     "slug": "marbled_crab",
+     "observations": 21
+    },
+    {
+     "slug": "eurasian_collared_dove",
+     "observations": 18
+    },
+    {
+     "slug": "little_egret",
+     "observations": 17
+    },
+    {
+     "slug": "white_italian_snail",
+     "observations": 17
+    },
+    {
+     "slug": "eurasian_moorhen",
+     "observations": 17
+    },
+    {
+     "slug": "black_winged_stilt",
+     "observations": 16
+    },
+    {
+     "slug": "garden_snail",
+     "observations": 16
+    },
+    {
+     "slug": "broad_scarlet",
+     "observations": 15
+    },
+    {
+     "slug": "ocellated_bronze_skink",
+     "observations": 13
+    },
+    {
+     "slug": "painted_lady",
+     "observations": 12
+    },
+    {
+     "slug": "zitting_cisticola",
+     "observations": 11
+    },
+    {
+     "slug": "little_stint",
+     "observations": 10
+    },
+    {
+     "slug": "lamenting_grasshopper",
+     "observations": 10
+    },
+    {
+     "slug": "indian_milkweed_bug",
+     "observations": 9
+    },
+    {
+     "slug": "italian_sparrow",
+     "observations": 9
+    },
+    {
+     "slug": "turbinate_monodont",
+     "observations": 9
+    },
+    {
+     "slug": "american_cockroach",
+     "observations": 8
+    },
+    {
+     "slug": "peacock_blenny",
+     "observations": 8
+    },
+    {
+     "slug": "chocolate_band_snail",
+     "observations": 8
+    },
+    {
+     "slug": "european_stonechat",
+     "observations": 8
+    },
+    {
+     "slug": "wood_sandpiper",
+     "observations": 7
+    },
+    {
+     "slug": "common_ringed_plover",
+     "observations": 7
+    },
+    {
+     "slug": "white_wagtail",
+     "observations": 7
+    },
+    {
+     "slug": "filfola_lizard",
+     "observations": 7
+    },
+    {
+     "slug": "egyptian_bird_grasshopper",
+     "observations": 7
+    },
+    {
+     "slug": "western_yellow_wagtail",
+     "observations": 7
+    },
+    {
+     "slug": "mediterranean_painted_frog",
+     "observations": 6
+    },
+    {
+     "slug": "mediterranean_house_gecko",
+     "observations": 6
+    },
+    {
+     "slug": "bearded_fireworm",
+     "observations": 6
+    },
+    {
+     "slug": "large_white",
+     "observations": 6
+    },
+    {
+     "slug": "nomad",
+     "observations": 6
+    },
+    {
+     "slug": "common_chiffchaff",
+     "observations": 6
+    },
+    {
+     "slug": "mediterranean_red_bug",
+     "observations": 6
+    },
+    {
+     "slug": "langs_short_tailed_blue",
+     "observations": 6
+    },
+    {
+     "slug": "sardinian_warbler",
+     "observations": 6
+    },
+    {
+     "slug": "common_kingfisher",
+     "observations": 5
+    },
+    {
+     "slug": "spotted_flycatcher",
+     "observations": 5
+    },
+    {
+     "slug": "european_robin",
+     "observations": 5
+    },
+    {
+     "slug": "blue_rock_thrush",
+     "observations": 5
+    },
+    {
+     "slug": "decollate_snail",
+     "observations": 5
+    },
+    {
+     "slug": "black_headed_gull",
+     "observations": 5
+    },
+    {
+     "slug": "north_african_hedgehog",
+     "observations": 4
+    },
+    {
+     "slug": "mediterranean_moray",
+     "observations": 4
+    },
+    {
+     "slug": "salema_porgy",
+     "observations": 4
+    },
+    {
+     "slug": "warty_crab",
+     "observations": 4
+    },
+    {
+     "slug": "european_bee_eater",
+     "observations": 3
+    },
+    {
+     "slug": "red_admiral",
+     "observations": 3
+    },
+    {
+     "slug": "ornate_wrasse",
+     "observations": 3
+    },
+    {
+     "slug": "mediterranean_spotted_chafer",
+     "observations": 3
+    },
+    {
+     "slug": "oriental_hornet",
+     "observations": 3
+    },
+    {
+     "slug": "wood_warbler",
+     "observations": 3
+    },
+    {
+     "slug": "european_pied_flycatcher",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "buskett",
+   "name": "Buskett Gardens",
+   "lat": 35.86,
+   "lon": 14.4,
+   "radius_km": 2,
+   "blurb": "Malta's woodland, a stop for migrating birds of prey.",
+   "species": [
+    {
+     "slug": "european_honey_buzzard",
+     "observations": 15
+    },
+    {
+     "slug": "moorish_gecko",
+     "observations": 14
+    },
+    {
+     "slug": "european_bee_eater",
+     "observations": 13
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 12
+    },
+    {
+     "slug": "chocolate_band_snail",
+     "observations": 11
+    },
+    {
+     "slug": "white_italian_snail",
+     "observations": 10
+    },
+    {
+     "slug": "western_marsh_harrier",
+     "observations": 9
+    },
+    {
+     "slug": "european_robin",
+     "observations": 9
+    },
+    {
+     "slug": "sardinian_warbler",
+     "observations": 9
+    },
+    {
+     "slug": "mediterranean_painted_frog",
+     "observations": 7
+    },
+    {
+     "slug": "common_chameleon",
+     "observations": 7
+    },
+    {
+     "slug": "painted_lady",
+     "observations": 7
+    },
+    {
+     "slug": "garden_snail",
+     "observations": 7
+    },
+    {
+     "slug": "ocellated_bronze_skink",
+     "observations": 6
+    },
+    {
+     "slug": "large_white",
+     "observations": 6
+    },
+    {
+     "slug": "old_world_swallowtail",
+     "observations": 6
+    },
+    {
+     "slug": "nomad",
+     "observations": 6
+    },
+    {
+     "slug": "wood_warbler",
+     "observations": 6
+    },
+    {
+     "slug": "spanish_sparrow",
+     "observations": 5
+    },
+    {
+     "slug": "zitting_cisticola",
+     "observations": 4
+    },
+    {
+     "slug": "spotted_flycatcher",
+     "observations": 4
+    },
+    {
+     "slug": "small_white",
+     "observations": 4
+    },
+    {
+     "slug": "indian_milkweed_bug",
+     "observations": 4
+    },
+    {
+     "slug": "european_pied_flycatcher",
+     "observations": 4
+    },
+    {
+     "slug": "decollate_snail",
+     "observations": 3
+    },
+    {
+     "slug": "european_stonechat",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "dingli_cliffs",
+   "name": "Dingli Cliffs",
+   "lat": 35.85,
+   "lon": 14.38,
+   "radius_km": 3,
+   "blurb": "Sea cliffs with blue rock thrushes, shearwaters and lizards.",
+   "species": [
+    {
+     "slug": "moorish_gecko",
+     "observations": 18
+    },
+    {
+     "slug": "european_honey_buzzard",
+     "observations": 15
+    },
+    {
+     "slug": "european_bee_eater",
+     "observations": 13
+    },
+    {
+     "slug": "chocolate_band_snail",
+     "observations": 13
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 12
+    },
+    {
+     "slug": "sardinian_warbler",
+     "observations": 12
+    },
+    {
+     "slug": "white_italian_snail",
+     "observations": 11
+    },
+    {
+     "slug": "european_robin",
+     "observations": 10
+    },
+    {
+     "slug": "painted_lady",
+     "observations": 10
+    },
+    {
+     "slug": "garden_snail",
+     "observations": 10
+    },
+    {
+     "slug": "western_marsh_harrier",
+     "observations": 9
+    },
+    {
+     "slug": "spanish_sparrow",
+     "observations": 8
+    },
+    {
+     "slug": "mediterranean_painted_frog",
+     "observations": 8
+    },
+    {
+     "slug": "common_chameleon",
+     "observations": 7
+    },
+    {
+     "slug": "nomad",
+     "observations": 7
+    },
+    {
+     "slug": "ocellated_bronze_skink",
+     "observations": 6
+    },
+    {
+     "slug": "old_world_swallowtail",
+     "observations": 6
+    },
+    {
+     "slug": "wood_warbler",
+     "observations": 6
+    },
+    {
+     "slug": "zitting_cisticola",
+     "observations": 5
+    },
+    {
+     "slug": "large_white",
+     "observations": 5
+    },
+    {
+     "slug": "indian_milkweed_bug",
+     "observations": 5
+    },
+    {
+     "slug": "spotted_flycatcher",
+     "observations": 4
+    },
+    {
+     "slug": "small_white",
+     "observations": 4
+    },
+    {
+     "slug": "egyptian_bird_grasshopper",
+     "observations": 4
+    },
+    {
+     "slug": "european_pied_flycatcher",
+     "observations": 4
+    },
+    {
+     "slug": "black_redstart",
+     "observations": 3
+    },
+    {
+     "slug": "red_admiral",
+     "observations": 3
+    },
+    {
+     "slug": "decollate_snail",
+     "observations": 3
+    },
+    {
+     "slug": "european_stonechat",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "dwejra_gozo",
+   "name": "Dwejra, Gozo",
+   "lat": 36.05,
+   "lon": 14.19,
+   "radius_km": 3,
+   "blurb": "Rugged coast with lizards, seabirds and clear water fish.",
+   "species": [
+    {
+     "slug": "filfola_lizard",
+     "observations": 76
+    },
+    {
+     "slug": "european_parrotfish",
+     "observations": 11
+    },
+    {
+     "slug": "spanish_sparrow",
+     "observations": 7
+    },
+    {
+     "slug": "bearded_fireworm",
+     "observations": 6
+    },
+    {
+     "slug": "green_whip_snake",
+     "observations": 6
+    },
+    {
+     "slug": "painted_comber",
+     "observations": 6
+    },
+    {
+     "slug": "indian_milkweed_bug",
+     "observations": 6
+    },
+    {
+     "slug": "egyptian_bird_grasshopper",
+     "observations": 6
+    },
+    {
+     "slug": "chocolate_band_snail",
+     "observations": 6
+    },
+    {
+     "slug": "garden_snail",
+     "observations": 6
+    },
+    {
+     "slug": "pond_slider",
+     "observations": 5
+    },
+    {
+     "slug": "common_octopus",
+     "observations": 5
+    },
+    {
+     "slug": "whinchat",
+     "observations": 4
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 4
+    },
+    {
+     "slug": "mediterranean_rainbow_wrasse",
+     "observations": 4
+    },
+    {
+     "slug": "ocellated_bronze_skink",
+     "observations": 4
+    },
+    {
+     "slug": "old_world_swallowtail",
+     "observations": 4
+    },
+    {
+     "slug": "marbled_crab",
+     "observations": 4
+    },
+    {
+     "slug": "oriental_hornet",
+     "observations": 4
+    },
+    {
+     "slug": "mediterranean_damselfish",
+     "observations": 4
+    },
+    {
+     "slug": "madeira_scorpionfish",
+     "observations": 4
+    },
+    {
+     "slug": "eurasian_kestrel",
+     "observations": 4
+    },
+    {
+     "slug": "western_marsh_harrier",
+     "observations": 3
+    },
+    {
+     "slug": "painted_lady",
+     "observations": 3
+    },
+    {
+     "slug": "ornate_wrasse",
+     "observations": 3
+    },
+    {
+     "slug": "wood_warbler",
+     "observations": 3
+    },
+    {
+     "slug": "white_sea_bream",
+     "observations": 3
+    },
+    {
+     "slug": "mauve_stinger",
+     "observations": 3
+    }
+   ]
+  }
+ ]
+}

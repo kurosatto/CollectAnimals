@@ -1,0 +1,1032 @@
+{
+ "source": "iNaturalist research-grade observations (species_counts by radius)",
+ "min_observations": 3,
+ "parks": [
+  {
+   "id": "dovrefjell",
+   "name": "Dovrefjell-Sunndalsfjella National Park",
+   "lat": 62.3,
+   "lon": 9.3,
+   "radius_km": 25,
+   "blurb": "Mountain plateau with musk oxen, wild reindeer and Arctic foxes.",
+   "species": [
+    {
+     "slug": "muskox",
+     "observations": 384
+    },
+    {
+     "slug": "moose",
+     "observations": 121
+    },
+    {
+     "slug": "meadow_pipit",
+     "observations": 78
+    },
+    {
+     "slug": "european_golden_plover",
+     "observations": 55
+    },
+    {
+     "slug": "northern_wheatear",
+     "observations": 53
+    },
+    {
+     "slug": "redwing",
+     "observations": 31
+    },
+    {
+     "slug": "caribou",
+     "observations": 22
+    },
+    {
+     "slug": "fieldfare",
+     "observations": 21
+    },
+    {
+     "slug": "european_common_frog",
+     "observations": 20
+    },
+    {
+     "slug": "common_gull",
+     "observations": 19
+    },
+    {
+     "slug": "arran_brown",
+     "observations": 18
+    },
+    {
+     "slug": "mountain_hare",
+     "observations": 15
+    },
+    {
+     "slug": "white_wagtail",
+     "observations": 13
+    },
+    {
+     "slug": "brambling",
+     "observations": 12
+    },
+    {
+     "slug": "white_tailed_eagle",
+     "observations": 9
+    },
+    {
+     "slug": "small_tortoiseshell",
+     "observations": 9
+    },
+    {
+     "slug": "european_starling",
+     "observations": 7
+    },
+    {
+     "slug": "hooded_crow",
+     "observations": 6
+    },
+    {
+     "slug": "eurasian_magpie",
+     "observations": 6
+    },
+    {
+     "slug": "grey_heron",
+     "observations": 5
+    },
+    {
+     "slug": "common_carder_bumble_bee",
+     "observations": 5
+    },
+    {
+     "slug": "eurasian_siskin",
+     "observations": 5
+    },
+    {
+     "slug": "great_tit",
+     "observations": 5
+    },
+    {
+     "slug": "tufted_duck",
+     "observations": 4
+    },
+    {
+     "slug": "eurasian_bullfinch",
+     "observations": 4
+    },
+    {
+     "slug": "common_merganser",
+     "observations": 3
+    },
+    {
+     "slug": "eurasian_tree_sparrow",
+     "observations": 3
+    },
+    {
+     "slug": "eurasian_stoat",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "jotunheimen",
+   "name": "Jotunheimen National Park",
+   "lat": 61.6,
+   "lon": 8.5,
+   "radius_km": 25,
+   "blurb": "Highest peaks with reindeer, ptarmigans and golden plovers.",
+   "species": [
+    {
+     "slug": "caribou",
+     "observations": 53
+    },
+    {
+     "slug": "white_wagtail",
+     "observations": 12
+    },
+    {
+     "slug": "northern_wheatear",
+     "observations": 11
+    },
+    {
+     "slug": "arran_brown",
+     "observations": 8
+    },
+    {
+     "slug": "european_common_frog",
+     "observations": 7
+    },
+    {
+     "slug": "meadow_pipit",
+     "observations": 6
+    },
+    {
+     "slug": "tufted_duck",
+     "observations": 4
+    },
+    {
+     "slug": "redwing",
+     "observations": 4
+    },
+    {
+     "slug": "moose",
+     "observations": 4
+    },
+    {
+     "slug": "common_gull",
+     "observations": 3
+    },
+    {
+     "slug": "fieldfare",
+     "observations": 3
+    },
+    {
+     "slug": "eurasian_stoat",
+     "observations": 3
+    },
+    {
+     "slug": "western_roe_deer",
+     "observations": 3
+    },
+    {
+     "slug": "small_tortoiseshell",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "lofoten",
+   "name": "Lofoten Islands",
+   "lat": 68.2,
+   "lon": 14.0,
+   "radius_km": 30,
+   "blurb": "Island coast with sea eagles, puffins, otters and orcas offshore.",
+   "species": [
+    {
+     "slug": "white_tailed_eagle",
+     "observations": 130
+    },
+    {
+     "slug": "eurasian_oystercatcher",
+     "observations": 109
+    },
+    {
+     "slug": "european_herring_gull",
+     "observations": 94
+    },
+    {
+     "slug": "common_gull",
+     "observations": 83
+    },
+    {
+     "slug": "common_eider",
+     "observations": 64
+    },
+    {
+     "slug": "hooded_crow",
+     "observations": 52
+    },
+    {
+     "slug": "grey_heron",
+     "observations": 46
+    },
+    {
+     "slug": "pollock",
+     "observations": 44
+    },
+    {
+     "slug": "european_greenfinch",
+     "observations": 42
+    },
+    {
+     "slug": "white_wagtail",
+     "observations": 36
+    },
+    {
+     "slug": "european_green_crab",
+     "observations": 34
+    },
+    {
+     "slug": "moose",
+     "observations": 34
+    },
+    {
+     "slug": "red_breasted_merganser",
+     "observations": 33
+    },
+    {
+     "slug": "meadow_pipit",
+     "observations": 33
+    },
+    {
+     "slug": "black_legged_kittiwake",
+     "observations": 32
+    },
+    {
+     "slug": "atlantic_cod",
+     "observations": 31
+    },
+    {
+     "slug": "great_black_backed_gull",
+     "observations": 30
+    },
+    {
+     "slug": "eurasian_magpie",
+     "observations": 30
+    },
+    {
+     "slug": "greylag_goose",
+     "observations": 28
+    },
+    {
+     "slug": "redwing",
+     "observations": 28
+    },
+    {
+     "slug": "cross_orbweaver",
+     "observations": 24
+    },
+    {
+     "slug": "northern_wheatear",
+     "observations": 22
+    },
+    {
+     "slug": "fieldfare",
+     "observations": 20
+    },
+    {
+     "slug": "common_sea_star",
+     "observations": 20
+    },
+    {
+     "slug": "house_sparrow",
+     "observations": 18
+    },
+    {
+     "slug": "common_carder_bumble_bee",
+     "observations": 17
+    },
+    {
+     "slug": "lions_mane_jelly",
+     "observations": 17
+    },
+    {
+     "slug": "great_tit",
+     "observations": 17
+    },
+    {
+     "slug": "great_cormorant",
+     "observations": 16
+    },
+    {
+     "slug": "arctic_green_sea_urchin",
+     "observations": 16
+    },
+    {
+     "slug": "mallard",
+     "observations": 15
+    },
+    {
+     "slug": "eurasian_bullfinch",
+     "observations": 15
+    },
+    {
+     "slug": "eurasian_otter",
+     "observations": 14
+    },
+    {
+     "slug": "arran_brown",
+     "observations": 13
+    },
+    {
+     "slug": "lesser_black_backed_gull",
+     "observations": 12
+    },
+    {
+     "slug": "american_mink",
+     "observations": 12
+    },
+    {
+     "slug": "common_merganser",
+     "observations": 10
+    },
+    {
+     "slug": "common_chaffinch",
+     "observations": 10
+    },
+    {
+     "slug": "small_tortoiseshell",
+     "observations": 10
+    },
+    {
+     "slug": "black_headed_gull",
+     "observations": 10
+    },
+    {
+     "slug": "european_golden_plover",
+     "observations": 9
+    },
+    {
+     "slug": "eurasian_stoat",
+     "observations": 9
+    },
+    {
+     "slug": "tufted_duck",
+     "observations": 7
+    },
+    {
+     "slug": "orca",
+     "observations": 7
+    },
+    {
+     "slug": "common_moon_jelly",
+     "observations": 7
+    },
+    {
+     "slug": "red_admiral",
+     "observations": 7
+    },
+    {
+     "slug": "brambling",
+     "observations": 5
+    },
+    {
+     "slug": "eurasian_blackbird",
+     "observations": 5
+    },
+    {
+     "slug": "atlantic_pollock",
+     "observations": 5
+    },
+    {
+     "slug": "atlantic_puffin",
+     "observations": 4
+    },
+    {
+     "slug": "harbour_porpoise",
+     "observations": 4
+    },
+    {
+     "slug": "harbor_seal",
+     "observations": 4
+    },
+    {
+     "slug": "brown_trout",
+     "observations": 4
+    },
+    {
+     "slug": "common_goldeneye",
+     "observations": 3
+    },
+    {
+     "slug": "great_spotted_woodpecker",
+     "observations": 3
+    },
+    {
+     "slug": "grey_seal",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "runde",
+   "name": "Runde bird island",
+   "lat": 62.4,
+   "lon": 5.62,
+   "radius_km": 5,
+   "blurb": "Seabird cliffs with puffins, gannets and kittiwakes.",
+   "species": [
+    {
+     "slug": "white_tailed_eagle",
+     "observations": 96
+    },
+    {
+     "slug": "eurasian_oystercatcher",
+     "observations": 75
+    },
+    {
+     "slug": "european_herring_gull",
+     "observations": 69
+    },
+    {
+     "slug": "common_gull",
+     "observations": 58
+    },
+    {
+     "slug": "northern_wheatear",
+     "observations": 46
+    },
+    {
+     "slug": "meadow_pipit",
+     "observations": 45
+    },
+    {
+     "slug": "great_black_backed_gull",
+     "observations": 36
+    },
+    {
+     "slug": "mallard",
+     "observations": 25
+    },
+    {
+     "slug": "white_wagtail",
+     "observations": 25
+    },
+    {
+     "slug": "hooded_crow",
+     "observations": 22
+    },
+    {
+     "slug": "lesser_black_backed_gull",
+     "observations": 15
+    },
+    {
+     "slug": "european_starling",
+     "observations": 15
+    },
+    {
+     "slug": "atlantic_puffin",
+     "observations": 14
+    },
+    {
+     "slug": "grey_heron",
+     "observations": 14
+    },
+    {
+     "slug": "greylag_goose",
+     "observations": 13
+    },
+    {
+     "slug": "eurasian_otter",
+     "observations": 7
+    },
+    {
+     "slug": "common_murre",
+     "observations": 4
+    },
+    {
+     "slug": "eurasian_blackbird",
+     "observations": 4
+    },
+    {
+     "slug": "harbor_seal",
+     "observations": 4
+    },
+    {
+     "slug": "green_veined_white",
+     "observations": 4
+    },
+    {
+     "slug": "great_tit",
+     "observations": 4
+    },
+    {
+     "slug": "european_golden_plover",
+     "observations": 3
+    },
+    {
+     "slug": "european_robin",
+     "observations": 3
+    },
+    {
+     "slug": "grey_seal",
+     "observations": 3
+    },
+    {
+     "slug": "common_hedgehog",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "hardangervidda",
+   "name": "Hardangervidda National Park",
+   "lat": 60.1,
+   "lon": 7.5,
+   "radius_km": 30,
+   "blurb": "Europe's biggest plateau with wild reindeer and snowy owls in some years.",
+   "species": [
+    {
+     "slug": "european_golden_plover",
+     "observations": 27
+    },
+    {
+     "slug": "meadow_pipit",
+     "observations": 8
+    },
+    {
+     "slug": "northern_wheatear",
+     "observations": 6
+    },
+    {
+     "slug": "european_common_frog",
+     "observations": 6
+    },
+    {
+     "slug": "norway_brown_lemming",
+     "observations": 6
+    },
+    {
+     "slug": "brown_trout",
+     "observations": 5
+    },
+    {
+     "slug": "common_gull",
+     "observations": 4
+    },
+    {
+     "slug": "moose",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "oslomarka",
+   "name": "Oslomarka forests, Oslo",
+   "lat": 60.0,
+   "lon": 10.7,
+   "radius_km": 15,
+   "blurb": "City forests with moose, beavers and capercaillie.",
+   "species": [
+    {
+     "slug": "european_herring_gull",
+     "observations": 853
+    },
+    {
+     "slug": "hooded_crow",
+     "observations": 679
+    },
+    {
+     "slug": "mallard",
+     "observations": 541
+    },
+    {
+     "slug": "common_eider",
+     "observations": 508
+    },
+    {
+     "slug": "barnacle_goose",
+     "observations": 479
+    },
+    {
+     "slug": "greylag_goose",
+     "observations": 474
+    },
+    {
+     "slug": "fieldfare",
+     "observations": 453
+    },
+    {
+     "slug": "eurasian_magpie",
+     "observations": 433
+    },
+    {
+     "slug": "black_headed_gull",
+     "observations": 394
+    },
+    {
+     "slug": "mute_swan",
+     "observations": 372
+    },
+    {
+     "slug": "common_wood_pigeon",
+     "observations": 357
+    },
+    {
+     "slug": "eurasian_blackbird",
+     "observations": 336
+    },
+    {
+     "slug": "house_sparrow",
+     "observations": 334
+    },
+    {
+     "slug": "white_wagtail",
+     "observations": 316
+    },
+    {
+     "slug": "lesser_black_backed_gull",
+     "observations": 236
+    },
+    {
+     "slug": "common_goldeneye",
+     "observations": 212
+    },
+    {
+     "slug": "common_gull",
+     "observations": 205
+    },
+    {
+     "slug": "common_chaffinch",
+     "observations": 185
+    },
+    {
+     "slug": "eurasian_oystercatcher",
+     "observations": 183
+    },
+    {
+     "slug": "western_honey_bee",
+     "observations": 170
+    },
+    {
+     "slug": "great_tit",
+     "observations": 168
+    },
+    {
+     "slug": "tufted_duck",
+     "observations": 162
+    },
+    {
+     "slug": "eurasian_blue_tit",
+     "observations": 155
+    },
+    {
+     "slug": "eurasian_red_squirrel",
+     "observations": 152
+    },
+    {
+     "slug": "eurasian_tree_sparrow",
+     "observations": 143
+    },
+    {
+     "slug": "eurasian_nuthatch",
+     "observations": 119
+    },
+    {
+     "slug": "great_cormorant",
+     "observations": 115
+    },
+    {
+     "slug": "small_tortoiseshell",
+     "observations": 110
+    },
+    {
+     "slug": "great_spotted_woodpecker",
+     "observations": 107
+    },
+    {
+     "slug": "red_breasted_merganser",
+     "observations": 105
+    },
+    {
+     "slug": "european_starling",
+     "observations": 105
+    },
+    {
+     "slug": "european_robin",
+     "observations": 103
+    },
+    {
+     "slug": "canada_goose",
+     "observations": 93
+    },
+    {
+     "slug": "european_greenfinch",
+     "observations": 93
+    },
+    {
+     "slug": "red_admiral",
+     "observations": 86
+    },
+    {
+     "slug": "western_roe_deer",
+     "observations": 76
+    },
+    {
+     "slug": "eurasian_jackdaw",
+     "observations": 74
+    },
+    {
+     "slug": "common_murre",
+     "observations": 72
+    },
+    {
+     "slug": "adder",
+     "observations": 58
+    },
+    {
+     "slug": "grey_heron",
+     "observations": 56
+    },
+    {
+     "slug": "european_toad",
+     "observations": 55
+    },
+    {
+     "slug": "green_veined_white",
+     "observations": 52
+    },
+    {
+     "slug": "eurasian_siskin",
+     "observations": 48
+    },
+    {
+     "slug": "lions_mane_jelly",
+     "observations": 47
+    },
+    {
+     "slug": "great_black_backed_gull",
+     "observations": 45
+    },
+    {
+     "slug": "european_green_crab",
+     "observations": 45
+    },
+    {
+     "slug": "cross_orbweaver",
+     "observations": 43
+    },
+    {
+     "slug": "yellowhammer",
+     "observations": 41
+    },
+    {
+     "slug": "european_common_frog",
+     "observations": 41
+    },
+    {
+     "slug": "woodland_dor_beetle",
+     "observations": 41
+    },
+    {
+     "slug": "arran_brown",
+     "observations": 35
+    },
+    {
+     "slug": "common_merganser",
+     "observations": 33
+    },
+    {
+     "slug": "northern_wheatear",
+     "observations": 32
+    },
+    {
+     "slug": "smooth_newt",
+     "observations": 31
+    },
+    {
+     "slug": "redwing",
+     "observations": 30
+    },
+    {
+     "slug": "common_sea_star",
+     "observations": 30
+    },
+    {
+     "slug": "common_slowworm",
+     "observations": 30
+    },
+    {
+     "slug": "common_carder_bumble_bee",
+     "observations": 26
+    },
+    {
+     "slug": "eurasian_bullfinch",
+     "observations": 23
+    },
+    {
+     "slug": "viviparous_lizard",
+     "observations": 22
+    },
+    {
+     "slug": "moose",
+     "observations": 20
+    },
+    {
+     "slug": "common_shiny_woodlouse",
+     "observations": 19
+    },
+    {
+     "slug": "grass_snake",
+     "observations": 19
+    },
+    {
+     "slug": "common_hedgehog",
+     "observations": 16
+    },
+    {
+     "slug": "brambling",
+     "observations": 14
+    },
+    {
+     "slug": "eurasian_beaver",
+     "observations": 13
+    },
+    {
+     "slug": "european_badger",
+     "observations": 10
+    },
+    {
+     "slug": "brown_trout",
+     "observations": 9
+    },
+    {
+     "slug": "american_mink",
+     "observations": 6
+    },
+    {
+     "slug": "great_crested_newt",
+     "observations": 4
+    },
+    {
+     "slug": "harbor_seal",
+     "observations": 4
+    },
+    {
+     "slug": "meadow_pipit",
+     "observations": 3
+    },
+    {
+     "slug": "common_moon_jelly",
+     "observations": 3
+    }
+   ]
+  },
+  {
+   "id": "varanger",
+   "name": "Varanger Peninsula",
+   "lat": 70.3,
+   "lon": 30.0,
+   "radius_km": 30,
+   "blurb": "Arctic coast with king eiders, Steller's eiders and gyrfalcons.",
+   "species": [
+    {
+     "slug": "black_legged_kittiwake",
+     "observations": 102
+    },
+    {
+     "slug": "common_eider",
+     "observations": 93
+    },
+    {
+     "slug": "white_tailed_eagle",
+     "observations": 80
+    },
+    {
+     "slug": "meadow_pipit",
+     "observations": 60
+    },
+    {
+     "slug": "mountain_hare",
+     "observations": 58
+    },
+    {
+     "slug": "common_gull",
+     "observations": 55
+    },
+    {
+     "slug": "european_golden_plover",
+     "observations": 51
+    },
+    {
+     "slug": "northern_wheatear",
+     "observations": 49
+    },
+    {
+     "slug": "eurasian_oystercatcher",
+     "observations": 39
+    },
+    {
+     "slug": "caribou",
+     "observations": 31
+    },
+    {
+     "slug": "great_black_backed_gull",
+     "observations": 30
+    },
+    {
+     "slug": "common_merganser",
+     "observations": 30
+    },
+    {
+     "slug": "tufted_duck",
+     "observations": 30
+    },
+    {
+     "slug": "european_herring_gull",
+     "observations": 28
+    },
+    {
+     "slug": "red_breasted_merganser",
+     "observations": 23
+    },
+    {
+     "slug": "european_greenfinch",
+     "observations": 22
+    },
+    {
+     "slug": "mallard",
+     "observations": 18
+    },
+    {
+     "slug": "redwing",
+     "observations": 18
+    },
+    {
+     "slug": "hooded_crow",
+     "observations": 18
+    },
+    {
+     "slug": "fieldfare",
+     "observations": 17
+    },
+    {
+     "slug": "white_wagtail",
+     "observations": 17
+    },
+    {
+     "slug": "common_murre",
+     "observations": 12
+    },
+    {
+     "slug": "arctic_green_sea_urchin",
+     "observations": 12
+    },
+    {
+     "slug": "great_cormorant",
+     "observations": 10
+    },
+    {
+     "slug": "moose",
+     "observations": 8
+    },
+    {
+     "slug": "brambling",
+     "observations": 6
+    },
+    {
+     "slug": "european_common_frog",
+     "observations": 6
+    },
+    {
+     "slug": "harbour_porpoise",
+     "observations": 6
+    },
+    {
+     "slug": "green_veined_white",
+     "observations": 6
+    },
+    {
+     "slug": "norway_brown_lemming",
+     "observations": 5
+    },
+    {
+     "slug": "small_tortoiseshell",
+     "observations": 5
+    },
+    {
+     "slug": "common_goldeneye",
+     "observations": 4
+    },
+    {
+     "slug": "house_sparrow",
+     "observations": 4
+    },
+    {
+     "slug": "greylag_goose",
+     "observations": 3
+    },
+    {
+     "slug": "american_mink",
+     "observations": 3
+    }
+   ]
+  }
+ ]
+}
