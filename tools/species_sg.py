@@ -11,7 +11,11 @@ from archetypes import BLACK, EYE, PINK, WHITE, alligator, bird, butterfly, crab
     frog, grasshopper, lizard, raptor, snake, sprite, star, wader
 from mammal import quad
 from pixel import mix
+from species_east import _hermit
 from species_eu_birds import _song
+from species_eu_bugs import EDGE_F, EDGE_H, TIP, D, E, L, P, _bf
+from species_eu_herps import NET, SPOTS, _both, _dots, _lines
+from species_eu_water import _bars
 
 
 def _dk(c, k=0.28):
@@ -336,3 +340,309 @@ def _(s):
     _song(s, "#2a5a6a", "#3a6a7a", head="#22303a", wing="#1e3a5a", tail_col="#1e2a3a", beak="crow",
           beak_col="#d83a2a", legs="#d85a3a", big=True, tail="mid",
           wingm=lambda s, m: s.paint(s.m_ellipse(21, 19, 1.8, 1.3), "#a8d0e8", within=m))
+
+
+# =========================================================================== reptiles
+def _tongue(s, x=1, y=19.5, col="#c84a7a"):
+    """A monitor's long forked tongue, flicking out now and then."""
+    if s.act in ("idle", "walk", "eat") and s.t % 0.5 < 0.2:
+        s.path([(x + 1, y), (x - 2.5, y)], 0.35, col, shade=False)
+        s.px([(round(x - 3), round(y - 1)), (round(x - 3), round(y + 1))], col)
+
+
+@sprite("asian_water_monitor")
+def _(s):
+    # A huge dark lizard: sooty gray-black with rows of pale yellow spots, a long neck,
+    # a long narrow snout and a thick tail flattened for swimming.
+    def pat(s, m):
+        s.paint(s.m_px([(x, y) for y in (19, 21, 23) for x in range(9 + (y % 4), 23, 3)]), "#d8c870", within=m)
+    lizard(s, "#3a3a30", "#a8a070", head="#3e3e34", throat="#c8c090", pattern=pat, wide=True,
+           legs="#34342c", tail_col="#34342c", tail_pts=[(20, 22), (27, 25), (33, 25), (37, 21)])
+    _tongue(s)
+
+
+@sprite("clouded_monitor")
+def _(s):
+    # Smaller and slimmer than the water monitor: gray-brown, clouded all over with pale
+    # yellowish flecks, and a more rounded tail.
+    def pat(s, m):
+        s.paint(s.m_px([(x + (y % 2), y) for y in range(18, 25) for x in range(8, 23, 2) if (x + y) % 3]),
+                "#c8b888", within=m)
+    lizard(s, "#6a6050", "#d8ccb0", head="#6e6454", throat="#d8ccb0", pattern=pat, legs="#5e5646",
+           tail_col="#5e5646", tail_pts=[(20, 22), (27, 25), (33, 24), (36, 20)])
+    _tongue(s)
+
+
+@sprite("oriental_garden_lizard")
+def _(s):
+    # The changeable lizard: tan with dark bands, a crest of spines down the neck and back,
+    # and a male's head flushed orange-red.
+    lizard(s, "#a08a5a", "#e8dcbc", head="#d0603a", throat="#d85a3a",
+           pattern=_dots([(10, 19), (10, 20), (14, 19), (14, 20), (18, 19), (18, 20), (21, 20)], "#4a3a24"),
+           horns=True, tail_col="#8a7650", tail_pts=[(20, 22), (27, 25), (33, 24), (37, 20)])
+
+
+@sprite("common_sun_skink")
+def _(s):
+    # A glossy bronze-brown skink with dark flanks and a yellow-orange wash on its sides.
+    lizard(s, "#8a6a40", "#e8dcb8",
+           pattern=_both(_lines((21.5,), "#3a2a1e"), _lines((22.5,), "#e0a040"), _dots(SPOTS[:4], "#5a4228")),
+           smooth=True, wide=True, tail_col="#7a5c38", throat="#e8c070")
+
+
+@sprite("common_gliding_lizard")
+def _(s):
+    # A slim gray-brown flying lizard: the folded "wing" along its side is orange with
+    # dark bars, and a yellow throat flag hangs under its chin.
+    def pat(s, m):
+        s.paint(s.m_ellipse(15, 21.5, 6.5, 1.6), "#d8803a", within=m)
+        for x in (11, 14, 17, 20):
+            s.paint(s.m_line(x, 20, x - 1, 23), "#4a2e1e", within=m)
+        s.paint(s.m_px([(9, 19), (13, 18), (17, 19)]), "#8a8474", within=m)
+    lizard(s, "#7a7064", "#d8d0c0", pattern=pat, legs="#6a6256", tail_col="#6e665a",
+           tail_pts=[(20, 22), (28, 24), (35, 24), (39, 22)])
+    if s.act in ("idle", "look") and 0.25 < s.t < 0.75:  # the flag flicks out in display
+        s.poly([(4, 20), (7, 20.5), (5.5, 24), (4, 22.5)], "#f0d030")
+
+
+@sprite("estuarine_crocodile")
+def _(s):
+    # The saltwater crocodile: the biggest reptile alive, olive-gray with darker bands
+    # and a long, broad snout.
+    alligator(s, "#6a6a44", "#e8e0b0")
+
+
+@sprite("waglers_pit_viper")
+def _(s):
+    # A stout, sleepy tree viper with a big triangular head: green crossed by thin yellow
+    # bands edged in black, with a yellow stripe behind the eye.
+    snake(s, "#4a8a3a", belly="#d8d060", bands="#e8d040", band_period=3.4, band_len=0.9, head="#4a8a3a",
+          head_w=6.4)
+
+
+@sprite("asian_vine_snake")
+def _(s):
+    # A whip-thin, bright leaf-green snake with a long pointed snout and a pale yellow
+    # line along its side.
+    snake(s, "#5ab040", belly="#c8e070", stripe="#e8f0a0", head="#5ab040", head_w=3.8)
+
+
+@sprite("paradise_tree_snake")
+def _(s):
+    # The flying snake: black, each scale edged in bright green, with a row of red-orange
+    # spots down its back.
+    snake(s, "#26302a", belly="#a8d050", blotch="#e8602a", band_period=3.0, stripe="#6ab040", head="#2a3a2a",
+          head_w=4.4)
+
+
+# =========================================================================== frogs
+@sprite("asian_common_toad")
+def _(s):
+    # The black-spined toad: warty brown with black-tipped warts, black ridges over
+    # the eyes and big glands behind them.
+    frog(s, "#8a6a44", "#e8dcc0", build="toad", ridges="#2b2226", parotoid="#7a5a38", warts="#2b2226",
+         spots=3, spot_col="#4a3424", iris="#d8a040", crown="#2b2226")
+
+
+@sprite("four_lined_tree_frog")
+def _(s):
+    # A slim, long-legged tan tree frog with four dark lines down its back.
+    frog(s, "#b8986a", "#f2ead8", build="tree", lines="#5a4228", mask="#6a4a30", pads=True, iris="#c8a060")
+
+
+@sprite("white_lipped_frog")
+def _(s):
+    # Olive-brown with a bright white stripe along the upper lip and long legs.
+    frog(s, "#6a6a3a", "#f0ecd8", lip=WHITE, mask="#3a3a24", spots=2, thigh="#5a5a32", pads=True)
+
+
+@sprite("banded_bullfrog")
+def _(s):
+    # A round, tiny-headed frog: chocolate brown with a broad tan band from the eye
+    # down each side.
+    frog(s, "#4a3424", "#e8dcc4", build="toad", side="#d8a060", dorsal=None, iris="#3a2a20", spots=0)
+
+
+@sprite("malesian_frog")
+def _(s):
+    # A chunky forest-stream frog: plain brown with a dark mask and a thick head.
+    frog(s, "#7a5a3c", "#ece0cc", mask="#3a2a1e", tympanum="#5a3e28", spots=3, thigh="#6a4e34",
+         ridges="#9a7a54")
+
+
+@sprite("green_paddy_frog")
+def _(s):
+    # A slim frog with a bright green back, brown sides and a pale line between them.
+    frog(s, "#8a6a44", "#f0ecdc", dorsal="#5aa040", ridges="#f0ecd0", lip="#f0ecd0", spots=0)
+
+
+@sprite("arcuate_spotted_pygmy_frog")
+def _(s):
+    # A tiny gray-brown narrow-mouthed frog with dark, pale-edged arcs on its back.
+    frog(s, "#9a8a74", "#ece4d8", build="toad", spots=5, spot_col="#3a3026", spot_big=True, iris="#5a4a3a")
+
+
+# =========================================================================== fish
+@sprite("striped_snakehead")
+def _(s):
+    # A long, round-bodied predator: dark olive-brown with darker chevrons, a long
+    # dorsal fin and a flat, snake-like head.
+    def pat(s, m):
+        for x in (10, 13.5, 17, 20.5):
+            s.paint(s.m_path([(x, 9), (x + 1.5, 13), (x, 17)], 0.6), "#2e2a20", within=m)
+    fish(s, "#5a5a3c", "#d8d0b0", fin="#4a4a32", pattern=pat, slim=True)
+
+
+@sprite("banded_archerfish")
+def _(s):
+    # Silver-white and deep-bodied, with black wedges hanging down its back and a
+    # pointed, upturned mouth for spitting water at insects.
+    fish(s, "#d8dcd8", "#f6f6f2", fin="#c8c8a0", pattern=_bars((9, 13, 17, 21), "#1e1c22", y0=7, y1=13))
+
+
+@sprite("giant_mudskipper")
+def _(s):
+    # A fish that lives on the mud: gray-brown with pale blue spots, eyes bulging on top of
+    # its blunt head, strong arm-like front fins and a tall spiny fin it flicks up.
+    s.can("walk")
+    walk = s.act == "walk"
+    hop = s.cyc(0, -1.5, 0, 0) if walk else 0
+    fin = s.cyc(0.6, 1, 0.6, 0.3) if s.act in ("idle", "look") else 0.5
+    body, lite, dark = "#7a6e5a", "#c8bca4", "#4a4234"
+    s.path([(22, 25 + hop), (29, 26.5), (34, 26)], (2.6, 1.0), body)
+    s.poly([(33, 26), (38, 23), (39, 26.5), (37.5, 29), (33, 27)], dark)  # tail fin
+    s.poly([(20, 22.5 + hop), (21, 18.5 + hop), (30, 23), (30, 25.5)], dark)  # second dorsal
+    top = 20.5 - 7 * fin
+    m1 = s.poly([(12, 20.5 + hop), (13, top + hop), (17, top + 1 + hop), (20, 20.5 + hop)], dark, edge=True)
+    s.paint(s.m_px([(14, round(top + 3 + hop)), (16, round(top + 4 + hop)), (18, round(top + 5 + hop))]),
+            "#a8c8e0", within=m1)
+    m = s.ellipse(16, 24 + hop, 9, 4, body, edge=True)
+    s.paint(s.m_ellipse(16, 27 + hop, 8, 1.4), lite, within=m)
+    s.paint(s.m_px([(14, 22), (17, 23), (20, 22), (12, 24), (18, 25), (22, 24)]), "#a8c8e0", within=m)
+    hm = s.ellipse(8, 23.5 + hop, 5, 4.2, body, edge=True)
+    s.paint(s.m_ellipse(7, 26.5 + hop, 4, 1.4), lite, within=hm)
+    s.paint(s.m_line(3, 25 + hop, 6, 25.5 + hop), dark, within=hm)
+    reach = s.cyc(0, 2, 1, 0) if walk else 0
+    s.path([(11, 25 + hop), (9 - reach, 28.5)], (1.6, 1.2), mix(body, lite, 0.3))  # front fin "arm"
+    s.ellipse(9.8, 19 + hop, 2.0, 2.0, _dk(body, 0.1), edge=True)  # eye turrets on top of the head
+    s.ellipse(7, 18.6 + hop, 2.5, 2.5, body, edge=True)
+    s.ellipse(7, 18.2 + hop, 1.7, 1.7, "#d8d0b8", shade=False)
+    s.eye(6, 17 + round(hop))
+
+
+# =========================================================================== insects
+sprite("brown_pansy")(_bf("#5a3020", "#5e3424", ("b", L(14, 9, 3, 13), "#d8603a"),
+                           ("f", E(5, 8, 1.1), "#e8a04a"), ("h", E(8, 21, 1.4), "#2b2226"),
+                           ("h", E(8, 21, 0.7), "#e8a04a"), ("h", L(14, 20, 6, 24), "#d8603a")))
+sprite("peacock_pansy")(_bf("#e08a2a", "#e4922e", ("f", E(6, 9, 1.8), "#2b2630"), ("f", E(6, 9, 0.9), "#e8b050"),
+                             ("h", E(9, 21, 2.6), "#2b2630"), ("h", E(9, 21, 1.6), "#e8902a"),
+                             ("h", E(9.5, 20.5, 0.7), "#6a8ac8"), ("b", EDGE_F, "#7a4a24"),
+                             ("h", EDGE_H, "#7a4a24")))
+sprite("tawny_coster")(_bf("#d8803a", "#e08a40", ("f", TIP, "#2b2630"), ("f", D((8, 9), (10, 11), (11, 8)), "#2b2630"),
+                            ("h", EDGE_H, "#2b2630"), ("h", D((6, 24), (8, 26)), WHITE),
+                            ("h", D((10, 19), (12, 21)), "#2b2630")))
+sprite("plain_tiger")(_bf("#e8902a", "#ec9a34", ("f", TIP, "#2b2630"), ("f", D((4, 7), (5, 8), (6, 6), (3, 9)), WHITE),
+                           ("f", EDGE_F, "#2b2630"), ("h", EDGE_H, "#2b2630"), ("h", D((6, 23), (8, 25)), WHITE),
+                           ("h", D((11, 19), (12, 18), (13, 19)), "#2b2630"), body="#2b2630"))
+sprite("common_palmfly")(_bf("#3a2a22", "#4a3024", ("f", D((3, 8), (4, 10), (5, 12), (4, 6)), "#a8c0e8"),
+                              ("h", EDGE_H, "#b8683a"), ("h", D((7, 24), (9, 25)), "#e8d0a0")))
+sprite("common_mormon")(_bf("#22201e", "#24201e", ("f", D((3, 12), (4, 13), (5, 14)), "#f0ece0"),
+                             ("h", P((5, 19), (13, 17), (13, 19.5), (6, 22)), "#f0ece0"),
+                             ("h", D((5, 24), (7, 26)), "#d84a3a"), tails=True))
+sprite("flambeau")(_bf("#f08a28", "#f09434", ("f", L(10, 6, 7, 11), "#2b2630"), ("f", D((2, 7), (3, 8)), "#2b2630"),
+                        ("h", EDGE_H, "#c8601e")))
+sprite("hubners_wasp_moth")(_bf("#24202a", "#26222a", ("f", E(9, 8, 1.6, 1.1), "#d8e0e8"),
+                                 ("f", E(6, 11, 1.4, 1.0), "#d8e0e8"), ("f", E(11, 12, 1.2), "#d8e0e8"),
+                                 ("h", E(10, 19, 1.6, 1.2), "#d8e0e8"), body="#e8a030"))
+
+
+@sprite("common_parasol")
+def _(s):
+    # A small red skimmer whose wings are stained rusty red almost to the tips.
+    dragonfly(s, "#8a2a1e", "#c8382a", wing_tint="#a8402a")
+
+
+@sprite("scarlet_skimmer")
+def _(s):
+    # Bright scarlet all over, with a thin black line down the abdomen and amber wing bases.
+    dragonfly(s, "#c8302a", "#e8302a", wing_tint="#f0c070")
+
+
+@sprite("asian_crimson_dropwing")
+def _(s):
+    # The crimson marsh glider: a magenta-crimson body and pink wing veins.
+    dragonfly(s, "#8a2a4a", "#d0306a", wing_tint="#e888b0")
+
+
+@sprite("rufous_legged_grasshopper")
+def _(s):
+    # A small brown grasshopper with a pale stripe and rusty-red hind legs.
+    grasshopper(s, "#8a7656", "#5a4a34", legs="#c0502a")
+
+
+# =========================================================================== shore and sea
+@sprite("blue_swimming_crab")
+def _(s):
+    # The flower crab: sky-blue mottled with white, long slim claws and paddle-shaped back legs.
+    crab(s, "#4a7ab0", "#5a8ac8", legs="#3a68a0",
+         pattern=lambda s, m: s.paint(s.m_px([(10, 17), (13, 16), (17, 15), (21, 17), (12, 20), (16, 19), (20, 20),
+                                               (14, 23), (19, 23)]), "#e8f0f8", within=m))
+
+
+@sprite("violet_tree_climbing_crab")
+def _(s):
+    # A square-backed mangrove crab, purple-brown with violet claws, that climbs the trunks.
+    crab(s, "#5a3a52", "#9a5ab0", legs="#4a2e46",
+         pattern=lambda s, m: s.paint(s.m_line(9, 15, 23, 15), "#7a5070", within=m))
+
+
+@sprite("pink_fingered_vinegar_crab")
+def _(s):
+    # A dark brown mangrove crab with pink-tipped claws.
+    crab(s, "#4a3a2e", "#c87a7a", legs="#3e3026",
+         pattern=lambda s, m: s.paint(s.m_line(9, 15, 23, 15), "#6a5444", within=m))
+    s.px([(2, 9), (3, 9), (29, 9), (30, 9)], "#f0b0c0")
+
+
+@sprite("orange_striped_hermit_crab")
+def _(s):
+    # A dark hermit crab in a borrowed shell, its legs ringed with orange stripes.
+    _hermit(s, "#a89a84", "#6a6050", "#3a2e2a", "#4a3a32", leg_mark="#e8802a")
+
+
+@sprite("chocolate_chip_sea_star")
+def _(s):
+    # A stout cream-tan sea star studded with knobs like chocolate chips.
+    star(s, "#d8b888", arms=0.35, dots="#3a2418")
+
+
+@sprite("haddons_carpet_anemone")
+def _(s):
+    # A flat, broad carpet of short sticky tentacles, green with pinkish patches.
+    sway = s.cyc(0, 0.5, 0, -0.5) if s.act == "idle" else 0
+    s.ellipse(16, 29, 15, 1.8, "#c8b8a0")
+    m = s.ellipse(16, 25, 15, 4.2, "#5a8a4a", edge=True)
+    for k, x in enumerate(range(2, 31, 3)):  # the ruffled, folded rim of the carpet
+        y = 21.5 + 1.2 * math.sin(k * 1.7) + (1.5 if x < 5 or x > 27 else 0)
+        m |= s.ellipse(x + sway * 0.5, y, 2.0, 1.8, "#6a9a52" if k % 2 else "#5a8a4a", shade=False)
+    s.paint(s.m_ellipse(16, 27.5, 14, 1.4), "#3a5a30", within=m)
+    for y in (20, 22, 24, 26):
+        for x in range(2 + y % 2, 31, 2):
+            col = "#e8a8c0" if (x // 2 + y) % 7 == 0 else "#a8d080" if (x + y) % 4 == 0 else "#7ab060"
+            s.paint(s.m_px([(x + round(sway * (26 - y) / 6), y)]), col, within=m)
+    s.ellipse(16, 23, 2.2, 0.9, "#c8d888", shade=False)
+
+
+@sprite("pink_warty_sea_cucumber")
+def _(s):
+    # A plump pink sea cucumber covered in round, darker warts.
+    s.can("walk")
+    st = s.cyc(0, 1, 2, 1) if s.act == "walk" else 0
+    c = "#e08a9a"
+    m = s.ellipse(17 - st / 2, 23, 13 + st / 2, 5.5, c, edge=True)
+    s.paint(s.m_ellipse(17, 27, 12, 1.6), "#f0b8c0", within=m)
+    for x, y in ((8, 20), (12, 18), (17, 18), (22, 19), (26, 21), (10, 23), (15, 22), (20, 22), (25, 24), (14, 25)):
+        s.paint(s.m_ellipse(x, y, 1.1, 1.0), "#b8506a", within=m)
+        s.paint(s.m_px([(x, y - 1)]), "#f4c8d0", within=m)
+    for x in (3, 5, 7):
+        s.ellipse(x - st, 21 + abs(x - 5) * 0.6, 1.1, 1.1, "#f0c8d0")
