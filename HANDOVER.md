@@ -185,6 +185,15 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
   monkeys (`_primate`), colugo, slow loris, pangolin, mudskipper and mouse-deer (a
   proportion swap on the deer skeleton). iNat place id 6734 is unverified; the ID model
   knows Singapore's new animals only after the next model is trained on the PC.
+- 0.99.0 Famous landmarks on the skyline (`HAB_SIGHTS` at the end of habitat.js):
+  Singapore's three towers with the ship-shaped garden deck (plus the observation
+  wheel, lotus museum and garden "supertrees"), one sight for each of the 42 European
+  countries (Eiffel Tower, clock tower, leaning tower, Atomium, stave church...), the
+  Golden Gate Bridge (CA) and Mount Rushmore (SD). Generic silhouettes, no signs or logos.
+  A sight is drawn behind the foothills (`habSight`, after the far scenery), keyed by the
+  real place, not its `HAB_TWIN`. Switzerland has its own far scene (the Matterhorn), and
+  the Alpine countries now twin Wyoming's grey granite instead of Colorado's maroon peaks.
+  Preview: render `habBackground(habLayout(w), phase, twin, {}, place)` in a page.
 - kuro doesn't want pictures stretched, squashed or turned to fake motion: every
   movement in the habitat is a drawn frame. Bends of a whole drawing are done in
   the sprite generator (`Sprite.pitch` / `Sprite.bend`), drawn pixel by pixel.
