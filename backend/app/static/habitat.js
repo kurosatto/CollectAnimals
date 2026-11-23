@@ -238,11 +238,11 @@ const HAB_CITY = {
 // Norway Alaska's, Ukraine Kansas's wheat. The sun, moon and weather still use the
 // country's own capital (habRealState).
 const HAB_TWIN = {
-  ALB: "CA", AUT: "CO", BLR: "MN", BEL: "DE", BIH: "TN", BGR: "TN", HRV: "CA", CYP: "CA",
+  ALB: "CA", AUT: "WY", BLR: "MN", BEL: "DE", BIH: "TN", BGR: "TN", HRV: "CA", CYP: "CA",
   CZE: "KY", DNK: "RI", EST: "ME", FIN: "MN", FRA: "MD", DEU: "KY", GRC: "CA", HUN: "IA",
   ISL: "AK", IRL: "RI", ITA: "CA", XKX: "TN", LVA: "ME", LTU: "MN", LUX: "KY", MLT: "CA",
   MDA: "IA", MNE: "CA", NLD: "DE", MKD: "TN", NOR: "AK", POL: "WI", PRT: "CA", ROU: "TN",
-  RUS: "MN", SRB: "KY", SVK: "TN", SVN: "CO", ESP: "CA", SWE: "MN", CHE: "CO", TUR: "CA",
+  RUS: "MN", SRB: "KY", SVK: "TN", SVN: "WY", ESP: "CA", SWE: "MN", CHE: "WY", TUR: "CA",
   UKR: "KS", GBR: "RI",
 };
 // The water on the right of the scene is the Pacific in these states, so the sun
@@ -1050,9 +1050,9 @@ function habDraw() {
   habDecorPlace();
   // The sun and moon creep across the sky, so the scenery is redrawn every few pixels they move.
   const spot = (b) => (b ? b.xy.map((v) => v >> 2).join(",") + (b.lit ? "/" + Math.round(b.lit * 40) : "") : "-");
-  const key = `${L.w}/${phase}/${habState()}/${habSeason()}/${spot(lights.sun)}/${spot(lights.moon)}`;
+  const key = `${L.w}/${phase}/${habRealState()}/${habSeason()}/${spot(lights.sun)}/${spot(lights.moon)}`;
   if (cv.width !== L.w * HAB_RES) { cv.width = L.w * HAB_RES; cv.height = HAB_H * HAB_RES; }
-  if (hab.bgKey !== key) { hab.bg = habBackground(L, phase, habState(), lights); hab.bgKey = key; }
+  if (hab.bgKey !== key) { hab.bg = habBackground(L, phase, habState(), lights, habRealState()); hab.bgKey = key; }
   const c = cv.getContext("2d");
   c.setTransform(HAB_RES, 0, 0, HAB_RES, 0, 0);
   c.imageSmoothingEnabled = false;
@@ -2013,7 +2013,7 @@ const HAB_SCENE_OVERRIDE = {
 for (const [st, o] of Object.entries(HAB_SCENE_OVERRIDE)) HAB_SCENES[st] = { ...(HAB_SCENES[st] || HAB_SCENES.default), ...o };
 
 
-function habBackground(L, phase, state, lights = {}) {
+function habBackground(L, phase, state, lights = {}, real = state) {
   // Land is painted in daylight colors, then graded for the time of day at the end.
   const W = L.w, H = HAB_H, season = habSeason(), snowy = habSnowy(state);
   const sc = habSeasonScene(HAB_SCENES[state] || HAB_SCENES.default, season, state), P = pxPalette("day");
@@ -2104,7 +2104,7 @@ function habBackground(L, phase, state, lights = {}) {
   const foot = L.water + 1;
   const fade = (x, h) => Math.round(foot - (foot - h) * env(x, 90));
   const atmo = (col, k) => pxMix(col, 0xcdeefb, k);
-  const fc = { img, P, W, H, L, foot, coastEnd, fade, atmo, night, season, snowy, sc, state, land, wk, inland };
+  const fc = { img, P, W, H, L, foot, coastEnd, fade, atmo, night, season, snowy, sc, state, real, land, wk, inland };
   if (habFarScene(fc)) {
     // A state's own far scenery (habFarScene).
   } else if (state === "CA" || land.far === "peaks") {
@@ -2222,6 +2222,9 @@ function habBackground(L, phase, state, lights = {}) {
       }
     }
   }
+  // The scene so far (sky and far scenery): a famous landmark is drawn behind
+  // whatever the foothills and hills paint over it (habSight).
+  const farSnap = HAB_SIGHTS[real] ? img.d.slice() : null;
   const snowPal = P("#b8c4d8", "#d4dcea", "#eef2f8", "#ffffff");
   // Hills, far then near, each with a lit top edge (low and gentle in flat states).
   // The hills always slope down to the shore, even when the far scenery runs on.
@@ -2298,6 +2301,7 @@ function habBackground(L, phase, state, lights = {}) {
     }
     tl.onto(img, li && dots !== "grass" && dots !== "sage" ? P("#22401f") : undefined);
   });
+  if (farSnap) habSight(fc, farSnap);
   // Sea: lighter at the horizon, deep blue below, with wave texture.
   const sea = P(...HAB_WATER[wk].water);
   for (let y = L.water; y < H; y++) for (let x = L.sea - 30; x < W; x++) {
@@ -3465,7 +3469,9 @@ function habLeafPals(c, kind) {
 // Foothills between the far scenery and the meadow, drawn with the terrain
 // renderer so they get real shading and a skyline of tree crowns.
 function habFoothills(c, bio) {
-  const { L, P, sc } = c, envH = (x) => { const k = clamp01((L.sea - 14 - x) / 60); return k * k * (3 - 2 * k); };
+  // Singapore's woods stop halfway so the city and the bay show beyond them.
+  const city = c.state === "SGP" ? (x) => clamp01((L.sea * .52 - x) / 40) : () => 1;
+  const { L, P, sc } = c, envH = (x) => { const k = clamp01((L.sea - 14 - x) / 60); return k * k * (3 - 2 * k) * city(x - 10); };
   const low = bio === "prairie" || bio === "marsh" || HAB_FARM_STATES.has(c.state), back = low ? 22 : bio === "desert" ? 14 : 52, front = low ? 12 : bio === "desert" ? 8 : back * .5;
   const kind = bio === "north" || bio === "alpine" ? "conifer" : bio === "desert" || bio === "prairie" ? "none" : "leafy";
   const hf = (x, z) => {
@@ -3791,6 +3797,34 @@ function habPaintMesas(c, ms) {
 // Far scenery for states with their own: true when it drew something.
 function habFarScene(c) {
   const R = HAB_ROCK, st = c.state;
+  if (c.real === "CHE") {
+    // Switzerland: the Matterhorn, a lone four-sided horn of dark rock streaked
+    // with snow, its summit hooked over, standing high above the lesser Alps.
+    const mx = c.W * .4, horn = (x, z) => {
+      if (z < 18 || z > 40) return 0;
+      const lift = 1 - Math.abs(z - 28) / 12, dx = x - mx + (z - 28) * 1.2;
+      const e = 1 - Math.abs(dx) / (dx < 0 ? 58 : 74) - Math.abs(z - 28) / 12;
+      if (e <= 0) return 0;
+      // the hooked summit and the shoulder on the long right-hand ridge
+      const hook = Math.max(0, 1 - Math.abs(dx + 5) / 10) * 16, shoulder = Math.max(0, 1 - Math.abs(dx - 32) / 12) * 10;
+      return lift * (235 * Math.pow(e, 1.1) + hook + shoulder) * (.84 + .24 * habRidged(x / 6, z / 2.5, 596));
+    };
+    const alps = habMassifs(c, [[.12, 10, 56, 70, 10, 1.2], [.78, 12, 62, 80, 10, 1.2], [.6, 30, 70, 90, 12], [.1, 34, 64, 70, 12]], { seed: 597, rough: .6, scale: 18 });
+    const mtn = habMountainColor(c, { rock: ["#3a3836", "#56524e", "#76706a", "#968e86", "#b4aca2"], snow: 60, tree: 22 });
+    const rock = c.P("#262222", "#3c3634", "#585048", "#7a6e62", "#9c8e7e"), snow = c.P("#8e9fc0", "#b8c6e2", "#dfe7f6", "#ffffff");
+    habTerrain(c, { n: 44, vs: 1, haze: .05, hazeK: .007, h: (x, z) => Math.max(horn(x, z), alps(x, z)),
+      color: (x, z, ht, sx, sz, y, dep) => {
+        if (horn(x, z) < alps(x, z) || ht < 8) return mtn(x, z, ht, sx, sz, y, dep);
+        // The lit east face on the left of the ridge, the dark north face on the right;
+        // snow clings in the gullies and on the ledges, thinning toward the steep top.
+        const dx = x - mx + (z - 28) * 1.2, east = dx < -2 + (vnoise(y / 5, 0, 601) - .5) * 4;
+        const rib = habRidged(x / 4, y / 12 + z, 598) - .5;
+        const light = (east ? .7 : .24) + rib * .3 - dep * .003 + (east ? dx / 160 : 0);
+        const sn = ht > 50 && ht < 215 && (vnoise(x / 2.5, y / 14, 599) > (east ? .56 : .66) || vnoise(x / 9, y / 2.2, 602) > .78);
+        return sn ? ramp(snow, light + .2, x, y) : ramp(rock, light, x, y);
+      } });
+    return true;
+  }
   if (st === "SGP") {
     // Singapore: the city's towers hazy across the water, a row of public
     // housing blocks, and low hills of rainforest (Bukit Timah) in front.
@@ -4033,7 +4067,7 @@ function habFarScene(c) {
 // lit windows at night. No one building is copied.
 function habSkylineSG(c) {
   const { img, P, foot, coastEnd, night } = c, sh = (col, k = .34) => c.atmo(col, k);
-  const lit = P("#ffe9a0", "#ffd36a"), x0 = Math.round(coastEnd * .3), x1 = coastEnd - 18;
+  const lit = P("#ffe9a0", "#ffd36a"), x0 = Math.round(coastEnd * .26), x1 = Math.round(coastEnd * .7);
   // housing blocks: long and low, pastel, with rows of windows
   const slab = [P("#a8a49a", "#c4beb0", "#dcd6c6"), P("#9aa6a8", "#b6c2c2", "#d0dada"), P("#b0a08e", "#cab8a4", "#e0d0bc")];
   for (let x = Math.round(coastEnd * .08), i = 0; x < x0 + 20; i++) {
@@ -4050,7 +4084,7 @@ function habSkylineSG(c) {
   const mid = (x0 + x1) / 2;
   for (let x = x0, i = 0; x < x1; i++) {
     const w = 4 + Math.floor(hash2(i, 85) * 5), near = 1 - Math.abs(x - mid) / ((x1 - x0) / 2);
-    const h = Math.round(16 + near * 34 + hash2(i, 86) * 16), pal = glass[Math.floor(hash2(i, 87) * 3)], top = foot - 2 - h;
+    const h = Math.round(12 + near * 30 + hash2(i, 86) * 12), pal = glass[Math.floor(hash2(i, 87) * 3)], top = foot - 2 - h;
     const roof = Math.floor(hash2(i, 88) * 3);  // 0 flat, 1 stepped crown, 2 slanted
     for (let dx = 0; dx < w && x + dx < x1; dx++) {
       let t = top;
@@ -4307,3 +4341,1008 @@ function habInit() {
   $("hab-peek").onclick = () => { hab.peek = !hab.peek; habNote(); if (habStill) habDraw(); };
   if (!habStill) requestAnimationFrame(habLoop);
 }
+
+// ---- Famous landmarks (2026-11-23) ------------------------------------------
+// A place can show one well-known sight on its skyline: Singapore's three
+// towers with the ship on top, the Eiffel Tower, a stave church... Each is a
+// generic painted silhouette (no names, signs or logos), lit from the upper left
+// like the rest of the scene, a little hazy with distance, with lit windows at
+// night. It stands behind the foothills (only the far scenery and the sky are
+// painted over), its foot on the lowest crest under it, so nothing floats.
+// HAB_SIGHTS[place] = { x: where it stands, as a share of the land's width,
+// w: half its footprint, haze, draw(k, cx, ground) }. k is habSightKit.
+function habSight(c, snap) {
+  const s = HAB_SIGHTS[c.real];
+  if (!s) return;
+  const { img, L, W, H } = c, d = img.d;
+  // The first pixel the foothills or hills painted in this column.
+  const crest = (x) => {
+    x = Math.max(0, Math.min(W - 1, Math.round(x)));
+    for (let y = 20; y < L.water + 2; y++) if (d[y * W + x] !== snap[y * W + x]) return y;
+    return L.water + 1;
+  };
+  // It stands at the middle height of the crest under it; where the crest dips
+  // lower, the trees and hills are carried up to its foot (below).
+  const cx = Math.round(L.sea * s.x), cr = [];
+  for (let x = cx - s.w; x <= cx + s.w; x++) cr.push(crest(x));
+  const g = Math.min(cr.sort((a, b) => a - b)[cr.length >> 1], L.water);
+  const t = pxLayer(W, H), lit = [];
+  s.draw(habSightKit(c, t, lit), cx, g + 1);
+  const haze = s.haze ?? .16, shown = new Uint8Array(W * H);
+  for (let i = 0; i < W * H; i++) if (t.d[i] >= 0 && d[i] === snap[i]) {
+    shown[i] = 1;
+    img.set(i % W, (i / W) | 0, c.atmo(t.d[i], haze));
+  }
+  for (let x = 0; x < W; x++) {
+    let yb = -1;
+    for (let y = H - 1; y >= 0; y--) if (t.d[y * W + x] >= 0) { yb = y; break; }
+    if (yb < 0) continue;
+    const cy = crest(x);
+    // Fill the gap under it with the hillside's own trees, mirrored upward.
+    for (let y = yb + 1; y < cy && cy - y <= 24; y++) {
+      const src = Math.min(H - 1, cy + (cy - y));
+      img.set(x, y, d[src * W + x]);
+    }
+  }
+  // Lit windows and floodlights glow at night (not graded for the dark).
+  if (c.night) for (const [x, y, col] of lit) if (x >= 0 && y >= 0 && x < W && y < H && shown[y * W + x]) img.set(x, y, col, 1);
+}
+
+// Drawing tools for the landmarks, all lit from the upper left. Palettes run
+// dark to light; v nudges the light; windows can light up at night.
+function habSightKit(c, t, lit) {
+  const { P, night } = c;
+  const set = (x, y, col) => t.set(Math.round(x), Math.round(y), col);
+  const R = (pal, v, x, y) => ramp(pal, v, Math.round(x), Math.round(y));
+  const glow = (hex) => parseInt(hex.slice(1), 16);
+  const k = {
+    P, set, R, night, t,
+    // Shared building materials, dark to light.
+    m: {
+      stone: P("#5e5444", "#7e725e", "#a09278", "#c2b496", "#ded2b6"), marble: P("#8a8478", "#b0a998", "#d2ccba", "#ece6d6", "#fbf8ee"),
+      white: P("#8a929c", "#aeb4bc", "#d0d4d8", "#eceef0", "#ffffff"), brick: P("#4e2418", "#703424", "#924632", "#b05e44", "#c87c5e"),
+      roof: P("#4e1c14", "#76281c", "#9c3a26", "#bc5434", "#d4724a"), copper: P("#244a3e", "#33624f", "#4a8068", "#68a086", "#92c0a8"),
+      gold: P("#5e400c", "#8e6416", "#bc8e24", "#e0b844", "#f8e08a"), slate: P("#262830", "#3a3c46", "#50525e", "#6a6c78", "#8a8c98"),
+      wood: P("#1a120c", "#2a1e14", "#3e2c1e", "#56402c", "#6e5438"), sand: P("#7a5e3a", "#9e7c4e", "#bc9a66", "#d4b682", "#e8d0a2"),
+      honey: P("#8a6838", "#ae8a4e", "#ccaa66", "#e2c47e", "#f2dca0"), rock: P("#3e3a36", "#5a544c", "#787064", "#968c7e", "#b2a898"),
+      iron: P("#2a2a30", "#3e3e46", "#56565e", "#707078", "#8c8c94"),
+    },
+    dark: P("#2a2420"), glass: P("#3a4a5e"),
+    pal: (...hex) => P(...hex),
+    // A round shape seen from the side: a tower, a dome, a spire or an onion.
+    // hw(u) is its half width from the top (u 0) to the bottom (u 1).
+    solid(cx, y0, y1, hw, pal, { lean = 0, v = 0, band } = {}) {
+      for (let y = Math.round(y0); y <= y1; y++) {
+        const u = (y - y0) / Math.max(1, y1 - y0), w = hw(u), xc = cx + lean * (y1 - y);
+        if (w < .3) { if (w > 0) set(xc, y, R(pal, .45 + v, xc, y)); continue; }
+        for (let x = Math.round(xc - w); x <= Math.round(xc + w); x++) {
+          const n = Math.max(-1, Math.min(1, (x - xc) / w));
+          let l = .62 - n * .45 + v - (Math.abs(n) > .8 ? .1 : 0);
+          if (band && band(u, y)) l -= .3;
+          set(x, y, R(pal, l, x, y));
+        }
+      }
+    },
+    // A flat wall facing us, a little darker toward its right and its foot.
+    box(x0, y0, x1, y1, pal, { v = 0, slope = .25 } = {}) {
+      for (let y = Math.round(y0); y <= Math.round(y1); y++) for (let x = Math.round(x0); x <= Math.round(x1); x++)
+        set(x, y, R(pal, .6 - (x - x0) / Math.max(1, x1 - x0) * slope - (y - y0) / Math.max(1, y1 - y0) * .1 + v, x, y));
+    },
+    // A wall seen corner-on: the lit face on the left, the shaded face on the right.
+    block(x0, xm, x1, y0, y1, pal, { v = 0 } = {}) {
+      k.box(x0, y0, xm, y1, pal, { v: v + .1, slope: .1 });
+      k.box(xm + 1, y0, x1, y1, pal, { v: v - .25, slope: .1 });
+    },
+    // A pitched roof over x0..x1 rising h above yb (ridge along the view: a gable end).
+    gable(x0, x1, yb, h, pal, { v = 0 } = {}) {
+      const mid = (x0 + x1) / 2, half = (x1 - x0) / 2;
+      for (let j = 0; j <= h; j++) {
+        const w = half * (1 - j / (h + 1));
+        for (let x = Math.round(mid - w); x <= Math.round(mid + w); x++) set(x, yb - j, R(pal, (x < mid ? .7 : .35) + v - (j === 0 ? .1 : 0), x, yb - j));
+      }
+    },
+    // A roof whose ridge runs across the view: a band with a lit top edge.
+    ridge(x0, x1, yb, h, pal, { v = 0, hip = 0 } = {}) {
+      for (let j = 0; j < h; j++) for (let x = Math.round(x0 + hip * j); x <= Math.round(x1 - hip * j); x++)
+        set(x, yb - j, R(pal, .35 + j / h * .4 + v - (x - x0) / Math.max(1, x1 - x0) * .15, x, yb - j));
+    },
+    line(x0, y0, x1, y1, col) {
+      const n = Math.max(1, Math.ceil(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0))));
+      for (let i = 0; i <= n; i++) set(x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n, col);
+    },
+    // A window: dark by day, often lit at night.
+    win(x, y, dark, p = .55, hex = "#ffe39a") {
+      set(x, y, dark);
+      if (night && hash2(Math.round(x), Math.round(y), 977) < p) lit.push([Math.round(x), Math.round(y), glow(hex)]);
+    },
+    // A floodlit or glowing pixel at night only.
+    glow(x, y, hex) { if (night) lit.push([Math.round(x), Math.round(y), glow(hex)]); },
+    // Battlements along a wall top.
+    crenel(x0, x1, y, pal, step = 2) {
+      for (let x = Math.round(x0); x <= x1; x++) if (Math.floor((x - x0) / step) % 2 === 0) set(x, y - 1, R(pal, .6 - (x - x0) / Math.max(1, x1 - x0) * .3, x, y - 1));
+    },
+    dome(cx, yb, r, h, pal, o) { k.solid(cx, yb - h, yb, (u) => r * Math.sqrt(Math.max(0, 1 - (1 - u) ** 2)) + .2, pal, o); },
+    // An onion dome: a bulb swelling out below a drawn-out tip.
+    onion(cx, yb, r, h, pal, o) { k.solid(cx, yb - h, yb, (u) => r * Math.pow(Math.sin(Math.PI * Math.min(1, Math.pow(u, .62) * .86 + .02)), 1.4) + (u > .93 ? -1 : 0), pal, o); },
+    cone(cx, y0, y1, r, pal, o) { k.solid(cx, y0, y1, (u) => .3 + r * u, pal, o); },
+    // A round tower with a pointed cap.
+    turret(cx, yb, h, r, wall, cap, capH = r * 2.4) {
+      k.solid(cx, yb - h, yb, () => r, wall);
+      k.cone(cx, yb - h - capH, yb - h, r + .8, cap);
+    },
+    // Arched openings: dark slots with a rounded top.
+    arches(x0, x1, y0, y1, step, col, p = .3) {
+      for (let x = Math.round(x0); x <= x1; x += step) for (let y = Math.round(y0); y <= y1; y++) k.win(x, y, col, y === Math.round(y0) ? 0 : p);
+    },
+    // A rocky outcrop or hill under a building: rough top, lit on the left.
+    crag(cx, g, w, h, pal, seed = 0, { steep = 1.6, top = .35 } = {}) {
+      for (let x = Math.round(cx - w); x <= cx + w; x++) {
+        const u = Math.abs(x - cx) / w, f = u < top ? 1 : Math.max(0, 1 - Math.pow((u - top) / (1 - top), 1 / steep));
+        const hh = h * f * (.9 + .2 * vnoise(x / 3, 0, 990 + seed));
+        for (let y = Math.round(g - hh); y <= g; y++) {
+          const side = x < cx ? .2 : -.2, crack = vnoise(x / 2, y / 4, 991 + seed) > .72 ? -.25 : 0;
+          k.set(x, y, R(pal, .55 + side - (y - g + hh) * .012 + crack, x, y));
+        }
+      }
+    },
+    // Trees in front of a building's foot.
+    shrubs(x0, x1, y, h = 3, seed = 0) {
+      const leaf = P("#22401f", "#2e5428", "#3e6a32", "#52803e");
+      for (let x = Math.round(x0); x <= x1; x++) {
+        const hh = h * (.4 + .6 * vnoise(x / 3, 0, 978 + seed));
+        for (let j = 0; j < hh; j++) set(x, y - j, R(leaf, .7 - j / Math.max(1, hh) * -.2 - (x % 3 === 0 ? .2 : 0), x, y - j));
+      }
+    },
+  };
+  return k;
+}
+
+const HAB_SIGHTS = {
+  // Singapore's bay: three tall hotel towers joined across their tops by a long
+  // ship-shaped garden deck that juts out past the last tower, a white lotus of a
+  // museum at their feet, a giant observation wheel, and the bay's tall steel
+  // garden "trees" with their flared crowns.
+  SGP: { x: .78, w: 30, haze: .08, draw(k, cx, g) {
+    const { P } = k;
+    const glass = P("#4a5e74", "#647a92", "#8298ae", "#a6bacb", "#cad8e2"), deck = P("#3e4650", "#5c6670", "#848e98", "#b4bcc4", "#e2e6ea");
+    const steel = P("#5a5e66", "#7a7e88", "#9ea2aa"), white = P("#a8b0b8", "#ccd2d8", "#eef0f2", "#ffffff");
+    // The observation wheel, far behind on the left.
+    const wx = cx - 82, wr = 17, wy = g - wr - 6;
+    for (let a = 0; a < Math.PI * 2; a += .03) {
+      const x = wx + Math.cos(a) * wr, y = wy + Math.sin(a) * wr;
+      k.set(x, y, steel[Math.cos(a - 2.4) > 0 ? 2 : 1]);
+      if (Math.round(a * 33) % 3 === 0) k.glow(x, y, "#9ad0ff");
+    }
+    for (let i = 0; i < 16; i++) {
+      const a = i / 16 * Math.PI * 2;
+      if (i % 2 === 0) k.line(wx, wy, wx + Math.cos(a) * wr, wy + Math.sin(a) * wr, steel[0]);
+      const x = wx + Math.cos(a) * (wr + 1.5), y = wy + Math.sin(a) * (wr + 1.5);
+      k.set(x, y, white[2]); k.set(x + 1, y, white[1]); k.glow(x, y, "#c8e8ff");
+    }
+    k.line(wx, wy, wx - 6, g, steel[0]); k.line(wx, wy, wx + 6, g, steel[1]);
+    k.box(wx - 14, g - 5, wx + 14, g + 2, P("#6a7078", "#8a9098", "#a8aeb4"));
+    // The three towers: each a pair of slabs, the inner one curving out to its foot.
+    const top = g - 58, tw = [cx - 24, cx - 2, cx + 20];
+    for (const [i, x0] of tw.entries()) {
+      for (let y = top; y <= g; y++) {
+        const u = (y - top) / (g - top), flare = Math.round(5 * u * u * u), x1 = x0 + 8 + flare;
+        for (let x = x0; x <= x1; x++) {
+          const split = x === x0 + 4 + Math.round(flare * .6) && u > .2;
+          const floor = (y - top) % 2 === 0;
+          let v = .78 - (x - x0) / (x1 - x0) * .55 - u * .12 - (floor ? .14 : 0) - (split ? .45 : 0) - i * .03;
+          if (x === x0) v += .15;
+          if (floor && !split && x > x0 && x < x1 && hash2(x, y, 960) < .45) k.win(x, y, k.R(glass, v, x, y), .5, "#ffe7b0");
+          else k.set(x, y, k.R(glass, v, x, y));
+        }
+      }
+    }
+    // The garden deck: a long hull across all three roofs, thick in the middle,
+    // its bow pointing out past the right-hand tower; trees and a pool on top.
+    const d0 = tw[0] - 3, d1 = tw[2] + 26;
+    for (let x = d0; x <= d1; x++) {
+      const u = (x - d0) / (d1 - d0), bow = x > tw[2] + 12 ? (x - tw[2] - 12) / 14 : 0;
+      const under = Math.round(top + 2 + Math.sin(u * Math.PI) * 1.2 - bow * 1.5), over = top - 2 + Math.round(bow * bow * 1.5);
+      for (let y = over; y <= under; y++) k.set(x, y, k.R(deck, y === over ? .95 : y === under ? .1 : .55 - u * .2, x, y));
+      if (x % 3 === 0 || x === d1) k.glow(x, under, "#bfe0ff");
+    }
+    for (let x = d0 + 2; x < tw[2] + 10; x++) {
+      if (hash2(x, 1, 961) > .55) k.set(x, top - 3, k.R(P("#2e5a2a", "#3e7234", "#58904a"), hash2(x, 2, 961), x, top - 3));
+      if (hash2(x, 3, 961) > .8) k.set(x, top - 4, P("#3e7234")[0]);
+    }
+    for (let x = tw[1] + 2; x < tw[2] + 8; x++) k.set(x, top - 2, P("#5ab0d8"));
+    // The podium between the towers' feet, and the lotus museum on the water.
+    k.box(tw[0] - 6, g - 6, tw[2] + 14, g + 2, P("#6e7880", "#8e989e", "#b0b8bc", "#d0d6d8"));
+    for (let x = tw[0] - 6; x <= tw[2] + 14; x += 2) k.win(x, g - 3, P("#3a4450")[0], .7);
+    const lx = cx + 36, ly = g;
+    for (let p = -3; p <= 3; p++) {
+      const len = 9 - Math.abs(p) * 1.2, a = -Math.PI / 2 + p * .32;
+      for (let s = 0; s < len; s++) {
+        const x = lx + Math.cos(a) * s, y = ly - 2 + Math.sin(a) * s, wdt = s < len - 2 ? 1 : 0;
+        for (let q = -wdt; q <= wdt; q++) k.set(x + q, y, k.R(white, .9 - (p + 3) / 7 * .5 - (s > len - 2 ? .1 : 0), x + q, y));
+      }
+    }
+    k.box(lx - 5, ly - 2, lx + 5, ly + 1, P("#7a8288", "#9aa2a8"));
+    // The steel garden trees: tall trunks opening into wide flared crowns.
+    for (const [dx, h, col] of [[cx - 52, 22, "#8a4a8e"], [cx - 44, 28, "#a0508a"], [cx - 36, 19, "#b06a4a"], [cx - 58, 15, "#7a5a9a"], [cx - 62, 25, "#9a4a6a"]]) {
+      const pal = P(hexMix(col, "#1a1a24", .45), hexMix(col, "#1a1a24", .15), col, hexMix(col, "#ffffff", .3));
+      const trunk = P("#4a3a52", "#6a5872", "#8a7892");
+      for (let y = g - h + 4; y <= g; y++) { const w = (y > g - 5 ? 1.5 : .6); for (let x = Math.round(dx - w); x <= Math.round(dx + w); x++) k.set(x, y, k.R(trunk, .7 - (x - dx + w) / (2 * w + 1) * .6, x, y)); }
+      for (let j = 0; j < 5; j++) {
+        const w = 1 + j * 1.1, y = g - h + 4 - j;
+        for (let x = Math.round(dx - w); x <= Math.round(dx + w); x++) {
+          k.set(x, y, k.R(pal, (j === 4 ? .85 : .55) - (x - dx) / w * .3 + (x % 2 ? -.12 : 0), x, y));
+          if ((x + j) % 3 === 0) k.glow(x, y, j === 4 ? "#ff9ad8" : "#b07aff");
+        }
+      }
+    }
+    // Trees along the waterfront promenade.
+    k.shrubs(cx - 100, tw[0] - 7, g + 1, 4, 1);
+    k.shrubs(tw[2] + 15, lx - 7, g + 1, 3, 2);
+  } },
+  // The Eiffel Tower: four curving iron legs meeting in a slender lattice
+  // spire, two viewing decks, and the great arch between the feet.
+  FRA: { x: .62, w: 16, haze: .2, draw(k, cx, g) {
+    const iron = k.pal("#3a2e28", "#544236", "#6e5844", "#8a7258", "#a68c6e");
+    const h = 84, y0 = g - h;
+    const hw = (u) => .6 + 15 * Math.pow(u, 2.6) + (u > .02 ? .6 : 0);
+    for (let y = y0; y <= g; y++) {
+      const u = (y - y0) / h, w = hw(u);
+      // the arch between the legs, and the open lattice inside each leg
+      const archTop = .82, inArch = u > archTop ? w * Math.sqrt(1 - Math.pow((1 - u) / (1 - archTop), 1.6)) * .72 : 0;
+      for (let x = Math.round(cx - w); x <= Math.round(cx + w); x++) {
+        const n = (x - cx) / Math.max(w, .5), a = Math.abs(x - cx);
+        if (a < inArch - .5) continue;
+        const edge = a > w - 1.2 || a < inArch + 1;
+        const deck1 = Math.abs(u - .63) < .018, deck2 = Math.abs(u - .33) < .014;
+        if (!edge && !deck1 && !deck2 && w > 3 && (x + y) % 2 && (x * 3 + y) % 5) continue;
+        let v = .62 - n * .45 + (deck1 || deck2 ? .2 : 0);
+        k.set(x, y, k.R(iron, v, x, y));
+        if ((deck1 || deck2 || u < .05) && x % 2 === 0) k.glow(x, y, "#ffd27a");
+        if (edge && y % 4 === 0) k.glow(x, y, "#ffc860");
+      }
+      if (Math.abs(u - .63) < .018) for (const s of [-1, 1]) k.set(cx + s * (w + 1), y, k.R(iron, .5, cx, y));
+    }
+    k.glow(cx, y0 - 1, "#fff4c8");
+  } },
+};
+
+Object.assign(HAB_SIGHTS, {
+  // A great clock tower beside a long Gothic parliament on the river.
+  GBR: { x: .56, w: 30, draw(k, cx, g) {
+    const { stone, slate, gold } = k.m, d = k.dark;
+    k.box(cx + 5, g - 17, cx + 50, g + 2, stone, { slope: .35 });
+    k.ridge(cx + 5, cx + 50, g - 17, 3, slate);
+    for (let x = cx + 6; x <= cx + 50; x += 3) {
+      k.line(x, g - 22, x, g + 2, k.R(stone, .85, x, g));
+      for (let y = g - 13; y < g; y += 4) k.win(x + 1, y, d, .45);
+    }
+    k.block(cx + 42, cx + 46, cx + 52, g - 34, g, stone);
+    k.crenel(cx + 42, cx + 52, g - 34, stone);
+    // the clock tower: a ribbed shaft, the clock stage, the belfry and a gilded spire
+    k.block(cx - 4, cx, cx + 3, g - 58, g + 2, stone);
+    for (let y = g - 56; y < g; y += 3) { k.set(cx - 2, y, k.R(stone, .3, cx, y)); k.set(cx + 2, y, k.R(stone, .1, cx, y)); }
+    k.block(cx - 5, cx, cx + 4, g - 67, g - 58, stone, { v: .05 });
+    for (let a = 0; a < Math.PI * 2; a += .3) k.set(cx - 2.5 + Math.cos(a) * 2.6, g - 62.5 + Math.sin(a) * 2.6, k.R(gold, .6, cx, g));
+    for (let y = -2; y <= 2; y++) for (let x = -2; x <= 2; x++) if (x * x + y * y <= 4) k.set(cx - 2.5 + x, g - 62.5 + y, k.P("#f4efe0"));
+    k.set(cx - 2.5, g - 63.5, d); k.set(cx - 2.5, g - 62.5, d); k.set(cx - 1.5, g - 62.5, d);
+    k.glow(cx - 3, g - 63, "#fff2c0"); k.glow(cx - 2, g - 62, "#fff2c0"); k.glow(cx - 3, g - 61, "#fff2c0");
+    k.block(cx - 4, cx, cx + 3, g - 73, g - 67, stone);
+    k.arches(cx - 3, cx + 2, g - 72, g - 69, 2, d, .9);
+    k.solid(cx - .5, g - 90, g - 73, (u) => .3 + 4.4 * u, slate);
+    for (const s of [-1, 1]) k.line(cx - .5 + s * 4.5, g - 73, cx - .5 + s * 4.5, g - 78, k.R(gold, .6, cx, g));
+    k.set(cx - .5, g - 91, k.R(gold, .9, cx, g)); k.set(cx - .5, g - 92, k.R(gold, .9, cx, g));
+  } },
+  // A white marble bell tower of stacked arcades, leaning hard, behind a cathedral.
+  ITA: { x: .6, w: 26, draw(k, cx, g) {
+    const { marble, roof } = k.m, d = k.P("#6a6458");
+    // the cathedral: a long nave, a striped gable front and a small dome
+    k.box(cx - 30, g - 14, cx - 2, g + 2, marble, { slope: .3 });
+    k.gable(cx - 34, cx - 20, g - 14, 6, roof);
+    k.box(cx - 34, g - 14, cx - 20, g + 2, marble, { v: .1 });
+    for (let y = g - 12; y < g; y += 3) k.arches(cx - 33, cx - 21, y, y, 2, d, .2);
+    k.ridge(cx - 20, cx - 2, g - 14, 3, roof);
+    k.dome(cx - 10, g - 16, 4, 5, roof);
+    // the tower: eight rings of arches, leaning to the right
+    const h = 50, r = 5.5, lean = .14, base = g + 2;
+    k.solid(cx, base - h, base, (u) => u < .1 ? r - 1.5 : r, marble, { lean, band: (u, y) => (y - base) % 6 === 0 });
+    for (let y = base - h + 7; y < base - 2; y++) {
+      const xc = cx + lean * (base - y);
+      if ((y - base) % 6 === -3 || (y - base) % 6 === -2) for (let x = Math.round(xc - r + 1); x <= xc + r - 1; x += 2) k.win(x, y, k.R(marble, .1, x, y), .2);
+    }
+  } },
+  // A fairy-tale castle of white walls and slender turrets on a wooded crag.
+  DEU: { x: .62, w: 26, draw(k, cx, g) {
+    const { white, slate, rock } = k.m, d = k.dark;
+    k.crag(cx, g + 2, 30, 14, rock, 1, { top: .3 });
+    const b = g - 12;
+    k.block(cx - 18, cx - 2, cx + 6, b - 20, b, white);
+    k.gable(cx - 18, cx - 2, b - 20, 8, slate);
+    k.ridge(cx - 2, cx + 6, b - 20, 5, slate, { hip: .6 });
+    for (let x = cx - 16; x < cx - 3; x += 3) for (let y = b - 17; y < b - 2; y += 5) k.win(x, y, d, .6);
+    k.block(cx + 6, cx + 12, cx + 20, b - 12, b, white, { v: -.05 });
+    k.ridge(cx + 6, cx + 20, b - 12, 4, slate);
+    k.turret(cx - 20, b, 26, 2.2, white, slate, 8);
+    k.turret(cx - 6, b - 18, 16, 1.6, white, slate, 7);
+    k.turret(cx + 3, b - 14, 22, 2.4, white, slate, 9);
+    k.turret(cx + 21, b, 18, 2.4, white, slate, 7);
+    k.turret(cx + 14, b - 10, 10, 1.4, white, slate, 5);
+    for (const [x, y] of [[cx - 20, b - 20], [cx + 3, b - 32], [cx + 21, b - 12]]) k.win(x, y, d, .9);
+  } },
+  // A basilica of tall perforated spires rising in a cluster, the tallest in the middle.
+  ESP: { x: .6, w: 26, draw(k, cx, g) {
+    const { sand, stone } = k.m, d = k.P("#4a3a28");
+    k.box(cx - 24, g - 22, cx + 24, g + 2, stone, { slope: .3 });
+    for (let x = cx - 22; x < cx + 24; x += 4) k.arches(x, x, g - 18, g - 8, 1, d, .5);
+    const spire = (x, h, r, tip) => {
+      k.solid(x, g - 20 - h, g - 20, (u) => .4 + r * Math.pow(u, .55), sand, { band: (u, y) => u > .25 && (y + Math.round(x)) % 4 === 0 });
+      for (let y = g - 20 - h * .7; y < g - 20; y += 3) k.set(x, y, d);
+      k.set(x, g - 21 - h, k.P(tip)); k.set(x - 1, g - 20 - h, k.P(tip)); k.set(x + 1, g - 20 - h, k.P(tip));
+      k.glow(x, g - 21 - h, "#fff0c0");
+    };
+    spire(cx - 18, 30, 3, "#d84a3a"); spire(cx - 11, 38, 3.2, "#e8c040"); spire(cx + 11, 38, 3.2, "#e8c040"); spire(cx + 18, 30, 3, "#d84a3a");
+    spire(cx - 5, 50, 3.6, "#f0f0f0"); spire(cx + 5, 50, 3.6, "#f0f0f0");
+    spire(cx, 68, 4.4, "#f8f8ff");
+  } },
+  // A marble temple of columns on a flat-topped rock, its roof long gone.
+  GRC: { x: .6, w: 32, draw(k, cx, g) {
+    const { marble } = k.m, rock = k.pal("#5e5040", "#7e6c56", "#9e8a70", "#bca88a", "#d6c4a4"), d = k.P("#8a8272");
+    k.crag(cx, g + 2, 42, 16, rock, 2, { top: .6, steep: 2.4 });
+    const b = g - 14;
+    for (let st = 0; st < 3; st++) k.box(cx - 27 + st, b - st, cx + 27 - st, b - st, marble, { v: .2 - st * .05 });
+    // columns: lit fluted shafts with shadow between them
+    for (let x = cx - 24; x <= cx + 24; x++) for (let y = b - 16; y < b - 2; y++) {
+      const ph = (x - cx + 24) % 4;
+      if (ph === 3) { if (hash2(x, 3, 995) > .4) k.set(x, y, k.R(marble, .15, x, y)); continue; }
+      k.set(x, y, k.R(marble, ph === 0 ? .95 : ph === 1 ? .7 : .45, x, y));
+    }
+    k.box(cx - 26, b - 20, cx + 26, b - 17, marble, { v: .15 });
+    for (let x = cx - 25; x <= cx + 25; x += 2) k.set(x, b - 19, k.R(marble, .35, x, b));
+    // the low pediment, broken away at its right end
+    for (let j = 0; j < 5; j++) for (let x = Math.round(cx - 26 + j * 5); x <= cx + 14 - j * 2; x++) k.set(x, b - 21 - j, k.R(marble, .8 - j * .05, x, b - 21 - j));
+    for (let x = cx - 23; x < cx + 24; x += 4) k.glow(x + 2, b - 6, "#ffe2a0");
+  } },
+  // Three windmills: tapering thatched towers with their sails crossed.
+  NLD: { x: .58, w: 40, draw(k, cx, g) {
+    const { wood, white } = k.m, thatch = k.pal("#3a2e22", "#544430", "#6e5a40", "#8a7454"), sail = k.pal("#6a5a4a", "#9a8a78", "#d8ccb8");
+    for (const [x, h, a, near] of [[cx - 34, 26, .3, 0], [cx + 30, 30, 1.1, 0], [cx - 2, 38, .7, 1]]) {
+      const top = g - h;
+      k.solid(x, top, g + 2, (u) => 2.5 + (near ? 4 : 3) * u, thatch);
+      k.box(x - 2, top - 3, x + 2, top, wood);
+      k.box(x - 1, g - 6, x + 1, g + 2, wood, { v: -.2 });
+      k.box(x - (near ? 8 : 6), g - 9, x + (near ? 8 : 6), g - 8, wood);
+      const L2 = near ? 20 : 15;
+      for (let i = 0; i < 4; i++) {
+        const an = a + i * Math.PI / 2, ex = Math.cos(an), ey = Math.sin(an);
+        k.line(x, top - 1, x + ex * L2, top - 1 + ey * L2, k.R(wood, .5, x, top));
+        // the lattice sail along one side of each arm
+        for (let s = 4; s < L2; s += 1) for (let w = 1; w <= (near ? 3 : 2); w++) {
+          const px = x + ex * s - ey * w, py = top - 1 + ey * s + ex * w;
+          if ((s + w) % 2 === 0 || w === (near ? 3 : 2)) k.set(px, py, k.R(sail, .6 + (w === 1 ? .2 : 0), px, py));
+        }
+      }
+      k.set(x, top - 1, k.R(white, .8, x, top));
+      k.win(x, g - 3, k.dark, .9);
+    }
+  } },
+  // A cathedral of nine onion domes, each striped or patterned in its own colors,
+  // around a tall tented spire.
+  RUS: { x: .6, w: 26, draw(k, cx, g) {
+    const { brick, white, gold } = k.m, P = k.P;
+    k.box(cx - 24, g - 14, cx + 24, g + 2, brick, { slope: .3 });
+    for (let x = cx - 22; x < cx + 24; x += 4) k.arches(x, x, g - 10, g - 6, 1, k.dark, .4);
+    const onion = (x, yb, r, h, pal, stripe) => {
+      k.solid(x, yb, g - 12, () => r * .7, brick);
+      k.onion(x, yb, r, h, pal, { band: stripe });
+      k.set(x, yb - h - 1, k.R(gold, .8, x, yb)); k.set(x, yb - h - 2, k.R(gold, .9, x, yb));
+    };
+    const spiral = (u, y) => Math.floor(y / 1.5 + u * 8) % 2 === 0;
+    const zig = (u, y) => (Math.floor(u * 10) % 2 === 0);
+    // the central tent spire
+    k.solid(cx, g - 62, g - 28, (u) => .4 + 4.5 * u, P("#7a4a1a", "#a8743a", "#d8a850", "#f2d48a"), { band: (u, y) => y % 4 === 0 });
+    k.box(cx - 5, g - 28, cx + 5, g - 12, white, { slope: .4 });
+    k.onion(cx, g - 61, 2, 6, gold); 
+    onion(cx - 18, g - 30, 4.5, 12, P("#1e5a2a", "#2e7a3a", "#d8b83a", "#f2e070"), spiral);
+    onion(cx - 9, g - 38, 5.5, 14, P("#1a3e7a", "#2a5aa8", "#e8e8f0", "#ffffff"), spiral);
+    onion(cx + 9, g - 38, 5.5, 14, P("#7a1a1a", "#b02a22", "#2a8a4a", "#5ac070"), zig);
+    onion(cx + 18, g - 30, 4.5, 12, P("#7a4a10", "#c8781a", "#e8c040", "#fff0a0"), spiral);
+    onion(cx - 13, g - 24, 3.5, 9, P("#3a6a2a", "#5a9a3a", "#e8d070"), zig);
+    onion(cx + 13, g - 24, 3.5, 9, P("#2a4a8a", "#3a6ac0", "#f0f0f0"), zig);
+  } },
+  // A great mosque: a wide central dome over cascading half-domes, and slender
+  // pencil minarets at its corners.
+  TUR: { x: .6, w: 32, draw(k, cx, g) {
+    const { stone, slate, white } = k.m, lead = k.pal("#3e4a5a", "#56647a", "#7a889c", "#a2aec0");
+    k.box(cx - 26, g - 12, cx + 26, g + 2, stone, { slope: .3 });
+    k.arches(cx - 24, cx + 25, g - 9, g - 5, 3, k.dark, .5);
+    k.box(cx - 16, g - 20, cx + 16, g - 12, stone, { v: .05 });
+    for (const dx of [-20, 20]) k.dome(cx + dx, g - 12, 6, 5, lead);
+    for (const dx of [-11, 11]) k.dome(cx + dx, g - 20, 7, 6, lead);
+    k.box(cx - 10, g - 26, cx + 10, g - 20, stone, { v: .08 });
+    k.arches(cx - 9, cx + 9, g - 24, g - 22, 2, k.dark, .7);
+    k.dome(cx, g - 26, 12, 11, lead);
+    k.set(cx, g - 38, k.R(k.m.gold, .9, cx, g)); k.set(cx, g - 39, k.R(k.m.gold, .9, cx, g));
+    for (const [dx, h] of [[-34, 46], [-28, 54], [28, 54], [34, 46]]) {
+      const x = cx + dx;
+      k.solid(x, g - h + 8, g + 2, () => 1.4, white);
+      for (const bal of [.35, .6]) k.box(x - 2, g - h * bal - 4, x + 2, g - h * bal - 3, white, { v: -.1 });
+      k.cone(x, g - h, g - h + 8, 1.6, lead);
+    }
+  } },
+  // A lakeside village church with a slender needle spire, pastel houses below.
+  AUT: { x: .66, w: 22, draw(k, cx, g) {
+    const { white, slate, roof, gold } = k.m;
+    k.box(cx - 2, g - 18, cx + 18, g + 2, white, { slope: .3 });
+    k.ridge(cx - 2, cx + 18, g - 18, 4, roof);
+    k.arches(cx + 2, cx + 16, g - 14, g - 9, 4, k.glass, .4);
+    k.block(cx - 7, cx - 3, cx + 1, g - 34, g + 2, white);
+    k.arches(cx - 6, cx, g - 31, g - 29, 2, k.dark, .6);
+    k.set(cx - 3, g - 25, k.R(gold, .8, cx, g));
+    k.solid(cx - 3, g - 58, g - 34, (u) => .3 + 4.2 * Math.pow(u, 1.4), slate);
+    k.set(cx - 3, g - 59, k.R(gold, .9, cx, g));
+    const house = ["#e8d8b0", "#f0c8a8", "#d8e0c0", "#f4ead0", "#e0c8d8"];
+    for (let i = 0; i < 6; i++) {
+      const x = cx - 30 + i * 9 - (i > 2 ? -26 : 0), h = 10 + (i % 3) * 3, pal = k.pal(hexMix(house[i % 5], "#40302a", .4), hexMix(house[i % 5], "#40302a", .15), house[i % 5], "#ffffff");
+      k.box(x, g - h, x + 6, g + 2, pal, { slope: .4 });
+      k.gable(x - 1, x + 7, g - h, 4, k.m.wood);
+      k.win(x + 2, g - h + 4, k.dark, .7); k.win(x + 4, g - h + 4, k.dark, .7);
+    }
+  } },
+  // A dark wooden stave church: roofs stacked in tiers, dragon heads curling
+  // from the gables, a little spire on top.
+  NOR: { x: .64, w: 16, draw(k, cx, g) {
+    const { wood } = k.m, shingle = k.pal("#140e0a", "#22180e", "#342414", "#4a361e");
+    k.box(cx - 16, g - 10, cx + 16, g + 2, wood, { slope: .3 });
+    const tier = (w, yb, h) => {
+      for (let j = 0; j < h; j++) {
+        const hw = w - j * (w * .55 / h);
+        for (let x = Math.round(cx - hw); x <= cx + hw; x++) k.set(x, yb - j, k.R(shingle, (x < cx ? .75 : .35) - (j === 0 ? .15 : 0) + ((x + j) % 3 === 0 ? -.1 : 0), x, yb - j));
+      }
+      // dragon heads at the gable tips
+      for (const s of [-1, 1]) { const x = cx + s * (w - 1); k.line(x, yb - 1, x + s * 2, yb - 4, k.R(wood, .5, x, yb)); k.set(x + s * 3, yb - 4, k.R(wood, .5, x, yb)); }
+    };
+    tier(19, g - 10, 7);
+    k.box(cx - 11, g - 22, cx + 11, g - 17, wood, { slope: .3 });
+    tier(14, g - 21, 6);
+    k.box(cx - 7, g - 31, cx + 7, g - 27, wood, { slope: .3 });
+    tier(10, g - 30, 5);
+    k.box(cx - 3, g - 38, cx + 3, g - 35, wood);
+    k.arches(cx - 2, cx + 2, g - 37, g - 36, 2, k.P("#8a6a3a"), .8);
+    k.solid(cx, g - 52, g - 38, (u) => .3 + 3.5 * u, shingle);
+    k.arches(cx - 12, cx + 12, g - 7, g - 3, 4, k.P("#4a3018"), .5);
+  } },
+  // A concrete church whose stepped wings climb like basalt columns to a tall tower.
+  ISL: { x: .62, w: 26, haze: .08, draw(k, cx, g) {
+    const conc = k.pal("#4a4e54", "#686c72", "#8a8e92", "#aeb0b2", "#d0d0ce"), { slate } = k.m;
+    for (let i = 0; i < 7; i++) for (const s of [-1, 1]) {
+      const x0 = cx + s * (6 + i * 3), h = 52 - i * 6.5;
+      k.box(Math.min(x0, x0 + s * 2), g - h, Math.max(x0, x0 + s * 2), g + 2, conc, { v: (s < 0 ? .15 : -.15) - i * .02, slope: .2 });
+    }
+    k.block(cx - 5, cx, cx + 5, g - 62, g + 2, conc);
+    for (let y = g - 56; y < g - 50; y++) k.win(cx - 1, y, k.dark, .3);
+    k.solid(cx, g - 80, g - 62, (u) => .3 + 4.6 * u, slate);
+    k.box(cx - 16, g - 14, cx + 16, g + 2, conc, { v: .05 });
+    k.arches(cx - 14, cx + 14, g - 10, g - 4, 4, k.glass, .5);
+    k.set(cx, g - 82, k.R(conc, .9, cx, g)); k.line(cx - 1, g - 84, cx + 1, g - 84, k.R(conc, .9, cx, g)); k.set(cx, g - 85, k.R(conc, .9, cx, g));
+  } },
+});
+
+Object.assign(HAB_SIGHTS, {
+  // A harbor row of narrow gabled houses painted in bright colors, tall ship masts in front.
+  DNK: { x: .6, w: 34, draw(k, cx, g) {
+    const cols = ["#d8a030", "#c84a32", "#3a6ab0", "#e8d8b8", "#4a9a6a", "#d87a3a", "#9ac0d8", "#c8607a", "#e8c860"];
+    for (let i = 0; i < 9; i++) {
+      const x = cx - 34 + i * 8, h = 14 + (i * 7 % 5), col = cols[i];
+      const pal = k.pal(hexMix(col, "#20180e", .5), hexMix(col, "#20180e", .25), col, hexMix(col, "#ffffff", .35));
+      k.box(x, g - h, x + 7, g + 2, pal, { slope: .35 });
+      if (i % 3 === 1) { for (let j = 0; j < 4; j++) k.box(x + j, g - h - j * 2 - 1, x + 7 - j, g - h - j * 2, pal, { v: .1 }); }
+      else k.gable(x - 1, x + 8, g - h, 4, k.m.roof);
+      for (let y = g - h + 3; y < g - 1; y += 4) for (let wx = x + 1; wx < x + 7; wx += 2) k.win(wx, y, k.P("#2a2a34"), .5);
+    }
+    const mast = k.m.wood;
+    for (const [x, h] of [[cx - 22, 34], [cx + 8, 40], [cx + 26, 30]]) {
+      k.line(x, g + 2, x, g - h, k.R(mast, .5, x, g));
+      k.line(x - 6, g - h * .6, x + 6, g - h * .6, k.R(mast, .4, x, g));
+      k.line(x - 4, g - h * .85, x + 4, g - h * .85, k.R(mast, .4, x, g));
+      k.box(x - 10, g - 1, x + 12, g + 2, k.m.wood, { v: .1 });
+    }
+  } },
+  // A red brick city hall: a long hall and a tall square tower crowned by a
+  // green copper lantern and three golden crowns.
+  SWE: { x: .62, w: 26, draw(k, cx, g) {
+    const { brick, copper, gold } = k.m;
+    k.box(cx - 30, g - 16, cx + 2, g + 2, brick, { slope: .3 });
+    k.ridge(cx - 30, cx + 2, g - 16, 3, copper);
+    k.arches(cx - 28, cx, g - 12, g - 6, 3, k.dark, .5);
+    k.block(cx + 2, cx + 7, cx + 12, g - 56, g + 2, brick);
+    for (let y = g - 50; y < g - 20; y += 6) k.win(cx + 5, y, k.dark, .5);
+    k.arches(cx + 3, cx + 11, g - 54, g - 51, 2, k.dark, .3);
+    k.solid(cx + 7, g - 68, g - 56, (u) => u < .3 ? 1.5 + u * 4 : 3.5 + (u > .8 ? 1.5 : 0), copper);
+    k.set(cx + 7, g - 69, k.R(gold, .9, cx, g));
+    for (const dx of [-2, 0, 2]) { k.set(cx + 7 + dx, g - 71, k.R(gold, .85, cx, g)); k.set(cx + 7 + dx, g - 72 + (dx ? 1 : 0), k.R(gold, .95, cx, g)); }
+    k.glow(cx + 7, g - 71, "#ffe080");
+  } },
+  // A white cathedral above wide steps: a tall green dome on a drum with four
+  // small domes around it.
+  FIN: { x: .62, w: 26, draw(k, cx, g) {
+    const { white, copper, gold } = k.m;
+    for (let st = 0; st < 5; st++) k.box(cx - 26 + st * 2, g - st, cx + 26 - st * 2, g - st + 1, k.m.stone, { v: .15 });
+    k.box(cx - 16, g - 22, cx + 16, g - 4, white, { slope: .3 });
+    for (let x = cx - 9; x <= cx + 9; x += 3) k.solid(x, g - 20, g - 5, () => .6, white, { v: .2 });
+    k.gable(cx - 11, cx + 11, g - 22, 5, white);
+    k.box(cx - 7, g - 34, cx + 7, g - 22, white, { slope: .4 });
+    k.arches(cx - 5, cx + 5, g - 31, g - 26, 2, k.dark, .5);
+    k.dome(cx, g - 34, 8, 9, copper);
+    k.solid(cx, g - 46, g - 42, () => 1, copper); k.set(cx, g - 47, k.R(gold, .9, cx, g));
+    for (const dx of [-14, 14]) { k.box(cx + dx - 2, g - 28, cx + dx + 2, g - 22, white); k.dome(cx + dx, g - 28, 3, 4, copper); k.set(cx + dx, g - 33, k.R(gold, .9, cx, g)); }
+  } },
+  // An old walled town: round wall towers with red cone roofs and a tall church spire.
+  EST: { x: .6, w: 30, draw(k, cx, g) {
+    const { stone, roof, copper, white } = k.m;
+    k.box(cx - 32, g - 10, cx + 32, g + 2, stone, { slope: .3 });
+    k.crenel(cx - 32, cx + 32, g - 10, stone);
+    for (const [dx, h] of [[-30, 18], [-16, 22], [14, 20], [30, 16]]) k.turret(cx + dx, g + 2, h, 3, stone, roof, 9);
+    for (let i = 0; i < 4; i++) { const x = cx - 10 + i * 5; k.box(x, g - 16, x + 4, g - 9, white); k.gable(x - 1, x + 5, g - 16, 3, roof); }
+    k.box(cx - 3, g - 40, cx + 4, g + 2, stone, { slope: .4 });
+    k.arches(cx - 1, cx + 3, g - 37, g - 34, 2, k.dark, .5);
+    k.solid(cx + .5, g - 78, g - 40, (u) => .3 + 4.4 * Math.pow(u, 1.6), copper);
+  } },
+  // A brick church with a tall stepped green spire, and a merchants' house with a stepped gable.
+  LVA: { x: .62, w: 26, draw(k, cx, g) {
+    const { brick, copper, gold, roof } = k.m;
+    k.box(cx - 4, g - 20, cx + 24, g + 2, brick, { slope: .3 });
+    k.ridge(cx - 4, cx + 24, g - 20, 6, roof);
+    k.arches(cx, cx + 22, g - 16, g - 6, 4, k.dark, .4);
+    k.block(cx - 10, cx - 6, cx - 2, g - 40, g + 2, brick);
+    const sp = k.m.slate;
+    k.box(cx - 9, g - 46, cx - 3, g - 40, copper);
+    k.box(cx - 8, g - 50, cx - 4, g - 46, sp);
+    k.solid(cx - 6, g - 58, g - 50, (u) => 1 + 2.5 * Math.sin(u * Math.PI), copper);
+    k.box(cx - 7, g - 62, cx - 5, g - 58, sp);
+    k.solid(cx - 6, g - 72, g - 62, (u) => .3 + 1.5 * Math.sin(u * 2.4), copper);
+    k.solid(cx - 6, g - 86, g - 72, (u) => .3 + 1.2 * u, copper);
+    k.set(cx - 6, g - 87, k.R(gold, .9, cx, g));
+    // the stepped-gable house
+    const x0 = cx - 34, pal = k.pal("#5a1e1a", "#7e2e24", "#a8463a", "#c8664e");
+    k.box(x0, g - 18, x0 + 14, g + 2, pal, { slope: .3 });
+    for (let j = 0; j < 5; j++) k.box(x0 + j * 1.5, g - 18 - j * 3, x0 + 14 - j * 1.5, g - 16 - j * 3, pal, { v: .1 });
+    for (let y = g - 16; y < g; y += 4) k.arches(x0 + 2, x0 + 12, y, y + 1, 3, k.P("#e8d8b0"), .6);
+  } },
+  // A red brick island castle: a tall keep with a steep roof inside walls and round towers.
+  LTU: { x: .62, w: 28, draw(k, cx, g) {
+    const { brick, roof } = k.m;
+    k.box(cx - 28, g - 12, cx + 28, g + 2, brick, { slope: .35 });
+    k.ridge(cx - 28, cx + 28, g - 12, 2, roof);
+    for (const dx of [-28, -10, 12, 28]) k.turret(cx + dx, g + 2, 18, 3, brick, roof, 8);
+    k.block(cx - 6, cx, cx + 6, g - 40, g - 10, brick);
+    k.gable(cx - 7, cx + 7, g - 40, 10, roof);
+    for (let y = g - 36; y < g - 14; y += 5) k.win(cx - 2, y, k.dark, .5);
+    k.box(cx + 7, g - 26, cx + 18, g - 12, brick, { v: -.1 });
+    k.ridge(cx + 7, cx + 18, g - 26, 4, roof, { hip: .6 });
+  } },
+  // A brick Gothic basilica with two unequal towers, the taller one wearing a
+  // crown of little spires around its needle.
+  POL: { x: .74, w: 24, draw(k, cx, g) {
+    const { brick, copper, gold } = k.m;
+    k.box(cx - 2, g - 24, cx + 26, g + 2, brick, { slope: .3 });
+    k.ridge(cx - 2, cx + 26, g - 24, 6, k.m.roof);
+    k.arches(cx + 2, cx + 24, g - 20, g - 6, 4, k.glass, .4);
+    k.block(cx - 18, cx - 14, cx - 10, g - 58, g + 2, brick);
+    k.block(cx - 6, cx - 2, cx + 2, g - 44, g + 2, brick);
+    for (let y = g - 54; y < g - 10; y += 6) { k.win(cx - 15, y, k.dark, .4); if (y > g - 42) k.win(cx - 3, y, k.dark, .4); }
+    // the tall tower's crown of spires
+    k.solid(cx - 14, g - 82, g - 58, (u) => .3 + 3.5 * Math.pow(u, 1.5), copper);
+    for (const dx of [-4, -2, 2, 4]) k.solid(cx - 14 + dx, g - 66 + Math.abs(dx), g - 58, (u) => .3 + .8 * u, copper);
+    k.set(cx - 14, g - 83, k.R(gold, .9, cx, g));
+    k.glow(cx - 14, g - 70, "#ffe090");
+    // the shorter tower's helmet
+    k.dome(cx - 2, g - 44, 4, 4, copper);
+    k.solid(cx - 2, g - 54, g - 48, (u) => .3 + 1.5 * u, copper);
+  } },
+  // A long castle on a hill with a Gothic cathedral's spires rising out of it.
+  CZE: { x: .6, w: 32, draw(k, cx, g) {
+    const { stone, copper, roof, gold } = k.m, pale = k.pal("#8a8270", "#aca290", "#ccc2ae", "#e6dcc8", "#f6eee0");
+    k.box(cx - 36, g - 14, cx + 36, g + 2, pale, { slope: .3 });
+    k.ridge(cx - 36, cx + 36, g - 14, 3, roof);
+    for (let x = cx - 34; x < cx + 36; x += 2) for (let y = g - 11; y < g; y += 4) k.win(x, y, k.dark, .35);
+    // the cathedral: a long dark nave, twin spires at its front, a great green-capped tower
+    const dk = k.pal("#3a3632", "#4e4844", "#66605a", "#807a72");
+    k.box(cx - 14, g - 30, cx + 12, g - 14, dk, { slope: .3 });
+    k.ridge(cx - 14, cx + 12, g - 30, 4, copper);
+    for (let x = cx - 12; x < cx + 12; x += 3) k.solid(x, g - 36, g - 30, (u) => .3 + .8 * u, dk);
+    for (const dx of [-19, -14]) { k.box(cx + dx - 2, g - 46, cx + dx + 2, g - 14, dk, { slope: .4 }); k.solid(cx + dx, g - 64, g - 46, (u) => .3 + 2.6 * u, dk); }
+    k.box(cx + 12, g - 48, cx + 20, g - 14, dk, { slope: .4 });
+    k.arches(cx + 14, cx + 18, g - 44, g - 38, 2, k.P("#1e1a18"), .3);
+    k.solid(cx + 16, g - 64, g - 48, (u) => u < .3 ? 1 + u * 4 : u < .6 ? 3 + Math.sin(u * 20) : 4.5, copper);
+    k.set(cx + 16, g - 65, k.R(gold, .9, cx, g));
+  } },
+  // A big white square castle with a red-roofed tower at each corner, on its hill
+  // above the river.
+  SVK: { x: .6, w: 26, draw(k, cx, g) {
+    const { white, roof } = k.m, hill = k.pal("#2e4a22", "#3e5e2c", "#527238", "#688a46");
+    k.crag(cx, g + 2, 36, 10, hill, 3, { top: .5, steep: 2 });
+    const b = g - 8;
+    k.block(cx - 18, cx + 6, cx + 18, b - 22, b, white);
+    for (let x = cx - 16; x < cx + 17; x += 3) for (let y = b - 19; y < b - 2; y += 5) k.win(x, y, k.dark, .5);
+    k.ridge(cx - 18, cx + 18, b - 22, 6, roof, { hip: .7 });
+    for (const dx of [-17, 17]) {
+      k.box(cx + dx - 3, b - 34, cx + dx + 3, b - 18, white, { slope: .4 });
+      k.solid(cx + dx, b - 44, b - 34, (u) => .3 + 3.6 * u, roof);
+      k.win(cx + dx, b - 28, k.dark, .6);
+    }
+  } },
+  // A long white Gothic Revival parliament on the riverbank: rows of pinnacles,
+  // a red ribbed dome in the middle with a spire.
+  HUN: { x: .7, w: 36, draw(k, cx, g) {
+    const { white, roof, gold } = k.m, red = k.pal("#4e1a14", "#741e18", "#9a2c22", "#bc4832", "#d86a4a");
+    k.box(cx - 40, g - 16, cx + 40, g + 2, white, { slope: .3 });
+    k.ridge(cx - 40, cx + 40, g - 16, 3, red);
+    for (let x = cx - 39; x <= cx + 40; x += 3) { k.solid(x, g - 21, g - 16, (u) => .3 + .6 * u, white); for (let y = g - 12; y < g; y += 4) k.win(x + 1, y, k.dark, .55); }
+    for (const dx of [-22, 22]) { k.box(cx + dx - 4, g - 28, cx + dx + 4, g - 16, white); k.ridge(cx + dx - 4, cx + dx + 4, g - 28, 4, red, { hip: .8 }); for (const e of [-4, 4]) k.solid(cx + dx + e, g - 36, g - 28, (u) => .3 + .8 * u, white); }
+    k.box(cx - 9, g - 30, cx + 9, g - 16, white, { slope: .4 });
+    k.arches(cx - 7, cx + 7, g - 27, g - 22, 2, k.dark, .7);
+    k.solid(cx, g - 48, g - 30, (u) => 9.5 * Math.pow(Math.sin(Math.min(1, u * 1.08) * Math.PI * .5), .9), red, { band: (u, y) => false });
+    for (let y = g - 46; y < g - 30; y++) for (const dx of [-5, 0, 5]) if (Math.abs(dx) < 9 * Math.sqrt((y - g + 48) / 18)) k.set(cx + dx, y, k.R(white, .7, cx + dx, y));
+    k.solid(cx, g - 62, g - 48, (u) => .3 + 1.8 * u, red);
+    k.set(cx, g - 63, k.R(gold, .9, cx, g));
+    for (const dx of [-11, 11]) k.solid(cx + dx, g - 44, g - 30, (u) => .3 + 1 * u, white);
+  } },
+  // A castle on a sheer cliff above an alpine lake, and a white church tower on
+  // its little island below.
+  SVN: { x: .62, w: 26, haze: .06, draw(k, cx, g) {
+    const { white, roof, stone } = k.m, rock = k.pal("#2a2622", "#3e3832", "#564e44", "#6e6456", "#887c6a");
+    k.crag(cx - 12, g + 2, 18, 34, rock, 4, { top: .25, steep: .6 });
+    k.shrubs(cx - 30, cx - 22, g - 4, 6, 3);
+    const b = g - 30;
+    k.box(cx - 22, b - 10, cx - 4, b + 1, stone, { slope: .3 }); k.ridge(cx - 22, cx - 4, b - 10, 3, roof);
+    k.block(cx - 10, cx - 7, cx - 4, b - 18, b - 8, stone); k.ridge(cx - 10, cx - 4, b - 18, 3, roof, { hip: 1 });
+    for (let x = cx - 20; x < cx - 4; x += 3) k.win(x, b - 6, k.dark, .5);
+    // the island church
+    const ix = cx + 18;
+    k.crag(ix, g + 2, 14, 5, k.pal("#2a4a22", "#3a5e2c", "#4e7438"), 5, { top: .4 });
+    k.box(ix - 6, g - 10, ix + 4, g - 3, white); k.ridge(ix - 6, ix + 4, g - 10, 3, roof);
+    k.block(ix + 4, ix + 6, ix + 8, g - 24, g - 3, white);
+    k.solid(ix + 6, g - 34, g - 24, (u) => .3 + 2.6 * u, roof);
+    k.win(ix + 6, g - 21, k.dark, .7);
+  } },
+  // A castle of white walls and red-tiled turrets clinging to a rocky crag.
+  ROU: { x: .62, w: 24, draw(k, cx, g) {
+    const { white, roof, rock } = k.m;
+    k.crag(cx, g + 2, 26, 18, rock, 6, { top: .35, steep: 1.2 });
+    const b = g - 15;
+    k.block(cx - 14, cx + 2, cx + 10, b - 16, b, white);
+    k.ridge(cx - 14, cx + 10, b - 16, 6, roof, { hip: .9 });
+    k.box(cx + 10, b - 22, cx + 16, b, white, { slope: .4 });
+    k.solid(cx + 13, b - 34, b - 22, (u) => .3 + 3.8 * u, roof);
+    k.turret(cx - 15, b, 20, 3, white, roof, 9);
+    k.block(cx - 6, cx - 3, cx, b - 26, b - 14, white); k.ridge(cx - 7, cx + 1, b - 26, 5, roof, { hip: .8 });
+    for (const [x, y] of [[cx - 10, b - 10], [cx - 4, b - 8], [cx + 4, b - 10], [cx + 13, b - 16], [cx - 15, b - 12], [cx - 4, b - 22]]) k.win(x, y, k.dark, .7);
+  } },
+  // A neo-Byzantine cathedral: gilded domes over green copper ones, a gold-domed bell tower.
+  BGR: { x: .62, w: 28, draw(k, cx, g) {
+    const { stone, copper, gold } = k.m, pale = k.pal("#8a8070", "#aaa08e", "#c8bea8", "#e0d8c4");
+    k.box(cx - 26, g - 18, cx + 22, g + 2, pale, { slope: .3 });
+    k.arches(cx - 24, cx + 20, g - 15, g - 8, 3, k.dark, .5);
+    for (const dx of [-20, -8, 8, 18]) { k.box(cx + dx - 3, g - 24, cx + dx + 3, g - 18, pale); k.dome(cx + dx, g - 24, 4, 4, copper); }
+    k.box(cx - 6, g - 34, cx + 6, g - 18, pale, { slope: .4 });
+    k.arches(cx - 4, cx + 4, g - 31, g - 26, 2, k.dark, .6);
+    k.dome(cx, g - 34, 8, 9, gold);
+    k.set(cx, g - 44, k.R(gold, .9, cx, g)); k.set(cx, g - 45, k.R(gold, .9, cx, g));
+    k.box(cx - 34, g - 40, cx - 27, g + 2, pale, { slope: .4 });
+    k.arches(cx - 32, cx - 29, g - 36, g - 32, 2, k.dark, .5);
+    k.dome(cx - 30.5, g - 40, 4, 6, gold);
+    k.solid(cx - 30.5, g - 50, g - 46, () => .5, gold);
+    k.glow(cx, g - 38, "#ffe7a0"); k.glow(cx - 31, g - 43, "#ffe7a0");
+  } },
+  // A huge white domed church: a great green dome on a square body with half-domes
+  // and small domes at its corners.
+  SRB: { x: .62, w: 28, draw(k, cx, g) {
+    const { white, copper, gold } = k.m;
+    k.box(cx - 24, g - 22, cx + 24, g + 2, white, { slope: .3 });
+    k.arches(cx - 22, cx + 22, g - 18, g - 10, 4, k.dark, .5);
+    for (const dx of [-16, 16]) k.dome(cx + dx, g - 22, 7, 6, copper);
+    for (const dx of [-22, 22]) { k.box(cx + dx - 2, g - 32, cx + dx + 2, g - 22, white); k.dome(cx + dx, g - 32, 3, 4, copper); k.set(cx + dx, g - 37, k.R(gold, .9, cx, g)); }
+    k.box(cx - 11, g - 32, cx + 11, g - 22, white, { slope: .35 });
+    k.arches(cx - 9, cx + 9, g - 30, g - 25, 3, k.dark, .6);
+    k.dome(cx, g - 32, 13, 14, copper);
+    k.solid(cx, g - 50, g - 46, () => 1.5, gold);
+    k.line(cx - 2, g - 52, cx + 2, g - 52, k.R(gold, .9, cx, g)); k.line(cx, g - 50, cx, g - 55, k.R(gold, .9, cx, g));
+  } },
+});
+
+Object.assign(HAB_SIGHTS, {
+  // A red brick castle whose towers are trimmed with white stone and topped with
+  // tall pointed roofs.
+  BLR: { x: .62, w: 26, draw(k, cx, g) {
+    const { brick, white, roof } = k.m;
+    k.box(cx - 24, g - 14, cx + 24, g + 2, brick, { slope: .35 });
+    k.ridge(cx - 24, cx + 24, g - 14, 3, roof);
+    for (const [dx, h, cap] of [[-24, 30, 12], [-8, 36, 14], [10, 32, 13], [24, 26, 10]]) {
+      const x = cx + dx;
+      k.box(x - 4, g - h, x + 4, g + 2, brick, { slope: .4 });
+      for (let y = g - h + 4; y < g; y += 6) { k.box(x - 4, y, x + 4, y, white, { v: -.1 }); k.win(x, y + 3, k.dark, .5); }
+      k.solid(x, g - h - cap, g - h, (u) => .4 + 4.8 * Math.pow(u, 1.3), roof);
+    }
+  } },
+  // A round stone fortress on the riverbank with round towers and wooden cone roofs.
+  MDA: { x: .8, w: 26, draw(k, cx, g) {
+    const { stone, wood } = k.m, shingle = k.pal("#3a2a1a", "#5a422a", "#7a5c3c", "#9a7a54");
+    k.solid(cx, g - 18, g + 2, () => 20, stone, { v: .05 });
+    for (let x = cx - 19; x <= cx + 19; x += 3) k.set(x, g - 19, k.R(stone, .5, x, g));
+    for (const [dx, h] of [[-20, 26], [-7, 28], [8, 28], [20, 26]]) {
+      k.solid(cx + dx, g - h, g + 2, () => 4, stone);
+      k.cone(cx + dx, g - h - 10, g - h, 5, shingle);
+      k.win(cx + dx, g - h + 6, k.dark, .5);
+    }
+    k.arches(cx - 2, cx + 2, g - 8, g, 4, k.dark, 0);
+  } },
+  // A tall tiered bell tower crowned with a golden dome, beside a white church
+  // with gilded domes above the river.
+  UKR: { x: .62, w: 28, draw(k, cx, g) {
+    const { white, gold, copper } = k.m;
+    k.box(cx - 2, g - 18, cx + 26, g + 2, white, { slope: .3 });
+    k.arches(cx + 1, cx + 24, g - 14, g - 6, 3, k.dark, .5);
+    k.ridge(cx - 2, cx + 26, g - 18, 3, copper);
+    k.onion(cx + 6, g - 21, 3, 7, gold); k.onion(cx + 20, g - 21, 3, 7, gold);
+    k.box(cx + 10, g - 28, cx + 16, g - 18, white); k.onion(cx + 13, g - 28, 4.5, 10, gold);
+    // the bell tower: four shrinking tiers of columns
+    let y = g + 2;
+    for (const [hw, h] of [[7, 18], [5.5, 14], [4.5, 12], [3.5, 10]]) {
+      k.box(cx - 14 - hw, y - h, cx - 14 + hw, y, white, { slope: .4 });
+      for (let x = cx - 14 - hw + 1; x < cx - 14 + hw; x += 2) k.set(x, y - h * .5, k.R(white, .2, x, y));
+      k.box(cx - 14 - hw - 1, y - h, cx - 14 + hw + 1, y - h, copper, { v: .1 });
+      y -= h;
+    }
+    k.onion(cx - 14, y, 3.5, 10, gold);
+    k.solid(cx - 14, y - 14, y - 10, () => .5, gold);
+    k.glow(cx - 14, y - 5, "#ffe7a0"); k.glow(cx + 13, g - 33, "#ffe7a0");
+  } },
+  // Nine shining steel spheres joined by tubes: a giant model of an iron crystal.
+  BEL: { x: .62, w: 22, draw(k, cx, g) {
+    const steel = k.pal("#4a525c", "#6a747e", "#9aa4ae", "#cad2da", "#f4f8fc"), tube = k.R(steel, .55, cx, g);
+    const pts = [], s = 15, cy = g - 38;
+    // a cube standing on one corner, seen at an angle: its eight corners and middle
+    for (const [a, b, c2] of [[-1, -1, -1], [1, -1, -1], [-1, 1, -1], [1, 1, -1], [-1, -1, 1], [1, -1, 1], [-1, 1, 1], [1, 1, 1], [0, 0, 0]]) {
+      const x = a * .7 - b * .7, y = (a + b) * .4 + c2 * .82, z = c2 * .58 - (a + b) * .5;
+      pts.push([cx + x * s, cy + y * s * .95, z]);
+    }
+    for (let i = 0; i < 8; i++) for (let j = i + 1; j < 8; j++) {
+      const dd = Math.hypot(pts[i][0] - pts[j][0], pts[i][1] - pts[j][1]), bits = i ^ j;
+      if (bits === 1 || bits === 2 || bits === 4) k.line(pts[i][0], pts[i][1], pts[j][0], pts[j][1], tube);
+    }
+    for (let i = 0; i < 8; i++) k.line(pts[i][0], pts[i][1], pts[8][0], pts[8][1], tube);
+    const low = pts.reduce((a, p) => (p[1] > a[1] ? p : a));
+    k.line(low[0], low[1], low[0], g + 2, tube);
+    k.line(low[0] - 1, low[1], low[0] - 6, g + 2, tube); k.line(low[0] + 1, low[1], low[0] + 6, g + 2, tube);
+    for (const p of pts.slice().sort((a, b) => a[2] - b[2])) {
+      pxBlob(k.t, Math.round(p[0]), Math.round(p[1]), 4, 4, steel);
+      k.glow(p[0] - 1, p[1] - 1, "#e0f0ff"); k.glow(p[0] + 1, p[1], "#e0f0ff");
+    }
+  } },
+  // A long medieval castle with slate roofs and round towers on a wooded hill above a town.
+  LUX: { x: .62, w: 28, draw(k, cx, g) {
+    const { stone, slate } = k.m, hill = k.pal("#2e4a22", "#3e5e2c", "#527238", "#688a46");
+    k.crag(cx, g + 2, 36, 12, hill, 7, { top: .4, steep: 1.6 });
+    const b = g - 10;
+    k.box(cx - 24, b - 14, cx + 16, b, stone, { slope: .35 });
+    k.ridge(cx - 24, cx + 16, b - 14, 6, slate, { hip: .4 });
+    for (let x = cx - 22; x < cx + 15; x += 3) k.win(x, b - 8, k.dark, .5);
+    k.block(cx - 4, cx, cx + 4, b - 30, b - 12, stone); k.ridge(cx - 5, cx + 5, b - 30, 6, slate, { hip: .9 });
+    k.turret(cx + 18, b, 22, 3, stone, slate, 9);
+    k.turret(cx - 26, b, 18, 2.6, stone, slate, 8);
+    k.box(cx + 4, b - 20, cx + 14, b - 12, stone, { v: -.05 }); k.gable(cx + 3, cx + 15, b - 20, 5, slate);
+  } },
+  // A tall slim round tower with a conical stone cap beside a roofless old church
+  // on green hills.
+  IRL: { x: .62, w: 20, draw(k, cx, g) {
+    const grey = k.pal("#4a4844", "#666260", "#86827a", "#a6a098", "#c4beb4");
+    k.solid(cx, g - 46, g + 2, (u) => 3 + u * .8, grey);
+    k.cone(cx, g - 54, g - 46, 3.6, grey, { v: -.05 });
+    for (const y of [g - 42, g - 30]) k.win(cx - 1, y, k.dark, 0);
+    k.win(cx, g - 14, k.dark, 0);
+    // the ruined church: bare gables and an empty window
+    k.box(cx + 8, g - 14, cx + 28, g + 2, grey, { slope: .3 });
+    k.gable(cx + 7, cx + 15, g - 14, 7, grey);
+    k.gable(cx + 22, cx + 29, g - 14, 6, grey, { v: -.1 });
+    for (let y = g - 16; y < g - 8; y++) k.set(cx + 11, y, k.R(grey, 0, cx, y));
+    for (let x = cx + 16; x < cx + 22; x++) k.set(x, g - 14, -1);
+    k.arches(cx + 17, cx + 21, g - 10, g - 3, 2, k.dark, 0);
+  } },
+  // A riverside watchtower of carved limestone: a bastion with battlements, and a
+  // square tower with little domed lookouts at its corners.
+  PRT: { x: .72, w: 18, draw(k, cx, g) {
+    const lime = k.pal("#8a7e6a", "#aca08a", "#cabea6", "#e2d8c2", "#f4ecdc"), { stone } = k.m;
+    k.box(cx - 16, g - 12, cx + 6, g + 2, lime, { slope: .3 });
+    k.crenel(cx - 16, cx + 6, g - 12, lime);
+    for (let x = cx - 14; x < cx + 6; x += 3) k.set(x, g - 12, k.P("#c8302a"));
+    k.block(cx - 5, cx + 1, cx + 7, g - 40, g - 12, lime);
+    k.crenel(cx - 5, cx + 7, g - 40, lime);
+    k.arches(cx - 3, cx + 5, g - 34, g - 31, 2, k.dark, .5);
+    k.box(cx - 4, g - 26, cx + 6, g - 25, lime, { v: .2 });
+    k.arches(cx - 2, cx + 4, g - 22, g - 18, 3, k.dark, .5);
+    for (const dx of [-5, 7]) { k.solid(cx + dx, g - 44, g - 38, () => 1.2, lime); k.dome(cx + dx, g - 44, 1.6, 3, lime); }
+    k.box(cx - 2, g - 44, cx + 4, g - 40, lime, { v: .1 }); k.crenel(cx - 2, cx + 4, g - 44, lime);
+    for (const dx of [-16, 6]) { k.solid(cx + dx, g - 16, g - 12, () => 1, lime); k.dome(cx + dx, g - 16, 1.5, 2, lime); }
+  } },
+  // A honey-colored fortress city on the harbor: sloping bastion walls, a big dome
+  // and a slender spire above flat-roofed houses.
+  MLT: { x: .62, w: 34, draw(k, cx, g) {
+    const { honey, slate } = k.m, dome = k.pal("#3a3e48", "#50566a", "#6e7488", "#9096a8");
+    for (let x = cx - 38; x <= cx + 38; x++) for (let y = g - 12; y <= g + 2; y++) {
+      const slope = (y - g + 12) * .25;
+      if (Math.abs(x - cx) < 38 - (12 - (y - g + 12)) * .3) k.set(x, y, k.R(honey, .62 - (x - cx) / 76 * .25 - slope * .05, x, y));
+    }
+    for (let i = 0; i < 12; i++) {
+      const x = cx - 34 + i * 6, h = 6 + (i * 5 % 7);
+      k.box(x, g - 12 - h, x + 5, g - 12, honey, { slope: .35, v: (i % 2) * .08 });
+      k.win(x + 2, g - 12 - h + 2, k.dark, .5);
+    }
+    k.box(cx - 6, g - 30, cx + 6, g - 18, honey, { slope: .4 });
+    k.dome(cx, g - 30, 7, 9, dome);
+    k.solid(cx, g - 44, g - 39, () => 1, honey);
+    k.box(cx + 16, g - 34, cx + 20, g - 18, honey, { slope: .4 });
+    k.solid(cx + 18, g - 52, g - 34, (u) => .3 + 2.4 * u, slate);
+  } },
+  // A square stone keep with battlements among palms and cypresses.
+  CYP: { x: .64, w: 18, draw(k, cx, g) {
+    const { honey } = k.m;
+    k.block(cx - 9, cx + 1, cx + 9, g - 34, g + 2, honey);
+    k.crenel(cx - 9, cx + 9, g - 34, honey);
+    for (const [x, y] of [[cx - 5, g - 28], [cx + 4, g - 28], [cx - 5, g - 18], [cx + 5, g - 16], [cx, g - 8]]) k.win(x, y, k.dark, .4);
+    k.box(cx - 3, g - 37, cx + 2, g - 35, honey, { v: .1 });
+    const palm = k.pal("#22401f", "#2e5a28", "#447a34", "#5e9644"), trunk = k.m.wood;
+    for (const [x, h] of [[cx - 18, 20], [cx + 16, 16], [cx + 22, 22]]) {
+      k.line(x, g + 2, x + 1, g - h, k.R(trunk, .6, x, g));
+      for (const [dx, dy] of [[-5, 2], [-4, 0], [-2, -1], [2, -1], [4, 0], [5, 2], [-3, 2], [3, 2], [0, -2]]) k.line(x + 1, g - h, x + 1 + dx, g - h + dy, k.R(palm, .5 + (dy < 0 ? .3 : 0), x, g));
+    }
+    k.solid(cx - 26, g - 22, g + 2, (u) => .4 + 2 * Math.sin(u * 2.8), palm);
+  } },
+  // A walled old town by the sea: stout walls and a big round fortress tower,
+  // packed orange roofs and a bell tower.
+  HRV: { x: .66, w: 32, draw(k, cx, g) {
+    const { stone, roof } = k.m;
+    for (let i = 0; i < 14; i++) {
+      const x = cx - 30 + i * 4.5, h = 8 + (i * 7 % 5);
+      k.box(x, g - 6 - h, x + 4, g - 6, k.m.honey, { slope: .3, v: (i % 3) * .05 });
+      k.ridge(x - .5, x + 4.5, g - 6 - h, 2, roof);
+    }
+    k.box(cx - 34, g - 8, cx + 30, g + 2, stone, { slope: .3 });
+    k.crenel(cx - 34, cx + 30, g - 8, stone);
+    k.solid(cx - 30, g - 28, g + 2, (u) => 5 + u * 2, stone);
+    k.crenel(cx - 36, cx - 24, g - 28, stone);
+    k.solid(cx - 30, g - 32, g - 28, () => 3, stone, { v: .05 });
+    k.box(cx + 4, g - 34, cx + 8, g - 6, stone, { slope: .4 });
+    k.arches(cx + 5, cx + 7, g - 32, g - 29, 2, k.dark, .5);
+    k.solid(cx + 6, g - 40, g - 34, (u) => .4 + 2.4 * u, roof);
+    k.box(cx + 22, g - 22, cx + 30, g - 8, stone); k.crenel(cx + 22, cx + 30, g - 22, stone);
+  } },
+  // A tall single stone arch bridge across a green river, a stone tower at each end.
+  BIH: { x: .8, w: 26, haze: .06, draw(k, cx, g) {
+    const { stone, roof } = k.m, river = k.pal("#2a5a5a", "#3a7a74", "#5a9a8e");
+    for (let x = cx - 18; x <= cx + 18; x++) for (let y = g - 2; y <= g + 2; y++) k.set(x, y, k.R(river, .5 + (x + y) % 3 * .1, x, y));
+    const span = 16, rise = 22, deck = g - rise - 3;
+    for (let x = cx - span - 2; x <= cx + span + 2; x++) {
+      const u = (x - cx) / span, under = Math.abs(u) <= 1 ? g - rise * Math.sqrt(1 - u * u) : g + 2;
+      const top = deck - 1 + Math.round(u * u * 2);
+      for (let y = top; y < under; y++) k.set(x, y, k.R(stone, .62 - u * .2 - (y === top ? -.15 : 0), x, y));
+    }
+    for (const s of [-1, 1]) {
+      const x0 = cx + s * (span + 3), x1 = x0 + s * 12;
+      k.box(Math.min(x0, x1), deck - 6, Math.max(x0, x1), g + 2, stone, { slope: .35 });
+      k.ridge(Math.min(x0, x1) - 1, Math.max(x0, x1) + 1, deck - 6, 4, roof, { hip: .8 });
+      k.win(x0 + s * 4, deck, k.dark, .6); k.win(x0 + s * 8, deck + 6, k.dark, .6);
+    }
+    k.shrubs(cx - 40, cx - 28, g + 1, 6, 4); k.shrubs(cx + 28, cx + 40, g + 1, 6, 5);
+  } },
+  // A little island village of stone houses with terracotta roofs packed onto a mound in the sea.
+  MNE: { x: .7, w: 26, draw(k, cx, g) {
+    const { stone, roof, honey } = k.m, green = k.pal("#22401f", "#2e5428", "#3e6a32");
+    k.crag(cx, g + 2, 28, 14, k.pal("#6a5a48", "#867460", "#a08e76", "#baa88e"), 8, { top: .2, steep: 1.4 });
+    for (let i = 0; i < 26; i++) {
+      const dx = -22 + (i * 37 % 44), row = (i * 13) % 4, y = g - 4 - row * 3 - Math.max(0, 9 - Math.abs(dx) * .4);
+      const pal = i % 3 ? honey : stone;
+      k.box(cx + dx, y - 4, cx + dx + 4, y, pal, { slope: .4 });
+      k.ridge(cx + dx - .5, cx + dx + 4.5, y - 4, 2, roof);
+      k.win(cx + dx + 2, y - 2, k.dark, .5);
+    }
+    k.box(cx - 2, g - 26, cx + 1, g - 14, stone);
+    k.solid(cx - .5, g - 30, g - 26, (u) => .4 + 1.5 * u, roof);
+    for (const dx of [-26, 24]) k.solid(cx + dx, g - 14, g + 2, (u) => .4 + 1.6 * Math.sin(u * 2.8), green);
+  } },
+  // A small Byzantine church of brick and stone with a tiled dome on a cliff above the lake.
+  MKD: { x: .8, w: 22, haze: .06, draw(k, cx, g) {
+    const { roof } = k.m, rock = k.pal("#4a4034", "#665846", "#82725c", "#9e8c74"), banded = k.pal("#5a3a28", "#86583c", "#b48a62", "#d8b88e");
+    k.crag(cx + 4, g + 2, 26, 22, rock, 9, { top: .3, steep: .8 });
+    const b = g - 19;
+    k.box(cx - 8, b - 10, cx + 8, b, banded, { slope: .3 });
+    for (let y = b - 9; y < b; y += 2) for (let x = cx - 8; x <= cx + 8; x++) if (hash2(x, y, 996) > .5) k.set(x, y, k.R(banded, .3, x, y));
+    k.gable(cx - 9, cx + 9, b - 10, 4, roof);
+    k.box(cx - 3, b - 18, cx + 3, b - 12, banded, { slope: .4 });
+    k.dome(cx, b - 18, 4, 4, roof);
+    k.arches(cx - 2, cx + 2, b - 16, b - 14, 2, k.dark, .5);
+    k.arches(cx - 6, cx + 6, b - 7, b - 4, 4, k.dark, .5);
+    k.shrubs(cx - 24, cx - 12, b + 6, 5, 6);
+  } },
+  // White Ottoman houses with rows of windows stacked up a hillside under a citadel.
+  ALB: { x: .62, w: 32, draw(k, cx, g) {
+    const { white, roof, stone } = k.m, hill = k.pal("#4a5a2e", "#5e7038", "#748844", "#8aa054");
+    k.crag(cx, g + 2, 40, 30, hill, 10, { top: .15, steep: 1.1 });
+    for (let row = 0; row < 5; row++) for (let i = 0; i < 7 - row; i++) {
+      if (hash2(row, i, 998) < .18) continue;
+      const x = cx - 30 + row * 5 + i * 8 + (row % 2) * 3 + Math.round((hash2(row, i, 999) - .5) * 4), y = g - row * 5.5 + Math.round(hash2(i, row, 999) * 2);
+      if (y < g - 28 + Math.abs(x - cx) * .6) continue;
+      k.box(x, y - 5, x + 6, y, white, { slope: .3 });
+      k.ridge(x - .5, x + 6.5, y - 5, 2, roof);
+      for (let wx = x + 1; wx < x + 6; wx += 2) k.win(wx, y - 3, k.P("#3a3028"), .5);
+    }
+    k.box(cx - 10, g - 34, cx + 10, g - 28, stone, { slope: .3 }); k.crenel(cx - 10, cx + 10, g - 34, stone);
+    k.box(cx - 4, g - 40, cx + 1, g - 34, stone); k.crenel(cx - 4, cx + 1, g - 40, stone);
+  } },
+  // A hilltop fortress over an old town, and the slender pencil minaret of a stone mosque below.
+  XKX: { x: .76, w: 28, haze: .06, draw(k, cx, g) {
+    const { stone, white, slate } = k.m, hill = k.pal("#3e5228", "#506632", "#667c40", "#7c9250");
+    k.crag(cx - 10, g + 2, 28, 24, hill, 11, { top: .3, steep: 1.2 });
+    const b = g - 22;
+    k.box(cx - 26, b - 6, cx + 4, b + 1, stone, { slope: .3 }); k.crenel(cx - 26, cx + 4, b - 6, stone);
+    k.box(cx - 14, b - 14, cx - 6, b - 6, stone); k.crenel(cx - 14, cx - 6, b - 14, stone);
+    const mx = cx + 16;
+    k.box(mx - 10, g - 10, mx + 6, g + 2, stone, { slope: .3 });
+    k.dome(mx - 2, g - 10, 7, 7, slate);
+    k.solid(mx + 9, g - 40, g + 2, () => 1.3, white);
+    k.box(mx + 7, g - 30, mx + 11, g - 29, white, { v: -.1 });
+    k.cone(mx + 9, g - 48, g - 40, 1.6, slate);
+  } },
+  // San Francisco's suspension bridge: two tall red-orange towers and the sweep of
+  // its main cables, reaching out over the bay.
+  CA: { x: .7, w: 8, haze: .14, draw(k, cx, g) {
+    const red = k.pal("#5a1e10", "#8a2e18", "#b0402a", "#c8583a", "#dc7650");
+    const t1 = cx - 4, t2 = cx + 62, deck = g - 14, top = g - 62;
+    const cable = (x) => x < t1 ? top + Math.pow((t1 - x) / 50, .9) * 44 : x > t2 ? top + Math.pow((x - t2) / 50, .9) * 44
+      : top + 40 * 4 * (x - t1) * (t2 - x) / ((t2 - t1) * (t2 - t1));
+    for (let x = t1 - 50; x <= t2 + 60; x++) {
+      k.set(x, deck, k.R(red, .7, x, deck)); k.set(x, deck + 1, k.R(red, .3, x, deck)); k.set(x, deck + 2, k.R(red, .1, x, deck));
+      const cy = Math.min(deck - 1, Math.round(cable(x)));
+      k.set(x, cy, k.R(red, .6, x, cy));
+      if (x % 4 === 0) for (let y = cy + 1; y < deck; y++) k.set(x, y, k.R(red, .25, x, y));
+      if (x % 5 === 0) k.glow(x, deck, "#ffd890");
+    }
+    for (const tx of [t1, t2]) {
+      for (const s of [-1, 1]) for (let y = top - 2; y <= g + 2; y++) {
+        const x = tx + s * (2 + (y - top) * .03);
+        k.set(x, y, k.R(red, s < 0 ? .8 : .45, x, y)); k.set(x + s, y, k.R(red, s < 0 ? .65 : .3, x, y));
+      }
+      for (const y of [top, top + 12, top + 24, top + 34, deck - 2]) for (let x = tx - 2; x <= tx + 2; x++) k.set(x, y, k.R(red, .55, x, y));
+      k.glow(tx, top - 3, "#ff6a5a");
+    }
+  } },
+  // Four giant faces carved into a granite cliff in pine-dark hills.
+  SD: { x: .62, w: 30, haze: .06, draw(k, cx, g) {
+    const gr = k.pal("#4e4a46", "#6c6660", "#8c857c", "#aca498", "#c8c0b2");
+    k.crag(cx, g + 2, 42, 44, gr, 12, { top: .45, steep: 1.3 });
+    // the faces: brow, deep-set eyes, nose, mouth and chin, each turned a little
+    // to the left, lit from the left, set back into the rock between them
+    for (const [i, dx] of [-21, -8, 4, 17].entries()) {
+      const fx = cx + dx, fy = g - 25 + (i === 2 ? 3 : i === 3 ? 1 : 0);
+      for (let y = -9; y <= 9; y++) for (let x = -5; x <= 5; x++) {
+        const w = y < 3 ? 5 : 5 - (y - 2) * .5;          // the jaw narrows to the chin
+        if (Math.abs(x + .5) > w || (y < -6 && Math.abs(x) > 3 + (y + 9))) continue;
+        const turn = i === 3 ? 1 : -1;
+        let v = .78 - (x - turn) * .07 - (Math.abs(x) > w - 1.2 ? .25 : 0);
+        if (y <= -7) v -= .12;                                        // hair
+        if (y === -5) v -= .2;                                        // brow shadow
+        if (y === -4 && (x === -2 + turn || x === 2 + turn)) v = .05; // eyes
+        if (y >= -3 && y <= 1 && x === turn) v += .18;                // nose ridge
+        if (y >= -2 && y <= 2 && x === turn + 1) v -= .3;             // nose shadow
+        if (y === 4 && x >= turn - 2 && x <= turn + 2) v = .15;       // mouth
+        if (y === 7) v -= .15;                                        // under the chin
+        k.set(fx + x, fy + y, k.R(gr, v, fx + x, fy + y));
+      }
+    }
+    // talus below the faces, and dark pines along the foot
+    for (let x = cx - 26; x <= cx + 24; x++) for (let y = g - 13; y < g - 4; y++) if (hash2(x >> 1, y >> 1, 997) > .45) k.set(x, y, k.R(gr, .45 + (x < cx ? .1 : -.1), x, y));
+    const pine = k.pal("#16221a", "#1e2e22", "#283c2c", "#324a36");
+    for (let x = cx - 44; x <= cx + 44; x++) {
+      const h = 3 + 7 * vnoise(x / 3, 0, 996) * (x % 3 === 1 ? 1 : .6);
+      for (let y = 0; y < h; y++) if (Math.abs(x % 3 - 1) <= (h - y) / 3) k.set(x, g + 2 - y, k.R(pine, .3 + (x % 3 === 0 ? .3 : 0) + y * .02, x, y));
+    }
+  } },
+});
