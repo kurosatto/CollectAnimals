@@ -82,6 +82,18 @@ class StatesTest {
         val sg = StateInfo("SGP", "Singapore", emptyList(), region = "asia") { error("not needed") }
         assertEquals(listOf("CA", "NC", "OR", "SC", "AUT", "DEU", "SGP"), StateList.alphabetical(listOf(sg) + eu + states).map { it.code })
         assertEquals("country", sg.word)
+        // The picker opens on regions: United States, Europe, then Asia, each A to Z.
+        val groups = StateList.groups(listOf(sg) + eu + states)
+        assertEquals(listOf("United States", "Europe", "Asia"), groups.map { it.label })
+        assertEquals(listOf("AUT", "DEU"), groups[1].items.map { it.code })
+        assertEquals("4 states", groups[0].count)
+        assertEquals("2 countries", groups[1].count)
+        // Seven places fit in one list; more than eight in several regions open on the regions.
+        assertTrue(!StateList.drills(groups))
+        val many = (1..8).map { StateInfo("S$it", "State $it", emptyList()) { error("not needed") } }
+        assertTrue(StateList.drills(StateList.groups(many + eu)))
+        // Only one region stays a plain list, however long.
+        assertTrue(!StateList.drills(StateList.groups(many + states)))
     }
 
     @Test

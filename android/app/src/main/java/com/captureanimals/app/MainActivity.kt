@@ -570,7 +570,7 @@ fun ResultCard(r: CaptureResult, onDismiss: () -> Unit, onPick: (String?) -> Uni
                 if (picking) StateListDialog(states, "Where was this photo taken?",
                     "The photo has no location we can use, so it was checked against " +
                         "${states.firstOrNull { it.code == r.state }?.name ?: "your home"}'s animals.",
-                    onDismiss = { picking = false }) { code -> picking = false; if (code != r.state) go(code) }
+                    current = r.state, onDismiss = { picking = false }) { code -> picking = false; if (code != r.state) go(code) }
             }
             if (r.matched && safety != null) SafetyCard(safety)
             if (r.whereWhen != null && onSaveWhereWhen != null) WhereWhenRow(r.whereWhen, parks, onSaveWhereWhen)
