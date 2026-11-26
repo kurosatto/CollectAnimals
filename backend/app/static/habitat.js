@@ -179,19 +179,21 @@ function habOutNow(caught, fresh = new Set()) {
 // A newly captured animal doesn't just appear in your habitat: it walks in from the edge
 // of the meadow (flies in, or swims in from the open sea), twinkling, and says hello with
 // its name and a fun fact. The phone remembers which animals it has already welcomed
-// (localStorage "hab.seen", slugs only); the first time it sees a habitat, everyone there
-// counts as already moved in.
+// (localStorage "hab.seen.<state>", slugs only, one list per home state, so moving to
+// another state doesn't greet its old captures as new); the first time it sees a
+// habitat, everyone there counts as already moved in.
 function habNewcomers(caught) {
   const fresh = new Set();
   // Nothing caught yet (or the collection hasn't loaded): don't mark the empty list as
   // seen, or the first real load would welcome its animals as newcomers.
   if (hab.visit || !caught.length) return fresh;
   let seen = null;
-  try { const v = localStorage.getItem("hab.seen"); seen = v === null ? null : new Set(v.split(",").filter(Boolean)); } catch { return fresh; }
+  const store = `hab.seen.${myState.code || ""}`;
+  try { const v = localStorage.getItem(store); seen = v === null ? null : new Set(v.split(",").filter(Boolean)); } catch { return fresh; }
   const slugs = caught.map((e) => e.species.slug);
   if (seen) for (const s of slugs) if (!seen.has(s) && fresh.size < 3) fresh.add(s);
   const all = new Set([...(seen || []), ...slugs]);
-  if (!seen || all.size !== seen.size) try { localStorage.setItem("hab.seen", [...all].join(",")); } catch {}
+  if (!seen || all.size !== seen.size) try { localStorage.setItem(store, [...all].join(",")); } catch {}
   return fresh;
 }
 function habArrive(a) {
