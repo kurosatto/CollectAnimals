@@ -338,7 +338,7 @@ function habNote() {
   const who = hab.visit ? `${hab.visit.username}'s habitat` : "here";
   $("hab-note").textContent = !n ? (hab.visit ? `No animals in ${who} yet.` : "Capture animals and they'll move in here.")
     : `${n} animal${n > 1 ? "s" : ""} live${n > 1 ? "" : "s"} ${hab.visit ? "in " + who : "here"}` + out + (asleep ? `, ${asleep} asleep` : "")
-      + (hab.wx ? ". " + habWxLine() : ". Tap one to say hi.")
+      + (hab.wx ? ". " + habWxLine() : hab.visit ? ". Tap one to say hi." : ". Tap one to say hi, or tap the grass to scatter seeds.")
       // Whole sentences: "It's fall." and at night "It's fall, under a full moon."
       + ` It's ${habSeasonWords()}${phase === "night" ? ", under a " + habMoonName()[1].toLowerCase() : ""}.`;
   const night = phase === "night";
@@ -1458,7 +1458,12 @@ function habTap(ev) {
     const [px, py] = habPose(a, awake, roost);
     return { a, awake, px, py, z: (awake && HAB_FLIERS.has(a.role) ? 1000 : 0) + py };
   }).filter((h) => Math.abs(x - h.px) <= 18 && y >= h.py - 34 && y <= h.py + 4).sort((p, q) => q.z - p.z);
-  if (!hits.length) { hab.picked = null; habDraw(); return; }
+  if (!hits.length) {
+    hab.picked = null;
+    if (typeof habSeed === "function") habSeed(x, y);  // the empty meadow: scatter some seeds
+    habDraw();
+    return;
+  }
   const h = hits[0];
   if (hab.picked === h.a && performance.now() < hab.pickedUntil) {
     // Again: the next fact, or (with no facts to tell) its Field Guide page.

@@ -121,11 +121,13 @@ const HAB_WHO = {
   bear: habMammal(/(^|_)bear$/),
   deer: habMammal(/(^|_)deer$|(^|_)elk$|moose|pronghorn|sheep$|mountain_goat|bison|caribou|javelina/),
   walker: (a) => ["walk", "hop", "shore"].includes(a.role) && !HAB_FLIERS.has(a.role),
+  // Come for scattered seeds (habSeed): small birds, ground birds, jays and crows, squirrels, mice.
+  seedeater: (a) => ["smallbird", "groundbird", "jay", "squirrel", "mouse"].some((w) => HAB_WHO[w](a)) && !HAB_SEA.has(a.role),
 };
 const habIs = (a, who) => !!HAB_WHO[who] && HAB_WHO[who](a);
 
 // Visits where a flier lands and sits still, rather than flying around the spot.
-const HAB_LANDS = new Set(["perch", "ride", "bathe", "home"]);
+const HAB_LANDS = new Set(["perch", "ride", "bathe", "home", "peck"]);
 // Visits that walk a path through or across the decoration: [gx, gy] points.
 const HAB_DECOR_PATHS = {
   through: [[0, 31], [32, 31]],
@@ -154,6 +156,7 @@ function habDecorTick(dt) {
   for (const d of hab.decor) {
     d.t += dt;
     const t = d.t, fx = d.it.fx, riders = Object.values(d.busy).some((a) => a.dv && a.dv.d === d && a.dv.stage === "stay");
+    if (d.seeds) { d.gone = d.left <= 0 || d.t > 45; continue; }
     d.gone = false;
     if (d.it.frames > 1) {
       if (d.key === "pinwheel") d.frame = Math.floor(t * (5 + Math.abs(gust))) % 4;
@@ -203,6 +206,8 @@ function habDecorTick(dt) {
     }
     habDecorParticles(d, dt, phase, gust);
   }
+  if (hab.decor.some((d) => d.seeds && d.gone && !Object.values(d.busy).some((a) => a.dv && a.dv.d === d)))
+    hab.decor = hab.decor.filter((d) => !(d.seeds && d.gone));
   for (const p of hab.dfx) { p.life -= dt; p.vy += (p.g || 0) * dt; p.x += p.vx * dt; p.y += p.vy * dt; }
   hab.dfx = hab.dfx.filter((p) => p.life > 0);
   if (hab.dfx.length > 160) hab.dfx.splice(0, hab.dfx.length - 160);
@@ -308,7 +313,7 @@ function habDecorGo(a, dt, dv) {
       const [lo, hi] = HAB_STAY[v.act] || [5, 10];
       dv.left = rnd(lo, hi);
       a.rest = v.act === "sit" || v.act === "bask" || v.act === "shelter" ? pick("sit", "idle", "look") : v.act === "watch" ? "look" : "idle";
-      if (["eat", "drink", "fish", "watch", "dig", "chase"].includes(v.act)) a.dir = Math.sign(d.x + d.ox - a.x) || a.dir;
+      if (["eat", "drink", "fish", "watch", "dig", "chase", "peck"].includes(v.act)) a.dir = Math.sign(d.x + d.ox - a.x) || a.dir;
       if (v.act === "bump") habDecorKick(d, a);
     } else {
       a.x += dx / dist * step; a.y += dy / dist * step; a.odo += step; a.pause = 0;
@@ -322,8 +327,9 @@ function habDecorGo(a, dt, dv) {
   else if (v.act === "escort") { a.x = tx - 12 + Math.sin(a.phase) * 4; a.y = ty + Math.sin(a.phase * 1.7) * 3; a.dir = 1; }
   else if (v.act === "chase") { a.x = tx + Math.sin(a.phase * .8) * 14; a.y = ty; a.dir = Math.cos(a.phase * .8) > 0 ? -1 : 1; a.pause = 0; a.odo += dt * 8; }
   else { a.x = tx; a.y = ty; }
-  if (["eat", "drink", "fish", "dig"].includes(v.act) && (dv.peck -= dt) <= 0) {
+  if (["eat", "drink", "fish", "dig", "peck"].includes(v.act) && (dv.peck -= dt) <= 0) {
     dv.peck = rnd(.7, 1.8); a.peck = .35;
+    if (d.seeds && --d.left <= 0) d.gone = true;  // the last seed eaten
     if (v.act === "fish" || v.act === "drink") habRipple(a.x + a.dir * 12, a.y - 1);
   }
   if (a.peck > 0) a.peck -= dt;
@@ -419,9 +425,14 @@ function habDecorPose(a, awake) {
   return null;
 }
 
+const acts0 = (a) => (habAnimIdx && habAnimIdx.acts[a.s.slug]) || [];
 function habDecorAnim(a, awake) {
   if (!awake || !a.dv) return null;
-  if (habDecorLanded(a)) return ["idle", habIdleFrame(a.phase * 4 / 3, 1)];
+  if (habDecorLanded(a)) {
+    // pecking at seeds on the ground: its drawn head-down "eat" row
+    if (a.peck > 0 && acts0(a).includes("eat")) return ["eat", habCyc(a.phase * 2.5)];
+    return ["idle", habIdleFrame(a.phase * 4 / 3, 1)];
+  }
   // Coming in to land on it: the drawn landing (braking, feet out), as at a perch.
   const dv = a.dv, acts = habAnimIdx && habAnimIdx.acts[a.s.slug];
   if (dv.stage === "go" && !dv.path && HAB_LANDS.has(dv.v.act) && HAB_FLIERS.has(a.role) && acts && acts.includes("land")) {
@@ -442,6 +453,7 @@ function habDecorZ(a, y) {
 // ---- Drawing -------------------------------------------------------------------------------
 function habDecorSprite(c, d, phase) {
   if (d.gone) return;
+  if (d.seeds) return habSeedsDraw(c, d, phase);
   const img = habDecorImg(d.key);
   if (!img.complete || !img.naturalWidth) return;
   const t = habTinted(img, `decor/${d.key}`, phase), F = img.naturalHeight;
@@ -465,7 +477,8 @@ function habDecorDrawArea(c, phase, area) {
 
 // The meadow, pond and beach decorations as entries to sort in with the animals.
 function habDecorDepth() {
-  return hab.decor.filter((d) => ["ground", "pond", "sand"].includes(d.it.area)).map((d) => ({ decor: d, z: d.y + d.oy }));
+  // Seeds lie flat on the grass, under the animals standing round them.
+  return hab.decor.filter((d) => ["ground", "pond", "sand"].includes(d.it.area)).map((d) => ({ decor: d, z: d.y + d.oy - (d.seeds ? 6 : 0) }));
 }
 
 // Night lights per effect: [gx, gy, radius, "r,g,b"].
@@ -544,4 +557,47 @@ function habDecorFx(c, phase) {
     } else c.fillRect(x, y, p.col === "#f2c14e" ? 2 : 1, 1 + (p.vy > 20 ? 1 : 0));
   }
   c.globalAlpha = 1;
+}
+
+// ---- Seeds (2026-11-26) ------------------------------------------------------------------
+// Tap the empty meadow in your own habitat and a handful of seeds lands there. The nearest
+// small birds, ground birds, jays, squirrels and mice that are awake come over (birds fly in
+// and land), peck them up with their drawn "eat" row and wander off again. Nothing is
+// saved: the seeds are gone in under a minute.
+const HAB_SEED_IT = { area: "ground", frames: 1, visits: [[-6, 31], [38, 31], [7, 26], [26, 35]]
+  .map(([x, y]) => ({ who: "seedeater", act: "peck", x, y })) };
+function habSeed(x, y) {
+  const L = hab.L, p = L && L.pond;
+  if (!L || !habMine() || x < 10 || x > L.land - 10 || y < 178 || y > 268) return false;
+  if (((x - p.x) / (p.rx + 10)) ** 2 + ((y - p.y) / (p.ry + 8)) ** 2 < 1) return false;
+  const piles = hab.decor.filter((d) => d.seeds && !d.gone);
+  if (piles.length >= 2) piles[0].left = 0;  // the oldest pile is finished off
+  const d = { key: "_seeds", seeds: true, it: HAB_SEED_IT, x: Math.round(x), y: Math.round(y) + 1, ox: 0, oy: 0, frame: 0,
+              flip: false, busy: {}, t: 0, st: {}, left: 16, n: 16, seed: Math.floor(Math.random() * 1e6) };
+  hab.decor.push(d);
+  // A little patter as they land.
+  const ctx = typeof habAudioCtx === "function" && habAudioCtx();
+  if (ctx) for (let i = 0; i < 4; i++) habTone(ctx, "triangle", ctx.currentTime + .02 + i * .05 + Math.random() * .02, .03, 1800 + Math.random() * 900, 1500, .25);
+  // Whoever is nearest and free comes over.
+  const phase = habPhase(), comers = hab.animals
+    .filter((a) => !a.dv && !a.mode && habAwake(a, phase) && habIs(a, "seedeater") && !(a.flee > 0))
+    .sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y)).slice(0, HAB_SEED_IT.visits.length);
+  comers.forEach((a, i) => {
+    d.busy[i] = a;
+    a.dv = { d, i, v: HAB_SEED_IT.visits[i], path: null, k: 0, stage: "go", left: 0, peck: rnd(.2, .8) };
+    a.pause = 0;
+  });
+  if (!comers.length) d.t = 30;  // nobody's hungry: they lie there a little while
+  return true;
+}
+function habSeedsDraw(c, d, phase) {
+  const r = mulberry(d.seed), night = phase === "night";
+  const cols = night ? ["#6e6650", "#857a5c", "#5c5240"] : ["#d8b070", "#f0d090", "#a8804a"];
+  for (let i = 0; i < d.n; i++) {
+    const x = Math.round(d.x + (r() - .5) * 30), y = Math.round(d.y - 1 + (r() - .5) * 8), col = cols[Math.floor(r() * 3)];
+    if (i >= d.left) continue;  // eaten
+    c.fillStyle = night ? "#2c281c" : "#5a4020"; c.fillRect(x, y + 1, i % 3 ? 1 : 2, 1);  // its shadow
+    c.fillStyle = col; c.fillRect(x, y, 1, 1);
+    if (i % 3 === 0) c.fillRect(x + 1, y, 1, 1);
+  }
 }
