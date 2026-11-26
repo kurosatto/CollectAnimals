@@ -916,6 +916,7 @@ function habReact(a) {
   const awake = habAwake(a, habPhase()), slug = a.s.slug, bird = a.s.category === "bird";
   const acts = (habAnimIdx && habAnimIdx.acts[slug]) || [];
   if (!awake) { a.shake = .25; return; }  // stirs in its sleep and dozes on
+  habVoice(a);
   if (a.dv || a.mode === "perched" || a.mode === "toPerch") {
     if (bird) a.react = { kind: HAB_SINGERS.test(slug) ? "note" : "?", life: 1.6 };
     return;
@@ -4420,8 +4421,152 @@ function habAmbient(c, L, phase) {
   }
 }
 
+// ---- Calls: tap an awake animal and it answers (2026-11-26) ----------------------------
+// Made on the spot with Web Audio from a few tones and a puff of noise, so there are no
+// sound files to download or store. Songbirds sing a little phrase of their own (the
+// same tune every time for a species), owls hoot, ducks quack, crows caw, hawks scream,
+// doves coo, frogs croak, crickets chirp, bees buzz, foxes and coyotes yip, seals bark,
+// whales sing, squirrels chatter, mice squeak, snakes hiss. Bigger animals sound
+// lower. Quiet animals (deer, bugs, fish...) stay quiet. "Calls off" turns it off.
+const HAB_VOICES = [  // [slug pattern, voice, the groups it's for]
+  [/(^|_)owl$|owlet/, "hoot", "bird"],
+  [/duck|mallard|teal|wigeon|goose|brant|merganser|scaup|eider|pintail|shoveler|gadwall|bufflehead|goldeneye|canvasback|redhead|swan/, "quack", "bird"],
+  [/(^|_)crow$|raven|jay|magpie(?!_robin)|nutcracker|jackdaw|rook|chough|gull|kittiwake|^tern|_tern/, "caw", "bird"],
+  [/hawk|eagle|osprey|falcon|kestrel|kite|harrier|buzzard|merlin|caracara/, "scream", "bird"],
+  [/dove|(^|_)pigeon$/, "coo", "bird"],
+  [/(^|_)turkey$/, "gobble", "bird"],
+  [/quail|grouse|pheasant|chicken|partridge|ptarmigan|chachalaca/, "cluck", "bird"],
+  [/hummingbird/, "squeak", "bird"],
+  [/(^|_)bat$|mouse|(^|_)rat$|vole|shrew|pika|lemming|gerbil|hamster/, "squeak", "mammal"],
+  [/squirrel|chipmunk|marmot|prairie_dog|woodchuck|groundhog/, "chatter", "mammal"],
+  [/coyote|wolf|fox|jackal|dingo/, "yip", "mammal"],
+  [/seal|sea_lion|walrus/, "bark", "mammal"],
+  [/whale|dolphin|porpoise|orca/, "whale", "mammal marine"],
+  [/frog|toad|peeper/, "croak", "amphibian"],
+  [/snake|viper|adder|cobra|python|(^|_)boa$|racer/, "hiss", "reptile"],
+  [/cricket|katydid|cicada|grasshopper/, "chirr", "invertebrate"],
+  [/(^|_)bee$|bumble|wasp|hornet|yellowjacket/, "buzz", "invertebrate"],
+];
+const habAudio = { ctx: null, out: null, noise: null };
+const habCallsOn = () => { try { return localStorage.getItem("hab.calls") !== "0"; } catch { return true; } };
+function habVoiceOf(s) {
+  const hit = HAB_VOICES.find(([re, , cats]) => cats.split(" ").includes(s.category) && re.test(s.slug));
+  if (hit) return hit[1];
+  if (s.category !== "bird") return null;
+  return HAB_SINGERS.test(s.slug) ? "song" : "chip";
+}
+function habAudioCtx() {
+  if (!habCallsOn()) return null;
+  try {
+    if (!habAudio.ctx) {
+      const C = window.AudioContext || window.webkitAudioContext;
+      if (!C) return null;
+      const ctx = habAudio.ctx = new C();
+      habAudio.out = ctx.createGain(); habAudio.out.gain.value = .22; habAudio.out.connect(ctx.destination);
+      const buf = ctx.createBuffer(1, ctx.sampleRate * .6, ctx.sampleRate), d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      habAudio.noise = buf;
+    }
+    if (habAudio.ctx.state === "suspended") habAudio.ctx.resume();
+    return habAudio.ctx;
+  } catch { return null; }
+}
+// One tone from f0 to f1 Hz: a quick fade in, a fade out, an optional wobble (vib:
+// [rate, depth]) and band filter (band: [Hz, Q]); f2 bends it on through a third pitch.
+function habTone(ctx, type, at, len, f0, f1, vol, { vib, band, f2, soft, hold } = {}) {
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = type;
+  o.frequency.setValueAtTime(f0, at);
+  if (f2) { o.frequency.exponentialRampToValueAtTime(f1, at + len / 2); o.frequency.exponentialRampToValueAtTime(f2, at + len); }
+  else o.frequency.exponentialRampToValueAtTime(f1, at + len);
+  g.gain.setValueAtTime(.0001, at);
+  g.gain.exponentialRampToValueAtTime(vol, at + (soft ? len * .35 : Math.min(.012, len / 4)));
+  if (hold) g.gain.setValueAtTime(vol, at + len * .7);  // a held note, not a pluck
+  g.gain.exponentialRampToValueAtTime(.0001, at + len);
+  let tail = g;
+  o.connect(g);
+  if (band) { const f = ctx.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = band[0]; f.Q.value = band[1]; g.connect(f); tail = f; }
+  tail.connect(habAudio.out);
+  if (vib) {
+    const l = ctx.createOscillator(), lg = ctx.createGain();
+    l.frequency.value = vib[0]; lg.gain.value = vib[1]; l.connect(lg); lg.connect(o.frequency);
+    l.start(at); l.stop(at + len + .02);
+  }
+  o.start(at); o.stop(at + len + .02);
+}
+function habHiss(ctx, at, len, vol, hz, q = 1) {
+  const n = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+  n.buffer = habAudio.noise; f.type = "bandpass"; f.frequency.value = hz; f.Q.value = q;
+  g.gain.setValueAtTime(.0001, at); g.gain.exponentialRampToValueAtTime(vol, at + Math.min(.03, len / 3));
+  g.gain.setValueAtTime(vol, at + len * .6);
+  g.gain.exponentialRampToValueAtTime(.0001, at + len);
+  n.connect(f); f.connect(g); g.connect(habAudio.out);
+  n.start(at, Math.random() * .1); n.stop(at + len + .02);
+}
+function habVoice(a) {
+  const kind = habVoiceOf(a.s);
+  if (!kind) return;
+  const ctx = habAudioCtx();
+  if (!ctx) return;
+  const t = ctx.currentTime + .02, k = habScale(a.s.slug), lo = Math.pow(2, (1 - k) * .8);  // bigger, lower
+  // The same little tune every time for a species.
+  let seed = 7;
+  for (const ch of a.s.slug) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
+  const r = mulberry(seed), rr = (x, y) => x + r() * (y - x);
+  switch (kind) {
+    case "song": {
+      let at = t;
+      const n = 3 + Math.floor(r() * 4), base = rr(2300, 4000) * lo;
+      for (let i = 0; i < n; i++) {
+        const f = base * rr(.8, 1.3), len = rr(.05, .13);
+        habTone(ctx, "sine", at, len, f, f * rr(.7, 1.45), .5);
+        at += len + rr(.015, .06);
+      }
+      break;
+    }
+    case "chip": { const f = rr(2800, 4200) * lo; habTone(ctx, "sine", t, .05, f, f * .8, .7); habTone(ctx, "sine", t + .11, .05, f, f * .8, .55); break; }
+    case "hoot": { const f = rr(300, 420) * lo;
+      [0, .42, .7].slice(0, 2 + Math.floor(r() * 2)).forEach((d, i) => habTone(ctx, "sine", t + d, i ? .22 : .32, f * 1.05, f * .92, .45, { soft: true, hold: true })); break; }
+    case "quack": { const f = rr(220, 300) * lo;
+      for (let i = 0; i < 3; i++) habTone(ctx, "sawtooth", t + i * .2, .13, f, f * .78, 1.5, { band: [1000, 3] }); break; }
+    case "caw": { const f = rr(520, 680) * lo;
+      for (let i = 0; i < 2; i++) { habTone(ctx, "sawtooth", t + i * .3, .2, f, f * .75, 1.3, { band: [1300, 2] }); habHiss(ctx, t + i * .3, .18, .2, 1600, 2); } break; }
+    case "scream": { const f = rr(2400, 3000) * lo; habTone(ctx, "sawtooth", t, .55, f, f * .62, .6, { band: [2200, 2], vib: [28, 70], hold: true }); break; }
+    case "coo": { const f = rr(420, 520) * lo; habTone(ctx, "sine", t, .22, f, f * .85, .6, { soft: true }); habTone(ctx, "sine", t + .3, .38, f * .95, f * .8, .6, { soft: true }); break; }
+    case "gobble": { habTone(ctx, "square", t, .55, 330 * lo, 260 * lo, .7, { band: [900, 2], vib: [24, 110], hold: true }); break; }
+    case "cluck": { const f = rr(600, 800) * lo; for (let i = 0; i < 3; i++) habTone(ctx, "triangle", t + i * .13, .06, f, f * .7, .55); break; }
+    case "squeak": { const f = rr(3200, 4200) * lo; habTone(ctx, "sine", t, .06, f, f * 1.2, .5); habTone(ctx, "sine", t + .1, .07, f * 1.05, f * 1.25, .45); break; }
+    case "croak": { const f = rr(110, 160) * lo;
+      for (let i = 0; i < 7; i++) habTone(ctx, "square", t + i * .045, .03, f, f * .95, 1.4, { band: [600, 1.5] }); break; }
+    case "chirr": { const f = rr(4000, 5200);
+      for (let j = 0; j < 3; j++) for (let i = 0; i < 4; i++) habTone(ctx, "sine", t + j * .22 + i * .03, .018, f, f, .5); break; }
+    case "buzz": { const f = rr(190, 260) / Math.sqrt(k); habTone(ctx, "sawtooth", t, .6, f, f * 1.05, .35, { band: [900, 1], vib: [9, 14], hold: true }); break; }
+    case "yip": { const f = rr(650, 800) * lo; habTone(ctx, "triangle", t, .09, f, f * 1.6, .5); habTone(ctx, "triangle", t + .14, .13, f * 1.2, f * 1.8, .45); break; }
+    case "bark": { const f = rr(220, 280) * lo; for (let i = 0; i < 2; i++) habTone(ctx, "sawtooth", t + i * .22, .12, f, f * .7, 1.4, { band: [700, 2] }); break; }
+    case "whale": { const f = rr(250, 380) * lo; habTone(ctx, "sine", t, 1.3, f, f * 2.1, .35, { f2: f * 1.1, soft: true, hold: true }); break; }
+    case "chatter": { const f = rr(1700, 2300) * lo; for (let i = 0; i < 8; i++) habTone(ctx, "square", t + i * .045, .022, f, f * .9, .9, { band: [2200, 2] }); break; }
+    case "hiss": habHiss(ctx, t, .6, .4, 5000, .7); break;
+  }
+}
+function habCallsLabel() {
+  const b = document.getElementById("hab-calls");
+  if (!b) return;
+  const on = habCallsOn(), img = document.createElement("img");
+  img.className = "pi"; img.alt = ""; img.src = `/sprites/ui_ic_sound_${on ? "on" : "off"}.png`;
+  img.style.cssText = "width:16px;height:16px;image-rendering:pixelated";
+  b.replaceChildren(img, on ? "Calls on" : "Calls off");
+  b.title = on ? "Tap an animal to hear its call" : "Animal calls are off";
+}
+
 function habInit() {
   $("hab-canvas").addEventListener("click", habTap);
+  if (document.getElementById("hab-calls")) {
+    habCallsLabel();
+    $("hab-calls").onclick = () => {
+      try { localStorage.setItem("hab.calls", habCallsOn() ? "0" : "1"); } catch {}
+      habCallsLabel();
+    };
+  }
   if (document.getElementById("hab-wx-here")) $("hab-wx-here").onclick = habWxHere;
   $("hab-peek").onclick = () => { hab.peek = !hab.peek; habNote(); if (habStill) habDraw(); };
   if (!habStill) requestAnimationFrame(habLoop);
