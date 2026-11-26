@@ -744,12 +744,45 @@ function habPerchStep(a, dt) {
 // or chasing, and not for animals without a "look" row.
 const HAB_TURN = .34;
 const HAB_TURNERS = new Set(["walk", "shore", "wade", "beach", "hop"]);
+// Animals notice you: move a finger (or the mouse) slowly near an awake walker and it
+// stops, turns round to face it and watches for a moment, then goes back to what it
+// was doing. A quick swipe past doesn't count, and it never startles anyone.
+const HAB_NOTICE_R = 34;
+function habNoticeAt(ev) {
+  if (!hab.L || ev.pointerType === "touch" && ev.buttons === 0) return;
+  const r = ev.currentTarget.getBoundingClientRect();
+  const x = (ev.clientX - r.left) / r.width * hab.L.w, y = (ev.clientY - r.top) / r.height * HAB_H;
+  const p = hab.ptr, now = performance.now();
+  // Slow means slow since the last move, and that one was just now (a finger that
+  // has only just come onto the scene hasn't lingered yet).
+  const fresh = p && now - p.at < 250;
+  const speed = fresh ? Math.hypot(x - p.x, y - p.y) / Math.max(16, now - p.at) * 1000 : 1e9;
+  hab.ptr = { x, y, at: now, slow: speed < 160 };
+}
+function habNotice(dt, phase) {
+  const p = hab.ptr;
+  if (!p || performance.now() - p.at > 600 || !p.slow) return;
+  for (const a of hab.animals) {
+    if (!HAB_TURNERS.has(a.role) || a.notice > 0 || (a.noticeNext || 0) > hab.t) continue;
+    if (Math.abs(a.x - p.x) > HAB_NOTICE_R || Math.abs(a.y - 8 - p.y) > HAB_NOTICE_R) continue;
+    if (!habAwake(a, phase) || a.flee > 0 || a.chaseT > 0 || a.dv || a.arriving > 0 || a.drinking) continue;
+    a.noticeDir = p.x < a.x ? -1 : 1;
+    a.dir = a.noticeDir;
+    a.notice = 1.6 + Math.random();
+    a.noticeNext = hab.t + a.notice + 4;  // then it loses interest for a while
+  }
+}
 function habStepTurning(a, dt, awake) {
   if (a.faced === undefined) a.faced = a.dir;
   if (a.arriving > 0) a.arriving -= dt;
   const x = a.x, y = a.y, turning = a.turnT > 0;
   habStep(a, dt, awake);
   const hurry = a.flee > 0 || a.chaseT > 0 || !awake || a.dv;
+  // Watching your finger (habNotice): it stands still, facing it.
+  if (a.notice > 0) {
+    a.notice = hurry ? 0 : a.notice - dt;
+    if (!hurry) { a.x = x; a.y = y; if (a.noticeDir) a.dir = a.noticeDir; }
+  }
   // Just woken and stretching (habAnim's groom): it stays put until it's done.
   if (!hurry && hab.t - (a.flipAt ?? -9) < 1.3 && HAB_TURNERS.has(a.role)) { a.x = x; a.y = y; }
   if (turning) {
@@ -1121,6 +1154,7 @@ function habAnim(a, awake, roost) {
     if (HAB_SHY.test(a.s.slug)) return ["sleep", 0];
   }
   if (a.turnT > 0 && has("look")) return ["look", habIdleFrame(a.phase * 4 / 3, 1)];
+  if (a.notice > 0) return has("look") ? ["look", habIdleFrame(a.phase * 4 / 3, 1)] : still;  // watching your finger
   const onDecor = habDecorAnim(a, awake);
   if (onDecor && onDecor[0] === "land") return onDecor;  // coming in to land on a decoration
   if (roost || onDecor) return still;  // sheltering from the rain, or perched on a decoration
@@ -1608,6 +1642,7 @@ function habLoop(now) {
   habDecorTick(dt);
   hab.animals.forEach((a) => habStepTurning(a, dt, habAwake(a, phase)));
   habSocial(dt, phase);
+  habNotice(dt, phase);
   habChorus(dt);
   habFxStep(dt);
   habWxStep(dt);
@@ -4667,6 +4702,7 @@ function habSavePicture() {
 
 function habInit() {
   $("hab-canvas").addEventListener("click", habTap);
+  $("hab-canvas").addEventListener("pointermove", habNoticeAt);
   if (document.getElementById("hab-snap")) $("hab-snap").onclick = habSavePicture;
   if (document.getElementById("hab-calls")) {
     habCallsLabel();
