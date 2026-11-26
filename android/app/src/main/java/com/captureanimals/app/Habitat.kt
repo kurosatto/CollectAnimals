@@ -1,9 +1,15 @@
 package com.captureanimals.app
 
 import android.annotation.SuppressLint
+import android.content.ContentValues
 import android.content.Context
+import android.os.Build
+import android.os.Environment
 import android.os.Handler
 import android.os.Looper
+import android.provider.MediaStore
+import android.util.Base64
+import android.widget.Toast
 import android.view.ViewGroup
 import android.webkit.JavascriptInterface
 import android.webkit.WebResourceRequest
@@ -25,9 +31,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import org.json.JSONArray
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.ByteArrayInputStream
 import java.net.HttpURLConnection
@@ -145,6 +153,28 @@ class HabitatWebView(context: Context) : WebView(context) {
         }
         @JavascriptInterface fun open(slug: String) { main.post { onOpen(slug) } }
         @JavascriptInterface fun height(px: Int) { main.post { if (px > 0) heightDp = px } }
+        /** The habitat's Picture button: Android 10+ saves to Pictures without any permission. */
+        @JavascriptInterface fun canSavePicture(): Boolean = Build.VERSION.SDK_INT >= 29
+        /** A PNG of the scene (base64, from habSavePicture) into Pictures/Capture Animals. */
+        @JavascriptInterface fun savePicture(base64: String, name: String) {
+            if (Build.VERSION.SDK_INT < 29) return
+            scope.launch {
+                val ok = withContext(Dispatchers.IO) {
+                    runCatching {
+                        val bytes = Base64.decode(base64, Base64.DEFAULT)
+                        val values = ContentValues().apply {
+                            put(MediaStore.Images.Media.DISPLAY_NAME, name.replace(Regex("[^A-Za-z0-9._-]"), "-"))
+                            put(MediaStore.Images.Media.MIME_TYPE, "image/png")
+                            put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/Capture Animals")
+                        }
+                        val resolver = context.contentResolver
+                        val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: error("no place to save")
+                        resolver.openOutputStream(uri)?.use { it.write(bytes) } ?: error("can't write")
+                    }.isSuccess
+                }
+                Toast.makeText(context, if (ok) "Saved to Pictures" else "Couldn't save the picture", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     companion object {

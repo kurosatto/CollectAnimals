@@ -4745,10 +4745,14 @@ function habSavePicture() {
     const c = cv.getContext("2d");
     c.imageSmoothingEnabled = false;
     c.drawImage(src, 0, 0, cv.width, cv.height);
+    const name = `capture-animals-habitat-${(habRealState() || "").toLowerCase() || "scene"}.png`;
+    // In the Android app the picture goes to the phone's Pictures (Habitat.kt).
+    const app = window.AndroidHabitat;
+    if (app && app.savePicture) { app.savePicture(cv.toDataURL("image/png").split(",")[1], name); return; }
     cv.toBlob((blob) => {
       if (!blob) return;
       const a = document.createElement("a"), url = URL.createObjectURL(blob);
-      a.href = url; a.download = `capture-animals-habitat-${(habRealState() || "").toLowerCase() || "scene"}.png`;
+      a.href = url; a.download = name;
       document.body.append(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 4000);
     }, "image/png");
