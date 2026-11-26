@@ -1255,7 +1255,8 @@ function mgSfx(kind) {
 // level more forgiving, so every level is built for the weakest animal and every
 // animal can finish it.
 let mgStatsIdx = null;
-fetch("/sprites/game_stats.json").then((r) => (r.ok ? r.json() : null)).then((j) => { mgStatsIdx = j; }).catch(() => {});
+(typeof habStatsReq !== "undefined" ? habStatsReq : fetch("/sprites/game_stats.json").then((r) => (r.ok ? r.json() : null)).catch(() => null))
+  .then((j) => { mgStatsIdx = j; });
 // The stats each game uses, named for what they do there; the rest don't show.
 // Agility is how hard a flier flaps, a swimmer swims up or a shell turns; Size is how
 // big a target you are, except in Claw Catch, where a big paw reaches further.
@@ -1675,6 +1676,7 @@ function mgStep(r, dt) {
   r.acc += dt * r.p.tempo;
   while (r.acc >= MG_DT && r.mode === "play") {
     r.acc -= MG_DT;
+    r.prev = mgLerpSnap(r);
     if (mg.practice) mgFlag(r);
     mgPress(r, key, mg.down);
     r.dir = mg.down ? mg.dir || 0 : 0;
@@ -1715,6 +1717,46 @@ function mgStep(r, dt) {
     if (mgHit(r, key, r.hazards || (r.hazards = r.things.filter((o) => !o.good).sort((a, b) => a.wx - b.wx)))) mgEnd(r, false);
     else if (r.dist >= r.len) mgEnd(r, true);
   }
+}
+
+// Drawing between physics steps. The course moves in fixed 1/120 s steps, so a
+// 90 or 120 Hz screen (or a phone whose frames come a little early or late) would
+// get 1, then 2, then 1 steps a frame and the scroll would stutter. Each frame is
+// drawn a fraction of the way from the step before to the latest one instead; the
+// game itself (hits, scores, replays) still only sees whole steps.
+const MG_LERP = ["dist", "x", "y", "ly", "cam", "wx", "t", "ang"];
+function mgLerpSnap(r) {
+  const o = {};
+  for (const k of MG_LERP) o[k] = r[k];
+  return o;
+}
+// Moves r to where it is `a` of the way through the step, for drawing only; returns
+// what to put back (mgLerpOut).
+function mgLerpIn(r) {
+  if (r.mode !== "play" || !r.prev) return null;
+  const a = Math.min(1, (r.demo ? r.demo.acc : r.acc) / MG_DT), back = {};
+  if (a >= 1) return null;
+  for (const k of MG_LERP) {
+    const p = r.prev[k], v = r[k];
+    // A jump (a respawn, a landing snap) is drawn as it is.
+    if (typeof v !== "number" || typeof p !== "number" || p === v || Math.abs(v - p) > 12) continue;
+    back[k] = v; r[k] = p + (v - p) * a;
+  }
+  mgLerpThings(r);
+  return back;
+}
+function mgLerpOut(r, back) {
+  if (!back) return;
+  Object.assign(r, back);
+  mgLerpThings(r);
+}
+// The classic courses keep each thing's screen x; put them where the course is.
+function mgLerpThings(r) {
+  const key = mg.game.key;
+  if (MG_MORE[key] || key === "claw") return;
+  for (const o of r.things) o.x = o.wx - r.dist + r.x;
+  if (key === "pool")
+    for (const o of r.things) if (o.good) { const rr = mgPoolR(o, r); o.x = MG_POOL.cx + Math.cos(o.ang) * rr; o.y = MG_POOL.cy + Math.sin(o.ang) * rr; }
 }
 
 function mgEnd(r, cleared) {
@@ -1773,6 +1815,10 @@ function mgDraw() {
   const cv = document.getElementById("mg-canvas"), r = mg.run;
   if (!cv || !r) return;
   mgFit(cv);
+  const back = mgLerpIn(r);
+  try { mgDrawAt(cv, r); } finally { mgLerpOut(r, back); }
+}
+function mgDrawAt(cv, r) {
   const c = cv.getContext("2d");
   c.setTransform(MG_RES, 0, 0, MG_RES, 0, 0);
   c.imageSmoothingEnabled = false;
