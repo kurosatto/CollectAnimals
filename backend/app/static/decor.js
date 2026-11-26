@@ -345,6 +345,8 @@ function habDecorKick(d, a) {
 
 function habDecorEnd(a) {
   const dv = a.dv;
+  // Leaving a perch, a bird plays its landing backwards as it takes off.
+  if (habDecorLanded(a)) a.takeoff = HAB_TAKEOFF;
   if (dv && dv.d.busy[dv.i] === a) delete dv.d.busy[dv.i];
   a.peck = 0;
   // Hawks and diving birds fly back up to where they were before handing back.
@@ -420,6 +422,12 @@ function habDecorPose(a, awake) {
 function habDecorAnim(a, awake) {
   if (!awake || !a.dv) return null;
   if (habDecorLanded(a)) return ["idle", habIdleFrame(a.phase * 4 / 3, 1)];
+  // Coming in to land on it: the drawn landing (braking, feet out), as at a perch.
+  const dv = a.dv, acts = habAnimIdx && habAnimIdx.acts[a.s.slug];
+  if (dv.stage === "go" && !dv.path && HAB_LANDS.has(dv.v.act) && HAB_FLIERS.has(a.role) && acts && acts.includes("land")) {
+    const [tx, ty] = habDecorAt(dv.d, dv.v.x, dv.v.y), d = Math.hypot(tx - a.x, ty - a.y);
+    if (d < HAB_LAND_D) return ["land", Math.min(habNF() - 1, Math.floor((1 - d / HAB_LAND_D) * habNF()))];
+  }
   return null;
 }
 
