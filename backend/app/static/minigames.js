@@ -1235,8 +1235,11 @@ function mgMusicTick(r) {
   }
 }
 
-// A short sound for a bump, a treat and a cleared level.
+// A short sound for a bump, a treat and a cleared level, and on phones that can, a
+// tiny buzz you feel on a bump and a clear (never during the how-to-play demo).
+const MG_BUZZ = { bump: 35, done: [18, 60, 18] };
 function mgSfx(kind) {
+  if (MG_BUZZ[kind] && !(mg.run && mg.run.demo)) try { navigator.vibrate && navigator.vibrate(MG_BUZZ[kind]); } catch {}
   const ctx = mgAudio.ctx;
   if (!ctx || mgAudio.muted || (mg.run && mg.run.demo)) return;
   const out = ctx.destination, at = ctx.currentTime;

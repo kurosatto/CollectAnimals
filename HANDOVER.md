@@ -194,7 +194,7 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
   real place, not its `HAB_TWIN`. Switzerland has its own far scene (the Matterhorn), and
   the Alpine countries now twin Wyoming's grey granite instead of Colorado's maroon peaks.
   Preview: render `habBackground(habLayout(w), phase, twin, {}, place)` in a page.
-- 0.99.1-0.99.5 overnight polish (2026-11-26; tonight's releases are 0.99.x patches so 1.0.0 stays free
+- 0.99.1-0.99.6 overnight polish (2026-11-26; tonight's releases are 0.99.x patches so 1.0.0 stays free
   for the launch; versionCode is major*10000+minor*100+patch, so 0.100.0 would clash with 1.0.0):
   - Smoothness: dawn/dusk/night light is applied per shown 40 px frame (`habFrame(..., phase)`), never to
     whole sheets (that froze low-end phones ~1.4 s). 120/144 Hz screens draw the habitat every other
@@ -213,6 +213,12 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
   - Newcomers: a newly captured animal walks, flies or swims in from the edge, twinkling, and introduces
     itself ("New here: ...") (`habNewcomers`, `habArrive`; localStorage `hab.seen` lists the welcomed
     slugs, and the first habitat a phone sees counts as already moved in).
+  - Chorus: once sound has been unlocked by a tap and calls are on, an awake animal calls quietly every
+    9-22 s (`habChorus`, volume via `habVoice(a, vol)` and a gain bus `habAudio.bus`).
+  - "Picture" button (`#hab-snap`, website only) saves the habitat as a 3x nearest-neighbour PNG
+    (`habSavePicture`).
+  - Minigames buzz briefly on a bump and a cleared level where the phone can (`MG_BUZZ`, `navigator.vibrate`;
+    Android declares VIBRATE), never in the how-to-play demo.
 - kuro doesn't want pictures stretched, squashed or turned to fake motion: every
   movement in the habitat is a drawn frame. Bends of a whole drawing are done in
   the sprite generator (`Sprite.pitch` / `Sprite.bend`), drawn pixel by pixel.

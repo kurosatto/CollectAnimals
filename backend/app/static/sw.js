@@ -8,7 +8,7 @@
 //   with the last answer as the offline fallback. The page clears it on log out.
 // - Everything else (photos, galleries, the feed, uploads, any POST) goes straight to the network,
 //   so other players' photos never fill up the phone.
-const VERSION = "79";
+const VERSION = "80";
 const SHELL = `shell-v${VERSION}`;
 const ASSETS = "assets-v15";  // v15: Singapore's 87 new animals (0.98)
 const API = "api-v1";
