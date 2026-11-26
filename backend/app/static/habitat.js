@@ -4408,14 +4408,24 @@ function habAmbient(c, L, phase) {
   if (habState() === "CA") {
     // Kelp swaying on the sea floor, with leaf blades.
     const dark = phase === "night" ? "#24402a" : "#3f6a26", light = phase === "night" ? "#355a2f" : "#6d9a35";
+    // Worked out once, then drawn in two passes (dark, then light) instead of
+    // switching colour for every pixel.
+    const xs = [];
     for (let i = 0; i < 4; i++) {
       const kx = L.sea + 24 + i * (L.w - L.sea - 40) / 4, len = 50 + (i * 17) % 30;
-      for (let j = 0; j < len; j++) {
-        const x = Math.round(kx + Math.sin(t * 1.1 + i + j * .08) * j * .1), y = HAB_H - 4 - j;
-        c.fillStyle = dark; c.fillRect(x, y, 2, 1);
-        c.fillStyle = light; c.fillRect(x, y, 1, 1);
-        if (j % 9 === 4) { c.fillStyle = light; c.fillRect(x + (j % 18 ? 2 : -3), y, 3, 1); c.fillStyle = dark; c.fillRect(x + (j % 18 ? 2 : -3), y + 1, 3, 1); }
-      }
+      for (let j = 0; j < len; j++) xs.push(Math.round(kx + Math.sin(t * 1.1 + i + j * .08) * j * .1), HAB_H - 4 - j, j);
+    }
+    c.fillStyle = dark;
+    for (let k = 0; k < xs.length; k += 3) {
+      const x = xs[k], y = xs[k + 1], j = xs[k + 2];
+      c.fillRect(x + 1, y, 1, 1);
+      if (j % 9 === 4) c.fillRect(x + (j % 18 ? 2 : -3), y + 1, 3, 1);
+    }
+    c.fillStyle = light;
+    for (let k = 0; k < xs.length; k += 3) {
+      const x = xs[k], y = xs[k + 1], j = xs[k + 2];
+      c.fillRect(x, y, 1, 1);
+      if (j % 9 === 4) c.fillRect(x + (j % 18 ? 2 : -3), y, 3, 1);
     }
   } else if (habState() === "NY" && phase !== "day") {
     // Liberty's torch glows after sundown.
@@ -4481,14 +4491,13 @@ function habAmbient(c, L, phase) {
   // Surf washing up the shore.
   c.fillStyle = phase === "night" ? "rgba(190,210,250,.55)" : "rgba(255,255,255,.85)";
   const roll = (t * .3) % 1, night = phase === "night";
-  for (let y = L.water + 1; y < HAB_H; y++) {
-    const e = L.surf[y], sway = Math.round(Math.sin(t * 1.4 + y * .21) * 1.5);
-    c.fillStyle = night ? "rgba(200,215,255,.55)" : "rgba(255,255,255,.85)";
-    c.fillRect(e - 1 + sway, y, 2, 1);
-    // A wave rolling in toward the beach.
-    c.fillStyle = night ? `rgba(200,215,255,${.5 * roll})` : `rgba(255,255,255,${.7 * roll})`;
-    if ((y + Math.floor(t * 6)) % 3) c.fillRect(e + 2 + Math.round((1 - roll) * 16) + sway, y, 1, 1);
-  }
+  const sway = (y) => Math.round(Math.sin(t * 1.4 + y * .21) * 1.5);
+  c.fillStyle = night ? "rgba(200,215,255,.55)" : "rgba(255,255,255,.85)";
+  for (let y = L.water + 1; y < HAB_H; y++) c.fillRect(L.surf[y] - 1 + sway(y), y, 2, 1);
+  // A wave rolling in toward the beach.
+  c.fillStyle = night ? `rgba(200,215,255,${(.5 * roll).toFixed(3)})` : `rgba(255,255,255,${(.7 * roll).toFixed(3)})`;
+  const rollX = 2 + Math.round((1 - roll) * 16), beat = Math.floor(t * 6);
+  for (let y = L.water + 1; y < HAB_H; y++) if ((y + beat) % 3) c.fillRect(L.surf[y] + rollX + sway(y), y, 1, 1);
   // Sun or moon glitter on the sea.
   if (hab.glowX > L.surf[L.water] + 8 && !grey) {
     c.fillStyle = night ? "rgba(225,232,255,.5)" : phase === "day" ? "rgba(255,250,215,.7)" : "rgba(255,210,150,.6)";
@@ -4511,6 +4520,7 @@ function habAmbient(c, L, phase) {
     c.fillStyle = `rgba(255,255,255,${((s - .4) * 1.5).toFixed(2)})`;
     c.fillRect(x - 1, y, 3, 1); c.fillRect(x, y - 1, 1, 3);
   });
+  habMeteor(c, L, night && !grey && sky !== "fog");
   // Glints that slide along the waves and fade in and out.
   for (let i = 0; i < 16; i++) {
     const a = Math.sin(t * 1.3 + i * 2.1);
@@ -4519,6 +4529,32 @@ function habAmbient(c, L, phase) {
     c.fillStyle = phase === "night" ? `rgba(160,190,255,${a * .5})` : `rgba(230,248,255,${a * .85})`;
     c.fillRect(Math.round(x), y, 3 + i % 3, 1);
     c.fillRect(Math.round(x) + 1, y - 1, 1 + i % 2, 1);
+  }
+}
+
+// On a clear night, now and then a shooting star streaks across the sky: a bright
+// head with a tail that fades out, gone in under a second.
+function habMeteor(c, L, clear) {
+  const t = hab.t;
+  if (!clear) { hab.meteor = null; hab.meteorAt = t + 15; return; }
+  if (hab.meteorAt === undefined) hab.meteorAt = t + 8 + Math.random() * 20;
+  if (!hab.meteor && t >= hab.meteorAt) {
+    const dir = Math.random() < .5 ? -1 : 1;
+    hab.meteor = { x: L.w * (.15 + Math.random() * .7), y: 6 + Math.random() * 30, dir, t0: t, len: .6 + Math.random() * .35 };
+    hab.meteorAt = t + 25 + Math.random() * 50;
+  }
+  const m = hab.meteor;
+  if (!m) return;
+  const k = (t - m.t0) / m.len;
+  if (k >= 1) { hab.meteor = null; return; }
+  // 2 px down for every 3 across, about 70 px in all; it brightens, then fades.
+  const run = k * 70, fade = Math.min(1, k * 5, (1 - k) * 3);
+  for (let i = 0; i < 18; i++) {
+    const d = run - i * 1.2;
+    if (d < 0) break;
+    const a = fade * (1 - i / 18) * (i < 3 ? 1 : .85);
+    c.fillStyle = i < 3 ? `rgba(255,255,235,${a.toFixed(3)})` : `rgba(215,228,255,${a.toFixed(3)})`;
+    c.fillRect(Math.round(m.x + m.dir * d * .83), Math.round(m.y + d * .55), 1, 1);
   }
 }
 
@@ -4556,8 +4592,8 @@ function habVoiceOf(s) {
   if (s.category !== "bird") return null;
   return HAB_SINGERS.test(s.slug) ? "song" : "chip";
 }
-function habAudioCtx() {
-  if (!habCallsOn()) return null;
+function habAudioCtx(force) {
+  if (!force && !habCallsOn()) return null;
   try {
     if (!habAudio.ctx) {
       const C = window.AudioContext || window.webkitAudioContext;
@@ -4604,10 +4640,11 @@ function habHiss(ctx, at, len, vol, hz, q = 1) {
   n.connect(f); f.connect(g); g.connect(habAudio.bus || habAudio.out);
   n.start(at, Math.random() * .1); n.stop(at + len + .02);
 }
-function habVoice(a, vol = 1) {
+// force: asked for on purpose (the Field Guide's "Hear its call"), so "Calls off" doesn't apply.
+function habVoice(a, vol = 1, force = false) {
   const kind = habVoiceOf(a.s);
   if (!kind) return;
-  const ctx = habAudioCtx();
+  const ctx = habAudioCtx(force);
   if (!ctx) return;
   habAudio.bus = null;
   if (vol !== 1) { habAudio.bus = ctx.createGain(); habAudio.bus.gain.value = vol; habAudio.bus.connect(habAudio.out); }

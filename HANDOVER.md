@@ -194,7 +194,7 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
   real place, not its `HAB_TWIN`. Switzerland has its own far scene (the Matterhorn), and
   the Alpine countries now twin Wyoming's grey granite instead of Colorado's maroon peaks.
   Preview: render `habBackground(habLayout(w), phase, twin, {}, place)` in a page.
-- 0.99.1-0.99.7 overnight polish (2026-11-26; tonight's releases are 0.99.x patches so 1.0.0 stays free
+- 0.99.1-0.99.8 overnight polish (2026-11-26; tonight's releases are 0.99.x patches so 1.0.0 stays free
   for the launch; versionCode is major*10000+minor*100+patch, so 0.100.0 would clash with 1.0.0):
   - Smoothness: dawn/dusk/night light is applied per shown 40 px frame (`habFrame(..., phase)`), never to
     whole sheets (that froze low-end phones ~1.4 s). 120/144 Hz screens draw the habitat every other
@@ -221,6 +221,8 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
     Android declares VIBRATE), never in the how-to-play demo.
   - Animals notice you: a finger or mouse moving slowly near an awake walker makes it stop, turn to it and
     watch with the `look` row for ~2 s, then lose interest for 4 s (`habNoticeAt` on pointermove, `habNotice`, `a.notice`).
+  - Shooting stars cross clear night skies every 25-75 s (`habMeteor`). Field Guide page (website) has
+    "Hear its call" (`#dex-call`, `habVoice({ s }, 1, true)`: plays even with habitat calls off).
 - kuro doesn't want pictures stretched, squashed or turned to fake motion: every
   movement in the habitat is a drawn frame. Bends of a whole drawing are done in
   the sprite generator (`Sprite.pitch` / `Sprite.bend`), drawn pixel by pixel.
