@@ -51,8 +51,9 @@ function habIdleFrame(t, seed = 0) {
 // How big each animal is drawn, next to a 1.0 crow: from 0.4 for a bee to 1.5 for a
 // whale (tools/make_game_stats.py), so a seal is bigger than a banana slug.
 let habScaleIdx = {};
-fetch("/sprites/game_stats.json").then((r) => (r.ok ? r.json() : null)).then((j) => { habScaleIdx = (j && j.scale) || {}; })
-  .catch(() => {});
+// Fetched once here; minigames.js reads the same answer (habStatsReq).
+const habStatsReq = fetch("/sprites/game_stats.json").then((r) => (r.ok ? r.json() : null)).catch(() => null);
+habStatsReq.then((j) => { habScaleIdx = (j && j.scale) || {}; });
 const habScale = (slug) => habScaleIdx[slug] || 1;
 const habStill = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const HAB_ROLES = [
@@ -1161,14 +1162,24 @@ function habSkin(img, skin) {
   return habSkinCache.get(key);
 }
 
-function habFrame(sheet, row, frame, F) {
+// With a phase (dawn, dusk, night) the frame gets that light. Only the frames that
+// are shown get tinted, one small square at a time: tinting whole sheets froze the
+// page for a second on low-end phones whenever night fell or the page opened at night.
+function habFrame(sheet, row, frame, F, phase) {
   let frames = habFrameCache.get(sheet);
   if (!frames) habFrameCache.set(sheet, frames = {});
-  const key = `${row}/${frame}`;
+  const g = phase && HAB_SPRITE_GRADE[phase];
+  const key = `${g ? phase : ""}${row}/${frame}`;
   if (!frames[key]) {
     const cv = document.createElement("canvas");
     cv.width = F; cv.height = F;
-    cv.getContext("2d").drawImage(sheet, frame * F, row * F, F, F, 0, 0, F, F);
+    const c = cv.getContext("2d");
+    c.drawImage(sheet, frame * F, row * F, F, F, 0, 0, F, F);
+    if (g) {
+      const id = c.getImageData(0, 0, F, F);
+      gradeData(id.data, g);
+      c.putImageData(id, 0, 0);
+    }
     frames[key] = cv;
   }
   return frames[key];
@@ -1211,7 +1222,7 @@ function habSprite(c, p) {
   if (!raw || !raw.complete || !raw.naturalWidth) return;
   const { a, x, y } = p, sheet = habSheets[a.s.slug];
   const framed = p.anim && sheet && sheet.complete && sheet.naturalWidth;
-  const img = framed ? habTinted(sheet, `${a.s.slug}@anim`, p.phase) : habTinted(raw, a.s.slug, p.phase);
+  const img = framed ? sheet : habTinted(raw, a.s.slug, p.phase);
   // Drawn 40 units square (a 32-unit drawing with room for wings, tails and antlers)
   // whatever the image's resolution, feet on its bottom row; FP is the frame in pixels.
   const F = HAB_UNIT, FP = framed ? sheet.naturalWidth / habAnimIdx.frames : raw.naturalWidth;
@@ -1246,10 +1257,11 @@ function habSprite(c, p) {
   if (k !== 1) c.scale(k, k);
   if (a.dir > 0 && a.role !== "reef") c.scale(-1, 1);
   if (p.sx !== 1 || p.sy !== 1) c.scale(p.sx, p.sy);
-  if (framed) c.drawImage(habFrame(img, habAnimIdx.rows.indexOf(p.anim[0]), p.anim[1], FP), -F / 2, mid - F, F, F);
+  const fr = framed && habFrame(sheet, habAnimIdx.rows.indexOf(p.anim[0]), p.anim[1], FP, p.phase);
+  if (framed) c.drawImage(fr, -F / 2, mid - F, F, F);
   else c.drawImage(img, -F / 2, mid - F, F, F);
   if (framed && p.awake && a.role === "dive" && a.fish > 0 && (a.mode === "fly" || a.mode === "rise"))
-    habFish(c, habFrame(img, habAnimIdx.rows.indexOf(p.anim[0]), p.anim[1], FP), F, FP, mid, /osprey/.test(a.s.slug));
+    habFish(c, fr, F, FP, mid, /osprey/.test(a.s.slug));
   c.restore();
   if (a.role === "paddle") {
     c.fillStyle = "rgba(255,255,255,.55)";
@@ -1445,6 +1457,9 @@ function habLoop(now) {
   requestAnimationFrame(habLoop);
   const box = $("habitat");
   if (document.hidden || !box || box.closest(".off") || box.closest(".hidden")) { hab.last = 0; return; }
+  // 90 Hz and slower screens draw every frame; 120 and 144 Hz ones every other one.
+  // The animals' drawings change 16 times a cycle, so the extra frames only cost battery.
+  if (hab.last && now - hab.last < 10) return;
   const w = box.clientWidth < HAB_WIDE ? 320 : 480;
   // A new size, or the next turn of animals coming out (see habOutNow).
   if (!hab.L || w !== hab.w || (hab.total > hab.animals.length && habTurn() !== hab.turn))
