@@ -1838,7 +1838,10 @@ function mgDrawAt(cv, r) {
     return;
   }
   if (MG_MORE[key]) {
+    r.drawn = null;
     MG_MORE[key].draw(c, r);
+    mgGhostDraw(c, r);
+    mgGhostKeep(r);
     for (const f of r.fx) mgFxDraw(c, f);
     mgHud(c, r);
     return;
@@ -2411,7 +2414,8 @@ function mgPlayer(c, r) {
 }
 
 // ---- Your best try's ghost (2026-11-26) ------------------------------------------------
-// In Sky Glide, Trail Run and River Swim the animal you played your best try with flies,
+// In Sky Glide, Trail Run and River Swim (and, since 0.99.9, the games in MG_GHOST_MORE)
+// the animal you played your best try with flies,
 // runs or swims along beside you, see-through: where it went up and down, the way to get
 // through. Kept on the device only (a few KB per game), and replaced when you beat it.
 const MG_GHOST_GAMES = new Set(["sky", "trail", "river"]);
@@ -2420,31 +2424,41 @@ const mgGhostCache = {};
 function mgGhostLoad(key) {
   const k = "ghost." + mgLevelKey(key);
   if (!(k in mgGhostCache)) {
-    try { const g = JSON.parse(mgStore.get(k) || "null"); mgGhostCache[k] = g && g.v === 1 && Array.isArray(g.s) ? g : null; }
+    const v = MG_GHOST_MORE.has(key) ? 2 : 1;
+    try { const g = JSON.parse(mgStore.get(k) || "null"); mgGhostCache[k] = g && g.v === v && Array.isArray(g.s) ? g : null; }
     catch { mgGhostCache[k] = null; }
   }
   return mgGhostCache[k];
 }
 // Each frame of a real try (not the demo or practice): where the animal was drawn and which frame.
+// The other games that run on a fixed clock keep where the animal was too, not just
+// its height, since it moves about (lanes, tunnels, flowers): 4 numbers a sample.
+const MG_GHOST_MORE = new Set(["slide", "nectar", "dig", "echo", "plunge", "splash", "leap", "freeze"]);
+const mgGhostOn = (key) => MG_GHOST_GAMES.has(key) || MG_GHOST_MORE.has(key);
 function mgGhostKeep(r) {
-  if (!MG_GHOST_GAMES.has(mg.game.key) || r.demo || mg.practice || r.mode !== "play" || !r.drawn) return;
-  const rec = r.ghostRec || (r.ghostRec = []), i = Math.floor(r.t * MG_GHOST_HZ);
-  while (rec.length / 2 <= i) rec.push(Math.round(r.drawn.y * 4), r.drawn.row * 32 + r.drawn.frame);
+  const key = mg.game.key;
+  if (!mgGhostOn(key) || r.demo || mg.practice || r.mode !== "play" || !r.drawn) return;
+  const d = r.drawn, rec = r.ghostRec || (r.ghostRec = []), i = Math.floor(r.t * MG_GHOST_HZ);
+  if (MG_GHOST_MORE.has(key)) {
+    const look = d.row * 32 + d.frame + (d.flip ? 4096 : 0);
+    while (rec.length / 4 <= i) rec.push(Math.round(d.x * 4), Math.round(d.y * 4), look, Math.round((d.k || 1) * 100));
+  } else while (rec.length / 2 <= i) rec.push(Math.round(d.y * 4), d.row * 32 + d.frame);
 }
 // At the end of a try: keep it if it got further than the ghost, or as far with more points.
 function mgGhostSave(r, pct) {
   const key = mg.game.key;
-  if (!MG_GHOST_GAMES.has(key) || !r.ghostRec || r.ghostRec.length < MG_GHOST_HZ * 2) return;
+  if (!mgGhostOn(key) || !r.ghostRec || r.ghostRec.length < MG_GHOST_HZ * (MG_GHOST_MORE.has(key) ? 4 : 2)) return;
   const g = mgGhostLoad(key), pts = r.points || 0;
   if (g && (pct < g.pct || pct === g.pct && pts <= (g.points || 0))) return;
   const k = "ghost." + mgLevelKey(key);
-  mgGhostCache[k] = { v: 1, slug: mg.species.slug, pct, points: pts, s: r.ghostRec };
+  mgGhostCache[k] = { v: MG_GHOST_MORE.has(key) ? 2 : 1, slug: mg.species.slug, pct, points: pts, s: r.ghostRec };
   mgStore.set(k, JSON.stringify(mgGhostCache[k]));
 }
 function mgGhostDraw(c, r) {
-  if (!MG_GHOST_GAMES.has(mg.game.key) || r.demo || r.mode !== "play") return;
+  if (!mgGhostOn(mg.game.key) || r.demo || r.mode !== "play") return;
   const g = mgGhostLoad(mg.game.key);
   if (!g) return;
+  if (g.v === 2) return mgGhostDraw2(c, r, g);
   const n = g.s.length / 2, i = Math.floor(r.t * MG_GHOST_HZ);
   if (i >= n) return;  // its try ended there
   const sheet = mgImg(mg.sheets, `/sprites/anim/${encodeURIComponent(g.slug)}.png`);
@@ -2461,6 +2475,29 @@ function mgGhostDraw(c, r) {
     c.globalAlpha = Math.min(1, (2.5 - r.t) * 2) * .8;
     c.font = "bold 8px system-ui, sans-serif"; c.textAlign = "center"; c.fillStyle = "#fff";
     c.fillText("your best", Math.round(r.x), Math.round(key === "trail" ? y - 40 : y - 12));
+    c.globalAlpha = 1;
+  }
+}
+
+// The v2 ghost (MG_GHOST_MORE): drawn where it was, the size and way round it was.
+// It goes on top of the scene, so it stays faint.
+function mgGhostDraw2(c, r, g) {
+  const n = g.s.length / 4, i = Math.floor(r.t * MG_GHOST_HZ);
+  if (i >= n) return;
+  const sheet = mgImg(mg.sheets, `/sprites/anim/${encodeURIComponent(g.slug)}.png`);
+  if (!sheet.complete || !sheet.naturalWidth || !habAnimIdx) return;
+  const x = g.s[i * 4] / 4, y = g.s[i * 4 + 1] / 4, look = g.s[i * 4 + 2], k = g.s[i * 4 + 3] / 100;
+  const flip = look >= 4096, rf = look & 4095, F = HAB_UNIT, FP = sheet.naturalWidth / habAnimIdx.frames;
+  c.save();
+  c.globalAlpha = .32 * Math.min(1, r.t * 2, (n - i) / MG_GHOST_HZ * 2);
+  c.translate(x, y);
+  c.scale(flip ? k : -k, k);
+  c.drawImage(mgFrame(sheet, `${g.slug}~`, rf >> 5, rf & 31, FP), -F / 2, -F, F, F);
+  c.restore();
+  if (r.t < 2.5) {
+    c.globalAlpha = Math.min(1, (2.5 - r.t) * 2) * .8;
+    c.font = "bold 8px system-ui, sans-serif"; c.textAlign = "center"; c.fillStyle = "#fff";
+    c.fillText("your best", Math.round(x), Math.round(y - F * k - 2));
     c.globalAlpha = 1;
   }
 }
@@ -2622,6 +2659,8 @@ function mgAnimal(c, r, x, y, poses, o = {}) {
     : pose === "idle" && !o.frame ? habIdleFrame(r.phase * 4 / 3) : loop(o.id === false ? f : mgSmooth(r, f, o.id || poses[0]));
   const k = o.scale || 1;
   if (sad && o.floor != null) y = mgSadDrop(r, y, o.floor);
+  // The animal you play as (not a partner or a whole school): kept for the ghost.
+  if (!o.other && o.id !== false && framed) r.drawn = { x: mgSub(x), y: mgSub(y), row: habAnimIdx.rows.indexOf(pose), frame, k, flip: o.flip === false };
   c.save();
   c.translate(mgSub(x), mgSub(y));
   c.scale(o.flip === false ? k : -k, k);

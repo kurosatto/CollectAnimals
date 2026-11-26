@@ -194,7 +194,7 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
   real place, not its `HAB_TWIN`. Switzerland has its own far scene (the Matterhorn), and
   the Alpine countries now twin Wyoming's grey granite instead of Colorado's maroon peaks.
   Preview: render `habBackground(habLayout(w), phase, twin, {}, place)` in a page.
-- 0.99.1-0.99.8 overnight polish (2026-11-26; tonight's releases are 0.99.x patches so 1.0.0 stays free
+- 0.99.1-0.99.9 overnight polish (2026-11-26; tonight's releases are 0.99.x patches so 1.0.0 stays free
   for the launch; versionCode is major*10000+minor*100+patch, so 0.100.0 would clash with 1.0.0):
   - Smoothness: dawn/dusk/night light is applied per shown 40 px frame (`habFrame(..., phase)`), never to
     whole sheets (that froze low-end phones ~1.4 s). 120/144 Hz screens draw the habitat every other
@@ -209,7 +209,10 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
   - Seeds: tapping the empty meadow (own habitat) drops a temporary decoration (`habSeed`, act `peck`);
     nearby seed eaters (`HAB_WHO.seedeater`) come and peck it up.
   - Minigame ghost: Sky Glide, Trail Run and River Swim replay your best try see-through
-    (`mgGhostKeep/Save/Draw`, localStorage `mg.ghost.<level>`).
+    (`mgGhostKeep/Save/Draw`, localStorage `mg.ghost.<level>`). Since 0.99.9 also Mud Slide, Nectar Rush,
+    Burrow Dig, Echo Flight, Plunge Dive, Big Splash, Branch Leap and Freeze! (`MG_GHOST_MORE`, format v2:
+    x, y, row/frame/flip, scale per sample, recorded from `mgAnimal`'s `r.drawn`). Not Claw Catch, Tide
+    Pool Spin, Call Back, Feeder Rush or School Swim.
   - Newcomers: a newly captured animal walks, flies or swims in from the edge, twinkling, and introduces
     itself ("New here: ...") (`habNewcomers`, `habArrive`; localStorage `hab.seen` lists the welcomed
     slugs, and the first habitat a phone sees counts as already moved in).
