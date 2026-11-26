@@ -727,7 +727,8 @@
     <img class="sprite dex-sprite" id="dex-sprite" alt="">
     <div style="flex:1"><div class="num muted" id="dex-num"></div><h2 id="dex-name"></h2>
       <div class="muted" id="dex-sci"></div><div class="rarity" id="dex-rarity"></div>
-      <div class="status" id="dex-status"></div><div class="muted small" id="dex-record"></div></div>
+      <div class="status" id="dex-status"></div><div class="muted small" id="dex-record"></div>
+      <button class="ghost dex-call" id="dex-call" hidden><img class="pi" src="/sprites/ui_ic_sound_on.png" alt="">Hear its call</button></div>
     <button class="close" id="dex-close" aria-label="Close">×</button>
   </div>
   <div class="dex-body">
@@ -1827,6 +1828,10 @@ async function openDex(key, num, caught, stateCode = myState.code) {
   const s = d.species;
   $("dex-sprite").src = s.slug ? spriteUrl(s.slug, true) : silhouetteUrl(s.number);
   $("dex-sprite").classList.toggle("shadow", !s.slug);
+  // Its call, the same one it makes when you tap it in the habitat (habVoice).
+  const sings = !!(s.revealed && s.slug && typeof habVoiceOf === "function" && habVoiceOf(s));
+  $("dex-call").hidden = !sings;
+  $("dex-call").onclick = sings ? () => habVoice({ s }, 1, true) : null;
   const st = $("dex-status");
   st.className = "status " + (d.captured ? "mine" : s.revealed ? "friend" : "");
   st.textContent = d.captured ? "✓ Captured by you"
