@@ -165,12 +165,42 @@ function habSpawn(a) {
 const HAB_WIDE = 440;
 const HAB_ROOM = { 320: 32, 480: 44 }, HAB_TURN_MIN = 20;
 const habTurn = () => Math.floor(habNow() / (HAB_TURN_MIN * 60000));
-function habOutNow(caught) {
+function habOutNow(caught, fresh = new Set()) {
   const room = HAB_ROOM[hab.w] || 32;
   hab.turn = habTurn();
   if (caught.length <= room) return caught;
   const mix = (slug) => { let h = hab.turn * 2654435761 >>> 0; for (const ch of slug) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0; return h; };
-  return [...caught].sort((x, y) => mix(x.species.slug) - mix(y.species.slug)).slice(0, room);
+  // A newcomer is always out, to make its entrance.
+  const key = (e) => (fresh.has(e.species.slug) ? -1 : mix(e.species.slug));
+  return [...caught].sort((x, y) => key(x) - key(y)).slice(0, room);
+}
+
+// ---- Newcomers (2026-11-26) ----------------------------------------------------------
+// A newly captured animal doesn't just appear in your habitat: it walks in from the edge
+// of the meadow (flies in, or swims in from the open sea), twinkling, and says hello with
+// its name and a fun fact. The phone remembers which animals it has already welcomed
+// (localStorage "hab.seen", slugs only); the first time it sees a habitat, everyone there
+// counts as already moved in.
+function habNewcomers(caught) {
+  const fresh = new Set();
+  if (hab.visit) return fresh;
+  let seen = null;
+  try { const v = localStorage.getItem("hab.seen"); seen = v === null ? null : new Set(v.split(",").filter(Boolean)); } catch { return fresh; }
+  const slugs = caught.map((e) => e.species.slug);
+  if (seen) for (const s of slugs) if (!seen.has(s) && fresh.size < 3) fresh.add(s);
+  const all = new Set([...(seen || []), ...slugs]);
+  if (!seen || all.size !== seen.size) try { localStorage.setItem("hab.seen", [...all].join(",")); } catch {}
+  return fresh;
+}
+function habArrive(a) {
+  const L = hab.L;
+  if (!L) return;
+  a.arriving = 7;
+  if (HAB_LAND.has(a.role)) { a.x = -16; a.y = a.ty; a.pause = 0; a.dir = 1; }
+  else if (a.role === "swim" || a.role === "float") a.x = L.w + 20;
+  else if (HAB_FLIERS.has(a.role) && a.role !== "soar") { a.x = -24; if (a.vx) a.vx = Math.abs(a.vx); a.dir = 1; }
+  // It introduces itself once the scene is up.
+  setTimeout(() => { if (hab.animals.includes(a) && !hab.picked) { hab.picked = a; hab.factIdx = 0; habSay(a); } }, 900);
 }
 
 // Called with the captured entries whenever the collection loads. Animals already
@@ -183,7 +213,8 @@ function habitatSet(entries) {
   const old = new Map(hab.animals.map((a) => [a.s.slug, a]));
   const caught = entries.filter((e) => e.caught && e.species.slug);
   hab.entries = entries; hab.total = caught.length;
-  hab.animals = habOutNow(caught).map((e) => {
+  const fresh = habNewcomers(caught);
+  hab.animals = habOutNow(caught, fresh).map((e) => {
     const prev = old.get(e.species.slug);
     if (prev && !relayout) { prev.s = e.species; prev.activity = e.activity || "day"; return prev; }
     const a = { s: e.species, activity: e.activity || "day", role: habRole(e.species), num: e.num };
@@ -191,6 +222,7 @@ function habitatSet(entries) {
     habSpawn(a);
     if (!habImgs[a.s.slug]) { habImgs[a.s.slug] = new Image(); habImgs[a.s.slug].src = spriteUrl(a.s.slug, true); }
     if (!habSheets[a.s.slug]) { habSheets[a.s.slug] = new Image(); habSheets[a.s.slug].src = `/sprites/anim/${a.s.slug}.png`; }
+    if (fresh.has(a.s.slug)) habArrive(a);
     return a;
   });
   habWeather();
@@ -327,8 +359,18 @@ function habPhase() {
   if (!hab.peek) return real;
   return real === "day" ? "night" : "day";
 }
-const habAwake = (a, phase) => !habTuckedIn(a) && (phase === "dawn" || phase === "dusk" || a.activity === "any"
+const habAwakeNow = (a, phase) => !habTuckedIn(a) && (phase === "dawn" || phase === "dusk" || a.activity === "any"
   || a.activity === (phase === "night" ? "night" : "day"));
+// Animals don't all drop off (or wake up) in the same instant when the light changes:
+// each one follows within a few seconds, and habAnim plays the moment itself (settling
+// down before sleep, a stretch and a groom on waking). a.flipAt is when it last changed.
+function habAwake(a, phase) {
+  const now = habAwakeNow(a, phase);
+  if (habStill || a.awNow === undefined) { a.awNow = a.awShown = now; return now; }
+  if (now !== a.awNow) { a.awNow = now; a.awAt = hab.t + Math.random() * 5; }
+  if (a.awShown !== now && hab.t >= a.awAt) { a.awShown = now; a.flipAt = hab.t; }
+  return a.awShown;
+}
 
 function habNote() {
   if (hab.visit?.showcase) return;
@@ -704,9 +746,12 @@ const HAB_TURN = .34;
 const HAB_TURNERS = new Set(["walk", "shore", "wade", "beach", "hop"]);
 function habStepTurning(a, dt, awake) {
   if (a.faced === undefined) a.faced = a.dir;
+  if (a.arriving > 0) a.arriving -= dt;
   const x = a.x, y = a.y, turning = a.turnT > 0;
   habStep(a, dt, awake);
   const hurry = a.flee > 0 || a.chaseT > 0 || !awake || a.dv;
+  // Just woken and stretching (habAnim's groom): it stays put until it's done.
+  if (!hurry && hab.t - (a.flipAt ?? -9) < 1.3 && HAB_TURNERS.has(a.role)) { a.x = x; a.y = y; }
   if (turning) {
     a.turnT = hurry ? 0 : a.turnT - dt;
     if (!hurry) { a.x = x; a.y = y; }  // it turns on the spot
@@ -1061,7 +1106,14 @@ function habAnim(a, awake, roost) {
   const cyc = habCyc;
   // Still, it breathes (one breath every ~3 s) and now and then blinks.
   const still = ["idle", habIdleFrame(a.phase * 4 / 3 + (a.x % 7) * .3, Math.round(a.x) & 1)];
-  if (!awake) return ["sleep", cyc(a.phase * 1.2)];
+  const since = hab.t - (a.flipAt ?? -9);
+  if (!awake) {
+    // just dropping off: it settles down first (a bird fluffs down, a mammal sits)
+    if (since < 1.1 && has("sit")) return ["sit", habIdleFrame(a.phase * 4 / 3, 1)];
+    return ["sleep", cyc(a.phase * 1.2)];
+  }
+  // just woken: a stretch and a quick groom before it gets going
+  if (since < 1.3 && has("groom") && !a.dv && !(a.flee > 0)) return ["groom", cyc(since * 2.5)];
   // Tapped: a reef animal or jelly pulls in and opens up again; a turtle or snail
   // tucks into its shell for a moment.
   if (a.shy > 0) {
@@ -1167,6 +1219,14 @@ function habDraw() {
       const on = Math.sin(p.a.phase * 4) > -.2;
       if (on) { c.fillStyle = "rgba(255,240,120,.35)"; c.fillRect(p.x - 6, p.y - 14, 12, 10);
                 c.fillStyle = "#fff6a0"; c.fillRect(p.x - 2, p.y - 11, 4, 4); }
+    }
+    if (p.a.arriving > 0 && !p.hidden) {
+      // a newcomer twinkles as it arrives
+      c.fillStyle = "#fff8c0";
+      for (let i = 0; i < 3; i++) {
+        const u = p.a.phase * 2.2 + i * 2.1, sx = Math.round(p.x + Math.sin(u * 1.3) * 14), sy = Math.round(p.y - 18 + Math.cos(u) * 12);
+        if (Math.sin(u * 3) > 0) { c.fillRect(sx, sy - 1, 1, 3); c.fillRect(sx - 1, sy, 3, 1); }
+      }
     }
     if (p.a.s.rarity === "legendary" && Math.sin(p.a.phase * 3) > .3) {
       c.fillStyle = "#ffe27a";
@@ -1413,7 +1473,7 @@ function habSay(a) {
   b.innerHTML = "";
   const name = document.createElement("div");
   name.className = "hab-name";
-  name.textContent = a.s.common_name + (mood ? ` · ${mood}` : awake ? "" : " · asleep");
+  name.textContent = (a.arriving > 0 ? "New here: " : "") + a.s.common_name + (mood ? ` · ${mood}` : awake ? "" : " · asleep");
   b.append(name);
   if (facts.length) {
     const fact = document.createElement("div");
