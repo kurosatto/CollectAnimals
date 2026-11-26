@@ -1247,6 +1247,7 @@ function mgSfx(kind) {
   else if (kind === "treat") mgNote(ctx, out, "square", 1320, at, .07, .05);
   // Lost: a soft "aww", two notes sliding down, after the bump.
   else if (kind === "sad") { mgNote(ctx, out, "triangle", mgHz(67), at + .3, .3, .07, mgHz(65)); mgNote(ctx, out, "triangle", mgHz(64), at + .62, .55, .07, mgHz(59)); }
+  else if (kind === "best") [7, 12].forEach((n, i) => mgNote(ctx, out, "triangle", mgHz(76 + n), at + i * .08, .18, .06));
   else if (kind === "done") [0, 4, 7, 12].forEach((n, i) => mgNote(ctx, out, "square", mgHz(72 + n), at + i * .1, .2, .07));
 }
 
@@ -1681,6 +1682,7 @@ function mgStep(r, dt) {
     r.acc -= MG_DT;
     r.prev = mgLerpSnap(r);
     if (mg.practice) mgFlag(r);
+    else mgPassBest(r, key);
     mgPress(r, key, mg.down);
     r.dir = mg.down ? mg.dir || 0 : 0;
     const P = MG_MORE[key];
@@ -1720,6 +1722,18 @@ function mgStep(r, dt) {
     if (mgHit(r, key, r.hazards || (r.hazards = r.things.filter((o) => !o.good).sort((a, b) => a.wx - b.wx)))) mgEnd(r, false);
     else if (r.dist >= r.len) mgEnd(r, true);
   }
+}
+
+// Getting further than ever before: a little chime and "New best!" the moment you pass
+// your best (the gold tick on the progress bar), not only once the try is over.
+function mgPassBest(r, key) {
+  const best = r.rec && r.rec.pct;
+  if (r.demo || r.passedBest || !best || best < 5 || best >= 100 || r.dist / r.len * 100 <= best) return;
+  r.passedBest = true;
+  const [x0, y0, x1] = mgBox(key, r), x = (x0 + x1) / 2;
+  r.fx.push({ kind: "text", x, y: y0 - 10, text: "New best!", life: 1.2 });
+  for (let i = 0; i < 6; i++) r.fx.push({ kind: "star", x, y: y0, vx: (i - 2.5) * 14, vy: -40 - (i % 2) * 16, life: .7 });
+  mgSfx("best");
 }
 
 // Drawing between physics steps. The course moves in fixed 1/120 s steps, so a

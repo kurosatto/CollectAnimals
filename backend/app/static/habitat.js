@@ -183,7 +183,9 @@ function habOutNow(caught, fresh = new Set()) {
 // counts as already moved in.
 function habNewcomers(caught) {
   const fresh = new Set();
-  if (hab.visit) return fresh;
+  // Nothing caught yet (or the collection hasn't loaded): don't mark the empty list as
+  // seen, or the first real load would welcome its animals as newcomers.
+  if (hab.visit || !caught.length) return fresh;
   let seen = null;
   try { const v = localStorage.getItem("hab.seen"); seen = v === null ? null : new Set(v.split(",").filter(Boolean)); } catch { return fresh; }
   const slugs = caught.map((e) => e.species.slug);
@@ -1198,6 +1200,7 @@ function habAnim(a, awake, roost) {
   return still;
 }
 
+const HAB_BG_FADE = 1400;  // ms
 function habDraw() {
   const cv = $("hab-canvas");
   if (!hab.L || !cv) return;
@@ -1207,11 +1210,24 @@ function habDraw() {
   const spot = (b) => (b ? b.xy.map((v) => v >> 2).join(",") + (b.lit ? "/" + Math.round(b.lit * 40) : "") : "-");
   const key = `${L.w}/${phase}/${habRealState()}/${habSeason()}/${spot(lights.sun)}/${spot(lights.moon)}`;
   if (cv.width !== L.w * HAB_RES) { cv.width = L.w * HAB_RES; cv.height = HAB_H * HAB_RES; }
-  if (hab.bgKey !== key) { hab.bg = habBackground(L, phase, habState(), lights, habRealState()); hab.bgKey = key; }
+  if (hab.bgKey !== key) {
+    // When the light changes (dawn, dusk, or peeking at night), the old scene fades
+    // out over the new one instead of snapping.
+    const old = hab.bg && hab.bgPhase && hab.bgPhase !== phase && hab.bg.width === L.w && !habStill ? hab.bg : null;
+    hab.bg = habBackground(L, phase, habState(), lights, habRealState()); hab.bgKey = key; hab.bgPhase = phase;
+    if (old) { hab.bgOld = old; hab.bgFade = 0; }
+  }
   const c = cv.getContext("2d");
   c.setTransform(HAB_RES, 0, 0, HAB_RES, 0, 0);
   c.imageSmoothingEnabled = false;
   c.drawImage(hab.bg, 0, 0);
+  if (hab.bgOld) {
+    const now = performance.now();
+    if (!hab.bgFade) hab.bgFade = now;
+    const k = (now - hab.bgFade) / HAB_BG_FADE;
+    if (k >= 1) hab.bgOld = null;
+    else { c.globalAlpha = 1 - k * k * (3 - 2 * k); c.drawImage(hab.bgOld, 0, 0); c.globalAlpha = 1; }
+  }
   habWxShade(c, L, phase);
   habAmbient(c, L, phase);
   const now = performance.now();
