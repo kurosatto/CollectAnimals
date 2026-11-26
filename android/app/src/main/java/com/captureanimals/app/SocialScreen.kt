@@ -327,6 +327,30 @@ private fun dateOf(ms: Long) = DateFormat.getDateInstance(DateFormat.MEDIUM).for
 
 // --- Account ------------------------------------------------------------------------------
 
+/**
+ * A pop-up that slides up from the bottom like an app's sheet (drag it down or tap outside to
+ * close), with the same title / text / buttons slots as AlertDialog (kuro, 2026-11-26).
+ */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+fun SheetDialog(onDismissRequest: () -> Unit, confirmButton: @Composable () -> Unit,
+                dismissButton: (@Composable () -> Unit)? = null, title: (@Composable () -> Unit)? = null,
+                text: (@Composable () -> Unit)? = null) {
+    androidx.compose.material3.ModalBottomSheet(onDismissRequest = onDismissRequest,
+        sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+        Column(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            title?.let { androidx.compose.material3.ProvideTextStyle(MaterialTheme.typography.titleLarge) { it() } }
+            text?.let { Box(Modifier.weight(1f, fill = false)) { it() } }
+            Row(Modifier.align(Alignment.End), horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically) {
+                dismissButton?.invoke()
+                confirmButton()
+            }
+        }
+    }
+}
+
 /** Sign in, sign up, or (signed in) feed sharing and sign out. Also where the server lives. */
 @Composable
 fun AccountDialog(state: UiState, vm: GameViewModel, onDismiss: () -> Unit) {
@@ -342,7 +366,7 @@ fun AccountDialog(state: UiState, vm: GameViewModel, onDismiss: () -> Unit) {
     // Close once signed in.
     LaunchedEffect(acct?.username) { if (acct != null && password.isNotEmpty()) onDismiss() }
 
-    AlertDialog(onDismissRequest = onDismiss, confirmButton = {
+    SheetDialog(onDismissRequest = onDismiss, confirmButton = {
         if (acct == null) {
             Button(enabled = !state.accountBusy && ident.isNotBlank() && password.length >= 8 &&
                     (!signUp || (email.isNotBlank() && birthYear.toIntOrNull() in 1900..2100)),
@@ -487,7 +511,7 @@ fun SocialScreen(state: UiState, social: SocialViewModel, section: String, onSig
 fun CommentsDialog(s: SocialState, social: SocialViewModel) {
     val p = s.commentsFor ?: return
     if (s.viewing != null) return  // the full-screen photo shows them itself
-    AlertDialog(onDismissRequest = social::closeComments,
+    SheetDialog(onDismissRequest = social::closeComments,
         confirmButton = { TextButton(onClick = social::closeComments) { Text("Close") } },
         title = { Text("Comments · ${p.commonName ?: "photo"} by ${if (p.isMine) "you" else p.username}",
             maxLines = 2, overflow = TextOverflow.Ellipsis) },

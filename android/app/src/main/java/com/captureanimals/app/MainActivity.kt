@@ -20,6 +20,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.displayCutout
@@ -63,8 +64,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -125,7 +125,12 @@ fun rarityColor(rarity: String): Color = when (rarity) {
 fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), openTab: String? = null) {
     val state by vm.state.collectAsStateWithLifecycle()
     val socialState by social.state.collectAsStateWithLifecycle()
-    var tabChoice by rememberSaveable { mutableIntStateOf(TABS.indexOfFirst { it.key == openTab }.coerceAtLeast(0)) }
+    // Feed, Friends and My photos are tabs inside the Friends tab; a notification can open any of them.
+    val openKey = if (openTab == "gallery" || openTab == "feed") "social" else openTab
+    var tabChoice by rememberSaveable { mutableIntStateOf(TABS.indexOfFirst { it.key == openKey }.coerceAtLeast(0)) }
+    var socialSub by rememberSaveable { mutableStateOf(when (openTab) { "gallery" -> "gallery"; "social" -> "friends"; else -> "feed" }) }
+    // Each tap on the shutter asks the capture screen to open the camera, like a camera app.
+    var cameraAsk by remember { mutableIntStateOf(0) }
     var showAccount by rememberSaveable { mutableStateOf(false) }
     // A minigame being played takes the whole screen, so the bars go away.
     var gameOn by remember { mutableStateOf(false) }
@@ -168,6 +173,10 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
     // Parks lives inside the Field Guide, behind a button (only for states with park data).
     var parksOpen by rememberSaveable { mutableStateOf(false) }
     val showParks = parksOpen && TABS[tab].key == "collection" && !dex?.parks.isNullOrEmpty()
+    val pickTab: (Int) -> Unit = { i ->
+        if (TABS[i].key == "capture" && TABS[tabChoice].key != "capture") cameraAsk++
+        tabChoice = i; parksOpen = false
+    }
     // The state's own entry, or another state's species from the Photos tab.
     val entry = dexSlug?.let { slug ->
         info?.species?.firstOrNull { it.slug == slug } ?: state.allSpecies.firstOrNull { it.slug == slug }
@@ -201,7 +210,9 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
     val barsAndNotch = WindowInsets.systemBars.union(WindowInsets.displayCutout)
 
     Row(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-    if (sideways && !gameOn) SideTabs(tab, requests) { tabChoice = it; parksOpen = false }
+    // Back goes to the habitat first, like other apps, instead of closing the app from any tab.
+    BackHandler(enabled = tab != 0 && !showParks && !gameOn) { tabChoice = 0 }
+    if (sideways && !gameOn) SideTabs(tab, requests, pickTab)
     Scaffold(Modifier.weight(1f), contentWindowInsets = when {
         gameOn -> ScaffoldDefaults.contentWindowInsets
         // The strip already keeps clear of a notch or buttons on the left.
@@ -214,7 +225,10 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
             Row(Modifier.fillMaxWidth().leather(top = false).windowInsetsPadding(WindowInsets.statusBars)
                 .windowInsetsPadding(barsAndNotch.only(
                     if (sideways) WindowInsetsSides.End else WindowInsetsSides.Horizontal))
-                .height(if (sideways) 40.dp else 46.dp).padding(start = 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                .height(if (sideways) 44.dp else 52.dp).padding(start = if (showParks) 0.dp else 14.dp, end = 6.dp),
+                verticalAlignment = Alignment.CenterVertically) {
+                // Parks opens from the Field Guide, so it has a back arrow like an app screen.
+                if (showParks) IconButton(onClick = { parksOpen = false }) { TabIcon("ui_ic_back", Modifier.size(24.dp)) }
                 Text(if (tab == 0) "Capture Animals" else if (showParks) "Parks" else TABS[tab].title,
                     style = MaterialTheme.typography.titleMedium, color = Journal.CreamBright, maxLines = 1,
                     overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = !sideways))
@@ -229,14 +243,17 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
                 }
                 if (state.states.size > 1) StateMenu(state.states, state.stateCode, state.mainState(), state.stateTiles,
                     onOpen = vm::loadStateTiles, onClose = vm::closeStateTiles, onView = vm::viewState, onMakeMain = vm::chooseState)
-                TextButton(onClick = { showAccount = true }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp),
+                // Your picture in a brass ring opens the account sheet (profile, log out).
+                val acct = state.account
+                if (acct != null) IconButton(onClick = { showAccount = true }) {
+                    Avatar(acct.avatar, Modifier.size(34.dp).clip(CircleShape).background(Journal.Cream)
+                        .border(2.dp, Journal.Brass, CircleShape).padding(2.dp))
+                } else TextButton(onClick = { showAccount = true },
                     colors = androidx.compose.material3.ButtonDefaults.textButtonColors(contentColor = Journal.Cream)) {
-                    state.account?.let { Avatar(it.avatar, Modifier.size(22.dp)); Spacer(Modifier.width(5.dp)) }
-                    Text(state.account?.username ?: "Log in", maxLines = 1, style = MaterialTheme.typography.labelLarge,
-                        overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 110.dp))
+                    Text("Log in", maxLines = 1, style = MaterialTheme.typography.labelLarge)
                 }
             }
-            if (info != null && !sideways) {
+            if (info != null && !sideways && TABS[tab].key in setOf("catch", "collection") && !showParks) {
                 // Progress on one short line instead of a sentence over a thick bar.
                 Row(Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("$captured/$total captured", style = handStyle(13))
@@ -249,64 +266,57 @@ fun App(vm: GameViewModel = viewModel(), social: SocialViewModel = viewModel(), 
             }
         }
     }, bottomBar = {
-        // One screen per job instead of one long page.
-        if (!gameOn && !sideways) NavigationBar(Modifier.leather(bottom = false), containerColor = Color.Transparent, tonalElevation = 0.dp) {
-            TABS.forEachIndexed { i, t ->
-                // Six tabs: one line of small text each, so "Field Guide" doesn't wrap.
-                NavigationBarItem(selected = tab == i, onClick = { tabChoice = i; parksOpen = false },
-                    colors = androidx.compose.material3.NavigationBarItemDefaults.colors(
-                        indicatorColor = Journal.Cream, selectedTextColor = Journal.CreamBright,
-                        unselectedTextColor = Journal.Cream.copy(alpha = .75f)),
-                    icon = {
-                        BadgedBox(badge = { if (t.key == "social" && requests > 0) Badge { Text("$requests") } }) {
-                            TabIcon(t.icon, Modifier.size(28.dp).then(
-                                if (tab == i) Modifier.border(2.dp, Journal.Brass, RoundedCornerShape(50)).padding(2.dp) else Modifier))
-                        }
-                    },
-                    label = { Text(t.title, maxLines = 1, softWrap = false, fontSize = 11.sp) })
-            }
-        }
+        // One screen per job, with the camera as a big shutter in the middle (kuro, 2026-11-26).
+        if (!gameOn && !sideways) BottomTabs(tab, requests, pickTab)
     }, containerColor = MaterialTheme.colorScheme.background) { padding ->
         val lines = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .45f)
         Box(Modifier.padding(padding).fillMaxSize().paperLines(lines)) {
+            // Screens fade into each other like an app's, instead of snapping like web pages.
+            val screen = if (info == null) "loading" else if (showParks) "parks" else TABS[tab].key
+            androidx.compose.animation.Crossfade(screen, animationSpec = androidx.compose.animation.core.tween(180),
+                label = "screen") { key ->
+            Box(Modifier.fillMaxSize()) {
             when {
-                info == null -> CircularProgressIndicator(Modifier.align(Alignment.Center))
-                TABS[tab].key == "catch" -> {
+                key == "loading" || info == null -> CircularProgressIndicator(Modifier.align(Alignment.Center))
+                key == "catch" || key == "capture" -> {
                     val animals = remember(info, dex, state.collection) { habitatAnimals(info, dex, state.collection) }
                     CatchScreen(state, animals, vm::capture, vm::dismissResult, vm::pick, vm::saveWhereWhen, vm::chooseState,
-                        vm::changeCaptureState, NameActions(vm::animalNames, vm::nameAnimal)) { dexSlug = it }
+                        vm::changeCaptureState, NameActions(vm::animalNames, vm::nameAnimal),
+                        capture = key == "capture", cameraAsk = cameraAsk) { dexSlug = it }
                 }
-                TABS[tab].key == "feed" ->
-                    SocialScreen(state, social, "feed", onSignIn = { showAccount = true }) { dexSlug = it }
-                TABS[tab].key == "social" ->
-                    SocialScreen(state, social, "friends", onSignIn = { showAccount = true }) { dexSlug = it }
-                TABS[tab].key == "gallery" && state.account != null ->
-                    OnlinePhotosScreen(social, onOpenDex = { dexSlug = it }, onDeleted = vm::reloadCollection,
-                        parks = state.fieldGuide?.parks.orEmpty())
-                showParks && dex != null -> {
-                    BackHandler { parksOpen = false }
-                    Column(Modifier.fillMaxSize()) {
-                        TextButton(onClick = { parksOpen = false }, modifier = Modifier.padding(horizontal = 8.dp)) {
-                            Text("‹ Back to Field Guide")
-                        }
-                        Box(Modifier.weight(1f)) {
-                            HotspotsScreen(info, dex, state.collection, onOpenDex = { dexSlug = it })
+                key == "social" -> Column(Modifier.fillMaxSize()) {
+                    SocialTabs(socialSub, requests) { socialSub = it }
+                    Box(Modifier.weight(1f)) {
+                        when {
+                            socialSub == "feed" ->
+                                SocialScreen(state, social, "feed", onSignIn = { showAccount = true }) { dexSlug = it }
+                            socialSub == "friends" ->
+                                SocialScreen(state, social, "friends", onSignIn = { showAccount = true }) { dexSlug = it }
+                            state.account != null ->
+                                OnlinePhotosScreen(social, onOpenDex = { dexSlug = it }, onDeleted = vm::reloadCollection,
+                                    parks = state.fieldGuide?.parks.orEmpty())
+                            else -> GalleryScreen(state.allSpecies, state.collection, onOpenDex = { dexSlug = it },
+                                onDelete = vm::deleteCatch)
                         }
                     }
                 }
-                TABS[tab].key == "collection" -> {
+                key == "parks" && dex != null -> {
+                    BackHandler { parksOpen = false }
+                    HotspotsScreen(info, dex, state.collection, onOpenDex = { dexSlug = it })
+                }
+                key == "collection" -> {
                     val sets = remember(state.sets, info, dex, state.stateCode) {
                         state.sets.forState(state.stateCode, info.species.map { it.slug }.toSet()) { dex?.details?.get(it)?.safety }
                     }
                     CollectionScreen(info, dex, state.collection, sets,
                         onOpenParks = if (dex?.parks.isNullOrEmpty()) null else ({ parksOpen = true })) { dexSlug = it }
                 }
-                TABS[tab].key == "games" -> {
+                key == "games" -> {
                     val animals = remember(info, dex, state.collection) { habitatAnimals(info, dex, state.collection) }
                     MinigamesScreen(animals) { gameOn = it }
                 }
-                TABS[tab].key == "gallery" -> GalleryScreen(state.allSpecies, state.collection, onOpenDex = { dexSlug = it },
-                    onDelete = vm::deleteCatch)
+            }
+            }
             }
         }
     }
@@ -326,6 +336,12 @@ private fun SideTabs(tab: Int, requests: Int, onPick: (Int) -> Unit) {
         verticalArrangement = Arrangement.SpaceEvenly, horizontalAlignment = Alignment.CenterHorizontally) {
         TABS.forEachIndexed { i, t ->
             val on = tab == i
+            if (t.key == "capture") {
+                Box(Modifier.weight(1f, fill = false).heightIn(max = 72.dp), contentAlignment = Alignment.Center) {
+                    Shutter(on, 50.dp) { onPick(i) }
+                }
+                return@forEachIndexed
+            }
             Column(Modifier.fillMaxWidth().weight(1f, fill = false).heightIn(max = 64.dp)
                 .clickable(role = androidx.compose.ui.semantics.Role.Tab, onClickLabel = t.title) { onPick(i) }
                 .padding(vertical = 3.dp),
@@ -346,21 +362,83 @@ private fun SideTabs(tab: Int, requests: Int, onPick: (Int) -> Unit) {
 // Icons are the website's 16x16 pixel-art tab icons (species/sprites/ui_tab_*.png).
 private class AppTab(val key: String, val title: String, val icon: String)
 
+// Five tabs like a phone app, the camera in the middle; Feed, Friends and My photos are
+// tabs inside Friends (SocialTabs).
 private val TABS = listOf(
-    AppTab("catch", "Habitat", "ui_tab_capture"),
+    AppTab("catch", "Habitat", "ui_tab_habitat"),
     AppTab("collection", "Field Guide", "ui_tab_guide"),
+    AppTab("capture", "Capture", "ui_tab_capture"),
     AppTab("games", "Games", "ui_tab_games"),
-    AppTab("gallery", "Photos", "ui_tab_photos"),
-    AppTab("feed", "Feed", "ui_tab_feed"),
     AppTab("social", "Friends", "ui_tab_friends"),
 )
+
+/** The camera tab: a round shutter in a brass ring, raised out of the leather strap. */
+@Composable
+private fun Shutter(on: Boolean, size: androidx.compose.ui.unit.Dp, onClick: () -> Unit) {
+    Box(Modifier.size(size).shadow(4.dp, CircleShape).clip(CircleShape).background(Journal.LeatherDark).padding(3.dp)
+        .clip(CircleShape).background(if (on) Color.White else Journal.Card).border(3.dp, Journal.Brass, CircleShape)
+        .clickable(role = androidx.compose.ui.semantics.Role.Tab, onClickLabel = "Capture an animal", onClick = onClick),
+        contentAlignment = Alignment.Center) {
+        TabIcon("ui_tab_capture", Modifier.size(size * .6f))
+    }
+}
+
+/**
+ * The tab bar on a phone held upright: a leather strap with an icon and a label per tab, the
+ * open one in a brass ring, and the camera shutter sitting up out of the middle.
+ */
+@Composable
+private fun BottomTabs(tab: Int, requests: Int, onPick: (Int) -> Unit) {
+    Box(Modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth().padding(top = 16.dp).leather(bottom = false)
+            .windowInsetsPadding(WindowInsets.navigationBars).height(66.dp),
+            verticalAlignment = Alignment.Bottom) {
+            TABS.forEachIndexed { i, t ->
+                val on = tab == i
+                Column(Modifier.weight(1f).fillMaxHeight()
+                    .clickable(role = androidx.compose.ui.semantics.Role.Tab, onClickLabel = t.title) { onPick(i) },
+                    horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Bottom) {
+                    if (t.key != "capture") BadgedBox(badge = { if (t.key == "social" && requests > 0) Badge { Text("$requests") } }) {
+                        TabIcon(t.icon, Modifier.size(34.dp).then(
+                            if (on) Modifier.background(Journal.Cream, CircleShape).border(2.dp, Journal.Brass, CircleShape).padding(4.dp)
+                            else Modifier.padding(4.dp)))
+                    }
+                    Text(t.title, maxLines = 1, softWrap = false, fontSize = 11.sp, overflow = TextOverflow.Clip,
+                        color = if (on) Journal.CreamBright else Journal.Cream.copy(alpha = .75f),
+                        fontWeight = if (on) FontWeight.Bold else FontWeight.Normal,
+                        modifier = Modifier.padding(top = 1.dp, bottom = 7.dp))
+                }
+            }
+        }
+        val capture = TABS.indexOfFirst { it.key == "capture" }
+        Box(Modifier.align(Alignment.TopCenter)) { Shutter(tab == capture, 62.dp) { onPick(capture) } }
+    }
+}
+
+/** Feed / Friends / My photos at the top of the Friends tab, as a leather segmented control. */
+@Composable
+private fun SocialTabs(sub: String, requests: Int, onPick: (String) -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp).clip(RoundedCornerShape(50))
+        .background(Journal.Leather).border(2.dp, Journal.Brass.copy(alpha = .45f), RoundedCornerShape(50)).padding(3.dp)) {
+        listOf("feed" to "Feed", "friends" to "Friends", "gallery" to "My photos").forEach { (key, label) ->
+            val on = sub == key
+            Row(Modifier.weight(1f).clip(RoundedCornerShape(50)).background(if (on) Journal.Cream else Color.Transparent)
+                .clickable(role = androidx.compose.ui.semantics.Role.Tab) { onPick(key) }.padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                Text(label, maxLines = 1, fontSize = 14.sp, fontWeight = FontWeight.Bold,
+                    color = if (on) Journal.Leather else Journal.Cream)
+                if (key == "friends" && requests > 0) { Spacer(Modifier.width(5.dp)); Badge { Text("$requests") } }
+            }
+        }
+    }
+}
 
 @Composable
 fun CatchScreen(state: UiState, animals: List<HabitatAnimal>, onCapture: (Uri, Pair<Double, Double>?, Boolean, CropBox?) -> Unit, onDismiss: () -> Unit,
                 onPick: (String?) -> Unit, onSaveWhereWhen: SaveWhereWhen, onMakeMain: (String) -> Unit,
-                onChangeState: (String) -> Unit, naming: NameActions? = null, onOpenDex: (String) -> Unit) {
+                onChangeState: (String) -> Unit, naming: NameActions? = null,
+                capture: Boolean = false, cameraAsk: Int = 0, onOpenDex: (String) -> Unit) {
     val context = LocalContext.current
-    val habitat = rememberHabitatView()
     var saveLocation by rememberSaveable { mutableStateOf(true) }
     val askLocation = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
         if (granted.values.none { it }) saveLocation = false
@@ -383,6 +461,10 @@ fun CatchScreen(state: UiState, animals: List<HabitatAnimal>, onCapture: (Uri, P
         pendingCameraUri = uri
         takePicture.launch(uri)
     }
+    // The shutter tab opens the camera straight away, unless a photo is already being worked on.
+    LaunchedEffect(cameraAsk) {
+        if (capture && cameraAsk > 0 && cropping == null && !state.busy && state.result == null) launchCamera()
+    }
 
     // Sideways the whole scene fits under the top bar, centred; upright it runs edge to edge.
     val sideways = isSideways()
@@ -393,63 +475,66 @@ fun CatchScreen(state: UiState, animals: List<HabitatAnimal>, onCapture: (Uri, P
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // The habitat is the home page, edge to edge with no frame (kuro, 2026-11-04); while a
-        // photo is being identified it moves below the result so the result shows first.
-        val working = cropping != null || state.busy || state.result != null || state.error != null
-        if (!working) Habitat(habitat, animals, state.stateCode, habMod, onOpen = onOpenDex)
-        else Spacer(Modifier.height(4.dp))
-        Text("Photograph a wild animal. If it's one of the ${state.info?.species?.size ?: 100} " +
-            "${state.fieldGuide?.region ?: ""} species, it's captured in your Field Guide.",
-            style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurfaceVariant)
-        val compact = androidx.compose.foundation.layout.PaddingValues(horizontal = 14.dp, vertical = 6.dp)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = ::launchCamera, enabled = !state.busy, contentPadding = compact,
-                elevation = androidx.compose.material3.ButtonDefaults.buttonElevation(defaultElevation = 3.dp)) {
-                TabIcon("ui_tab_capture", Modifier.size(20.dp)); Spacer(Modifier.width(6.dp)); Text("Take photo")
+        // The habitat is the home tab, edge to edge with no frame (kuro, 2026-11-04); taking and
+        // identifying a photo has its own tab behind the camera shutter (2026-11-26).
+        if (!capture) {
+            Habitat(rememberHabitatView(), animals, state.stateCode, habMod, onOpen = onOpenDex)
+            Text("Spotted a wild animal? Tap the camera to capture it.",
+                style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        } else {
+            Spacer(Modifier.height(4.dp))
+            Text("Photograph a wild animal. If it's one of the ${state.info?.species?.size ?: 100} " +
+                "${state.fieldGuide?.region ?: ""} species, it's captured in your Field Guide.",
+                style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            val compact = androidx.compose.foundation.layout.PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = ::launchCamera, enabled = !state.busy, contentPadding = compact,
+                    elevation = androidx.compose.material3.ButtonDefaults.buttonElevation(defaultElevation = 3.dp)) {
+                    TabIcon("ui_tab_capture", Modifier.size(20.dp)); Spacer(Modifier.width(6.dp)); Text("Take photo")
+                }
+                OutlinedButton(
+                    onClick = { pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                    enabled = !state.busy, contentPadding = compact,
+                    border = androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline),
+                ) { TabIcon("ui_tab_photos", Modifier.size(20.dp)); Spacer(Modifier.width(6.dp)); Text("Choose photo") }
             }
-            OutlinedButton(
-                onClick = { pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
-                enabled = !state.busy, contentPadding = compact,
-                border = androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline),
-            ) { TabIcon("ui_tab_photos", Modifier.size(20.dp)); Spacer(Modifier.width(6.dp)); Text("Choose photo") }
-        }
-        if (state.account != null) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                androidx.compose.material3.Checkbox(saveLocation, onCheckedChange = { on ->
-                    saveLocation = on
-                    if (on && !hasLocationPermission(context)) askLocation.launch(LOCATION_PERMISSIONS)
-                })
-                Text("Save where I captured it")
+            if (state.account != null) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    androidx.compose.material3.Checkbox(saveLocation, onCheckedChange = { on ->
+                        saveLocation = on
+                        if (on && !hasLocationPermission(context)) askLocation.launch(LOCATION_PERMISSIONS)
+                    })
+                    Text("Save where I captured it")
+                }
+                androidx.compose.runtime.LaunchedEffect(Unit) {
+                    if (saveLocation && !hasLocationPermission(context)) askLocation.launch(LOCATION_PERMISSIONS)
+                }
             }
-            androidx.compose.runtime.LaunchedEffect(Unit) {
-                if (saveLocation && !hasLocationPermission(context)) askLocation.launch(LOCATION_PERMISSIONS)
+            cropping?.let { uri ->
+                CropPanel(uri, onIdentify = { box ->
+                    cropping = null
+                    onCapture(uri, if (saveLocation) lastLocation(context) else null, saveLocation, box)
+                }, onCancel = { cropping = null })
+            }
+            if (state.busy) {
+                CircularProgressIndicator()
+                Text("Identifying…", style = MaterialTheme.typography.bodyMedium)
+            }
+            state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            state.result?.let { r ->
+                ResultCard(r, onDismiss, onPick, onOpenDex, state.fieldGuide?.parks.orEmpty(), onSaveWhereWhen,
+                    safety = r.species?.let { state.fieldGuide?.details?.get(it.slug) }
+                        ?.takeIf { it.safety == "caution" || it.safety == "danger" },
+                    // A photo that unlocked a state offers to make it the main one.
+                    makeMain = r.unlockedState?.takeIf { it != state.mainState() }
+                        ?.let { code -> state.states.firstOrNull { it.code == code } }
+                        ?.let { st -> "${st.name} my main ${st.word}" to { onMakeMain(st.code) } },
+                    changeState = if (r.canChangeState && state.states.size > 1) state.states to onChangeState else null,
+                    naming = naming, sharing = state.account?.shareTrainingPhotos == true, signedIn = state.account != null)
             }
         }
-        cropping?.let { uri ->
-            CropPanel(uri, onIdentify = { box ->
-                cropping = null
-                onCapture(uri, if (saveLocation) lastLocation(context) else null, saveLocation, box)
-            }, onCancel = { cropping = null })
-        }
-        if (state.busy) {
-            CircularProgressIndicator()
-            Text("Identifying…", style = MaterialTheme.typography.bodyMedium)
-        }
-        state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        state.result?.let { r ->
-            ResultCard(r, onDismiss, onPick, onOpenDex, state.fieldGuide?.parks.orEmpty(), onSaveWhereWhen,
-                safety = r.species?.let { state.fieldGuide?.details?.get(it.slug) }
-                    ?.takeIf { it.safety == "caution" || it.safety == "danger" },
-                // A photo that unlocked a state offers to make it the main one.
-                makeMain = r.unlockedState?.takeIf { it != state.mainState() }
-                    ?.let { code -> state.states.firstOrNull { it.code == code } }
-                    ?.let { st -> "${st.name} my main ${st.word}" to { onMakeMain(st.code) } },
-                changeState = if (r.canChangeState && state.states.size > 1) state.states to onChangeState else null,
-                naming = naming, sharing = state.account?.shareTrainingPhotos == true, signedIn = state.account != null)
-        }
-        // Your live habitat: the animals you've captured, in your state's scenery.
-        if (working) Habitat(habitat, animals, state.stateCode, habMod, onOpen = onOpenDex)
     }
     }
 }

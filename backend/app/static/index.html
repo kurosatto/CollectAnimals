@@ -575,30 +575,133 @@
     dialog:not(#viewer) { max-height:calc(100dvh - 12px); margin-top:6px; margin-bottom:6px; }
     #version { margin:12px 0 4px; }
   }
+  /* ---- Native app shell (2026-11-26): kuro said the menu felt like browsing a web page.
+     A fixed leather app bar with the screen's name (a back arrow on Parks), your picture
+     opening a menu sheet, five tabs with a raised camera shutter in the middle, Feed /
+     Friends / My photos as tabs inside Friends, chip rows that scroll sideways, pop-ups
+     that slide up as sheets, and no tap flashes or text selection on the controls. ---- */
+  html { -webkit-tap-highlight-color:transparent; }
+  body { overscroll-behavior-y:none; }
+  button, .photo-btn, .tile, nav#tabs, header, .subtabs { -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; touch-action:manipulation; }
+  header { position:sticky; top:0; z-index:12; display:flex; align-items:center; gap:6px; min-height:50px; }
+  header h1 { flex:1 1 auto; min-width:0; }
+  header h1 .title { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  body.authed:not([data-screen="catch"]) header h1 .logo, body.authed:not([data-screen="catch"]) header #state-name { display:none; }
+  #app-back { min-width:36px; min-height:36px; margin-left:-6px; }
+  #app-back .pi { width:22px; height:22px; }
+  /* Your place as a little pill, your picture in a brass ring. */
+  header #my-state { background:rgba(0,0,0,.22); border-radius:999px; padding:0 10px 0 7px; min-height:32px; gap:4px; font-size:.9rem; }
+  header #my-state .pi { width:18px; height:18px; }
+  header #username { max-width:none; min-width:0; padding:0; min-height:36px; }
+  header #username .avatar.small { width:32px; height:32px; border-radius:50%; background:#f3ead4; border:2px solid var(--brass); padding:1px; }
+  header #who:not(.hidden) { gap:8px; }
+  /* Switching screens: the new one fades in, like an app, not a page load. */
+  #game.enter > :not(.off) { animation:screen-in .18s ease-out; }
+  @keyframes screen-in { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+  /* The tab bar: the camera is a big round shutter sitting up out of the strap. */
+  nav#tabs { overflow:visible; }
+  nav#tabs button { min-width:0; }
+  nav#tabs button.shutter { padding-top:0; color:#fff3d6; }
+  nav#tabs .shutter .lens { display:grid; place-items:center; width:62px; height:62px; margin:-24px auto 1px; border-radius:50%;
+    background:radial-gradient(circle at 50% 38%, #fbf5e6 0 55%, #ead9b2 100%);
+    border:3px solid var(--brass); box-shadow:0 0 0 4px var(--leather), 0 0 0 6px rgba(201,164,90,.5), 0 4px 0 6px var(--leather2); }
+  nav#tabs .shutter .lens .ic { width:40px; height:40px; padding:0; border:none; background:none !important; box-shadow:none !important; opacity:1; }
+  nav#tabs .shutter:active .lens { transform:translateY(2px) scale(.96); }
+  nav#tabs .shutter.on .lens { background:radial-gradient(circle at 50% 38%, #fff 0 55%, #f3e3bf 100%); }
+  nav#tabs button:not(.shutter):active .ic { transform:scale(.9); }
+  nav#tabs .ic { transition:transform .12s; }
+  /* Feed / Friends / My photos: a segmented control under the top bar. */
+  .subtabs { position:sticky; top:var(--bar-h, 50px); z-index:11; display:flex; gap:0; margin:8px 0 4px; padding:3px;
+    background:var(--leather); border-radius:999px; box-shadow:inset 0 0 0 2px rgba(201,164,90,.45), 0 2px 0 var(--leather2); }
+  .subtabs button { flex:1; background:transparent; color:#d9c49a; box-shadow:none; border-radius:999px; padding:7px 4px;
+    font-size:.88rem; position:relative; }
+  .subtabs button:active { transform:none; }
+  .subtabs button.on { background:#f3ead4; color:var(--leather); }
+  .subtabs .badge { display:inline-block; margin-left:5px; min-width:18px; padding:0 5px; border-radius:9px; background:#d2423a; color:#fff;
+    font-size:.7rem; font-weight:700; line-height:18px; }
+  .card[data-tab="friends"] > h2, #hotspots-card > h2 { display:none; }
+  /* Capture screen: two big buttons, camera and library. */
+  .capture-card .cap-lead { margin:0 0 10px; }
+  .capture-card form .photo-btn { flex:1 1 140px; display:grid; justify-items:center; gap:6px; padding:16px 10px; border-radius:14px;
+    border:2px dashed var(--muted); font-size:1rem; text-align:center; cursor:pointer; }
+  .capture-card form .photo-btn .ic { width:40px; height:40px; }
+  .capture-card form #photo-name { flex:1 1 100%; }
+  /* Filter chips: one row that scrolls sideways instead of wrapping into a block. */
+  @media (max-width:719px), (orientation: landscape) and (max-height:520px) {
+    .seg { flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; margin-left:-12px; margin-right:-12px; padding:2px 12px 4px;
+           scroll-padding:0 12px; -webkit-overflow-scrolling:touch; }
+    .seg::-webkit-scrollbar { display:none; }
+    .seg button { flex:none; white-space:nowrap; }
+  }
+  /* The menu sheet. */
+  #menu .dex { padding:8px 16px 14px; }
+  .menu-me { display:flex; align-items:center; gap:12px; width:100%; text-align:left; background:transparent; color:var(--ink);
+    box-shadow:none; border-radius:12px; padding:8px 4px; font-family:var(--text); }
+  .menu-me > span:last-child { display:grid; gap:2px; }
+  .menu-me b { font-family:var(--pixel); font-size:1.2rem; }
+  .menu-me .avatar.big { border-radius:50%; border:2px solid var(--brass); background:#f3ead4; }
+  .menu-list { display:grid; margin:8px 0 0; border-top:1px solid var(--line); }
+  .menu-list button { display:flex; align-items:center; gap:12px; width:100%; text-align:left; background:transparent; color:var(--ink);
+    box-shadow:none; border-radius:0; padding:14px 4px; border-bottom:1px solid var(--line); font-size:1rem; }
+  .menu-list button .pi { width:22px; height:22px; margin:0; }
+  .menu-list button .small { margin-left:auto; font-family:var(--text); font-weight:400; }
+  .menu-list button:active { transform:none; background:rgba(0,0,0,.05); }
+  #menu #version { margin:14px 0 0; }
+  /* Phones: the app bar runs edge to edge under the status bar, pop-ups are bottom sheets. */
+  @media (max-width:719px) {
+    header { border-radius:0; margin:0 -10px 2px; padding:max(4px, env(safe-area-inset-top)) 8px 4px 12px; }
+    body.authed main { padding-bottom:calc(86px + env(safe-area-inset-bottom)); }
+    nav#tabs button { font-size:.66rem; }
+    dialog:not(#viewer) { width:100%; max-width:100%; margin:auto 0 0; border-radius:18px 18px 0 0; max-height:92dvh;
+      padding-bottom:env(safe-area-inset-bottom); animation:sheet-up .24s cubic-bezier(.2,.8,.3,1); transition:transform .2s; }
+    dialog:not(#viewer)::before { content:""; display:block; width:42px; height:5px; margin:8px auto 0; border-radius:3px;
+      background:var(--muted); opacity:.45; }
+    dialog:not(#viewer)::backdrop { animation:fade-in .24s; }
+  }
+  @keyframes sheet-up { from { transform:translateY(100%); } to { transform:none; } }
+  @keyframes fade-in { from { opacity:0; } to { opacity:1; } }
+  @media (prefers-reduced-motion: reduce) { #game.enter > :not(.off), dialog:not(#viewer) { animation:none !important; } }
+  /* Wide screens: the tabs stay along the top under the bar; the shutter is a round button among them. */
+  @media (min-width:720px) {
+    header { border-radius:0 0 14px 14px; }
+    nav#tabs { top:calc(var(--bar-h, 58px) + 6px); z-index:11; }
+    nav#tabs .shutter .lens { width:36px; height:36px; margin:0; border-width:2px; box-shadow:0 0 0 2px var(--leather2); }
+    nav#tabs .shutter .lens .ic { width:26px; height:26px; }
+    nav#tabs button.shutter { display:flex; align-items:center; justify-content:center; gap:6px; padding:6px 10px; }
+    .subtabs { top:calc(var(--bar-h, 58px) + 72px); }
+  }
+  /* Sideways phones: the shutter sits in the middle of the side strip. */
+  @media (orientation: landscape) and (max-height:520px) {
+    header { min-height:40px; border-radius:0 0 12px 12px; }
+    nav#tabs { top:0; }
+    nav#tabs .shutter .lens { width:46px; height:46px; margin:0 auto 1px; border-width:2px; box-shadow:0 0 0 3px var(--leather2); }
+    nav#tabs .shutter .lens .ic { width:30px; height:30px; }
+    nav#tabs button.shutter { display:grid; justify-items:center; align-content:center; gap:1px; padding:0 2px; max-height:72px; }
+    .subtabs { top:var(--bar-h, 40px); }
+    dialog:not(#viewer) { animation:sheet-up .24s cubic-bezier(.2,.8,.3,1); }
+  }
 </style>
 </head>
 <body>
 <main>
   <button id="update" class="hidden"></button>
   <header>
-    <h1><img class="logo" src="/icons/hummingbird/logo.png" alt=""><span class="title">Capture Animals</span> <span class="muted" style="font-size:1rem" id="state-name"></span></h1>
+    <button class="link hidden" id="app-back" type="button" aria-label="Back"><img class="pi" src="/sprites/ui_ic_back.png" alt=""></button>
+    <h1><img class="logo" src="/icons/hummingbird/logo.png" alt=""><span class="title" id="screen-title">Capture Animals</span> <span class="muted" style="font-size:1rem" id="state-name"></span></h1>
     <div class="head-right">
     <span id="offline" class="hidden" title="No connection: your Field Guide and habitat still work, new captures need the internet">Offline</span>
-    <button class="link hidden" id="install">Install app</button>
-    <div id="who" class="hidden"><button class="link" id="username"></button>
+    <div id="who" class="hidden">
       <button class="link" id="my-state" title="Your places: look at any state or country you have unlocked, or pick your main one"><img class="pi" src="/sprites/ui_ic_pin.png" alt=""></button>
-      <button class="link hidden" id="reports-open" title="Reports from players" aria-label="Reports"><img class="pi" src="/sprites/ui_ic_flag.png" alt=""><span class="lbl"> Reports</span></button>
-      <button class="link" id="logout" title="Log out" aria-label="Log out"><img class="pi" src="/sprites/ui_ic_logout.png" alt=""><span class="lbl">Log out</span></button></div>
+      <button class="link" id="username" aria-label="Menu"></button></div>
     </div>
   </header>
 
 <nav id="tabs" class="hidden">
-  <button data-tab="catch"><img class="ic" src="/sprites/ui_tab_capture.png" alt="">Habitat</button>
+  <button data-tab="catch"><img class="ic" src="/sprites/ui_tab_habitat.png" alt="">Habitat</button>
   <button data-tab="dex"><img class="ic" src="/sprites/ui_tab_guide.png" alt="">Field Guide</button>
+  <button data-tab="capture" class="shutter" aria-label="Capture an animal"><span class="lens"><img class="ic" src="/sprites/ui_tab_capture.png" alt=""></span><span class="lbl">Capture</span></button>
   <button data-tab="games"><img class="ic" src="/sprites/ui_tab_games.png" alt="">Games</button>
-  <button data-tab="photos"><img class="ic" src="/sprites/ui_tab_photos.png" alt="">Photos</button>
-  <button data-tab="feed"><img class="ic" src="/sprites/ui_tab_feed.png" alt="">Feed</button>
-  <button data-tab="friends"><img class="ic" src="/sprites/ui_tab_friends.png" alt="">Friends</button>
+  <button data-tab="social"><img class="ic" src="/sprites/ui_tab_friends.png" alt="">Friends</button>
 </nav>
 
   <section id="auth" class="card auth">
@@ -643,8 +746,8 @@
       <div class="hab-bar" id="hab-bar"><span id="hab-note" class="muted"></span><button class="ghost" id="hab-wx-here" hidden><img class="pi" src="/sprites/ui_ic_pin.png" alt="">My weather</button><button class="ghost" id="hab-calls"></button><button class="ghost" id="hab-snap" title="Save a picture of your habitat"><img class="pi" src="/sprites/ui_tab_photos.png" alt="">Picture</button><button class="ghost" id="hab-peek"></button></div>
       </div>
     </div>
-    <div class="card capture-card" data-tab="catch">
-      <h2>Capture an animal</h2>
+    <div class="card capture-card" data-tab="capture">
+      <p class="muted cap-lead">Snap a wild animal, or pick a photo you took. Crop it to the animal, then tap Identify.</p>
       <form id="upload-form">
         <label class="photo-btn"><img class="ic" src="/sprites/ui_tab_capture.png" alt="">Take photo
           <input id="photo-camera" type="file" accept="image/*" capture="environment" hidden></label>
@@ -667,6 +770,9 @@
       </div>
       <div id="result" class="card hidden"></div>
     </div>
+    <div class="subtabs off" data-tab="feed friends photos" role="tablist">
+      <button type="button" data-sub="feed">Feed</button><button type="button" data-sub="friends">Friends</button><button type="button" data-sub="photos">My photos</button>
+    </div>
     <div class="card off" data-tab="feed">
       <h2>Latest captures</h2>
       <div class="seg" id="feed-seg"></div>
@@ -676,7 +782,6 @@
       <p><button class="ghost hidden" id="feed-more">Show more</button></p>
     </div>
     <div class="card off" id="hotspots-card" data-tab="parks">
-      <p style="margin:0 0 8px"><button class="ghost" id="parks-back" type="button">‹ Back to Field Guide</button></p>
       <h2>Parks</h2>
       <p class="muted" style="margin-top:0">Parks worth a trip for animals you haven't captured yet. Tap a park to see what lives there.</p>
       <div class="hot-wrap">
@@ -686,7 +791,7 @@
       <div id="hot-list" class="hot-list"></div>
     </div>
     <div class="card off" data-tab="dex">
-      <h2>Field Guide <span id="progress" class="muted"></span></h2>
+      <h2>Captured <span id="progress" class="muted"></span></h2>
       <button class="parks-open hidden" id="parks-open" type="button"><img class="ic" src="/sprites/ui_tab_parks.png" alt=""> Parks to find animals</button>
       <div class="seg" id="guide-seg"></div>
       <div id="grid" class="grid guide"></div>
@@ -719,9 +824,18 @@
       <div id="friend-lists"></div>
     </div>
   </section>
-  <p id="version" class="muted">Capture Animals <span id="version-num">__RELEASE_VERSION__</span></p>
 </main>
 <div id="toast" class="hidden"></div>
+<dialog id="menu" class="sheet"><div class="dex">
+  <button class="menu-me" id="menu-me" type="button"><span id="menu-avatar"></span><span><b id="menu-name"></b><span class="muted small">Your profile and picture</span></span></button>
+  <div class="menu-list">
+    <button type="button" id="menu-places"><img class="pi" src="/sprites/ui_ic_pin.png" alt="">Places<span class="muted small" id="menu-place"></span></button>
+    <button type="button" class="hidden" id="reports-open"><img class="pi" src="/sprites/ui_ic_flag.png" alt="">Reports from players</button>
+    <button type="button" class="hidden" id="install"><img class="pi" src="/sprites/ui_ic_install.png" alt="">Install app</button>
+    <button type="button" id="logout"><img class="pi" src="/sprites/ui_ic_logout.png" alt="">Log out</button>
+  </div>
+  <p id="version" class="muted">Capture Animals <span id="version-num">__RELEASE_VERSION__</span></p>
+</div></dialog>
 <dialog id="dex"><div class="dex">
   <div class="dex-head">
     <img class="sprite dex-sprite" id="dex-sprite" alt="">
@@ -894,10 +1008,21 @@ $("auth-form").onsubmit = async (e) => {
 // One stray tap shouldn't sign a kid out (getting back in needs the password).
 $("logout").onclick = async () => {
   if (!confirm("Log out? You'll need your password to log back in.")) return;
+  $("menu").close();
   await pushUnsubscribe(); setToken(null);
 };
-$("username").onclick = () => openProfile($("username").textContent);
-$("username").title = "Your profile and picture";
+// The top bar's picture opens the menu sheet: profile, places, reports, install, log out.
+let myName = "";
+function setMe(avatar, name) {
+  myName = name;
+  $("username").replaceChildren(avatarImg(avatar, "small"));
+  $("menu-avatar").replaceChildren(avatarImg(avatar, "big"));
+  $("menu-name").textContent = name;
+}
+$("username").onclick = () => openSheet($("menu"));
+$("username").title = "Menu";
+$("menu-me").onclick = () => { $("menu").close(); openProfile(myName); };
+$("menu-places").onclick = () => { $("menu").close(); $("my-state").click(); };
 
 const CAPTURE_TIMEOUT_MS = 90000;
 
@@ -1610,6 +1735,8 @@ async function useState(code) {
   $("my-state").title = visiting ? `Visiting ${myState.name}. Tap to change places.`
     : "Your places: look at any state or country you have unlocked, or pick your main one";
   $("my-state").classList.toggle("hidden", states.length < 2);
+  $("menu-places").classList.toggle("hidden", states.length < 2);
+  $("menu-place").textContent = (myState.name || "") + (visiting ? " (visiting)" : "");
   let o = null;
   try { o = await api(`/map/${myState.code}`); } catch {}
   OUTLINE = (o && o.rings) || [];
@@ -2126,23 +2253,87 @@ function drawAlbum() {
   [...albumPhotos].sort(ALBUM_SORTS[albumSort][1]).forEach((p) => grid.append(photoCard(p, { compact: true })));
 }
 
-// One section at a time, picked from the tab bar (bottom on phones, top on wide screens).
-// Parks has no tab of its own: a button in the Field Guide opens it.
-const TABS = ["catch", "dex", "games", "photos", "feed", "parks", "friends"];
-function showTab(name) {
+// One screen at a time, picked from the tab bar like a phone app (bottom on phones, a strip
+// on the left when sideways, along the top on wide screens). Feed, Friends and My photos share
+// the Friends tab and switch with the tabs at its top; Parks opens from the Field Guide with a
+// back arrow in the top bar. Each screen keeps its own scroll position, tapping the open tab
+// again scrolls it to the top, and the phone's back button goes back to the habitat.
+const TABS = ["catch", "dex", "capture", "games", "photos", "feed", "parks", "friends"];
+const TAB_OF = { photos: "social", feed: "social", friends: "social", parks: "dex" };
+const SCREEN_TITLE = { catch: "Capture Animals", dex: "Field Guide", capture: "Capture", games: "Games",
+  photos: "Friends", feed: "Friends", friends: "Friends", parks: "Parks" };
+let socialSub = "feed", curTab = null;
+const tabScroll = {};
+try { socialSub = localStorage.getItem("socialSub") || "feed"; } catch {}
+function showTab(name, how) {
+  if (name === "social") name = socialSub;
   if (!TABS.includes(name)) name = "catch";
-  document.querySelectorAll("#game > [data-tab]").forEach((c) => c.classList.toggle("off", c.dataset.tab !== name));
-  document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b.dataset.tab === (name === "parks" ? "dex" : name)));
-  if (location.hash !== "#" + name) history.replaceState(null, "", "#" + name);
+  if (curTab) tabScroll[curTab] = window.scrollY;
+  const same = name === curTab;
+  document.querySelectorAll("#game > [data-tab]").forEach((c) => c.classList.toggle("off", !c.dataset.tab.split(" ").includes(name)));
+  const bar = TAB_OF[name] || name;
+  document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b.dataset.tab === bar));
+  document.querySelectorAll(".subtabs [data-sub]").forEach((b) => b.classList.toggle("on", b.dataset.sub === name));
+  if (bar === "social") { socialSub = name; try { localStorage.setItem("socialSub", name); } catch {} }
+  $("screen-title").textContent = SCREEN_TITLE[name];
+  document.body.dataset.screen = name;
+  $("app-back").classList.toggle("hidden", name !== "parks");
+  // Leaving the habitat leaves a step to come back to, so the phone's back button returns
+  // to it (and from Parks to the Field Guide) instead of closing the app.
+  if (location.hash !== "#" + name) {
+    const push = how !== "pop" && curTab && ((curTab === "catch" && name !== "catch") || name === "parks");
+    history[push ? "pushState" : "replaceState"](null, "", "#" + name);
+  }
+  curTab = name;
   if (name === "photos") loadMyPhotos();
   // Leaflet can't measure a map while its tab is hidden.
   if (name === "parks" && hotMap) setTimeout(frameHotMap, 0);
-  window.scrollTo(0, 0);
+  if (same) { window.scrollTo({ top: 0, behavior: "smooth" }); return; }
+  window.scrollTo(0, tabScroll[name] || 0);
+  const g = $("game");
+  g.classList.remove("enter"); void g.offsetWidth; g.classList.add("enter");
 }
-document.querySelectorAll("#tabs button").forEach((b) => (b.onclick = () => showTab(b.dataset.tab)));
-window.addEventListener("hashchange", () => showTab(location.hash.slice(1)));
+document.querySelectorAll("#tabs button").forEach((b) => (b.onclick = () => {
+  // The shutter opens the camera straight away on a phone, like a camera app.
+  if (b.dataset.tab === "capture" && matchMedia("(pointer:coarse)").matches && curTab !== "capture"
+      && $("crop").classList.contains("hidden") && $("result").classList.contains("hidden")) $("photo-camera").click();
+  showTab(b.dataset.tab);
+}));
+document.querySelectorAll(".subtabs [data-sub]").forEach((b) => (b.onclick = () => showTab(b.dataset.sub)));
+window.addEventListener("popstate", () => showTab(location.hash.slice(1), "pop"));
 $("parks-open").onclick = () => showTab("parks");
-$("parks-back").onclick = () => showTab("dex");
+$("app-back").onclick = () => showTab("dex");
+
+// Sticky things under the top bar need its height (it grows with the status bar on phones).
+new ResizeObserver(() => document.documentElement.style.setProperty("--bar-h", document.querySelector("header").offsetHeight + "px"))
+  .observe(document.querySelector("header"));
+
+// Pop-ups slide up from the bottom on phones like app sheets: drag the handle down, tap
+// outside, or press back to close them.
+function openSheet(d) { if (!d.open) d.showModal(); }
+for (const d of document.querySelectorAll("dialog:not(#viewer)")) {
+  d.addEventListener("click", (e) => {
+    if (e.target !== d) return;
+    const r = d.getBoundingClientRect();
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) d.close();
+  });
+  let y0 = null, dy = 0;
+  d.addEventListener("touchstart", (e) => {
+    const r = d.getBoundingClientRect();
+    y0 = (d.scrollTop <= 0 && e.touches[0].clientY - r.top < 56) ? e.touches[0].clientY : null; dy = 0;
+  }, { passive: true });
+  d.addEventListener("touchmove", (e) => {
+    if (y0 === null) return;
+    dy = Math.max(0, e.touches[0].clientY - y0);
+    d.style.transition = "none"; d.style.transform = `translateY(${dy}px)`;
+  }, { passive: true });
+  d.addEventListener("touchend", () => {
+    if (y0 === null) return;
+    d.style.transition = ""; d.style.transform = "";
+    if (dy > 90) d.close();
+    y0 = null;
+  });
+}
 
 async function loadGallery() {
   const box = $("dex-photos");
@@ -2260,7 +2451,7 @@ async function openProfile(username) {
             body: JSON.stringify({ avatar: n }) });
           row.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
           $("album-avatar").src = `/sprites/avatar_${n}.png`;
-          $("username").replaceChildren(avatarImg(n, "small"), u.username);
+          setMe(n, u.username);
           loadFriends();
         } catch (err) { alert(err.message); }
       };
@@ -2672,9 +2863,10 @@ let pushOn = false;
 
 function friendAlerts(f) {
   const names = f.incoming.map((p) => p.username);
-  const btn = document.querySelector('#tabs button[data-tab="friends"]');
-  btn.querySelector(".badge")?.remove();
-  if (names.length) btn.append(el("span", "badge", String(names.length)));
+  for (const btn of document.querySelectorAll('#tabs button[data-tab="social"], .subtabs [data-sub="friends"]')) {
+    btn.querySelector(".badge")?.remove();
+    if (names.length) btn.append(el("span", "badge", String(names.length)));
+  }
   document.title = (names.length ? `(${names.length}) ` : "") + "Capture Animals";
   const fresh = knownRequests ? names.filter((n) => !knownRequests.has(n)) : [];
   knownRequests = new Set(names);
@@ -3018,7 +3210,7 @@ async function render() {
     showTab(location.hash.slice(1));
     try {
       const me = await api("/me");
-      $("username").replaceChildren(avatarImg(me.avatar, "small"), me.username);
+      setMe(me.avatar, me.username);
       shareTraining = !!me.share_training_photos;
       myPrivacy = { show_in_feed: me.show_in_feed !== false, is_private: !!me.is_private };
       $("reports-open").classList.toggle("hidden", !me.is_admin);

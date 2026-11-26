@@ -161,6 +161,25 @@ ICONS = {
         "................",
         "................",
     ],
+    # A round tree on a green hill by a little pond, under the sun: your habitat.
+    "habitat": [
+        "................",
+        "...ooooo....oo..",
+        "..oglgggo..oyyo.",
+        ".oglggggGo.oyyo.",
+        ".ogggggGGo..oo..",
+        ".oggggGGGo......",
+        "..oGGGGGo.......",
+        "...oobboo.......",
+        ".....bo..ooooo..",
+        "..oooBboogggggo.",
+        ".ogggBgggggllggo",
+        "oggggggggooooggo",
+        "ogglgggggoSsSoGo",
+        "oGGGGGGGGGoooGGo",
+        "oooooooooooooooo",
+        "................",
+    ],
 }
 
 
