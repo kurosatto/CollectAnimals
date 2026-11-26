@@ -1793,6 +1793,7 @@ function mgEnd(r, cleared) {
     else if (cleared) r.newBest = false;
     r.bestPoints = pts >= rec.points;
   }
+  mgGhostSave(r, pct);
   if (!cleared) {
     const [x0, y0, x1, y1] = mgBox(mg.game.key, r);
     for (let i = 0; i < 6; i++) r.fx.push({ kind: "star", x: (x0 + x1) / 2, y: (y0 + y1) / 2, vx: (i - 2.5) * 16, vy: -30 - (i % 2) * 20, life: .8 });
@@ -1849,7 +1850,9 @@ function mgDrawAt(cv, r) {
   // Creeks first, so the stepping stones sit in them.
   for (const o of r.things) if (o.type === "pit" && o.x > -o.w && o.x < MG_W + o.w) mgThing(c, o, r);
   for (const o of r.things) if (!o.gone && o.type !== "pit") mgThing(c, o, r);
+  mgGhostDraw(c, r);
   mgPlayer(c, r);
+  mgGhostKeep(r);
   for (const f of r.fx) mgFxDraw(c, f);
   mgHud(c, r);
 }
@@ -2401,6 +2404,62 @@ function mgPlayer(c, r) {
   if (framed) c.drawImage(mgFrame(sheet, `${s.slug}~${habLook.skins[s.slug] || ""}`, habAnimIdx.rows.indexOf(pose), frame, FP), -F / 2, -F + bob, F, F);
   else c.drawImage(raw, -F / 2, -F + bob, F, F);
   c.restore();
+  r.drawn = framed ? { y, row: habAnimIdx.rows.indexOf(pose), frame } : null;  // for the ghost (mgGhostKeep)
+}
+
+// ---- Your best try's ghost (2026-11-26) ------------------------------------------------
+// In Sky Glide, Trail Run and River Swim the animal you played your best try with flies,
+// runs or swims along beside you, see-through: where it went up and down, the way to get
+// through. Kept on the device only (a few KB per game), and replaced when you beat it.
+const MG_GHOST_GAMES = new Set(["sky", "trail", "river"]);
+const MG_GHOST_HZ = 30;  // samples per second of course time
+const mgGhostCache = {};
+function mgGhostLoad(key) {
+  const k = "ghost." + mgLevelKey(key);
+  if (!(k in mgGhostCache)) {
+    try { const g = JSON.parse(mgStore.get(k) || "null"); mgGhostCache[k] = g && g.v === 1 && Array.isArray(g.s) ? g : null; }
+    catch { mgGhostCache[k] = null; }
+  }
+  return mgGhostCache[k];
+}
+// Each frame of a real try (not the demo or practice): where the animal was drawn and which frame.
+function mgGhostKeep(r) {
+  if (!MG_GHOST_GAMES.has(mg.game.key) || r.demo || mg.practice || r.mode !== "play" || !r.drawn) return;
+  const rec = r.ghostRec || (r.ghostRec = []), i = Math.floor(r.t * MG_GHOST_HZ);
+  while (rec.length / 2 <= i) rec.push(Math.round(r.drawn.y * 4), r.drawn.row * 32 + r.drawn.frame);
+}
+// At the end of a try: keep it if it got further than the ghost, or as far with more points.
+function mgGhostSave(r, pct) {
+  const key = mg.game.key;
+  if (!MG_GHOST_GAMES.has(key) || !r.ghostRec || r.ghostRec.length < MG_GHOST_HZ * 2) return;
+  const g = mgGhostLoad(key), pts = r.points || 0;
+  if (g && (pct < g.pct || pct === g.pct && pts <= (g.points || 0))) return;
+  const k = "ghost." + mgLevelKey(key);
+  mgGhostCache[k] = { v: 1, slug: mg.species.slug, pct, points: pts, s: r.ghostRec };
+  mgStore.set(k, JSON.stringify(mgGhostCache[k]));
+}
+function mgGhostDraw(c, r) {
+  if (!MG_GHOST_GAMES.has(mg.game.key) || r.demo || r.mode !== "play") return;
+  const g = mgGhostLoad(mg.game.key);
+  if (!g) return;
+  const n = g.s.length / 2, i = Math.floor(r.t * MG_GHOST_HZ);
+  if (i >= n) return;  // its try ended there
+  const sheet = mgImg(mg.sheets, `/sprites/anim/${encodeURIComponent(g.slug)}.png`);
+  if (!sheet.complete || !sheet.naturalWidth || !habAnimIdx) return;
+  const y = g.s[i * 2] / 4, rf = g.s[i * 2 + 1], F = HAB_UNIT, FP = sheet.naturalWidth / habAnimIdx.frames, key = mg.game.key;
+  const left = (n - i) / MG_GHOST_HZ;  // fades out over its last half second
+  c.save();
+  c.globalAlpha = .38 * Math.min(1, r.t * 2, left * 2);
+  c.translate(mgSub(r.x), key === "trail" ? y + 2 : y + F * .4);
+  c.scale(-1, 1);
+  c.drawImage(mgFrame(sheet, `${g.slug}~`, rf >> 5, rf & 31, FP), -F / 2, -F, F, F);
+  c.restore();
+  if (r.t < 2.5) {  // says what it is for the first moments
+    c.globalAlpha = Math.min(1, (2.5 - r.t) * 2) * .8;
+    c.font = "bold 8px system-ui, sans-serif"; c.textAlign = "center"; c.fillStyle = "#fff";
+    c.fillText("your best", Math.round(r.x), Math.round(key === "trail" ? y - 40 : y - 12));
+    c.globalAlpha = 1;
+  }
 }
 
 function mgFxDraw(c, f) {
