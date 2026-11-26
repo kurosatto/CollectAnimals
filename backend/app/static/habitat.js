@@ -16,7 +16,7 @@
 const HAB_H = 270;
 // While you look at a friend's profile, the scene moves into it and shows their
 // animals in their state's scenery (`visit`); closing the profile brings yours back.
-const hab = { w: 0, L: null, animals: [], peek: false, picked: null, pickedUntil: 0, factIdx: 0, last: 0, bg: null, bgKey: "", t: 0,
+const hab = { prints: [], w: 0, L: null, animals: [], peek: false, picked: null, pickedUntil: 0, factIdx: 0, last: 0, bg: null, bgKey: "", t: 0,
               fx: [], visit: null };
 const habRealState = () => (hab.visit ? hab.visit.state : myState.code);
 // The state whose scenery the habitat is drawn with (HAB_TWIN for countries).
@@ -179,7 +179,7 @@ function habitatSet(entries) {
   const box = $("habitat");
   const w = box.clientWidth && box.clientWidth < HAB_WIDE ? 320 : 480;
   const relayout = w !== hab.w;
-  if (relayout) { hab.w = w; hab.L = habLayout(w); hab.bgKey = ""; }
+  if (relayout) { hab.w = w; hab.L = habLayout(w); hab.bgKey = ""; hab.prints = []; }
   const old = new Map(hab.animals.map((a) => [a.s.slug, a]));
   const caught = entries.filter((e) => e.caught && e.species.slug);
   hab.entries = entries; hab.total = caught.length;
@@ -696,6 +696,70 @@ function habPerchStep(a, dt) {
   return false;
 }
 
+// Turning round: a mammal that changes direction on the ground stops and looks
+// at you over its shoulder (its drawn "look" row), first still facing the old way,
+// then the new one, instead of flipping in a single frame. Not when it's bolting
+// or chasing, and not for animals without a "look" row.
+const HAB_TURN = .34;
+const HAB_TURNERS = new Set(["walk", "shore", "wade", "beach", "hop"]);
+function habStepTurning(a, dt, awake) {
+  if (a.faced === undefined) a.faced = a.dir;
+  const x = a.x, y = a.y, turning = a.turnT > 0;
+  habStep(a, dt, awake);
+  const hurry = a.flee > 0 || a.chaseT > 0 || !awake || a.dv;
+  if (turning) {
+    a.turnT = hurry ? 0 : a.turnT - dt;
+    if (!hurry) { a.x = x; a.y = y; }  // it turns on the spot
+  }
+  habPrintStep(a, awake);
+  if (a.dir && a.dir !== a.faced) {
+    const acts = habAnimIdx && habAnimIdx.acts[a.s.slug];
+    if (!hurry && !turning && HAB_TURNERS.has(a.role) && acts && acts.includes("look")) { a.turnT = HAB_TURN; a.turnFrom = a.faced; }
+    a.faced = a.dir;
+  }
+}
+// Footprints: animals walking on the beach (or the mud or shingle of a lake or river)
+// leave tracks that fade away, and in a snowy winter they leave them all over the
+// meadow. Birds leave little three-toed forks, the rest paw dots, bigger animals
+// bigger ones. Legless animals and bugs leave none.
+const HAB_NO_PRINTS = /snake|slug|snail|worm|millipede|centipede|woodlouse|crab|turtle|tortoise|skink|lizard|newt|salamander|frog|toad/;
+function habPrintStep(a, awake) {
+  const L = hab.L;
+  if (!awake || !L || a.odo === undefined || !HAB_LAND.has(a.role) || a.dv) return;
+  if (a.printNo === undefined) a.printNo = a.s.category === "invertebrate" || HAB_NO_PRINTS.test(a.s.slug);
+  if (a.printNo) return;
+  const k = habScale(a.s.slug), stride = 4 + 5 * k;
+  if (a.printOdo === undefined || Math.abs(a.odo - a.printOdo) > 60) a.printOdo = a.odo;
+  if (a.odo - a.printOdo < stride) return;
+  a.printOdo = a.odo;
+  const x = Math.round(a.x), y = Math.round(a.y), p = L.pond;
+  const sand = y > L.water && y < HAB_H && x >= L.shore[y] && x <= L.surf[y] - 3;
+  const snow = habSnowy() && x < L.land && ((x - p.x) / (p.rx + 3)) ** 2 + ((y - p.y) / (p.ry + 3)) ** 2 > 1;
+  if (!sand && !snow) return;
+  a.printSide = -(a.printSide || 1);
+  hab.prints.push({ x, y: y + a.printSide, dir: a.dir || 1, bird: a.s.category === "bird", big: k >= 1.1,
+                    life: snow ? 24 : 12, max: snow ? 24 : 12, snow });
+  if (hab.prints.length > 160) hab.prints.shift();
+}
+function habPrintsDraw(c, dt) {
+  if (!hab.prints.length) return;
+  for (const f of hab.prints) {
+    f.life -= dt;
+    const a = Math.min(1, f.life / f.max * 2.5);
+    if (a <= 0) continue;
+    c.fillStyle = f.snow ? `rgba(96,118,160,${(.75 * a).toFixed(2)})` : `rgba(70,50,25,${(.5 * a).toFixed(2)})`;
+    if (f.bird) {
+      // a fork pointing the way it walked
+      c.fillRect(f.x, f.y, 1, 1); c.fillRect(f.x + f.dir, f.y - 1, 1, 1); c.fillRect(f.x + f.dir, f.y + 1, 1, 1); c.fillRect(f.x - f.dir, f.y, 1, 1);
+    } else if (f.big) { c.fillRect(f.x - 1, f.y, 3, 2); c.fillRect(f.x + 2 * f.dir, f.y - 1, 1, 1); }
+    else c.fillRect(f.x, f.y, 2, 1);
+  }
+  hab.prints = hab.prints.filter((f) => f.life > 0);
+}
+
+// Which way the animal is drawn facing: the old way for the first half of a turn.
+const habFacing = (a) => (a.turnT > HAB_TURN / 2 ? a.turnFrom : a.dir);
+
 function habStep(a, dt, awake) {
   a.phase += dt;
   if (a.takeoff > 0) a.takeoff -= dt;
@@ -1003,7 +1067,10 @@ function habAnim(a, awake, roost) {
     if (has("hide")) return ["hide", Math.min(habNF() - 1, Math.floor((1 - a.shy / 1.6) * habNF()))];
     if (HAB_SHY.test(a.s.slug)) return ["sleep", 0];
   }
-  if (roost || habDecorAnim(a, awake)) return still;  // sheltering from the rain, or perched on a decoration
+  if (a.turnT > 0 && has("look")) return ["look", habIdleFrame(a.phase * 4 / 3, 1)];
+  const onDecor = habDecorAnim(a, awake);
+  if (onDecor && onDecor[0] === "land") return onDecor;  // coming in to land on a decoration
+  if (roost || onDecor) return still;  // sheltering from the rain, or perched on a decoration
   if (a.mode === "perched") return still;
   if (a.mode === "toPerch") {
     // the last stretch in to the perch: braking, nose up, feet reaching out (drawn "land" row)
@@ -1060,6 +1127,9 @@ function habDraw() {
   c.drawImage(hab.bg, 0, 0);
   habWxShade(c, L, phase);
   habAmbient(c, L, phase);
+  const now = performance.now();
+  habPrintsDraw(c, hab.printAt ? Math.min(.1, (now - hab.printAt) / 1000) : 0);
+  hab.printAt = now;
   const roosting = { n: 0 };
   const poses = hab.animals.map((a) => {
     const awake = habAwake(a, phase);
@@ -1255,7 +1325,7 @@ function habSprite(c, p) {
   // Sprites face left; mirror the ones heading right.
   c.translate(x, y - mid);
   if (k !== 1) c.scale(k, k);
-  if (a.dir > 0 && a.role !== "reef") c.scale(-1, 1);
+  if (habFacing(a) > 0 && a.role !== "reef") c.scale(-1, 1);
   if (p.sx !== 1 || p.sy !== 1) c.scale(p.sx, p.sy);
   const fr = framed && habFrame(sheet, habAnimIdx.rows.indexOf(p.anim[0]), p.anim[1], FP, p.phase);
   if (framed) c.drawImage(fr, -F / 2, mid - F, F, F);
@@ -1408,7 +1478,7 @@ function habVisit(username, state, entries, slot) {
   if (!hab.visit) hab.visit = { home: hab.entries || hab.animals.map((a) => ({ caught: true, species: a.s, activity: a.activity })) };
   Object.assign(hab.visit, { username, state });
   slot.append($("habitat"), $("hab-bar"));
-  hab.animals = []; hab.w = 0; hab.picked = null; hab.fx = [];
+  hab.animals = []; hab.w = 0; hab.picked = null; hab.fx = []; hab.prints = [];
   habitatSet(entries);
 }
 
@@ -1418,7 +1488,7 @@ function habLeave() {
   const home = hab.visit.home;
   hab.visit = null;
   $("hab-home").append($("habitat"), $("hab-bar"));
-  hab.animals = []; hab.w = 0; hab.picked = null; hab.fx = [];
+  hab.animals = []; hab.w = 0; hab.picked = null; hab.fx = []; hab.prints = [];
   habitatSet(home);
 }
 
@@ -1445,7 +1515,7 @@ function habShowcase(state, slot) {
   if (slot && $("habitat").parentElement !== slot) slot.append($("habitat"));
   if (!hab.visit || !hab.visit.showcase || hab.visit.state !== state) {
     hab.visit = { showcase: true, state, home: [] };
-    hab.animals = []; hab.w = 0; hab.picked = null; hab.fx = [];
+    hab.animals = []; hab.w = 0; hab.picked = null; hab.fx = []; hab.prints = [];
   }
   const fresh = !hab.animals.length;
   habitatSet([{ caught: true, activity: "any", species: { number: 0, ...s } }]);
@@ -1470,7 +1540,7 @@ function habLoop(now) {
   hab.t += dt;
   habWeather();
   habDecorTick(dt);
-  hab.animals.forEach((a) => habStep(a, dt, habAwake(a, phase)));
+  hab.animals.forEach((a) => habStepTurning(a, dt, habAwake(a, phase)));
   habSocial(dt, phase);
   habFxStep(dt);
   habWxStep(dt);
