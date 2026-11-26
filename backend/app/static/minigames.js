@@ -485,6 +485,11 @@ function mgBuild() {
   // Stop when the tab is switched away or the page is hidden; the round waits.
   new IntersectionObserver(([en]) => { mg.visible = en.isIntersecting; mgWake(); }).observe(cv);
   document.addEventListener("visibilitychange", mgWake);
+  // Clicking away to another window (on a computer) pauses too; the page keeps drawing.
+  addEventListener("blur", () => {
+    const r = mg.run;
+    if (r && !r.demo && (r.mode === "play" || r.mode === "count")) { r.mode = "paused"; mg.down = false; mgMusicStop(r); }
+  });
 }
 
 function mgGamePt(cv, e) {
@@ -1511,7 +1516,10 @@ function mgTap() {
   if (!r) return;
   // The how-to-play demo: a tap starts your own try.
   if (r.demo) { mgReset("play"); mg.last = 0; mgMusicStart(mg.run); mgWake(); return; }
-  if (r.mode === "ready" || r.mode === "paused") { r.mode = "play"; mg.last = 0; mgMusicStart(r); mgWake(); }
+  if (r.mode === "ready") { r.mode = "play"; mg.last = 0; mgMusicStart(r); mgWake(); }
+  // Coming back from a pause: a short count first, so you aren't thrown straight back in.
+  else if (r.mode === "paused") { r.mode = "count"; r.countAt = performance.now(); mgWake(); }
+  else if (r.mode === "count") return;
   else if (r.mode === "over" || r.mode === "done") {
     if (performance.now() - r.overAt > (r.mode === "done" ? 900 : 350)) {
       if (!(mg.practice && r.mode === "over" && mgBackToFlag(r))) mgReset("play");
@@ -1520,10 +1528,11 @@ function mgTap() {
   }
 }
 
+const MG_COUNT = 1500;  // ms of "3, 2, 1" after a pause
 function mgWake() {
   const r = mg.run;
   const on = r && mg.visible && !document.hidden;
-  if (r && !on && r.mode === "play") { r.mode = "paused"; mgMusicStop(r); }
+  if (r && !on && (r.mode === "play" || r.mode === "count")) { r.mode = "paused"; mgMusicStop(r); }
   if (on && !mg.raf) { mg.last = 0; mg.raf = requestAnimationFrame(mgLoop); }
   if (!on && mg.raf) { cancelAnimationFrame(mg.raf); mg.raf = 0; mgDraw(); }
 }
@@ -1535,6 +1544,10 @@ function mgLoop(now) {
   mg.last = now;
   const r = mg.run;
   r.phase += dt;
+  if (r.mode === "count" && now - r.countAt >= MG_COUNT) {
+    // Go: a finger still down from the tap that resumed doesn't count as a press.
+    r.mode = "play"; r.held = mg.down; r.fresh = !mg.down; if (mg.taps) mg.taps.length = 0; mgMusicStart(r);
+  }
   if (r.demo) mgDemoStep(r, dt);
   else if (r.mode === "play") { mgStep(r, dt); mgMusicTick(r); }
   mgFxStep(r, dt);
@@ -2591,6 +2604,7 @@ function mgHud(c, r) {
   if (r.mode === "ready" && mg.practice) mgPanel(c, [[`${lvl.name}: practice`, 14], ["A bump sends you back a few seconds, not to the start.", 10, "#cfe"], ["No points or coins while practising.", 10, "#cfe"], ["Tap to start", 11, "#ffd28a"]], top);
   else if (r.mode === "ready") mgPanel(c, [[lvl.name, 14], [g.tip, 11], ["The course is the same every time. Learn it!", 10, "#cfe"], ["Tap to start", 11, "#ffd28a"]], top);
   else if (r.mode === "paused") mgPanel(c, [["Paused", 15], ["Tap to keep going", 11, "#ffd28a"]], top);
+  else if (r.mode === "count") mgPanel(c, [[String(Math.max(1, 3 - Math.floor((performance.now() - r.countAt) / (MG_COUNT / 3)))), 22], ["Get ready", 11, "#ffd28a"]], top);
   else if (r.mode === "over" && performance.now() - r.overAt < MG_SAD_HOLD) {
     // First a moment to see your animal's sad face; the panel comes after.
     const why = (P && P.why && P.why[r.why]) || (r.why === "bee" ? "Ouch, a bee!" : r.why === "missed" ? "Three got away!" : "Bump!");

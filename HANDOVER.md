@@ -194,7 +194,7 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
   real place, not its `HAB_TWIN`. Switzerland has its own far scene (the Matterhorn), and
   the Alpine countries now twin Wyoming's grey granite instead of Colorado's maroon peaks.
   Preview: render `habBackground(habLayout(w), phase, twin, {}, place)` in a page.
-- 0.99.1-0.99.10 overnight polish (2026-11-26; tonight's releases are 0.99.x patches so 1.0.0 stays free
+- 0.99.1-0.99.11 overnight polish (2026-11-26; tonight's releases are 0.99.x patches so 1.0.0 stays free
   for the launch; versionCode is major*10000+minor*100+patch, so 0.100.0 would clash with 1.0.0):
   - Smoothness: dawn/dusk/night light is applied per shown 40 px frame (`habFrame(..., phase)`), never to
     whole sheets (that froze low-end phones ~1.4 s). 120/144 Hz screens draw the habitat every other
@@ -221,6 +221,8 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
     (`hab.bgOld`, `HAB_BG_FADE`).
   - Minigames chime and say "New best!" the moment a try passes your best % (`mgPassBest`, sfx `best`;
     only when the best is 5-99%, never in practice or the demo).
+  - Resuming a paused minigame counts "3, 2, 1" (1.5 s, mode `count`, `MG_COUNT`) before play goes on; the
+    resuming tap never counts as a flap or press. Clicking to another window (window blur) pauses too.
   - Chorus: once sound has been unlocked by a tap and calls are on, an awake animal calls quietly every
     9-22 s (`habChorus`, volume via `habVoice(a, vol)` and a gain bus `habAudio.bus`).
   - "Picture" button (`#hab-snap`, website only) saves the habitat as a 3x nearest-neighbour PNG
