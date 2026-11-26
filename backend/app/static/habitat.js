@@ -1608,6 +1608,7 @@ function habLoop(now) {
   habDecorTick(dt);
   hab.animals.forEach((a) => habStepTurning(a, dt, habAwake(a, phase)));
   habSocial(dt, phase);
+  habChorus(dt);
   habFxStep(dt);
   habWxStep(dt);
   habDraw();
@@ -4551,7 +4552,7 @@ function habTone(ctx, type, at, len, f0, f1, vol, { vib, band, f2, soft, hold } 
   let tail = g;
   o.connect(g);
   if (band) { const f = ctx.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = band[0]; f.Q.value = band[1]; g.connect(f); tail = f; }
-  tail.connect(habAudio.out);
+  tail.connect(habAudio.bus || habAudio.out);
   if (vib) {
     const l = ctx.createOscillator(), lg = ctx.createGain();
     l.frequency.value = vib[0]; lg.gain.value = vib[1]; l.connect(lg); lg.connect(o.frequency);
@@ -4565,14 +4566,19 @@ function habHiss(ctx, at, len, vol, hz, q = 1) {
   g.gain.setValueAtTime(.0001, at); g.gain.exponentialRampToValueAtTime(vol, at + Math.min(.03, len / 3));
   g.gain.setValueAtTime(vol, at + len * .6);
   g.gain.exponentialRampToValueAtTime(.0001, at + len);
-  n.connect(f); f.connect(g); g.connect(habAudio.out);
+  n.connect(f); f.connect(g); g.connect(habAudio.bus || habAudio.out);
   n.start(at, Math.random() * .1); n.stop(at + len + .02);
 }
-function habVoice(a) {
+function habVoice(a, vol = 1) {
   const kind = habVoiceOf(a.s);
   if (!kind) return;
   const ctx = habAudioCtx();
   if (!ctx) return;
+  habAudio.bus = null;
+  if (vol !== 1) { habAudio.bus = ctx.createGain(); habAudio.bus.gain.value = vol; habAudio.bus.connect(habAudio.out); }
+  try { habVoiceSing(ctx, a, kind); } finally { habAudio.bus = null; }
+}
+function habVoiceSing(ctx, a, kind) {
   const t = ctx.currentTime + .02, k = habScale(a.s.slug), lo = Math.pow(2, (1 - k) * .8);  // bigger, lower
   // The same little tune every time for a species.
   let seed = 7;
@@ -4613,6 +4619,22 @@ function habVoice(a) {
     case "hiss": habHiss(ctx, t, .6, .4, 5000, .7); break;
   }
 }
+// Once you've heard a call (so sound has been allowed on this page), the habitat keeps
+// singing quietly by itself: every so often one of the animals that's awake calls, birds
+// by day, owls, frogs and crickets at night, shown with its little note. Off with "Calls off".
+const HAB_CHORUS = new Set(["song", "chip", "hoot", "coo", "quack", "caw", "croak", "chirr", "cluck"]);
+function habChorus(dt) {
+  if (!habAudio.ctx || !habCallsOn() || habStill || habAudio.ctx.state !== "running") return;
+  if ((hab.chorusIn = (hab.chorusIn ?? rnd(6, 12)) - dt) > 0) return;
+  hab.chorusIn = rnd(9, 22);
+  const phase = habPhase();
+  const who = hab.animals.filter((a) => HAB_CHORUS.has(habVoiceOf(a.s)) && habAwake(a, phase) && !(a.flee > 0));
+  if (!who.length) return;
+  const a = who[Math.floor(Math.random() * who.length)];
+  habVoice(a, .35);
+  if (!a.react) a.react = { kind: "note", life: 1.6 };
+}
+
 function habCallsLabel() {
   const b = document.getElementById("hab-calls");
   if (!b) return;
@@ -4623,8 +4645,29 @@ function habCallsLabel() {
   b.title = on ? "Tap an animal to hear its call" : "Animal calls are off";
 }
 
+// "Save picture" (website only; the app's habitat page has no button): the scene as it
+// is right now, three times bigger with crisp pixels, saved as a PNG named after the place.
+function habSavePicture() {
+  const src = $("hab-canvas"), k = 3;
+  try {
+    const cv = document.createElement("canvas");
+    cv.width = src.width * k; cv.height = src.height * k;
+    const c = cv.getContext("2d");
+    c.imageSmoothingEnabled = false;
+    c.drawImage(src, 0, 0, cv.width, cv.height);
+    cv.toBlob((blob) => {
+      if (!blob) return;
+      const a = document.createElement("a"), url = URL.createObjectURL(blob);
+      a.href = url; a.download = `capture-animals-habitat-${(habRealState() || "").toLowerCase() || "scene"}.png`;
+      document.body.append(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+    }, "image/png");
+  } catch { /* a canvas that can't be read: nothing saved */ }
+}
+
 function habInit() {
   $("hab-canvas").addEventListener("click", habTap);
+  if (document.getElementById("hab-snap")) $("hab-snap").onclick = habSavePicture;
   if (document.getElementById("hab-calls")) {
     habCallsLabel();
     $("hab-calls").onclick = () => {

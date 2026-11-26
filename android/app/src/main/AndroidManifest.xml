@@ -3,6 +3,8 @@
 
     <!-- The game server (accounts, friends, feed); playing offline needs none of these. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- A tiny buzz when you bump into something in a minigame (navigator.vibrate). -->
+    <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <!-- Friend request notifications (asked for after signing in). -->
