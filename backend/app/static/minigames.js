@@ -399,7 +399,9 @@ function mgBuild() {
   .mg-lock { font-size:.85rem; }
   .mg-stage canvas { display:block; width:100%; height:auto; border-radius:10px;
                      touch-action:none; user-select:none; -webkit-user-select:none; cursor:pointer; }
-  .mg-bar { display:flex; justify-content:space-between; align-items:center; margin-top:6px; font-size:.85rem; }
+  .mg-bar { display:flex; justify-content:space-between; align-items:center; gap:6px; margin-top:6px; font-size:.85rem; }
+  .mg-bar-r { display:flex; gap:6px; flex:none; }
+  #mg-playing { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   /* Playing fills the whole screen. A phone held upright gets the game turned sideways,
      so it's as big as it can be: turn the phone to play. */
   .mg-stage.full { position:fixed; inset:0; z-index:1000; background:#0b120b; color:#e6eee6; }
@@ -437,7 +439,16 @@ function mgBuild() {
     if (mgAudio.muted) mgMusicStop(mg.run); else if (mg.run && mg.run.mode === "play") mgMusicStart(mg.run);
   };
   label();
-  bar.append(back, name, mute);
+  // Your best try's ghost can be hidden (some find it distracting); it's still kept.
+  const ghost = mgEl("button", "mg-back");
+  const gLabel = () => { ghost.replaceChildren(mgIco("trophy"), mgGhostShown() ? "Ghost on" : "Ghost off"); ghost.style.display = !mg.game || !mgGhostOn(mg.game.key) ? "none" : ""; };
+  ghost.id = "mg-ghost-btn"; ghost.title = "Show or hide the see-through animal replaying your best try";
+  ghost.onclick = () => { mgStore.set("ghost", mgGhostShown() ? "0" : "1"); gLabel(); if (mg.run && mg.run.mode !== "play") mgDraw(); };
+  mg.ghostLabel = gLabel;
+  gLabel();
+  const right = mgEl("span", "mg-bar-r");
+  right.append(ghost, mute);
+  bar.append(back, name, right);
   stage.id = "mg-stage";
   const turn = mgEl("div", "mg-turn");
   turn.append(cv, bar);
@@ -822,6 +833,7 @@ function mgImg(cache, url) {
 
 function mgStart(g, s, practice = false) {
   mg.game = g; mg.species = s; mg.tries = 0; mg.practice = practice;
+  if (mg.ghostLabel) mg.ghostLabel();
   mgImg(mg.imgs, `/sprites/${encodeURIComponent(s.slug)}.png`);
   mgImg(mg.sheets, `/sprites/anim/${encodeURIComponent(s.slug)}.png`);
   document.getElementById("mg-list").classList.add("hidden");
@@ -2461,6 +2473,7 @@ function mgGhostLoad(key) {
 // The other games that run on a fixed clock keep where the animal was too, not just
 // its height, since it moves about (lanes, tunnels, flowers): 4 numbers a sample.
 const MG_GHOST_MORE = new Set(["slide", "nectar", "dig", "echo", "plunge", "splash", "leap", "freeze"]);
+const mgGhostShown = () => mgStore.get("ghost") !== "0";
 const mgGhostOn = (key) => MG_GHOST_GAMES.has(key) || MG_GHOST_MORE.has(key);
 function mgGhostKeep(r) {
   const key = mg.game.key;
@@ -2482,7 +2495,7 @@ function mgGhostSave(r, pct) {
   mgStore.set(k, JSON.stringify(mgGhostCache[k]));
 }
 function mgGhostDraw(c, r) {
-  if (!mgGhostOn(mg.game.key) || r.demo || r.mode !== "play") return;
+  if (!mgGhostOn(mg.game.key) || !mgGhostShown() || r.demo || r.mode !== "play") return;
   const g = mgGhostLoad(mg.game.key);
   if (!g) return;
   if (g.v === 2) return mgGhostDraw2(c, r, g);
