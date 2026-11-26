@@ -132,6 +132,16 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
   (JournalTheme.kt / MainActivity.kt). MainActivity handles rotation itself (`configChanges`), so
   turning the phone never reloads the habitat or a game. Check layouts at 740x360 too.
   habitat.js draws the wide scene from `HAB_WIDE` (440 px), not 520.
+- **Native app shell (0.99.14)**: navigation works like a phone app, not a web page. Five tabs:
+  Habitat, Field Guide, a raised camera **shutter** (Capture screen; on a phone it opens the camera
+  straight away), Games, Friends (Feed / Friends / My photos as a segmented control at its top).
+  Fixed leather app bar with the screen's name, a back arrow on Parks, the place pill and your
+  picture, which opens a menu sheet (profile, places, reports, install, log out, version). Pop-ups
+  are bottom sheets on phones (drag down / tap outside / back to close); filter chips scroll
+  sideways; the phone's back button returns to the Habitat tab. Web: the "Native app shell" CSS
+  block and `showTab()`/`openSheet()` in index.html (hashes #catch #dex #capture #games #feed
+  #friends #photos #parks). Android: `BottomTabs`, `Shutter`, `SocialTabs` (MainActivity.kt),
+  `SheetDialog` (SocialScreen.kt, used for the account and comments sheets).
 - Change habitat and map behaviour in `habitat.js` and the web first;
   Android packages `backend/app/static` and `species/` as assets, so it picks
   them up on its next build. Keep web and Android at feature parity.
