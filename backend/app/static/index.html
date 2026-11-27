@@ -96,6 +96,17 @@
                        color:var(--ink); cursor:pointer; display:flex; justify-content:space-between; gap:8px; }
   .state-list button:hover, .state-list button:focus-visible { background:var(--line); }
   .state-list button.on { font-weight:600; color:var(--accent); }
+  /* Rows read like a phone's settings list: flat, full width, a hairline between them. */
+  .state-list > button:not(.photo-btn) { box-shadow:none; border-radius:0; border-bottom:1px solid var(--line); min-height:46px; align-items:center; }
+  .state-list > button:not(.photo-btn):active { transform:none; box-shadow:none; background:var(--line); }
+  .state-list > button:last-child { border-bottom:none; }
+  .state-list .pick-region { padding:12px 10px; }
+  .state-list .pick-region-txt { display:grid; gap:2px; }
+  .state-list .pick-region-txt > span:first-child { font-family:var(--pixel); font-size:1.05rem; }
+  .state-list .pick-region.on .pick-region-txt .muted { color:var(--accent); font-weight:600; }
+  .state-list .pick-chev { font-size:1.4rem; color:var(--muted); line-height:1; }
+  .state-list .pick-back { justify-content:flex-start; align-items:center; color:var(--accent); font-weight:600; }
+  .state-list .pick-back .pi { width:18px; height:18px; }
   .state-list .sep { font-size:.75rem; color:var(--muted); padding:8px 10px 2px; text-transform:uppercase; letter-spacing:.04em; }
   .dex { padding:16px; }
   .dex-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
@@ -1696,6 +1707,16 @@ function avatarImg(n, cls = "") {
 let states = [];
 // "state" for a US state, "country" for one in Europe or Asia (region from /states).
 const placeWord = (st) => (st && (st.region || "usa") !== "usa" ? "country" : "state");
+// Places by region (US states, then Europe, then Asia), each A to Z.
+const REGIONS = [["usa", "United States"], ["europe", "Europe"], ["asia", "Asia"]];
+function placeGroups(list) {
+  const key = (st) => st.region || "usa";
+  const known = REGIONS.map(([k]) => k);
+  const extra = [...new Set(list.map(key))].filter((k) => !known.includes(k)).map((k) => [k, k[0].toUpperCase() + k.slice(1)]);
+  return [...REGIONS, ...extra].map(([k, label]) => ({ key: k, label,
+    items: list.filter((st) => key(st) === k).sort((a, b) => a.name.localeCompare(b.name)) }))
+    .filter((g) => g.items.length);
+}
 // Until /states and /me answer: no state, and a map of the lower 48.
 let myState = { code: "", name: "", bounds: { west: -124.8, east: -66.9, south: 24.5, north: 49.4 } };
 // The player's main state (from /me). myState is the one on screen, which can be
@@ -1747,6 +1768,7 @@ async function useState(code) {
 // as big tiles with how much of each they've captured, main marked ★, and an
 // optional `action` button ([label, code it resolves to]). Otherwise every state
 // A to Z, after a guess from the device's location when `locate` is set (sign-up).
+// Either way, more than 8 places in several regions open on the regions first.
 // Resolves to the chosen code, or null when closed.
 function pickState({ title, note = "", current = null, tiles = null, locate = false, after = "", action = null }) {
   const dlg = $("state-pick"), list = $("state-list");
@@ -1764,52 +1786,84 @@ function pickState({ title, note = "", current = null, tiles = null, locate = fa
       b.onclick = () => finish(st.code);
       return b;
     };
-    list.innerHTML = "";
-    if (tiles) {
-      list.className = "";
-      const grid = el("div", "state-tiles");
-      for (const t of tiles) {
-        const st = states.find((x) => x.code === t.state) || { code: t.state, name: t.name };
-        grid.append(tile(st, t.main ? `★ Main ${placeWord(st)}` : st.code === current ? "Looking now" : "",
-                         `${t.caught} of ${t.total} captured`));
+    // Places come in regions (United States, Europe, Asia). With more than one region
+    // the dialog opens on the regions and a tap drills into one, like a phone's settings
+    // list; a region with a single place (Singapore) is that place's own row.
+    let view = null;      // null: the regions; otherwise the region key being shown
+    const show = (key) => { view = key; draw(); list.scrollTop = 0; };
+    const back = () => {
+      const b = el("button", "pick-back"); b.type = "button";
+      b.append(ico("back"), el("span", "", "All places"));
+      b.onclick = () => show(null);
+      return b;
+    };
+    const regionRow = (g, sub, cls = "") => {
+      const b = el("button", "pick-region " + cls); b.type = "button";
+      const txt = el("span", "pick-region-txt");
+      txt.append(el("span", "", g.label), el("span", "muted small", sub));
+      b.append(txt, el("span", "pick-chev", "›"));
+      b.onclick = () => show(g.key);
+      return b;
+    };
+    const guess = el("div", "state-tiles");
+    if (!tiles && locate && navigator.geolocation) {
+      guess.append(el("p", "muted", "Finding where you are…"));
+      navigator.geolocation.getCurrentPosition(async (p) => {
+        let code = null;
+        try { ({ code } = await api(`/states/at?lat=${p.coords.latitude}&lon=${p.coords.longitude}`)); } catch {}
+        const st = states.find((x) => x.code === code);
+        guess.replaceChildren(st ? Object.assign(tile(st, "You're here"), { className: "on" }) : el("p", "muted", "Couldn't tell from your location."));
+      }, () => guess.replaceChildren(el("p", "muted", "Location is off, so pick from the list.")),
+      { timeout: 8000, maximumAge: 600000 });
+    }
+    const stOf = (t) => states.find((x) => x.code === t.state) || { code: t.state, name: t.name };
+    const groups = placeGroups(tiles ? tiles.map((t) => ({ ...stOf(t), tile: t })) : states);
+    const drill = groups.length > 1 && (tiles ? tiles.length : states.length) > 8;
+    const draw = () => {
+      list.innerHTML = "";
+      list.className = "state-list";
+      const shown = !drill ? groups : view ? groups.filter((g) => g.key === view) : null;
+      if (!tiles && view === null && guess.childNodes.length) list.append(guess, el("div", "sep", "Or pick your state or country"));
+      if (drill && view) list.append(back());
+      if (!shown) {
+        // The regions, each with how many places it has and which one is picked there.
+        for (const g of groups) {
+          if (g.items.length === 1) {
+            if (tiles) { const grid = el("div", "state-tiles"); grid.append(tileOf(g.items[0])); list.append(grid); }
+            else list.append(row(g.items[0], g.label));
+            continue;
+          }
+          const cur = g.items.find((st) => st.code === current);
+          const word = g.key === "usa" ? "states" : "countries";
+          const sub = tiles ? `${g.items.length} unlocked` + (cur ? ` · ${cur.name}` : "")
+                            : (cur ? `✓ ${cur.name}` : `${g.items.length} ${word}`);
+          list.append(regionRow(g, sub, cur ? "on" : ""));
+        }
+      } else {
+        for (const g of shown) {
+          if (shown.length > 1 || (drill && view)) list.append(el("div", "sep", g.label));
+          if (tiles) { const grid = el("div", "state-tiles"); g.items.forEach((st) => grid.append(tileOf(st))); list.append(grid); }
+          else g.items.forEach((st) => list.append(row(st)));
+        }
       }
-      list.append(grid);
-      if (action) {
+      if (tiles && action) {
         const b = el("button", "photo-btn", action[0]);
         b.type = "button"; b.style.marginTop = "12px";
         b.onclick = () => finish(action[1]);
         list.append(b);
       }
-      if (after) list.append(el("p", "muted", after));
-    } else {
-      list.className = "state-list";
-      const guess = el("div", "state-tiles");
-      if (locate && navigator.geolocation) {
-        guess.append(el("p", "muted", "Finding where you are…"));
-        list.append(guess, el("div", "sep", "Or pick your state or country"));
-        navigator.geolocation.getCurrentPosition(async (p) => {
-          let code = null;
-          try { ({ code } = await api(`/states/at?lat=${p.coords.latitude}&lon=${p.coords.longitude}`)); } catch {}
-          const st = states.find((x) => x.code === code);
-          guess.replaceChildren(st ? Object.assign(tile(st, "You're here"), { className: "on" }) : el("p", "muted", "Couldn't tell from your location."));
-        }, () => guess.replaceChildren(el("p", "muted", "Location is off, so pick from the list.")),
-        { timeout: 8000, maximumAge: 600000 });
-      }
-      // US states, then the countries of Europe, then Asia, each A to Z.
-      const groups = [["United States", states.filter((st) => (st.region || "usa") === "usa")],
-                      ["Europe", states.filter((st) => st.region === "europe")],
-                      ["Asia", states.filter((st) => st.region === "asia")]].filter(([, g]) => g.length);
-      for (const [label, group] of groups) {
-        if (groups.length > 1) list.append(el("div", "sep", label));
-        for (const st of [...group].sort((a, b) => a.name.localeCompare(b.name))) {
-          const b = el("button", st.code === current ? "on" : "");
-          b.type = "button";
-          b.append(el("span", "", st.name), el("span", "muted", st.code === current ? "✓" : ""));
-          b.onclick = () => finish(st.code);
-          list.append(b);
-        }
-      }
-    }
+      if (tiles && after) list.append(el("p", "muted", after));
+    };
+    const tileOf = (st) => tile(st, st.tile.main ? `★ Main ${placeWord(st)}` : st.code === current ? "Looking now" : "",
+                                `${st.tile.caught} of ${st.tile.total} captured`);
+    const row = (st, hint = "") => {
+      const b = el("button", st.code === current ? "on" : "");
+      b.type = "button";
+      b.append(el("span", "", st.name), el("span", "muted", st.code === current ? "✓" : hint));
+      b.onclick = () => finish(st.code);
+      return b;
+    };
+    draw();
     $("state-pick-close").onclick = () => finish(null);
     dlg.onclose = () => finish(null);
     dlg.showModal();

@@ -1,5 +1,6 @@
 package com.captureanimals.app
 
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -17,6 +18,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
@@ -27,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -48,6 +51,115 @@ object StateList {
 
     /** The picker's groups, in order. */
     val REGIONS = listOf("usa", "europe", "asia")
+    private val LABELS = mapOf("usa" to "United States", "europe" to "Europe", "asia" to "Asia")
+
+    /** One region of places, A to Z: tap "United States" to open its states. */
+    data class Group<T>(val key: String, val label: String, val items: List<T>) {
+        /** "50 states" / "42 countries". */
+        val count get() = "${items.size} ${if (key == "usa") "states" else "countries"}"
+    }
+
+    /** Places by region (US, Europe, Asia, then any new region), each A to Z, empty regions left out. */
+    fun <T> groups(items: List<T>, info: (T) -> StateInfo?): List<Group<T>> {
+        val region = { t: T -> info(t)?.region ?: "usa" }
+        val keys = REGIONS + items.map(region).distinct().filter { it !in REGIONS }
+        return keys.map { k ->
+            Group(k, LABELS[k] ?: k.replaceFirstChar { it.uppercase() },
+                items.filter { region(it) == k }.sortedBy { info(it)?.name.orEmpty() })
+        }.filter { it.items.isNotEmpty() }
+    }
+
+    fun groups(states: List<StateInfo>): List<Group<StateInfo>> = groups(states) { it }
+
+    /** Open on the regions first only when there are several and the list is long. */
+    fun <T> drills(groups: List<Group<T>>): Boolean = groups.size > 1 && groups.sumOf { it.items.size } > 8
+}
+
+/**
+ * A place list that opens on its regions (United States, Europe, then Singapore on its
+ * own row) and drills into one when tapped, with "All places" (or the back gesture) to
+ * go back. [row] draws one place; a region holding one place shows that place directly.
+ */
+@Composable
+fun <T> RegionDrill(groups: List<StateList.Group<T>>, current: String?, code: (T) -> String,
+                    sub: (StateList.Group<T>, T?) -> String, modifier: Modifier = Modifier,
+                    grid: Boolean = false, row: @Composable (T) -> Unit) {
+    var open by remember(groups) { mutableStateOf<String?>(null) }
+    val drill = StateList.drills(groups)
+    BackHandler(enabled = drill && open != null) { open = null }
+    val shown = if (!drill) groups else groups.filter { it.key == open }
+    when {
+        drill && open == null -> LazyColumn(modifier) {
+            items(groups, key = { "region-" + it.key }) { g ->
+                if (g.items.size == 1) row(g.items[0]) else RegionRow(g, sub(g, g.items.firstOrNull { code(it) == current }),
+                    picked = g.items.any { code(it) == current }) { open = g.key }
+            }
+        }
+        drill -> Column {
+            Row(Modifier.fillMaxWidth().clickable { open = null }.padding(vertical = 10.dp, horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically) {
+                TabIcon("ui_ic_back", Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("All places", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+            }
+            shown.firstOrNull()?.let { g ->
+                Text(g.label.uppercase(), style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(4.dp))
+                DrillItems(g.items, grid, modifier, code, row)
+            }
+        }
+        else -> DrillItems(shown.flatMap { it.items }, grid, modifier, code, row)
+    }
+}
+
+@Composable
+private fun <T> DrillItems(items: List<T>, grid: Boolean, modifier: Modifier, code: (T) -> String, row: @Composable (T) -> Unit) {
+    if (grid) LazyVerticalGrid(GridCells.Adaptive(120.dp), modifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(items, key = code) { row(it) }
+    } else LazyColumn(modifier) { items(items, key = code) { row(it) } }
+}
+
+/** "United States / 50 states  ›": opens that region's places. */
+@Composable
+private fun RegionRow(g: StateList.Group<*>, sub: String, picked: Boolean, onOpen: () -> Unit) {
+    Row(Modifier.fillMaxWidth().clickable(onClick = onOpen).padding(vertical = 12.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(g.label, style = MaterialTheme.typography.titleMedium,
+                color = if (picked) MaterialTheme.colorScheme.primary else Color.Unspecified)
+            Text(sub, style = MaterialTheme.typography.bodySmall,
+                color = if (picked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Text("›", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+    HorizontalDivider()
+}
+
+/** One place in a plain list, ✓ on the one already picked. */
+@Composable
+private fun PlaceRow(st: StateInfo, current: String?, hint: String = "", onPick: (String) -> Unit) {
+    Row(Modifier.fillMaxWidth().clickable { onPick(st.code) }.padding(vertical = 12.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically) {
+        Text(st.name, Modifier.weight(1f), fontWeight = if (st.code == current) FontWeight.SemiBold else null,
+            color = if (st.code == current) MaterialTheme.colorScheme.primary else Color.Unspecified)
+        Text(if (st.code == current) "✓" else hint, style = MaterialTheme.typography.bodySmall,
+            color = if (st.code == current) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/** Every place grouped by region, for the first-launch and "where was this taken?" lists. */
+@Composable
+private fun PlaceList(states: List<StateInfo>, current: String?, modifier: Modifier, onPick: (String) -> Unit) {
+    val groups = remember(states) { StateList.groups(states) }
+    // Singapore sits among the regions on its own row, with "Asia" beside it.
+    val solo = remember(groups) {
+        if (StateList.drills(groups)) groups.filter { it.items.size == 1 }.associate { it.items[0].code to it.label } else emptyMap()
+    }
+    RegionDrill(groups, current, code = { it.code }, modifier = modifier,
+        sub = { g, cur -> cur?.let { "✓ ${it.name}" } ?: g.count }) { st ->
+        PlaceRow(st, current, hint = solo[st.code].orEmpty(), onPick = onPick)
+    }
 }
 
 /**
@@ -82,16 +194,16 @@ fun StateMenu(states: List<StateInfo>, viewing: String, main: String, tiles: Lis
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Tap one to look at its Field Guide, habitat and parks. Your main one (★) is where you start and what friends see first.",
                     style = MaterialTheme.typography.bodyMedium)
-                LazyVerticalGrid(GridCells.Adaptive(120.dp), Modifier.heightIn(max = dialogListMax()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(tiles, key = { it.code }) { t ->
-                        states.firstOrNull { it.code == t.code }?.let { st ->
-                            StateTile(st, main = t.code == viewing,
-                                label = if (t.main) "★ Main ${st.word}" else if (t.code == viewing) "Looking now" else "",
-                                sub = "${t.caught} of ${t.total} captured") {
-                                onClose()
-                                if (t.code != viewing) onView(t.code)
-                            }
+                val groups = remember(tiles, states) { StateList.groups(tiles) { t -> states.firstOrNull { it.code == t.code } } }
+                RegionDrill(groups, viewing, code = { it.code }, grid = true,
+                    modifier = Modifier.heightIn(max = dialogListMax()),
+                    sub = { g, cur -> "${g.items.size} unlocked" + (cur?.let { c -> states.firstOrNull { it.code == c.code }?.name }?.let { " · $it" } ?: "") }) { t ->
+                    states.firstOrNull { it.code == t.code }?.let { st ->
+                        StateTile(st, main = t.code == viewing,
+                            label = if (t.main) "★ Main ${st.word}" else if (t.code == viewing) "Looking now" else "",
+                            sub = "${t.caught} of ${t.total} captured") {
+                            onClose()
+                            if (t.code != viewing) onView(t.code)
                         }
                     }
                 }
@@ -135,7 +247,6 @@ fun StatePicker(states: List<StateInfo>, onDismiss: () -> Unit, onPick: (String)
         if (granted.values.any { it }) locate() else guess = ""
     }
     LaunchedEffect(Unit) { if (hasLocationPermission(context)) locate() }
-    val rows = remember(states) { StateList.alphabetical(states) }
     AlertDialog(onDismissRequest = onDismiss, confirmButton = {},
         dismissButton = { TextButton(onClick = onDismiss) { Text("Close") } },
         title = { Text("Where do you live?") },
@@ -152,36 +263,24 @@ fun StatePicker(states: List<StateInfo>, onDismiss: () -> Unit, onPick: (String)
                     guess != null -> Text("Couldn't tell where you are, so pick from the list.",
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                Text("OR PICK YOUR STATE", style = MaterialTheme.typography.labelSmall,
+                Text("OR PICK YOUR STATE OR COUNTRY", style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
-                LazyColumn(Modifier.heightIn(max = 300.dp)) {
-                    items(rows, key = { it.code }) { st ->
-                        Row(Modifier.fillMaxWidth().clickable { onPick(st.code) }.padding(vertical = 10.dp, horizontal = 4.dp)) {
-                            Text(st.name)
-                        }
-                    }
-                }
+                PlaceList(states, current = null, modifier = Modifier.heightIn(max = 300.dp), onPick = onPick)
             }
         })
 }
 
-/** Every state A to Z, to say where a photo was taken. */
+/** Every place by region, to say where a photo was taken. */
 @Composable
-fun StateListDialog(states: List<StateInfo>, title: String, note: String, onDismiss: () -> Unit, onPick: (String) -> Unit) {
-    val rows = remember(states) { StateList.alphabetical(states) }
+fun StateListDialog(states: List<StateInfo>, title: String, note: String, current: String? = null,
+                    onDismiss: () -> Unit, onPick: (String) -> Unit) {
     AlertDialog(onDismissRequest = onDismiss, confirmButton = {},
         dismissButton = { TextButton(onClick = onDismiss) { Text("Close") } },
         title = { Text(title) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(note, style = MaterialTheme.typography.bodyMedium)
-                LazyColumn(Modifier.heightIn(max = dialogListMax())) {
-                    items(rows, key = { it.code }) { st ->
-                        Row(Modifier.fillMaxWidth().clickable { onPick(st.code) }.padding(vertical = 10.dp, horizontal = 4.dp)) {
-                            Text(st.name)
-                        }
-                    }
-                }
+                PlaceList(states, current, Modifier.heightIn(max = dialogListMax()), onPick)
             }
         })
 }

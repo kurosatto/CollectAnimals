@@ -132,6 +132,11 @@ Web previews: `?weather=rain,windy`, `?season=winter` and
   (JournalTheme.kt / MainActivity.kt). MainActivity handles rotation itself (`configChanges`), so
   turning the phone never reloads the habitat or a game. Check layouts at 740x360 too.
   habitat.js draws the wide scene from `HAB_WIDE` (440 px), not 520.
+- **Place picker (0.99.15)**: every list of places (sign-up, "Which state or country?",
+  "Where was this photo taken?", Your places) is grouped by region. With more than 8 places in
+  several regions it opens on the regions (United States, Europe; a one-place region such as
+  Singapore is its own row) and a tap drills in, with "All places" / back to return. Web:
+  `placeGroups()` + `pickState()`; Android: `StateList.groups()` + `RegionDrill`.
 - **Native app shell (0.99.14)**: navigation works like a phone app, not a web page. Five tabs:
   Habitat, Field Guide, a raised camera **shutter** (Capture screen; on a phone it opens the camera
   straight away), Games, Friends (Feed / Friends / My photos as a segmented control at its top).
